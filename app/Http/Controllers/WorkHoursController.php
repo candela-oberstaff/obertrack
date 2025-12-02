@@ -10,22 +10,17 @@ use App\Http\Requests\StoreWorkHoursRequest;
 use App\Http\Requests\ApproveWorkHoursRequest;
 use App\Services\ReportService;
 use App\Services\ZapierService;
+use App\Services\WorkHoursApprovalService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WorkHoursController extends Controller
 {
     public function __construct(
         private ReportService $reportService,
-        private ZapierService $zapierService
+        private ZapierService $zapierService,
+        private WorkHoursApprovalService $approvalService
     ) {}
-
-    // Código comentado eliminado
-
 
     public function store(StoreWorkHoursRequest $request)
     {
@@ -68,26 +63,24 @@ class WorkHoursController extends Controller
         ]);
     }
 
+    public function index()
+    {
+        $currentMonth = now()->startOfMonth();
+        $calendar = $this->generateCalendar($currentMonth);
 
-public function index()
-{
-    $currentMonth = now()->startOfMonth();
-    $calendar = $this->generateCalendar($currentMonth);
+        // Calcular el total de horas para el mes
+        $totalHours = WorkHours::where('user_id', auth()->id())
+            ->whereYear('work_date', $currentMonth->year)
+            ->whereMonth('work_date', $currentMonth->month)
+            ->sum('hours_worked');
 
-    // Calcular el total de horas para el mes
-    $totalHours = WorkHours::where('user_id', auth()->id())
-        ->whereYear('work_date', $currentMonth->year)
-        ->whereMonth('work_date', $currentMonth->month)
-        ->sum('hours_worked');
+        // Si hay un total de horas en la sesión, usarlo
+        if (session('totalHours')) {
+            $totalHours = session('totalHours');
+        }
 
-    // Si hay un total de horas en la sesión, usarlo
-    if (session('totalHours')) {
-        $totalHours = session('totalHours');
+        return view('work_hours.index', compact('calendar', 'currentMonth', 'totalHours'));
     }
-
-    return view('work_hours.index', compact('calendar', 'currentMonth', 'totalHours'));
-}
-
 
     private function generateCalendar($month)
     {
@@ -111,47 +104,31 @@ public function index()
         return array_chunk($calendar, 7);
     }
 
-
-
-    
-   private function sendResponse($success, $message, $data = [])
-    {
-        $response = [
-            'success' => $success,
-            'message' => $message
-        ];
-
-        if (!empty($data)) {
-            $response = array_merge($response, $data);
-        }
-
-        if (request()->ajax()) {
-            return response()->json($response);
-        }
-
-        if ($success) {
-            return back()->with('success', $message);
-        } else {
-            return back()->with('error', $message);
-        }
-    }
-
-
-
     public function approveWeek(ApproveWorkHoursRequest $request)
     {
-        // Validación ya manejada por ApproveWorkHoursRequest
-
-        $weekStart = Carbon::parse($request->week_start)->startOfWeek(Carbon::MONDAY);
-        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::FRIDAY);
-
-        WorkHours::where('user_id', $request->employee_id)
-            ->whereBetween('work_date', [$weekStart, $weekEnd])
-            ->update(['approved' => true]);
-
+        $this->approvalService->approveWeek($request->employee_id, $request->week_start);
         return back()->with('success', 'Semana aprobada correctamente.');
     }
 
+    public function approveWeekWithComment(ApproveWorkHoursRequest $request)
+    {
+        $this->approvalService->approveWeekWithComment(
+            $request->employee_id, 
+            $request->week_start, 
+            $request->comment
+        );
+        return response()->json(['success' => true]);
+    }
+
+    public function approveMonth(Request $request)
+    {
+        $month = $request->input('month');
+        $user = Auth::user();
+
+        $success = $this->approvalService->approveMonth($user->id, $month);
+
+        return response()->json(['success' => $success]);
+    }
 
     public function downloadMonthlyReport($month, Request $request)
     {
@@ -210,77 +187,33 @@ public function index()
         return response($csvContent, 200, $headers);
     }
 
-
-
-
-
-
-public function approveWeekWithComment(ApproveWorkHoursRequest $request)
-{
-    // Validación ya manejada por ApproveWorkHoursRequest
-
-    $weekStart = Carbon::parse($request->week_start)->startOfWeek(Carbon::MONDAY);
-    $weekEnd = $weekStart->copy()->endOfWeek(Carbon::FRIDAY);
-
-    // Actualizar las horas trabajadas para el empleado en la semana especificada
-    WorkHours::where('user_id', $request->employee_id)
-        ->whereBetween('work_date', [$weekStart, $weekEnd])
-        ->update([
-            'approved' => true,
-            'approval_comment' => $request->comment, // Guardar el comentario
+    public function update(Request $request, $taskId)
+    {
+        $task = Task::findOrFail($taskId);
+        
+        $validatedData = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string',
+            'duration' => 'nullable|numeric|min:0',
+            'completed' => 'boolean',
+            // ... otras validaciones ...
         ]);
 
-    return response()->json(['success' => true]);
-}
+        $task->update($validatedData);
 
+        if (isset($validatedData['duration'])) {
+            WorkHours::updateOrCreate(
+                [
+                    'user_id' => $task->created_by,
+                    'work_date' => $task->updated_at->toDateString(),
+                ],
+                [
+                    'hours_worked' => $validatedData['duration'],
+                    'approved' => false,
+                ]
+            );
+        }
 
-
-
-
-public function update(Request $request, $taskId)
-{
-    $task = Task::findOrFail($taskId);
-    
-    $validatedData = $request->validate([
-        'title' => 'sometimes|required|string|max:255',
-        'description' => 'nullable|string',
-        'duration' => 'nullable|numeric|min:0',
-        'completed' => 'boolean',
-        // ... otras validaciones ...
-    ]);
-
-    $task->update($validatedData);
-
-    if (isset($validatedData['duration'])) {
-        WorkHours::updateOrCreate(
-            [
-                'user_id' => $task->created_by,
-                'work_date' => $task->updated_at->toDateString(),
-            ],
-            [
-                'hours_worked' => $validatedData['duration'],
-                'approved' => false,
-            ]
-        );
+        return response()->json($task, 200);
     }
-
-    return response()->json($task, 200);
-}
-
-
-
-
-
-public function approveMonth(Request $request)
-{
-    $month = $request->input('month');
-    $user = Auth::user();
-
-    $success = WorkHours::where('user_id', $user->id)
-        ->whereRaw("DATE_FORMAT(work_date, '%Y-%m') = ?", [$month])
-        ->update(['approved' => true]);
-
-    return response()->json(['success' => $success]);
-}
-
 }
