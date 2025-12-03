@@ -65,11 +65,11 @@ RUN chown -R www-data:www-data \
     /var/www/html/bootstrap/cache
 
 # Expose port
-EXPOSE 8000
+EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
-  CMD curl -f http://localhost:8000/up || exit 1
+  CMD curl -f http://localhost:80/up || exit 1
 
 # Start command (JSON array format to avoid shell issues)
-CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"]
+CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=80"]
