@@ -27,7 +27,8 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interactio
 FROM base AS node-build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+# Install ALL dependencies (including devDependencies) for build
+RUN npm ci --legacy-peer-deps
 COPY . .
 COPY --from=composer-deps /app/vendor ./vendor
 RUN npm run build
@@ -38,7 +39,8 @@ FROM php:8.2-fpm-alpine
 # Install runtime dependencies
 RUN apk add --no-cache \
     postgresql-dev \
-    nginx
+    nginx \
+    curl
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo pdo_pgsql opcache
@@ -69,9 +71,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
   CMD curl -f http://localhost:8000/api/health || exit 1
 
-# Start command
-CMD php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache && \
-    php artisan migrate --force && \
-    php artisan serve --host=0.0.0.0 --port=8000
+# Start command (JSON array format to avoid shell issues)
+CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"]
