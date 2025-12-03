@@ -32,10 +32,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Health Check Route
-Route::get('/health', function () {
-    return response()->json(['status' => 'healthy']);
-});
+
 
 /*
 |--------------------------------------------------------------------------
