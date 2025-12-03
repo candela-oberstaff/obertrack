@@ -42,22 +42,22 @@ function approveWithComment() {
             comment: comment
         })
     })
-        .then(response =\u003e response.json())
-        .then(data =\u003e {
-            if(data.success) {
-        alert('Semana aprobada con comentarios');
-        location.reload();
-        window.scrollTo(0, scrollPosition);
-    } else {
-        alert('Error al aprobar la semana');
-    }
-})
-    .catch (error =\u003e {
-    console.error('Error:', error);
-    alert('Error al aprobar la semana');
-});
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Semana aprobada con comentarios');
+                location.reload();
+                window.scrollTo(0, scrollPosition);
+            } else {
+                alert('Error al aprobar la semana');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al aprobar la semana');
+        });
 
-closeCommentModal();
+    closeCommentModal();
 }
 
 /**
