@@ -91,7 +91,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => 'require', // Changed from 'prefer' for Supabase
+            'sslmode' => env('DB_SSL_MODE', 'prefer'),
             // Connection pooling and performance optimization
             'options' => [
                 PDO::ATTR_PERSISTENT => true, // Enable persistent connections

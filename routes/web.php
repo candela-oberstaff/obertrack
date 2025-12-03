@@ -32,6 +32,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+
+
 /*
 |--------------------------------------------------------------------------
 | Authenticated Routes
