@@ -57,7 +57,7 @@
         
         <div id="particles-js" class="absolute inset-0"></div>
 
-        <!-- <div class="relative z-10 w-full max-w-md">
+        <div class="relative z-10 w-full max-w-md">
             <div class="glassmorphism p-10 rounded-3xl shadow-2xl space-y-6">
                 <div class="text-center">
                     <h2 class="text-3xl font-black mb-2 tracking-tight">
@@ -134,7 +134,7 @@
                     </div>
                 </form>
             </div>
-        </div> -->
+        </div>
 
         <!-- <div class="absolute bottom-0 left-0 w-64 h-64 bg-brand-indigo rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
         <div class="absolute top-0 right-0 w-72 h-72 bg-brand-purple rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div> -->

@@ -40,9 +40,9 @@ return [
     */
     'pusher' => [
         'debug' => env('APP_DEBUG', false),
-        'key' => env('PUSHER_APP_KEY'),
-        'secret' => env('PUSHER_APP_SECRET'),
-        'app_id' => env('PUSHER_APP_ID'),
+        'key' => env('PUSHER_APP_KEY', 'dummy_key'),
+        'secret' => env('PUSHER_APP_SECRET', 'dummy_secret'),
+        'app_id' => env('PUSHER_APP_ID', 'dummy_app_id'),
         'options' => [
             'cluster' => env('PUSHER_APP_CLUSTER', 'mt1'),
             'host' => env('PUSHER_HOST') ?: 'api-'.env('PUSHER_APP_CLUSTER', 'mt1').'.pusher.com',
