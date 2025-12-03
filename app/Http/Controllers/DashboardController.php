@@ -99,6 +99,7 @@ class DashboardController extends Controller
 
         $workHoursSummary = $this->workHoursService->getWorkHoursSummary($empleados, $weekStart, $weekEnd);
 
-        return view('empleadores.dashboard', compact('empleados', 'workHoursSummary', 'weekStart'));
+        // Redirect to the main tasks view which acts as the dashboard
+        return redirect()->route('empleador.tareas.index');
     }
 }

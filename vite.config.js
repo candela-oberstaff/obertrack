@@ -7,6 +7,9 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
+                'resources/js/work-hours-approval.js',
+                'resources/js/report-download.js',
+                'resources/js/task-management.js',
             ],
             refresh: true,
         }),
