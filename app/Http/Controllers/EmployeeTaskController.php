@@ -17,27 +17,20 @@ class EmployeeTaskController extends Controller
         return view('empleados.tasks.index', compact('tasks'));
     }
 
-    // public function show(Task $task)
-    // {
-    //     if ($task->visible_para !== Auth::id()) {
-    //         abort(403);
-    //     }
-    //     return view('empleados.tasks.show', compact('task'));
-    // }
-
     public function show(Task $task)
-{
-    // if ($task->visible_para !== Auth::id() && $task->created_by !== Auth::id()) {
-    //     abort(403);
-    // }
-    $comments = $task->comments()
-                     ->whereIn('user_id', [$task->visible_para, $task->created_by])
-                     ->with('user')
-                     ->orderBy('created_at', 'desc')
-                     ->get();
-    $task->load('createdBy');
-    return view('empleados.tasks.show', compact('task', 'comments'));
-}
+    {
+        if ($task->visible_para !== Auth::id() && $task->created_by !== Auth::id()) {
+            abort(403);
+        }
+        
+        $comments = $task->comments()
+                         ->whereIn('user_id', [$task->visible_para, $task->created_by])
+                         ->with('user')
+                         ->orderBy('created_at', 'desc')
+                         ->get();
+        $task->load('createdBy');
+        return view('empleados.tasks.show', compact('task', 'comments'));
+    }
 
     public function addComment(Request $request, Task $task)
     {
@@ -60,10 +53,9 @@ class EmployeeTaskController extends Controller
 
     public function updateComment(Request $request, Comment $comment)
     {
-        // if ($comment->user_id !== Auth::id()) {
-        //     abort(403);
-        // }
-
+        if ($comment->user_id !== Auth::id()) {
+            abort(403);
+        }
 
         $request->validate([
             'content' => 'required|string'
@@ -79,9 +71,9 @@ class EmployeeTaskController extends Controller
 
     public function deleteComment(Comment $comment)
     {
-        // if ($comment->user_id !== Auth::id()) {
-        //     abort(403);
-        // }
+        if ($comment->user_id !== Auth::id()) {
+            abort(403);
+        }
 
         $comment->delete();
 
@@ -90,9 +82,9 @@ class EmployeeTaskController extends Controller
 
     public function toggleCompletion(Request $request, Task $task)
     {
-        // if ($task->visible_para !== Auth::id()) {
-        //     abort(403);
-        // }
+        if ($task->visible_para !== Auth::id()) {
+            abort(403);
+        }
 
         $task->update(['completed' => !$task->completed]);
 

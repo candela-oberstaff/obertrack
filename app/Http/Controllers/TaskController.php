@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\TaskManagementService;
 use App\Services\TaskCommentService;
+use App\Http\Requests\StoreTaskRequest;
+use App\Http\Requests\UpdateTaskRequest;
 
 class TaskController extends Controller
 {
@@ -33,35 +35,16 @@ class TaskController extends Controller
         return view('tareas.create', compact('empleados'));
     }
 
-    public function store(Request $request)
+    public function store(StoreTaskRequest $request)
     {
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'priority' => 'required|in:low,medium,high,urgent',
-            'completed' => 'boolean',
-        ]);
-
-        $this->taskManagementService->createTask($validatedData);
-
+        $this->taskManagementService->createTask($request->validated());
         return back()->with('success', 'Tarea creada exitosamente.');
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateTaskRequest $request, $id)
     {
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'priority' => 'required|in:low,medium,high,urgent',
-        ]);
-
         $task = Task::findOrFail($id);
-        $this->taskManagementService->updateTask($task, $validatedData);
-
+        $this->taskManagementService->updateTask($task, $request->validated());
         return back()->with('success', 'Tarea actualizada exitosamente.');
     }
 
@@ -120,22 +103,13 @@ class TaskController extends Controller
         return view('tareas.create_for_employee', compact('empleados'));
     }
 
-    public function storeForEmployee(Request $request)
+    public function storeForEmployee(StoreTaskRequest $request)
     {
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'priority' => 'required|in:low,medium,high,urgent',
-            'employee_id' => 'required|exists:users,id',
-        ]);
-
+        $validatedData = $request->validated();
         // Map employee_id to visible_para for service compatibility
         $validatedData['visible_para'] = $validatedData['employee_id'];
         
         $this->taskManagementService->createTask($validatedData);
-
         return redirect()->route('empleador.tareas.index')->with('success', 'Tarea creada y asignada exitosamente.');
     }
 
@@ -145,22 +119,13 @@ class TaskController extends Controller
         return view('tareas.edit', compact('task', 'empleados'));
     }
 
-    public function updateForEmployer(Request $request, Task $task)
+    public function updateForEmployer(UpdateTaskRequest $request, Task $task)
     {
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'priority' => 'required|in:low,medium,high,urgent',
-            'employee_id' => 'required|exists:users,id',
-        ]);
-
+        $validatedData = $request->validated();
         // Map employee_id to visible_para for service compatibility
         $validatedData['visible_para'] = $validatedData['employee_id'];
 
         $this->taskManagementService->updateTask($task, $validatedData);
-
         return redirect()->route('empleador.tareas.index')->with('success', 'Tarea actualizada exitosamente.');
     }
 
@@ -196,7 +161,7 @@ class TaskController extends Controller
         return view('empleador.tareas.edit', compact('task'));
     }
 
-    public function updateEmployerTask(Request $request, $taskId)
+    public function updateEmployerTask(UpdateTaskRequest $request, $taskId)
     {
         $task = Task::findOrFail($taskId);
         
@@ -205,16 +170,7 @@ class TaskController extends Controller
             return redirect()->back()->with('error', 'No tienes permiso para actualizar esta tarea');
         }
 
-        $validatedData = $request->validate([
-            'title' => 'required|max:255',
-            'description' => 'required',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'priority' => 'required|in:low,medium,high,urgent',
-        ]);
-
-        $this->taskManagementService->updateTask($task, $validatedData);
-
+        $this->taskManagementService->updateTask($task, $request->validated());
         return redirect()->route('empleador.tareas.index')->with('success', 'Tarea actualizada con éxito');
     }
 }

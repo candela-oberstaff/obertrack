@@ -11,6 +11,7 @@ use App\Http\Requests\ApproveWorkHoursRequest;
 use App\Services\ReportService;
 use App\Services\ZapierService;
 use App\Services\WorkHoursApprovalService;
+use App\Services\CalendarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,7 +20,8 @@ class WorkHoursController extends Controller
     public function __construct(
         private ReportService $reportService,
         private ZapierService $zapierService,
-        private WorkHoursApprovalService $approvalService
+        private WorkHoursApprovalService $approvalService,
+        private CalendarService $calendarService
     ) {}
 
     public function store(StoreWorkHoursRequest $request)
@@ -66,13 +68,10 @@ class WorkHoursController extends Controller
     public function index()
     {
         $currentMonth = now()->startOfMonth();
-        $calendar = $this->generateCalendar($currentMonth);
+        $calendar = $this->calendarService->generateCalendar($currentMonth, auth()->id());
 
-        // Calcular el total de horas para el mes
-        $totalHours = WorkHours::where('user_id', auth()->id())
-            ->whereYear('work_date', $currentMonth->year)
-            ->whereMonth('work_date', $currentMonth->month)
-            ->sum('hours_worked');
+        // Calcular el total de horas para el mes usando el servicio
+        $totalHours = $this->calendarService->getTotalHoursForMonth($currentMonth, auth()->id());
 
         // Si hay un total de horas en la sesión, usarlo
         if (session('totalHours')) {
@@ -82,27 +81,7 @@ class WorkHoursController extends Controller
         return view('work_hours.index', compact('calendar', 'currentMonth', 'totalHours'));
     }
 
-    private function generateCalendar($month)
-    {
-        $calendar = [];
-        $startDate = $month->copy()->startOfMonth()->startOfWeek(Carbon::MONDAY);
-        $endDate = $month->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
-
-        $workHours = WorkHours::where('user_id', auth()->id())
-            ->whereBetween('work_date', [$startDate, $endDate])
-            ->get()
-            ->keyBy('work_date');
-
-        for ($date = $startDate; $date->lte($endDate); $date->addDay()) {
-            $calendar[] = [
-                'date' => $date->copy(),
-                'inMonth' => $date->month === $month->month,
-                'workHours' => $workHours->get($date->format('Y-m-d'))
-            ];
-        }
-
-        return array_chunk($calendar, 7);
-    }
+    // Calendar generation moved to CalendarService
 
     public function approveWeek(ApproveWorkHoursRequest $request)
     {
@@ -187,33 +166,5 @@ class WorkHoursController extends Controller
         return response($csvContent, 200, $headers);
     }
 
-    public function update(Request $request, $taskId)
-    {
-        $task = Task::findOrFail($taskId);
-        
-        $validatedData = $request->validate([
-            'title' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'duration' => 'nullable|numeric|min:0',
-            'completed' => 'boolean',
-            // ... otras validaciones ...
-        ]);
-
-        $task->update($validatedData);
-
-        if (isset($validatedData['duration'])) {
-            WorkHours::updateOrCreate(
-                [
-                    'user_id' => $task->created_by,
-                    'work_date' => $task->updated_at->toDateString(),
-                ],
-                [
-                    'hours_worked' => $validatedData['duration'],
-                    'approved' => false,
-                ]
-            );
-        }
-
-        return response()->json($task, 200);
-    }
+    // Removed misplaced update() method - task updates belong in TaskController
 }

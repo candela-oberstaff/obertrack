@@ -32,19 +32,23 @@ class EmployeeDataService
 
     /**
      * Get employee info with work hours summary
+     * Optimized to avoid N+1 queries
      */
     public function getEmployeesInfo($empleados, $currentMonth, WorkHoursSummaryService $workHoursService)
     {
-        return $empleados->map(function ($empleado) use ($currentMonth, $workHoursService) {
-            $startOfMonth = $currentMonth->copy()->startOfMonth();
-            $endOfMonth = $currentMonth->copy()->endOfMonth();
+        $startOfMonth = $currentMonth->copy()->startOfMonth();
+        $endOfMonth = $currentMonth->copy()->endOfMonth();
+        
+        // Single query for all employees - NO N+1!
+        $allApprovedHours = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+            ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
+            ->where('approved', true)
+            ->selectRaw('user_id, SUM(hours_worked) as total')
+            ->groupBy('user_id')
+            ->pluck('total', 'user_id');
 
-            $totalApprovedHours = $workHoursService->getEmployeeApprovedHoursInRange(
-                $empleado->id, 
-                $startOfMonth, 
-                $endOfMonth
-            );
-
+        return $empleados->map(function ($empleado) use ($currentMonth, $workHoursService, $allApprovedHours) {
+            $totalApprovedHours = $allApprovedHours->get($empleado->id, 0);
             $approvedWeeks = $workHoursService->getApprovedWeeks(collect([$empleado]), $currentMonth);
 
             return [

@@ -9,14 +9,19 @@ class WorkHoursSummaryService
 {
     /**
      * Get work hours summary for a list of employees within a date range
+     * Optimized to avoid N+1 queries
      */
     public function getWorkHoursSummary($empleados, $weekStart, $weekEnd)
     {
+        // Single query for all employees - NO N+1!
+        $allWorkHours = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+            ->whereBetween('work_date', [$weekStart, $weekEnd])
+            ->get()
+            ->groupBy('user_id');
+
         $summary = [];
         foreach ($empleados as $empleado) {
-            $workHours = WorkHours::where('user_id', $empleado->id)
-                ->whereBetween('work_date', [$weekStart, $weekEnd])
-                ->get();
+            $workHours = $allWorkHours->get($empleado->id, collect([]));
     
             $summary[$empleado->id] = [
                 'name' => $empleado->name,
