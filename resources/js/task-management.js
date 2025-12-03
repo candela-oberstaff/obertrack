@@ -34,56 +34,56 @@ function toggleEmployerTaskCompletion(taskId) {
             },
             body: JSON.stringify({ completed: newCompletedState })
         })
-            .then(response =\u003e response.json())
-            .then(data =\u003e {
-                if(data.success) {
-            if (newCompletedState) {
-                // Changed to Completed
-                toggleButton.innerHTML = '\u003ci class="fas fa-undo mr-1"\u003e\u003c/i\u003e Marcar En Progreso';
-                toggleButton.classList.remove('bg-green-500', 'hover:bg-green-600');
-                toggleButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (newCompletedState) {
+                        // Changed to Completed
+                        toggleButton.innerHTML = '<i class="fas fa-undo mr-1"></i> Marcar En Progreso';
+                        toggleButton.classList.remove('bg-green-500', 'hover:bg-green-600');
+                        toggleButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
 
-                statusBadge.textContent = 'Completada';
-                statusBadge.classList.remove('bg-yellow-100', 'text-yellow-800');
-                statusBadge.classList.add('bg-green-100', 'text-green-800');
-            } else {
-                // Changed to In Progress
-                toggleButton.innerHTML = '\u003ci class="fas fa-check mr-1"\u003e\u003c/i\u003e Marcar Completada';
-                toggleButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
-                toggleButton.classList.add('bg-green-500', 'hover:bg-green-600');
+                        statusBadge.textContent = 'Completada';
+                        statusBadge.classList.remove('bg-yellow-100', 'text-yellow-800');
+                        statusBadge.classList.add('bg-green-100', 'text-green-800');
+                    } else {
+                        // Changed to In Progress
+                        toggleButton.innerHTML = '<i class="fas fa-check mr-1"></i> Marcar Completada';
+                        toggleButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                        toggleButton.classList.add('bg-green-500', 'hover:bg-green-600');
 
-                statusBadge.textContent = 'En Progreso';
-                statusBadge.classList.remove('bg-green-100', 'text-green-800');
-                statusBadge.classList.add('bg-yellow-100', 'text-yellow-800');
-            }
+                        statusBadge.textContent = 'En Progreso';
+                        statusBadge.classList.remove('bg-green-100', 'text-green-800');
+                        statusBadge.classList.add('bg-yellow-100', 'text-yellow-800');
+                    }
 
-            // Optional: Show alert if SweetAlert2 is available
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Estado actualizado',
-                    text: 'El estado de la tarea ha sido actualizado correctamente.',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            }
-        } else {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire('Error', 'No se pudo actualizar el estado de la tarea', 'error');
-            } else {
-                alert('Error al actualizar el estado de la tarea');
-            }
-        }
-    })
-        .catch (error =\u003e {
-        console.error('Error:', error);
-        if (typeof Swal !== 'undefined') {
-            Swal.fire('Error', 'Ocurrió un error al procesar la solicitud', 'error');
-        } else {
-            alert('Error al procesar la solicitud');
-        }
-    });
-}
+                    // Optional: Show alert if SweetAlert2 is available
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Estado actualizado',
+                            text: 'El estado de la tarea ha sido actualizado correctamente.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error', 'No se pudo actualizar el estado de la tarea', 'error');
+                    } else {
+                        alert('Error al actualizar el estado de la tarea');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', 'Ocurrió un error al procesar la solicitud', 'error');
+                } else {
+                    alert('Error al procesar la solicitud');
+                }
+            });
+    }
 }
 
 function showEmployerEditFields(taskId) {
@@ -127,23 +127,23 @@ function addEmployerTaskComment(event, taskId) {
             },
             body: JSON.stringify({ content: commentContent })
         })
-            .then(response =\u003e {
-                if(!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-    })
-        .then(data =\u003e {
-        // Reload page to show new comment (simple approach)
-        // Ideally we would append the comment to the DOM dynamically
-        location.reload();
-    })
-        .catch(error =\u003e {
-            console.error('Error:', error);
-            if(typeof Swal !== 'undefined') {
-        Swal.fire('Error', 'No se pudo agregar el comentario', 'error');
-    } else {
-        alert('Error al agregar el comentario');
-    }
-});
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                // Reload page to show new comment (simple approach)
+                // Ideally we would append the comment to the DOM dynamically
+                location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', 'No se pudo agregar el comentario', 'error');
+                } else {
+                    alert('Error al agregar el comentario');
+                }
+            });
     }
 }
 
@@ -165,27 +165,27 @@ function deleteEmployerComment(commentId, taskId) {
             'Accept': 'application/json'
         }
     })
-        .then(response =\u003e {
-            if(!response.ok) throw new Error('Network response was not ok');
-    return response.json();
-})
-    .then(data =\u003e {
-    const commentElement = document.getElementById(`comment-${commentId}`);
-    if(commentElement) {
-        commentElement.remove();
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            const commentElement = document.getElementById(`comment-${commentId}`);
+            if (commentElement) {
+                commentElement.remove();
 
-        // Update count
-        const countSpan = document.getElementById(`commentCount-${taskId}`);
-        if (countSpan) {
-            let count = parseInt(countSpan.innerText);
-            countSpan.innerText = Math.max(0, count - 1);
-        }
-    }
-})
-    .catch(error =\u003e {
-        console.error('Error:', error);
-        alert('Error al eliminar el comentario');
-    });
+                // Update count
+                const countSpan = document.getElementById(`commentCount-${taskId}`);
+                if (countSpan) {
+                    let count = parseInt(countSpan.innerText);
+                    countSpan.innerText = Math.max(0, count - 1);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar el comentario');
+        });
 }
 
 // Export functions

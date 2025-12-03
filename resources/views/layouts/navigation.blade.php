@@ -1,78 +1,50 @@
-<nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+<nav x-data="{ open: false }" class="bg-gray-100 border-b border-gray-200">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-20">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center h-4 mt-3">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800 dark:text-gray-200" />
-                    </a>
-                </div>
-
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('chat')" :active="request()->routeIs('chatify')">
-                        {{ __('Chat') }}
-                    </x-nav-link>
-                </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    @if(auth()->user()->tipo_usuario === 'empleador')
-                        <x-nav-link :href="route('empleadores.tareas-asignadas')" :active="request()->routeIs('empleadores.tareas-asignadas')">
-                            {{ __('Registro de Horas') }}
-                        </x-nav-link>
-                    @else
-                        <x-nav-link :href="route('empleado.registrar-horas')" :active="request()->routeIs('empleado.registrar-horas')">
-                            {{ __('Registrar Horas') }}
-                        </x-nav-link>
-                    @endif
-                </div>
-
-                <div class="hidden space-x-8 sm:-my-px sm:ms-4 sm:flex">
-                    @if(auth()->user()->tipo_usuario === 'empleado' && auth()->user()->is_manager)
-                        <x-nav-link :href="route('manager.tasks.index')" :active="request()->routeIs('manager.tasks.index')">
-                            {{ __('Asignar tareas a mi equipo') }}
-                        </x-nav-link>
-                    @endif
-                </div>
-
-                
-                <div class="hidden space-x-8 sm:-my-px sm:ms-4 sm:flex">
-                    @if(auth()->user()->tipo_usuario === 'empleado')
-                        <x-nav-link :href="route('empleados.crear-tarea')" :active="request()->routeIs('empleados.crear-tarea')">
-                            {{ __('Reporte de actividades generales') }}
-                        </x-nav-link>
-                    @endif
-                </div>
-
-                <div class="hidden space-x-2 sm:-my-px sm:ms-8 sm:flex">
-                    @if(auth()->user()->tipo_usuario === 'empleado')
-                        <x-nav-link :href="route('empleados.tasks.index')" :active="request()->routeIs('empleados.tasks.index')">
-                            {{ __('Asignaciones de equipo') }}
-                        </x-nav-link>
-                    @endif
-                </div>
-
-
-                
+        <div class="flex justify-between h-20 items-center">
+            <!-- Logo -->
+            <div class="shrink-0 flex items-center">
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
+                    <x-application-logo class="block h-10 w-auto fill-current text-gray-800" />
+                    <div class="flex flex-col">
+                        <div class="relative inline-block">
+                            <span class="font-bold text-2xl tracking-tight text-gray-900 leading-none">Obertrack</span>
+                            <span class="absolute -top-1 -right-3 text-[0.5rem] font-bold text-gray-900">TM</span>
+                        </div>
+                        <span class="text-[0.6rem] font-bold tracking-widest text-gray-500 uppercase leading-none mt-0.5">Remote Work Tracking</span>
+                    </div>
+                </a>
             </div>
 
-            <!-- Settings Dropdown -->
+            <!-- Centered Navigation Links -->
+            <div class="hidden space-x-10 sm:flex items-center justify-center flex-1">
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    Dashboard
+                </a>
+                
+                @if(auth()->user()->tipo_usuario === 'empleador')
+                    <a href="{{ route('empleadores.tareas-asignadas') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleadores.tareas-asignadas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                        Monitoreo de horas
+                    </a>
+                @else
+                    <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                        Monitoreo de horas
+                    </a>
+                @endif
+
+                <a href="{{ route('chat') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('chatify') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    Chat
+                </a>
+            </div>
+
+            <!-- User Menu -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <span class="mr-3 text-sm font-medium text-gray-700">{{ Auth::user()->name }}</span>
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
-
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
+                        <button class="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition duration-150 ease-in-out">
+                            <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                {{ substr(Auth::user()->name, 0, 1) }}
                             </div>
                         </button>
                     </x-slot>
@@ -85,7 +57,6 @@
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-
                             <x-dropdown-link :href="route('logout')"
                                     onclick="event.preventDefault();
                                                 this.closest('form').submit();">
@@ -98,7 +69,7 @@
 
             <!-- Hamburger -->
             <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-900 focus:text-gray-500 dark:focus:text-gray-400 transition duration-150 ease-in-out">
+                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -114,12 +85,15 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('chat')" :active="request()->routeIs('chatify')">
+                {{ __('Chat') }}
+            </x-responsive-nav-link>
         </div>
 
         <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
+        <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">
-                <div class="font-medium text-base text-gray-800 dark:text-gray-200">{{ Auth::user()->name }}</div>
+                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
                 <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
             </div>
 
@@ -131,7 +105,6 @@
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
                     <x-responsive-nav-link :href="route('logout')"
                             onclick="event.preventDefault();
                                         this.closest('form').submit();">
