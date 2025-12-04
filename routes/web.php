@@ -45,7 +45,13 @@ Route::middleware(['auth'])->get('/dashboard', function () {
     $user = Auth::user();
     $nombreUsuario = $user ? $user->name : 'Invitado';
     return view('dashboard', ['nombreUsuario' => $nombreUsuario]);
+
 })->name('dashboard');
+
+// Mock Chat Route
+Route::middleware(['auth'])->get('/chat', function () {
+    return view('chat.mock');
+})->name('chat');
 
 /*
 |--------------------------------------------------------------------------

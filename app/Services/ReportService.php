@@ -133,4 +133,44 @@ class ReportService
             'employer_signature' => $employerSignature,
         ];
     }
+    /**
+     * Orchestrate the generation of a monthly report
+     */
+    public function generateMonthlyReportOrchestration(User $employee, Carbon $month): array
+    {
+        $startOfMonth = $month->copy()->startOfMonth();
+        $endOfMonth = $month->copy()->endOfMonth();
+
+        // Obtener las horas trabajadas para el mes especificado
+        $workHours = WorkHours::where('user_id', $employee->id)
+            ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
+            ->where('approved', true)
+            ->get();
+
+        // Calcular el total de horas aprobadas
+        $totalApprovedHours = $workHours->sum('hours_worked');
+
+        // Verificar si hay suficientes horas aprobadas
+        if ($totalApprovedHours < 160) {
+            throw new \Exception('No se pueden descargar reportes hasta que se hayan aprobado al menos 160 horas.');
+        }
+
+        // Preparar los datos para el CSV
+        $reportData = $this->prepareReportData($employee, $workHours, $month);
+
+        // Generar el contenido del CSV
+        $csvContent = $this->generateCSV($reportData, $employee, $month);
+    
+        // Extraer resumen del CSV
+        $summary = $this->extractCSVSummary($csvContent);
+
+        // Notificar a Zapier (usando el servicio inyectado si fuera necesario, pero aquí lo haremos en el controlador o inyectaremos ZapierService aquí)
+        // Para mantener este servicio puro, devolveremos los datos necesarios para que el controlador o un orquestador superior llame a ZapierService
+        
+        return [
+            'csvContent' => $csvContent,
+            'summary' => $summary,
+            'fileName' => "reporte_mensual_{$employee->name}_{$month->format('Y_m')}.csv"
+        ];
+    }
 }

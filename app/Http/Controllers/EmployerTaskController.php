@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Auth;
 
 class EmployerTaskController extends Controller
 {
+    public function __construct(
+        private \App\Services\TaskManagementService $taskManagementService,
+        private \App\Services\TaskCommentService $taskCommentService
+    ) {}
+
     public function index()
     {
         $tasks = Task::where('created_by', Auth::id())->with('visibleTo')->get();
@@ -34,16 +39,10 @@ class EmployerTaskController extends Controller
             'employee_id' => 'required|exists:users,id',
         ]);
 
-        $task = Task::create([
-            'created_by' => Auth::id(),
-            'visible_para' => $validatedData['employee_id'],
-            'title' => $validatedData['title'],
-            'description' => $validatedData['description'],
-            'start_date' => $validatedData['start_date'],
-            'end_date' => $validatedData['end_date'],
-            'priority' => $validatedData['priority'],
-            'completed' => false,
-        ]);
+        // Map employee_id to visible_para for service compatibility
+        $validatedData['visible_para'] = $validatedData['employee_id'];
+
+        $this->taskManagementService->createTask($validatedData);
 
         return redirect()->route('empleadores.ver_tareas_empleados')->with('success', 'Tarea creada y asignada exitosamente.');
     }
@@ -68,7 +67,10 @@ class EmployerTaskController extends Controller
             'employee_id' => 'required|exists:users,id',
         ]);
 
-        $task->update($validatedData);
+        // Map employee_id to visible_para for service compatibility
+        $validatedData['visible_para'] = $validatedData['employee_id'];
+
+        $this->taskManagementService->updateTask($task, $validatedData);
 
         return redirect()->route('empleadores.ver_tareas_empleados')->with('success', 'Tarea actualizada exitosamente.');
     }
@@ -76,7 +78,7 @@ class EmployerTaskController extends Controller
     public function destroy(Task $task)
     {
         $this->authorize('delete', $task);
-        $task->delete();
+        $this->taskManagementService->deleteTask($task->id);
         return redirect()->route('empleadores.ver_tareas_empleados')->with('success', 'Tarea eliminada exitosamente.');
     }
 
@@ -84,33 +86,25 @@ class EmployerTaskController extends Controller
     {
         $this->authorize('update', $task);
 
-        $task->completed = !$task->completed;
-        $task->save();
-
-        return response()->json([
-            'success' => true,
-            'completed' => $task->completed,
-            'message' => $task->completed ? 'Tarea marcada como completada' : 'Tarea marcada como en progreso'
-        ]);
+        try {
+            $result = $this->taskManagementService->toggleCompletion($task->id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el estado de la tarea: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function addComment(Request $request, $taskId)
-{
-    $validatedData = $request->validate([
-        'content' => 'required|string',
-    ]);
+    {
+        $validatedData = $request->validate([
+            'content' => 'required|string',
+        ]);
 
-    $task = Task::findOrFail($taskId);
+        $comment = $this->taskCommentService->addComment($taskId, $validatedData['content']);
 
-    $comment = new Comment();
-    $comment->content = $validatedData['content'];
-    $comment->task_id = $taskId;
-    $comment->user_id = Auth::id();
-
-    if ($comment->save()) {
-        // Cargar la relación del usuario para incluirla en la respuesta
-        $comment->load('user');
-        
         return response()->json([
             'success' => true,
             'message' => 'Comentario agregado con éxito',
@@ -125,26 +119,22 @@ class EmployerTaskController extends Controller
                 'task_id' => $comment->task_id
             ]
         ]);
-    } else {
-        return response()->json(['success' => false, 'message' => 'Error al agregar el comentario'], 500);
     }
-}
-
 
     public function updateComment(Request $request, $taskId, $commentId)
     {
-        $comment = Comment::find($commentId);
-        $comment->content = $request->input('content');
-        $comment->save();
+        $validatedData = $request->validate([
+            'content' => 'required|string',
+        ]);
+
+        $comment = $this->taskCommentService->updateComment($commentId, $validatedData['content']);
 
         return response()->json(['success' => true, 'comment' => $comment]);
     }
 
     public function deleteComment($taskId, $commentId)
     {
-        $comment = Comment::find($commentId);
-        $comment->delete();
-
+        $this->taskCommentService->deleteComment($taskId, $commentId);
         return response()->json(['success' => true]);
     }
 }

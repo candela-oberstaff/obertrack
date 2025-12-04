@@ -25,8 +25,15 @@
     </head>
     <body class="flex min-h-screen flex-col bg-white">
         <header class="fixed top-0 z-20 flex h-16 w-full items-center justify-between px-5 bg-white shadow-md">
-            <a class="h-20 w-auto p-1" href="">
-                <img src="https://i.postimg.cc/JhdTT8GV/Obertrack-2-removebg-preview.png" alt="logo" class="h-full w-auto object-contain" />
+            <a class="h-20 w-auto p-1 flex items-center gap-3" href="">
+                <x-application-logo class="h-16 w-auto object-contain" />
+                <div class="flex flex-col">
+                    <div class="relative inline-block">
+                        <span class="font-bold text-2xl tracking-tight text-gray-900 leading-none">Obertrack</span>
+                        <span class="absolute -top-1 -right-3 text-[0.5rem] font-bold text-gray-900">TM</span>
+                    </div>
+                    <span class="text-[0.6rem] font-bold tracking-widest text-gray-500 uppercase leading-none mt-0.5">Remote Work Tracking</span>
+                </div>
             </a>
             <nav class="hidden lg:flex space-x-4">
                 <!-- <a class="text-gray-600 hover:text-indigo-600" href="#">Inicio</a>
