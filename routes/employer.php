@@ -82,7 +82,13 @@ Route::middleware(['auth'])->prefix('empleador')->name('empleador.')->group(func
     // DELETE /empleador/tareas/{taskId}/comments/{commentId} - Delete a task comment
     Route::delete('/tareas/{taskId}/comments/{commentId}', [EmployerTaskController::class, 'deleteComment'])
         ->name('tareas.comments.delete');
+
+    // Employee Management
+    // POST /empleador/empleados/{employee}/toggle-manager - Toggle manager status
+    Route::post('/empleados/{employee}/toggle-manager', [\App\Http\Controllers\EmployerController::class, 'toggleManager'])
+        ->name('empleados.toggle-manager');
 });
+
 
 // Legacy route - kept for backward compatibility
 // GET /empleadores/tareas-asignadas - View assigned tasks to employees

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Task;
+use App\Models\User;
 use App\Models\WorkHours;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;

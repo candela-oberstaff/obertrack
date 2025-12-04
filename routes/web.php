@@ -43,9 +43,14 @@ Route::get('/', function () {
 // GET /dashboard - Main dashboard (redirects based on user role)
 Route::middleware(['auth'])->get('/dashboard', function () {
     $user = Auth::user();
-    $nombreUsuario = $user ? $user->name : 'Invitado';
-    return view('dashboard', ['nombreUsuario' => $nombreUsuario]);
-
+    
+    // Employers see the original dashboard with action cards
+    if ($user->tipo_usuario === 'empleador') {
+        return view('dashboard', ['nombreUsuario' => $user->name]);
+    }
+    
+    // Professionals (employees and managers) see their specific dashboard
+    return view('dashboard-professional');
 })->name('dashboard');
 
 // Mock Chat Route

@@ -22,15 +22,24 @@
                     Dashboard
                 </a>
                 
+                
                 @if(auth()->user()->tipo_usuario === 'empleador')
                     <a href="{{ route('empleadores.tareas-asignadas') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleadores.tareas-asignadas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Monitoreo de horas
                     </a>
+                @elseif(auth()->user()->is_manager)
+                    <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                        <span class="flex items-center gap-2">
+                            Mis horas
+                            <span class="px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">Manager</span>
+                        </span>
+                    </a>
                 @else
                     <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
-                        Monitoreo de horas
+                        Registrar horas
                     </a>
                 @endif
+
 
                 <a href="{{ route('chat') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('chatify') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                     Chat
@@ -85,6 +94,17 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+            
+            @if(auth()->user()->tipo_usuario === 'empleador')
+                <x-responsive-nav-link :href="route('empleadores.tareas-asignadas')" :active="request()->routeIs('empleadores.tareas-asignadas')">
+                    Monitoreo de horas
+                </x-responsive-nav-link>
+            @else
+                <x-responsive-nav-link :href="route('empleado.registrar-horas')" :active="request()->routeIs('empleado.registrar-horas')">
+                    {{ auth()->user()->is_manager ? 'Mis horas' : 'Registrar horas' }}
+                </x-responsive-nav-link>
+            @endif
+            
             <x-responsive-nav-link :href="route('chat')" :active="request()->routeIs('chatify')">
                 {{ __('Chat') }}
             </x-responsive-nav-link>

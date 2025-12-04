@@ -47,46 +47,61 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        // Obtener los empleados
-        $empleados = $this->employeeDataService->getEmployeesForUser($user);
+        // Cache key único por usuario y parámetros de request
+        $cacheKey = 'dashboard_' . $user->id . '_' . md5(json_encode($request->all()));
 
-        // Obtener las tareas creadas por los empleados
-        $tareas = $this->taskManagementService->getEmployeeTasks($empleados, $request->all());
+        // Track cache keys for this user (for invalidation)
+        $userCacheKeys = cache()->get('cache_keys_' . $user->id, []);
+        if (!in_array($cacheKey, $userCacheKeys)) {
+            $userCacheKeys[] = $cacheKey;
+            cache()->put('cache_keys_' . $user->id, $userCacheKeys, 3600);
+        }
 
-        // Obtener las tareas creadas para los empleados (por el empleador, manager o superadmin)
-        $tareasEmpleador = $this->taskManagementService->getEmployerTasks($user, $empleados, $request->all());
+        // Cachear por 60 segundos para evitar queries repetidas
+        $data = cache()->remember($cacheKey, 60, function () use ($user, $request) {
+            // Obtener los empleados
+            $empleados = $this->employeeDataService->getEmployeesForUser($user);
 
-        // Preparar datos para el gráfico
-        $chartData = $this->taskDataService->prepareChartData($tareas->concat($tareasEmpleador));
+            // Obtener las tareas creadas por los empleados
+            $tareas = $this->taskManagementService->getEmployeeTasks($empleados, $request->all());
 
-        // Obtener las horas trabajadas de los empleados por semana
-        $weekStart = $request->week ? Carbon::parse($request->week) : Carbon::now()->startOfWeek(Carbon::MONDAY);
-        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::FRIDAY);
-        $workHoursSummary = $this->workHoursService->getWorkHoursSummary($empleados, $weekStart, $weekEnd);
+            // Obtener las tareas creadas para los empleados (por el empleador, manager o superadmin)
+            $tareasEmpleador = $this->taskManagementService->getEmployerTasks($user, $empleados, $request->all());
 
-        // Obtener las semanas pendientes
-        $pendingWeeks = $this->workHoursService->getPendingWeeks($empleados);
+            // Preparar datos para el gráfico
+            $chartData = $this->taskDataService->prepareChartData($tareas->concat($tareasEmpleador));
 
-        $currentMonth = Carbon::now()->startOfMonth();
+            // Obtener las horas trabajadas de los empleados por semana
+            $weekStart = $request->week ? Carbon::parse($request->week) : Carbon::now()->startOfWeek(Carbon::MONDAY);
+            $weekEnd = $weekStart->copy()->endOfWeek(Carbon::FRIDAY);
+            $workHoursSummary = $this->workHoursService->getWorkHoursSummary($empleados, $weekStart, $weekEnd);
 
-        // Calcular el total de horas aprobadas para el mes actual
-        $totalApprovedHours = $this->workHoursService->getTotalApprovedHoursForMonth($empleados, $currentMonth);
+            // Obtener las semanas pendientes
+            $pendingWeeks = $this->workHoursService->getPendingWeeks($empleados);
 
-        // Obtener información detallada de los empleados
-        $empleadosInfo = $this->employeeDataService->getEmployeesInfo($empleados, $currentMonth, $this->workHoursService);
+            $currentMonth = Carbon::now()->startOfMonth();
 
-        return view('empleadores.ver_tareas_empleados', compact(
-            'tareas',
-            'tareasEmpleador',
-            'chartData',
-            'workHoursSummary',
-            'weekStart',
-            'currentMonth',
-            'totalApprovedHours',
-            'pendingWeeks',
-            'empleadosInfo',
-            'empleados'
-        ));
+            // Calcular el total de horas aprobadas para el mes actual
+            $totalApprovedHours = $this->workHoursService->getTotalApprovedHoursForMonth($empleados, $currentMonth);
+
+            // Obtener información detallada de los empleados
+            $empleadosInfo = $this->employeeDataService->getEmployeesInfo($empleados, $currentMonth, $this->workHoursService);
+
+            return compact(
+                'tareas',
+                'tareasEmpleador',
+                'chartData',
+                'workHoursSummary',
+                'weekStart',
+                'currentMonth',
+                'totalApprovedHours',
+                'pendingWeeks',
+                'empleadosInfo',
+                'empleados'
+            );
+        });
+
+        return view('empleadores.ver_tareas_empleados', $data);
     }
 
     public function empleadorDashboard(Request $request)

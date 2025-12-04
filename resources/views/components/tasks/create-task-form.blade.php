@@ -1,95 +1,117 @@
 @props(['empleados'])
 
-\u003cdiv x-data="{ activeTab: 'create' }" class="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-10"\u003e
-    \u003c!-- Tabbed Interface --\u003e
-    \u003cdiv class="flex border-b border-gray-200 dark:border-gray-700"\u003e
-        \u003cbutton 
+<div x-data="{ activeTab: 'create' }" class="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-10">
+    <!-- Tabbed Interface -->
+    <div class="flex border-b border-gray-200 dark:border-gray-700">
+        <button 
             @click="activeTab = 'create'" 
             :class="{'text-blue-600 bg-white dark:bg-gray-800 dark:text-blue-400 border-b-2 border-blue-500': activeTab === 'create', 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200': activeTab !== 'create'}"
-            class="flex-1 py-3 px-4 text-center font-medium"\u003e
+            class="flex-1 py-3 px-4 text-center font-medium transition-colors duration-200">
             Crear Nueva Tarea
-        \u003c/button\u003e
-        \u003cbutton 
+        </button>
+        <button 
             @click="activeTab = 'filter'" 
             :class="{'text-blue-600 bg-white dark:bg-gray-800 dark:text-blue-400 border-b-2 border-blue-500': activeTab === 'filter', 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200': activeTab !== 'filter'}"
-            class="flex-1 py-3 px-4 text-center font-medium"\u003e
-            Filtrar y Buscar
-        \u003c/button\u003e
-    \u003c/div\u003e
+            class="flex-1 py-3 px-4 text-center font-medium transition-colors duration-200">
+            Filtrar Tareas
+        </button>
+    </div>
 
-    \u003c!-- Create Task Form --\u003e
-    \u003cdiv x-show="activeTab === 'create'" class="p-4"\u003e
-        \u003cform action="{{ route('empleador.crear-tarea') }}" method="POST" class="space-y-4"\u003e
+    <!-- Create Task Form -->
+    <div x-show="activeTab === 'create'" class="p-6">
+        <form action="{{ route('empleador.crear-tarea') }}" method="POST" onsubmit="handleFormSubmit(this)">
             @csrf
-            \u003cdiv\u003e
-                \u003clabel for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300"\u003eTítulo de la Tarea\u003c/label\u003e
-                \u003cinput type="text" id="title" name="title" required class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Ingrese el título de la tarea"\u003e
-            \u003c/div\u003e
-            \u003cdiv\u003e
-                \u003clabel for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300"\u003eDescripción\u003c/label\u003e
-                \u003ctextarea id="description" name="description" rows="3" class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Describa los detalles de la tarea"\u003e\u003c/textarea\u003e
-            \u003c/div\u003e
-            \u003cdiv class="grid grid-cols-2 gap-4"\u003e
-                \u003cdiv\u003e
-                    \u003clabel for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300"\u003eFecha de Inicio\u003c/label\u003e
-                    \u003cinput type="date" id="start_date" name="start_date" required class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"\u003e
-                \u003c/div\u003e
-                \u003cdiv\u003e
-                    \u003clabel for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300"\u003eFecha de Finalización\u003c/label\u003e
-                    \u003cinput type="date" id="end_date" name="end_date" required class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"\u003e
-                \u003c/div\u003e
-            \u003c/div\u003e
-            \u003cdiv class="grid grid-cols-2 gap-4"\u003e
-                \u003cdiv\u003e
-                    \u003clabel for="priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300"\u003ePrioridad\u003c/label\u003e
-                    \u003cselect id="priority" name="priority" required class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"\u003e
-                        \u003coption value="" disabled selected\u003eSeleccione la prioridad\u003c/option\u003e
-                        \u003coption value="low"\u003eBaja\u003c/option\u003e
-                        \u003coption value="medium"\u003eMedia\u003c/option\u003e
-                        \u003coption value="high"\u003eAlta\u003c/option\u003e
-                        \u003coption value="urgent"\u003eUrgente\u003c/option\u003e
-                    \u003c/select\u003e
-                \u003c/div\u003e
-                \u003cdiv\u003e
-                    \u003clabel for="employee_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300"\u003eAsignar a\u003c/label\u003e
-                    \u003cselect id="employee_id" name="employee_id" required class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"\u003e
-                        \u003coption value="" disabled selected\u003eSeleccione un empleado\u003c/option\u003e
-                        @foreach($empleados as $empleado)
-                            \u003coption value="{{ $empleado-\u003eid }}"\u003e{{ $empleado-\u003ename }}\u003c/option\u003e
-                        @endforeach
-                    \u003c/select\u003e
-                \u003c/div\u003e
-            \u003c/div\u003e
-            \u003cdiv class="flex justify-end"\u003e
-                \u003cbutton type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200"\u003e
-                    Crear Tarea
-                \u003c/button\u003e
-            \u003c/div\u003e
-        \u003c/form\u003e
-    \u003c/div\u003e
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="col-span-2">
+                    <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Título de la Tarea</label>
+                    <input type="text" name="title" id="title" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
 
-    \u003c!-- Filter Tasks Form --\u003e
-    \u003cdiv x-show="activeTab === 'filter'" class="p-4"\u003e
-        \u003cform method="GET" action="{{ route('empleadores.tareas-asignadas') }}" class="space-y-4"\u003e
-            \u003cdiv class="grid grid-cols-1 sm:grid-cols-3 gap-4"\u003e
-                \u003cdiv\u003e
-                    \u003clabel for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300"\u003eEstado\u003c/label\u003e
-                    \u003cselect name="status" id="status" class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"\u003e
-                        \u003coption value="all"\u003eTodas las tareas\u003c/option\u003e
-                        \u003coption value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}\u003eCompletadas\u003c/option\u003e
-                        \u003coption value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}\u003ePendientes\u003c/option\u003e
-                    \u003c/select\u003e
-                \u003c/div\u003e
-                \u003cdiv class="sm:col-span-2"\u003e
-                    \u003clabel for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300"\u003eBuscar\u003c/label\u003e
-                    \u003cinput type="text" id="search" name="search" placeholder="Buscar tarea..." value="{{ request('search') }}" class="w-full px-3 py-2 text-sm rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"\u003e
-                \u003c/div\u003e
-            \u003c/div\u003e
-            \u003cdiv class="flex justify-end"\u003e
-                \u003cbutton type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-md transition duration-300 ease-in-out flex items-center justify-center"\u003e
-                    \u003ci class="fas fa-search mr-2"\u003e\u003c/i\u003eBuscar
-                \u003c/button\u003e
-            \u003c/div\u003e
-        \u003c/form\u003e
-    \u003c/div\u003e
-\u003c/div\u003e
+                <div class="col-span-2">
+                    <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</label>
+                    <textarea name="description" id="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                </div>
+
+                <div>
+                    <label for="employee_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Asignar a</label>
+                    <select name="employee_id" id="employee_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="">Seleccionar empleado...</option>
+                        @foreach($empleados as $empleado)
+                            <option value="{{ $empleado->id }}">{{ $empleado->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label for="priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Prioridad</label>
+                    <select name="priority" id="priority" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="low">Baja</option>
+                        <option value="medium" selected>Media</option>
+                        <option value="high">Alta</option>
+                        <option value="urgent">Urgente</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Inicio</label>
+                    <input type="date" name="start_date" id="start_date" value="{{ date('Y-m-d') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+
+                <div>
+                    <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Fin</label>
+                    <input type="date" name="end_date" id="end_date" value="{{ date('Y-m-d') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button type="submit" id="submitBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition duration-150 ease-in-out flex items-center">
+                    <span id="btnText">Crear Tarea</span>
+                    <span id="loadingSpinner" class="hidden ml-2">
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Filter Tasks Form -->
+    <div x-show="activeTab === 'filter'" class="p-6">
+        <form action="{{ route('empleador.tareas.index') }}" method="GET">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>
+                    <select name="status" id="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="all">Todas las tareas</option>
+                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completadas</option>
+                        <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pendientes</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Buscar</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="search" name="search" placeholder="Buscar por título..." value="{{ request('search') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <button type="submit" class="mt-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md shadow-sm transition duration-150 ease-in-out">
+                            Buscar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function handleFormSubmit(form) {
+        const btn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const spinner = document.getElementById('loadingSpinner');
+        
+        btn.disabled = true;
+        btn.classList.add('opacity-75', 'cursor-not-allowed');
+        btnText.textContent = 'Creando...';
+        spinner.classList.remove('hidden');
+    }
+</script>

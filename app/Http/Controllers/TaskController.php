@@ -19,20 +19,14 @@ class TaskController extends Controller
 
     public function index()
     {
-        $user = Auth::user();
-        if ($user->tipo_usuario === 'empleador') {
-            $tasks = Task::where('created_by', $user->id)->with('visibleTo')->get();
-        } else {
-            $tasks = Task::where('visible_para', $user->id)->get();
-        }
-        
-        return view('tareas.index', compact('tasks'));
+        // Redirect to the new dashboard view
+        return redirect()->route('empleador.tareas.index');
     }
 
     public function create()
     {
-        $empleados = Auth::user()->empleados;
-        return view('tareas.create', compact('empleados'));
+        // Redirect to the new dashboard view where creation is inline
+        return redirect()->route('empleador.tareas.index');
     }
 
     public function store(StoreTaskRequest $request)
@@ -99,8 +93,8 @@ class TaskController extends Controller
 
     public function createForEmployee()
     {
-        $empleados = Auth::user()->empleados;
-        return view('tareas.create_for_employee', compact('empleados'));
+        // Redirect to the new dashboard view where creation is inline
+        return redirect()->route('empleador.tareas.index');
     }
 
     public function storeForEmployee(StoreTaskRequest $request)
@@ -115,9 +109,10 @@ class TaskController extends Controller
 
     public function edit(Task $task)
     {
-        $empleados = Auth::user()->empleados;
-        return view('tareas.edit', compact('task', 'empleados'));
+        // Redirect to the new dashboard view where editing is inline
+        return redirect()->route('empleador.tareas.index');
     }
+
 
     public function updateForEmployer(UpdateTaskRequest $request, Task $task)
     {
