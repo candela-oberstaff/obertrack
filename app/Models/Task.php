@@ -43,4 +43,16 @@ class Task extends Model
     {
         return $this->belongsTo(User::class, 'visible_para');
     }
+
+    public function readBy()
+    {
+        return $this->belongsToMany(User::class, 'task_reads')
+            ->withTimestamps()
+            ->withPivot('read_at');
+    }
+
+    public function isReadBy($userId)
+    {
+        return $this->readBy()->where('user_id', $userId)->exists();
+    }
 }

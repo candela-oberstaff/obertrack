@@ -12,14 +12,6 @@ use App\Services\CalendarService;
 
 class EmpleadoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        // Empty - consider removing if not used
-    }
-
     public function create()
     {
         $user = auth()->user();

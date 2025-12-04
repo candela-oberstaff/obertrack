@@ -41,7 +41,10 @@
                         <div>
                             <p class="text-amber-700 text-sm font-medium">Horas Este Mes</p>
                             <p class="text-4xl font-bold mt-2 text-gray-900">
-                                {{ auth()->user()->workHours()->whereMonth('work_date', now()->month)->sum('hours_worked') }}
+                                {{ auth()->user()->workHours()
+                                    ->whereYear('work_date', now()->year)
+                                    ->whereMonth('work_date', now()->month)
+                                    ->sum('hours_worked') ?? 0 }}
                             </p>
                         </div>
                         <div class="bg-amber-200 rounded-full p-4">
@@ -58,7 +61,11 @@
                         <div>
                             <p class="text-green-100 text-sm font-medium">Tareas Completadas</p>
                             <p class="text-4xl font-bold mt-2">
-                                {{ auth()->user()->assignedTasks()->where('completed', true)->whereMonth('updated_at', now()->month)->count() }}
+                                {{ auth()->user()->assignedTasks()
+                                    ->where('completed', true)
+                                    ->whereYear('updated_at', now()->year)
+                                    ->whereMonth('updated_at', now()->month)
+                                    ->count() }}
                             </p>
                         </div>
                         <div class="bg-white bg-opacity-20 rounded-full p-4">

@@ -40,6 +40,14 @@ class DashboardController extends Controller
 
         $this->taskManagementService->createTask($request->all());
 
+        // Clear dashboard cache so new task appears immediately
+        $user = auth()->user();
+        $cacheKeys = cache()->get('cache_keys_' . $user->id, []);
+        foreach ($cacheKeys as $key) {
+            cache()->forget($key);
+        }
+        cache()->forget('cache_keys_' . $user->id);
+
         return redirect()->back()->with('success', 'Tarea creada y asignada con éxito.');
     }
 

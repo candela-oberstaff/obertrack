@@ -15,9 +15,12 @@ class TaskManagementService
      */
     public function createTask(array $data)
     {
-        return Task::create([
+        // Handle both 'employee_id' (from form) and 'visible_para' (legacy)
+        $visiblePara = $data['employee_id'] ?? $data['visible_para'] ?? Auth::user()->empleador_id;
+        
+        $task = Task::create([
             'created_by' => Auth::id(),
-            'visible_para' => $data['visible_para'] ?? Auth::user()->empleador_id,
+            'visible_para' => $visiblePara,
             'title' => $data['title'],
             'description' => $data['description'],
             'start_date' => $data['start_date'],
@@ -25,6 +28,22 @@ class TaskManagementService
             'priority' => $data['priority'],
             'completed' => $data['completed'] ?? false,
         ]);
+
+        // Send notification to assigned employee
+        if ($visiblePara && $visiblePara !== Auth::id()) {
+            $assignedUser = User::find($visiblePara);
+            if ($assignedUser) {
+                // For now, we'll log the notification
+                // In the future, you can implement email/database notifications
+                Log::info('Task assigned', [
+                    'task_id' => $task->id,
+                    'assigned_to' => $assignedUser->name,
+                    'assigned_by' => Auth::user()->name
+                ]);
+            }
+        }
+
+        return $task;
     }
 
     /**

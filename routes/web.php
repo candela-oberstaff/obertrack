@@ -58,6 +58,13 @@ Route::middleware(['auth'])->get('/chat', function () {
     return view('chat.mock');
 })->name('chat');
 
+// Notification Routes
+Route::middleware(['auth'])->group(function () {
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::post('/notifications/tasks/{task}/mark-read', [App\Http\Controllers\NotificationController::class, 'markTaskAsRead'])->name('notifications.mark-task-read');
+});
+
+
 /*
 |--------------------------------------------------------------------------
 | Modularized Route Files
