@@ -56,8 +56,8 @@
     </div>
 
     <header class="lgtw-max-w-lg:tw-justify-around tw-max-w-lg:tw-px-4 tw-max-w-lg:tw-mr-auto tw-absolute tw-top-0 tw-z-20 tw-flex tw-h-[60px] tw-w-full tw-bg-opacity-0 tw-px-[5%] tw-text-black">
-        <a class="tw-h-[100px] tw-w-auto tw-p-[4px] tw-flex tw-items-center tw-gap-3" href="">
-            <x-application-logo class="tw-h-[80px] tw-w-auto" />
+        <a class="tw-flex tw-items-center tw-gap-3 tw-p-[4px]" href="">
+            <x-application-logo class="tw-h-10 tw-w-auto" />
             <div class="tw-flex tw-flex-col">
                 <div class="tw-relative tw-inline-block">
                     <span class="tw-font-bold tw-text-2xl tw-tracking-tight tw-text-black tw-leading-none">Obertrack</span>

@@ -25,8 +25,8 @@
     </head>
     <body class="flex min-h-screen flex-col bg-white">
         <header class="fixed top-0 z-20 flex h-16 w-full items-center justify-between px-5 bg-white shadow-md">
-            <a class="h-20 w-auto p-1 flex items-center gap-3" href="">
-                <x-application-logo class="h-16 w-auto object-contain" />
+            <a class="flex items-center gap-3 p-1" href="">
+                <x-application-logo class="h-10 w-auto object-contain" />
                 <div class="flex flex-col">
                     <div class="relative inline-block">
                         <span class="font-bold text-2xl tracking-tight text-gray-900 leading-none">Obertrack</span>
