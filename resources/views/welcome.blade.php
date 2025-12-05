@@ -115,23 +115,99 @@
     <p class="text-[19px] text-[#09122C]">Nos comprometemos a brindarte <span class="font-bold">una respuesta de valor</span></p>
 </div>
 
-            <form class="flex flex-col gap-4">
-                <div class="flex gap-4">
-                    <input type="text" placeholder="Nombre y Apellido" class="flex-1 border rounded-lg px-4 py-2 border-[#0976D6]" />
-                    <input type="email" placeholder="Email" class="flex-1 border rounded-lg px-4 py-2 border-[#0976D6]" />
-                </div>
-                <input type="text" placeholder="Empresa" class="border rounded-lg px-4 py-2 border-[#0976D6]" />
-                <textarea placeholder="Mensaje" rows="4" class="border rounded-lg px-4 py-2 border-[#0976D6]"></textarea>
-                <button type="submit" class="rounded-full bg-[#09122C] text-white px-6 py-3 hover:bg-[#09122C] transition duration-300 hover:scale-105">
-                    Enviar mensaje
-                </button>
-            </form>
+           <form id="webhookForm" class="flex flex-col gap-4">
+    <div class="flex gap-4">
+        <input type="text" name="nombre" placeholder="Nombre" class="flex-1 border rounded-lg px-4 py-2 border-[#0976D6]" required />
+        <input type="text" name="apellidos" placeholder="Apellido" class="flex-1 border rounded-lg px-4 py-2 border-[#0976D6]" required />
+    </div>
+    <input type="email" name="email" placeholder="Email" class="border rounded-lg px-4 py-2 border-[#0976D6]" required />
+    <input type="text" name="empresa" placeholder="Empresa" class="border rounded-lg px-4 py-2 border-[#0976D6]" />
+    <textarea name="mensaje" placeholder="Mensaje" rows="4" class="border rounded-lg px-4 py-2 border-[#0976D6]" required></textarea>
+    <button type="submit" class="rounded-full bg-[#09122C] text-white px-6 py-3 hover:bg-[#09122C] transition duration-300 hover:scale-105">
+        Enviar mensaje
+    </button>
+</form>
+
+<!--modal-->
+<div id="statusModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg relative max-w-sm w-full text-center">
+        <span id="statusModalText" class="text-lg font-semibold">Enviando...</span>
+        <button id="closeStatusModal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800 font-bold">&times;</button>
+    </div>
+</div>
+
         </div>
     </section>
 
     <footer class="bg-white py-6 text-center text-gray-600">
         &copy; 2025 Obertrack. Todos los derechos reservados.
     </footer>
+
+
+    <script>
+function initContacto() {
+  (function() {
+    const WEBHOOK_URL = 'https://n8n.obertrack.com/webhook-test/obertrack';   
+
+    const form = document.getElementById('webhookForm');
+    const statusModal = document.getElementById('statusModal');
+    const statusModalText = document.getElementById('statusModalText');
+    const closeStatusModal = document.getElementById('closeStatusModal');
+
+    if (!form || !statusModal || !statusModalText || !closeStatusModal) return;
+
+    form.addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      statusModalText.textContent = 'Enviando...';
+      statusModal.classList.remove('hidden'); // muestra el modal
+      document.body.style.overflow = 'hidden';
+
+      const data = {
+        nombre: form.nombre.value,
+        apellidos: form.apellidos.value,
+        email: form.email.value,
+        empresa: form.empresa.value,
+        mensaje: form.mensaje.value
+      };
+
+      try {
+        const response = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          statusModalText.textContent = 'Datos enviados exitosamente';
+          form.reset();
+        } else {
+          statusModalText.textContent = 'Error al enviar los datos. Código ' + response.status;
+        }
+      } catch (error) {
+        statusModalText.textContent = 'Error de red o en la URL del Webhook: ' + error.message;
+        console.error('Error:', error);
+      }
+    });
+
+    // Cerrar modal
+    closeStatusModal.addEventListener('click', () => {
+      statusModal.classList.add('hidden');
+      document.body.style.overflow = '';
+    });
+
+    // Cerrar al hacer clic fuera del contenido
+    statusModal.addEventListener('click', (e) => {
+      if (e.target === statusModal) {
+        statusModal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    });
+  })();
+}
+
+initContacto(); // ejecutar la función
+</script>
 
 </body>
 
