@@ -4,179 +4,156 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro - Obertrack</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Montserrat', 'sans-serif'],
-                    },
-                    colors: {
-                        'brand-purple': '#1e1b4b',
-                        'brand-indigo': '#3b82f6',
-                        'brand-light': '#ffffff',
-                    }
-                }
-            }
-        }
-    </script>
     <style>
-        .glassmorphism {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        body { font-family: 'Montserrat', sans-serif; }
+        .bg-gradient-brand {
+            background: linear-gradient(180deg, #FFFFFF 0%, #E0F2FE 40%, #3B82F6 100%);
         }
-        @keyframes gradient {
-            0% {background-position: 0% 50%;}
-            50% {background-position: 100% 50%;}
-            100% {background-position: 0% 50%;}
+        .glass-card {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
         }
-        .animate-gradient {
-            background-size: 200% 200%;
-            animation: gradient 15s ease infinite;
+        .form-input-custom {
+            background: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px; /* Reduced vertical padding */
+            font-size: 0.95rem;
+            color: #6B7280; /* Text-gray-500 */
         }
-        @keyframes blob {
-            0% {transform: translate(0px, 0px) scale(1);}
-            33% {transform: translate(30px, -50px) scale(1.1);}
-            66% {transform: translate(-20px, 20px) scale(0.9);}
-            100% {transform: translate(0px, 0px) scale(1);}
+        .form-input-custom::placeholder {
+            color: #D1D5DB; /* Gray-300 */
         }
-        .animate-blob {
-            animation: blob 7s infinite;
+        .form-input-custom:focus {
+            ring: 2px;
+            ring-color: #3B82F6;
+        }
+        /* Custom scrollbar handling for modal if needed on small screens */
+        .glass-card {
+            max-height: 95vh;
+            overflow-y: auto;
         }
     </style>
 </head>
-<body class="font-sans bg-brand-purple text-brand-light min-h-screen">
-    <div class="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="absolute inset-0 animate-gradient bg-gradient-to-br from-brand-purple via-brand-indigo to-brand-light opacity-50"></div>
-        
-        <div id="particles-js" class="absolute inset-0"></div>
+<body class="h-full bg-gradient-brand flex items-center justify-center p-4">
 
-        <div class="relative z-10 w-full max-w-md">
-            <div class="glassmorphism p-10 rounded-3xl shadow-2xl space-y-6">
-                <div class="text-center">
-                    <h2 class="text-3xl font-black mb-2 tracking-tight">
-                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-brand-indigo to-brand-light">
-                            Registro
-                        </span>
-                    </h2>
-                    <p class="text-lg text-white opacity-80">Crea tu cuenta en Obertrack</p>
-                </div>
-                
-                <form class="space-y-4" method="POST" action="{{ route('register') }}">
-                    @csrf
-
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-brand-light">Nombre</label>
-                        <input id="name" name="name" type="text" required autofocus autocomplete="name"
-                               class="mt-1 block w-full px-3 py-2 bg-white bg-opacity-10 border border-brand-light border-opacity-20 rounded-md text-brand-light placeholder-brand-light placeholder-opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-indigo focus:border-transparent"
-                               value="{{ old('name') }}">
-                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
-                    </div>
-
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-brand-light">Email</label>
-                        <input id="email" name="email" type="email" required autocomplete="username"
-                               class="mt-1 block w-full px-3 py-2 bg-white bg-opacity-10 border border-brand-light border-opacity-20 rounded-md text-brand-light placeholder-brand-light placeholder-opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-indigo focus:border-transparent"
-                               value="{{ old('email') }}">
-                        <x-input-error :messages="$errors->get('email')" class="mt-2" />
-                    </div>
-
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-brand-light">Contraseña</label>
-                        <input id="password" name="password" type="password" required autocomplete="new-password"
-                               class="mt-1 block w-full px-3 py-2 bg-white bg-opacity-10 border border-brand-light border-opacity-20 rounded-md text-brand-light placeholder-brand-light placeholder-opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-indigo focus:border-transparent">
-                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                    </div>
-
-                    <div>
-                        <label for="password_confirmation" class="block text-sm font-medium text-brand-light">Confirmar Contraseña</label>
-                        <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password"
-                               class="mt-1 block w-full px-3 py-2 bg-white bg-opacity-10 border border-brand-light border-opacity-20 rounded-md text-brand-light placeholder-brand-light placeholder-opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-indigo focus:border-transparent">
-                        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-                    </div>
-
-                    <div>
-                        <label for="tipo_usuario" class="block text-sm font-medium text-brand-light">Tipo de Usuario</label>
-                        <select id="tipo_usuario" name="tipo_usuario" required
-                                class="mt-1 block w-full px-3 py-2 bg-white text-black font-sans bg-opacity-10 border border-brand-light border-opacity-20 rounded-md  focus:outline-none focus:ring-2 focus:ring-brand-indigo focus:border-transparent">
-                            <option class="" value="">Seleccione...</option>
-                            <option value="empleador">Empresa</option>
-                            <option value="empleado">Profesional</option>
-                        </select>
-                        <x-input-error :messages="$errors->get('tipo_usuario')" class="mt-2" />
-                    </div>
-
-                    <div id="empleado_por_id_container" class="hidden">
-                        <label for="empleado_por_id" id="empleado_por_id_label" class="block text-sm font-medium text-brand-light">Seleccionar Empresa</label>
-                        <select name="empleado_por_id" id="empleado_por_id"
-                                class="mt-1 block w-full px-3 py-2 bg-white text-black bg-opacity-10 border border-brand-light border-opacity-20 rounded-md  focus:outline-none focus:ring-2 focus:ring-brand-indigo focus:border-transparent">
-                            <option value="">Seleccione una Empresa</option>
-                            @foreach ($empleadores as $empleadorId => $nombreEmpleador)
-                                <option value="{{ $empleadorId }}">{{ $nombreEmpleador }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="flex items-center justify-between mt-6">
-                        <a class="text-sm text-brand-light hover:text-brand-indigo transition duration-150 ease-in-out" href="{{ route('login') }}">
-                            ¿Ya tienes una cuenta?
-                        </a>
-                        <button type="submit" 
-                                class="px-4 py-2 bg-brand-indigo text-white font-semibold rounded-md hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-brand-indigo focus:ring-offset-2 focus:ring-offset-brand-purple transition duration-150 ease-in-out">
-                            Registrarse
-                        </button>
-                    </div>
-                </form>
+    <!-- Reduced padding p-6 sm:p-8 and max-w-sm -->
+    <div class="w-full max-w-sm glass-card rounded-3xl p-6 sm:p-8">
+        <!-- Logo -->
+        <div class="flex flex-col items-center mb-4">
+            <x-application-logo class="block h-10 w-auto fill-current text-gray-800 mb-1" />
+            <div class="text-center">
+                <span class="font-bold text-xl tracking-tight text-gray-900 leading-none">Obertrack</span>
+                <span class="text-[0.5rem] font-bold tracking-widest text-gray-500 uppercase leading-none block mt-0.5">REMOTE WORK TRACKING</span>
             </div>
         </div>
 
-        <!-- <div class="absolute bottom-0 left-0 w-64 h-64 bg-brand-indigo rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-        <div class="absolute top-0 right-0 w-72 h-72 bg-brand-purple rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div> -->
+        <h2 class="text-xl font-bold text-center text-[#1e1b4b] mb-4">
+            Regístrate en Obertrack
+        </h2>
+
+        <form method="POST" action="{{ route('register') }}" class="space-y-3">
+            @csrf
+
+            <!-- Name -->
+            <div>
+                <input id="name" name="name" type="text" placeholder="Nombre y apellido" required autofocus
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm"
+                       value="{{ old('name') }}">
+                <x-input-error :messages="$errors->get('name')" class="mt-1 text-xs" />
+            </div>
+
+            <!-- Email -->
+            <div>
+                <input id="email" name="email" type="email" placeholder="Email" required
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm"
+                       value="{{ old('email') }}">
+                <x-input-error :messages="$errors->get('email')" class="mt-1 text-xs" />
+            </div>
+
+            <!-- Password -->
+            <div>
+                <input id="password" name="password" type="password" placeholder="Contraseña" required
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                <x-input-error :messages="$errors->get('password')" class="mt-1 text-xs" />
+            </div>
+
+            <!-- Confirm Password -->
+            <div>
+                <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Confirma la contraseña" required
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1 text-xs" />
+            </div>
+
+            <!-- User Type -->
+            <div>
+                <select id="tipo_usuario" name="tipo_usuario" required
+                        class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm text-gray-600 appearance-none">
+                    <option value="" disabled selected>Tipo de usuario</option>
+                    <option value="empleador">Empresa</option>
+                    <option value="empleado">Profesional</option>
+                </select>
+                <x-input-error :messages="$errors->get('tipo_usuario')" class="mt-1 text-xs" />
+            </div>
+            
+            <!-- Job Title (Hidden by default) -->
+            <div id="job_title_container" class="hidden">
+                 <input id="job_title" name="job_title" type="text" placeholder="Cargo / Profesión"
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm"
+                       value="{{ old('job_title') }}">
+                <x-input-error :messages="$errors->get('job_title')" class="mt-1 text-xs" />
+            </div>
+
+            <!-- Employer Selection (Hidden by default) -->
+            <div id="empleado_por_id_container" class="hidden">
+                 <select name="empleado_por_id" id="empleado_por_id"
+                        class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm text-gray-600 appearance-none">
+                    <option value="">Selecciona tu empresa</option>
+                    @foreach ($empleadores as $empleadorId => $nombreEmpleador)
+                        <option value="{{ $empleadorId }}">{{ $nombreEmpleador }}</option>
+                    @endforeach
+                </select>
+                <x-input-error :messages="$errors->get('empleado_por_id')" class="mt-1 text-xs" />
+            </div>
+
+            <!-- Footer & Button -->
+            <div class="pt-2 text-center">
+                <p class="text-xs font-semibold text-gray-600 mb-4">
+                    ¿Ya tienes una cuenta? <a href="{{ route('login') }}" class="text-blue-600 hover:text-blue-800 underline">Inicia sesión</a>
+                </p>
+
+                <button type="submit" class="bg-[#1D71B8] hover:bg-blue-700 text-white font-bold py-2.5 px-10 rounded-full transition duration-300 shadow-lg w-auto inline-block text-sm">
+                    Registrarse
+                </button>
+            </div>
+        </form>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
-        particlesJS("particles-js", {
-            "particles": {
-                "number": {"value": 80},
-                "color": {"value": "#ffffff"},
-                "shape": {"type": "circle"},
-                "opacity": {"value": 0.5, "random": true},
-                "size": {"value": 3, "random": true},
-                "move": {"enable": true, "speed": 1, "direction": "none", "random": true, "out_mode": "out"}
-            },
-            "interactivity": {
-                "events": {
-                    "onhover": {"enable": true, "mode": "repulse"},
-                    "onclick": {"enable": true, "mode": "push"}
-                }
-            }
-        });
-
         $(document).ready(function() {
             $('#tipo_usuario').change(function() {
                 var selectedValue = $(this).val();
-                if (selectedValue === 'empleado' || selectedValue === '') {
-                    $('#empleado_por_id_container').show();
+                if (selectedValue === 'empleado') {
+                    $('#empleado_por_id_container').slideDown(200);
+                    $('#job_title_container').slideDown(200);
                 } else {
-                    $('#empleado_por_id_container').hide();
+                    $('#empleado_por_id_container').slideUp(200);
+                    $('#job_title_container').slideUp(200);
                 }
             });
-            $('#tipo_usuario').trigger('change');
+            // Trigger change on load if value is pre-selected
+            var currentVal = $('#tipo_usuario').val();
+            if(currentVal === 'empleado') {
+                 $('#empleado_por_id_container').show();
+                 $('#job_title_container').show();
+            }
         });
-
-        // Animaciones con GSAP
-        gsap.from(".glassmorphism", {duration: 1, y: 50, opacity: 0, ease: "power3.out"});
-        gsap.from("h2", {duration: 1, y: 20, opacity: 0, ease: "power3.out", delay: 0.3});
-        gsap.from("p", {duration: 1, y: 20, opacity: 0, ease: "power3.out", delay: 0.5});
-        gsap.from("input, select", {duration: 1, y: 20, opacity: 0, ease: "power3.out", delay: 0.7, stagger: 0.1});
-        gsap.from("button", {duration: 1, y: 20, opacity: 0, ease: "power3.out", delay: 1});
     </script>
 </body>
 </html>

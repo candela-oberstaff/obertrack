@@ -16,7 +16,7 @@
                         </svg>
                         {{ $empleado['name'] }}
                         @if($empleado['is_manager'])
-                            <span class="ml-2 px-2 py-0.5 text-xs bg-yellow-400 text-yellow-900 rounded-full font-bold uppercase tracking-wider">Manager</span>
+                            <span class="ml-2 px-2 py-0.5 text-xs bg-yellow-400 text-yellow-900 rounded-full font-bold uppercase tracking-wider">Gerente</span>
                         @endif
                     </h3>
                     
@@ -24,7 +24,7 @@
                         <form action="{{ route('empleador.empleados.toggle-manager', $empleado['id']) }}" method="POST" @click.stop>
                             @csrf
                             <button type="submit" class="text-xs px-3 py-1 rounded-full border border-white/30 hover:bg-white/10 text-white transition-colors">
-                                {{ $empleado['is_manager'] ? 'Degradar' : 'Promover a Manager' }}
+                                {{ $empleado['is_manager'] ? 'Degradar' : 'Promover a Gerente' }}
                             </button>
                         </form>
 

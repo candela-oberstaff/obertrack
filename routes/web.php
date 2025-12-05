@@ -93,3 +93,6 @@ require __DIR__.'/tasks.php';
 
 // Work hours management routes
 require __DIR__.'/work-hours.php';
+
+// Professional reports routes
+require __DIR__.'/reports.php';

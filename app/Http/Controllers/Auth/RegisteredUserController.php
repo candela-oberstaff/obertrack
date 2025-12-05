@@ -40,6 +40,7 @@ class RegisteredUserController extends Controller
             'password' => 'required|confirmed|min:8',
             'tipo_usuario' => 'required|string|in:empleador,empleado',
             'empleado_por_id' => 'required_if:tipo_usuario,empleado|nullable|exists:users,id',
+            'job_title' => 'nullable|string|max:100',
         ]);
 
         $user = User::create([
@@ -48,6 +49,7 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
             'tipo_usuario' => $request->tipo_usuario,
             'empleador_id' => $request->tipo_usuario === 'empleado' ? $request->empleado_por_id : null,
+            'job_title' => $request->tipo_usuario === 'empleado' ? $request->job_title : null,
         ]);
 
         Auth::login($user);
