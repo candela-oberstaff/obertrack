@@ -28,6 +28,8 @@ class User extends Authenticatable
         'empleador_id',
         'is_manager',
         'is_superadmin',
+        'google_id',
+        'avatar',
     ];
 
 
