@@ -209,6 +209,16 @@ function initContacto() {
 initContacto(); // ejecutar la función
 </script>
 
+
+
+
+        <script>
+            function toggleMenu() {
+                const menu = document.getElementById('mobile-menu');
+                menu.classList.toggle('translate-x-full');
+            }
+        </script>
+
 </body>
 
 </html>
