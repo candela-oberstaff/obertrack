@@ -118,52 +118,30 @@ class WorkHoursController extends Controller
 
         $employeeId = $request->query('employee_id');
         $employee = User::findOrFail($employeeId);
+        $monthDate = Carbon::parse($month);
 
-        // Parsear el mes
-        $month = Carbon::parse($month);
-        $startOfMonth = $month->copy()->startOfMonth();
-        $endOfMonth = $month->copy()->endOfMonth();
+        try {
+            // Delegar la orquestación al servicio
+            $result = $this->reportService->generateMonthlyReportOrchestration($employee, $monthDate);
+            
+            // Notificar a Zapier
+            $this->zapierService->notifyReportDownload($monthDate, $result['csvContent'], $employee, $result['summary']);
 
-        // Obtener las horas trabajadas para el mes especificado
-        $workHours = WorkHours::where('user_id', $employeeId)
-            ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
-            ->where('approved', true)
-            ->get();
+            // Configurar las cabeceras para la descarga
+            $headers = [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => "attachment; filename=\"{$result['fileName']}\"",
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0'
+            ];
 
-        // Calcular el total de horas aprobadas
-        $totalApprovedHours = $workHours->sum('hours_worked');
+            // Devolver la respuesta con el contenido del CSV
+            return response($result['csvContent'], 200, $headers);
 
-        // Verificar si hay suficientes horas aprobadas
-        if ($totalApprovedHours < 160) {
-            return back()->with('error', 'No se pueden descargar reportes hasta que se hayan aprobado al menos 160 horas.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        // Preparar los datos para el CSV usando ReportService
-        $reportData = $this->reportService->prepareReportData($employee, $workHours, $month);
-
-        // Generar el contenido del CSV usando ReportService
-        $csvContent = $this->reportService->generateCSV($reportData, $employee, $month);
-    
-        // Extraer resumen del CSV
-        $summary = $this->reportService->extractCSVSummary($csvContent);
-
-        // Notificar a Zapier usando ZapierService
-        $this->zapierService->notifyReportDownload($month, $csvContent, $employee, $summary);
-
-        // Nombre del archivo
-        $fileName = "reporte_mensual_{$employee->name}_{$month->format('Y_m')}.csv";
-
-        // Configurar las cabeceras para la descarga
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"$fileName\"",
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0'
-        ];
-
-        // Devolver la respuesta con el contenido del CSV
-        return response($csvContent, 200, $headers);
     }
 
     // Removed misplaced update() method - task updates belong in TaskController

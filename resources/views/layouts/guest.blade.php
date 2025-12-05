@@ -17,8 +17,15 @@
     <body class="font-sans text-gray-900 antialiased">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100 dark:bg-white">
             <div>
-                <a href="/">
+                <a href="/" class="flex items-center gap-3">
                     <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
+                    <div class="flex flex-col">
+                        <div class="relative inline-block">
+                            <span class="font-bold text-3xl tracking-tight text-gray-900 leading-none">Obertrack</span>
+                            <span class="absolute -top-1 -right-3 text-[0.6rem] font-bold text-gray-900">TM</span>
+                        </div>
+                        <span class="text-[0.7rem] font-bold tracking-widest text-gray-500 uppercase leading-none mt-0.5">Remote Work Tracking</span>
+                    </div>
                 </a>
             </div>
 

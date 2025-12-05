@@ -56,8 +56,15 @@
     </div>
 
     <header class="lgtw-max-w-lg:tw-justify-around tw-max-w-lg:tw-px-4 tw-max-w-lg:tw-mr-auto tw-absolute tw-top-0 tw-z-20 tw-flex tw-h-[60px] tw-w-full tw-bg-opacity-0 tw-px-[5%] tw-text-black">
-        <a class="tw-h-[100px] tw-w-[100px] tw-p-[4px]" href="">
-            <img src="https://i.postimg.cc/JhdTT8GV/Obertrack-2-removebg-preview.png" alt="logo" class="tw-object tw-h-full tw-w-[280px]" />
+        <a class="tw-h-[100px] tw-w-auto tw-p-[4px] tw-flex tw-items-center tw-gap-3" href="">
+            <x-application-logo class="tw-h-[80px] tw-w-auto" />
+            <div class="tw-flex tw-flex-col">
+                <div class="tw-relative tw-inline-block">
+                    <span class="tw-font-bold tw-text-2xl tw-tracking-tight tw-text-black tw-leading-none">Obertrack</span>
+                    <span class="tw-absolute -tw-top-1 -tw-right-3 tw-text-[0.5rem] tw-font-bold tw-text-black">TM</span>
+                </div>
+                <span class="tw-text-[0.6rem] tw-font-bold tw-tracking-widest tw-text-gray-600 tw-uppercase tw-leading-none tw-mt-0.5">Remote Work Tracking</span>
+            </div>
         </a>
     </header>
 </head>
@@ -106,7 +113,7 @@
 
             <div class="tw-mt-6 tw-text-center tw-text-sm tw-text-gray-600">
                 ¿No tienes una cuenta?
-                <a href="#" class="tw-font-medium tw-text-primary hover:tw-text-primary-dark tw-transition tw-duration-150 tw-ease-in-out">
+                <a href="{{ route('register') }}" class="tw-font-medium tw-text-primary hover:tw-text-primary-dark tw-transition tw-duration-150 tw-ease-in-out">
                     Regístrate aquí
                 </a>
             </div>
