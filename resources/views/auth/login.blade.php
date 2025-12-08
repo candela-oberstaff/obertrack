@@ -3,129 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - Experiencia Inmersiva</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Iniciar Sesión - Obertrack</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
-    <style>
-        body {
-            font-family: 'Montserrat', sans-serif;
-        }
-        .glassmorphism {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .custom-shape-divider-bottom-1628127602 {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            overflow: hidden;
-            line-height: 0;
-        }
-        .custom-shape-divider-bottom-1628127602 svg {
-            position: relative;
-            display: block;
-            width: calc(100% + 1.3px);
-            height: 150px;
-        }
-        .custom-shape-divider-bottom-1628127602 .shape-fill {
-            fill: #FFFFFF;
-        }
-
-    </style>
-
-    <link rel="stylesheet" href="../../tailwind-css/tailwind-runtime.css" />
-    <link rel="stylesheet" href="css/index.css" />
-    <script src="https://cdn.tailwindcss.com"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" integrity="sha512-dPXYcDub/aeb08c63jRq/k6GaKccl256JQy/AnOq7CAnEZ9FzSL9wSbcZkMp4R26vBsMLFYH4kQ67/bbV8XaCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    </head>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        
-        .bg-gradient-light {
-            background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.5) 100%);
+        body { font-family: 'Montserrat', sans-serif; }
+        .bg-gradient-brand {
+            background: linear-gradient(180deg, #FFFFFF 0%, #E0F2FE 40%, #3B82F6 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+        .form-input-custom {
+            background: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #6B7280; /* Text-gray-500 */
+        }
+        .form-input-custom::placeholder {
+            color: #D1D5DB; /* Gray-300 */
+        }
+        .form-input-custom:focus {
+            ring: 2px;
+            ring-color: #3B82F6;
+        }
+        .btn-google {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid #3B82F6;
+            color: #1e1b4b;
+            transition: all 0.3s;
+        }
+        .btn-google:hover {
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
     </style>
-    <body class="h-screen bg-gradient-to-r from-white via-blue-200 to-purple-200">
-    <div class="tw-absolute tw-top-0 tw-flex tw-h-[150px] tw-w-full">
-        <div class="header-gradient tw-h-full tw-w-full"></div>
-    </div>
-
-    <header class="lgtw-max-w-lg:tw-justify-around tw-max-w-lg:tw-px-4 tw-max-w-lg:tw-mr-auto tw-absolute tw-top-0 tw-z-20 tw-flex tw-h-[60px] tw-w-full tw-bg-opacity-0 tw-px-[5%] tw-text-black">
-        <a class="tw-h-[100px] tw-w-auto tw-p-[4px] tw-flex tw-items-center tw-gap-3" href="">
-            <x-application-logo class="tw-h-[80px] tw-w-auto" />
-            <div class="tw-flex tw-flex-col">
-                <div class="tw-relative tw-inline-block">
-                    <span class="tw-font-bold tw-text-2xl tw-tracking-tight tw-text-black tw-leading-none">Obertrack</span>
-                    <span class="tw-absolute -tw-top-1 -tw-right-3 tw-text-[0.5rem] tw-font-bold tw-text-black">TM</span>
-                </div>
-                <span class="tw-text-[0.6rem] tw-font-bold tw-tracking-widest tw-text-gray-600 tw-uppercase tw-leading-none tw-mt-0.5">Remote Work Tracking</span>
-            </div>
-        </a>
-    </header>
 </head>
+<body class="h-full bg-gradient-brand flex items-center justify-center p-4">
 
-<body>
-<section class="tw-relative tw-flex tw-min-h-[100vh] tw-w-full tw-max-w-[100vw] tw-flex-col tw-overflow-hidden max-lg:tw-p-4 max-md:tw-mt-[50px]">
-    <div class="tw-flex tw-h-full tw-min-h-[100vh] tw-w-full tw-flex-col tw-place-content-center tw-gap-6 tw-p-[5%] max-xl:tw-place-items-center">
-        <div class="tw-flex tw-flex-col tw-place-content-center tw-items-center">
-            <div class="tw-text-center tw-text-7xl tw-font-semibold tw-uppercase tw-leading-[80px] max-lg:tw-text-4xl max-md:tw-leading-snug">
-                <span class="tw-text-primary tw-font-black tw-text-2xl">OBERTRACK</span>
-            </div>
-            <div class="tw-mt-10 tw-max-w-[450px] tw-p-2 tw-text-center max-lg:tw-max-w-full">
-                Inicia sesión para acceder a tu cuenta
-            </div>
-
-            <form class="tw-mt-8 tw-space-y-6 tw-w-full tw-max-w-md" action="{{ route('login') }}" method="POST">
-                @csrf
-                <div class="tw-space-y-4">
-                    <div class="tw-relative">
-                        <input id="email" name="email" type="email" required
-                               class="tw-w-full tw-px-4 tw-py-3 tw-bg-white tw-bg-opacity-10 tw-rounded-lg tw-text-black tw-placeholder-gray-500 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-primary tw-transition tw-duration-200"
-                               placeholder="Correo electrónico">
-                    </div>
-                    <div class="tw-relative">
-                        <input id="password" name="password" type="password" required
-                               class="tw-w-full tw-px-4 tw-py-3 tw-bg-white tw-bg-opacity-10 tw-rounded-lg tw-text-black tw-placeholder-gray-500 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-primary tw-transition tw-duration-200"
-                               placeholder="Contraseña">
-                    </div>
-                </div>
-
-                <div class="tw-flex tw-items-center tw-justify-between tw-text-sm">
-                    <div class="tw-flex tw-items-center">
-                        <input id="remember_me" name="remember" type="checkbox"
-                               class="tw-h-4 tw-w-4 tw-text-primary focus:tw-ring-primary tw-border-gray-300 tw-rounded">
-                        <label for="remember_me" class="tw-ml-2 tw-block tw-text-gray-700">
-                            Recordarme
-                        </label>
-                    </div>
-                </div>
-
-                <button type="submit"
-                        class="tw-w-full tw-py-3 tw-px-4 tw-bg-primary hover:tw-bg-primary-dark tw-text-white tw-font-bold tw-rounded-lg tw-shadow-md hover:tw-shadow-lg tw-transition tw-duration-300">
-                    Iniciar sesión
-                </button>
-            </form>
-
-            <div class="tw-mt-6 tw-text-center tw-text-sm tw-text-gray-600">
-                ¿No tienes una cuenta?
-                <a href="{{ route('register') }}" class="tw-font-medium tw-text-primary hover:tw-text-primary-dark tw-transition tw-duration-150 tw-ease-in-out">
-                    Regístrate aquí
-                </a>
+    <!-- Card Container -->
+    <div class="w-full max-w-sm glass-card rounded-3xl p-8">
+        
+        <!-- Logo -->
+        <div class="flex flex-col items-center mb-6">
+            <x-application-logo class="block h-12 w-auto fill-current text-gray-800 mb-2" />
+            <div class="text-center">
+                <span class="font-bold text-2xl tracking-tight text-gray-900 leading-none">Obertrack</span>
+                <span class="text-[0.6rem] font-bold tracking-widest text-gray-500 uppercase leading-none block mt-1">REMOTE WORK TRACKING</span>
             </div>
         </div>
+
+        <h2 class="text-xl font-bold text-center text-[#1e1b4b] mb-6">
+            Inicia sesión en Obertrack
+        </h2>
+
+        <!-- Google Login Button -->
+        <div class="mb-6">
+            <a href="{{ route('login.google') }}" class="btn-google w-full flex items-center justify-center py-2.5 px-4 rounded-full font-medium text-sm group">
+               Inicia sesión con Google
+            </a>
+        </div>
+
+        @if (session('error'))
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <span class="block sm:inline">{{ session('error') }}</span>
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('login') }}" class="space-y-4">
+            @csrf
+
+            <!-- Email -->
+            <div>
+                <input id="email" name="email" type="email" placeholder="Email" required autofocus
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm"
+                       value="{{ old('email') }}">
+                <x-input-error :messages="$errors->get('email')" class="mt-2 text-xs" />
+            </div>
+
+            <!-- Password -->
+            <div>
+                <input id="password" name="password" type="password" placeholder="Contraseña" required
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                <x-input-error :messages="$errors->get('password')" class="mt-2 text-xs" />
+            </div>
+
+            <!-- Remember Me -->
+             <div class="flex items-center justify-between">
+                <label for="remember_me" class="inline-flex items-center">
+                    <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500" name="remember">
+                    <span class="ml-2 text-sm text-gray-600 font-medium">Recuérdame</span>
+                </label>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-2 text-center">
+                <button type="submit" class="bg-[#1D71B8] hover:bg-blue-700 text-white font-bold py-2.5 px-10 rounded-full transition duration-300 shadow-lg w-auto inline-block text-sm">
+                    Iniciar sesión
+                </button>
+            </div>
+
+            <!-- Forgot Password -->
+            <div class="text-center mt-4">
+                <p class="text-xs text-gray-600 font-medium">
+                    ¿Olvidaste tu contraseña? 
+                    @if (Route::has('password.request'))
+                    <a href="{{ route('password.request') }}" class="text-blue-600 hover:text-blue-800 underline">Recupérala</a>
+                    @endif
+                </p>
+                 <p class="text-xs text-gray-600 font-medium mt-2">
+                    ¿No tienes una cuenta? <a href="{{ route('register') }}" class="text-blue-600 hover:text-blue-800 underline">Regístrate aquí</a>
+                </p>
+            </div>
+        </form>
     </div>
-</section>
 </body>
-
-
 </html>
-
-
-
-
-

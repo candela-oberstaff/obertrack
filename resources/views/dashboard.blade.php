@@ -18,9 +18,6 @@
     </div>
 
     <!-- Footer -->
-    <footer class="bg-gray-100 py-8 text-center">
-        <p class="text-gray-500 text-sm flex items-center justify-center gap-1">
-            <span class="font-bold">©</span> 2025 Obertrack. Todos los derechos reservados
-        </p>
-    </footer>
+    <x-layout.footer />
+
 </x-app-layout>
