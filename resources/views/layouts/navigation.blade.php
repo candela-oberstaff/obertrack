@@ -52,7 +52,7 @@
 
                 <a href="{{ route('chat') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('chatify') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                     Chat
-                </a>
+                </a> 
             </div>
 
             <!-- Notification Bell for Employers (Pending Work Hours) -->
@@ -182,7 +182,7 @@
             <x-responsive-nav-link :href="route('chat')" :active="request()->routeIs('chatify')">
                 {{ __('Chat') }}
             </x-responsive-nav-link>
-        </div>
+        </div> 
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">
