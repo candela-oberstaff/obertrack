@@ -9,8 +9,5 @@ php artisan view:cache
 # Run migrations
 php artisan migrate --force
 
-# Start PHP-FPM in background
-php-fpm -D
-
-# Start Nginx in foreground
-nginx -g "daemon off;"
+# Start Supervisord
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
