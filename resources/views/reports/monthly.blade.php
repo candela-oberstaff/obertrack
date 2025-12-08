@@ -13,7 +13,7 @@
 </head>
 <body>
     <h1>Reporte Mensual de Horas Trabajadas</h1>
-    <p>Empleado: {{ $employee->name }}</p>
+    <p>Profesional: {{ $employee->name }}</p>
     <p>Período: {{ $startDate->format('d/m/Y') }} - {{ $endDate->format('d/m/Y') }}</p>
     <p>Total de horas trabajadas: {{ $totalHours }}</p>
 

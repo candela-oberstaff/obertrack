@@ -22,20 +22,100 @@
                     Dashboard
                 </a>
                 
+                
                 @if(auth()->user()->tipo_usuario === 'empleador')
                     <a href="{{ route('empleadores.tareas-asignadas') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleadores.tareas-asignadas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Monitoreo de horas
                     </a>
+                    <a href="{{ route('reportes.index') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('reportes.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                        Reportes
+                    </a>
+                @elseif(auth()->user()->is_manager)
+                    <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                        <span class="flex items-center gap-2">
+                            Mis horas
+                            <span class="px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">Gerente</span>
+                        </span>
+                    </a>
+                    <a href="{{ route('empleados.tasks.index') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleados.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                        Tareas
+                    </a>
                 @else
                     <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
-                        Monitoreo de horas
+                        Registrar horas
+                    </a>
+                    <a href="{{ route('empleados.tasks.index') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleados.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                        Tareas
                     </a>
                 @endif
+
 
                 <a href="{{ route('chat') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('chatify') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                     Chat
                 </a>
             </div>
+
+            <!-- Notification Bell for Employers (Pending Work Hours) -->
+            @if(auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager)
+                @php
+                    $empleados = auth()->user()->tipo_usuario === 'empleador' 
+                        ? \App\Models\User::where('empleador_id', auth()->id())->get()
+                        : \App\Models\User::where('empleador_id', auth()->user()->empleador_id)->get();
+                    
+                    $pendingWeeks = [];
+                    
+                    // Check ALL pending hours (not just by week)
+                    $totalPendingHours = \App\Models\WorkHours::whereIn('user_id', $empleados->pluck('id'))
+                        ->where('approved', false)
+                        ->exists();
+                    
+                    if ($totalPendingHours && $empleados->count() > 0) {
+                        // Get detailed breakdown by employee
+                        $workHoursSummary = [];
+                        foreach ($empleados as $empleado) {
+                            $pendingHours = \App\Models\WorkHours::where('user_id', $empleado->id)
+                                ->where('approved', false)
+                                ->sum('hours_worked');
+                            
+                            if ($pendingHours > 0) {
+                                $workHoursSummary[$empleado->id] = [
+                                    'name' => $empleado->name,
+                                    'pending_hours' => $pendingHours,
+                                ];
+                            }
+                        }
+                        
+                        if (!empty($workHoursSummary)) {
+                            $pendingWeeks[] = [
+                                'start' => \Illuminate\Support\Carbon::now()->subWeek(),
+                                'end' => \Illuminate\Support\Carbon::now(),
+                                'summary' => $workHoursSummary
+                            ];
+                        }
+                    }
+                    
+                    $pendingCount = count($pendingWeeks);
+                @endphp
+                <x-notifications.employer-bell :pendingCount="$pendingCount" :pendingWeeks="$pendingWeeks" />
+            @endif
+
+            <!-- Notification Bell (for employees) -->
+            @if(auth()->user()->tipo_usuario === 'empleado')
+                @php
+                    $recentTasks = \App\Models\Task::where('visible_para', auth()->id())
+                        ->where('completed', false)
+                        ->where('created_at', '>=', now()->subDays(7))
+                        ->whereDoesntHave('readBy', function ($query) {
+                            $query->where('user_id', auth()->id());
+                        })
+                        ->with('createdBy')
+                        ->orderBy('created_at', 'desc')
+                        ->limit(5)
+                        ->get();
+                    $unreadCount = $recentTasks->count();
+                @endphp
+                <x-notifications.bell :unreadCount="$unreadCount" :recentTasks="$recentTasks" />
+            @endif
 
             <!-- User Menu -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
@@ -85,6 +165,20 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+            
+            @if(auth()->user()->tipo_usuario === 'empleador')
+                <x-responsive-nav-link :href="route('empleadores.tareas-asignadas')" :active="request()->routeIs('empleadores.tareas-asignadas')">
+                    Monitoreo de horas
+                </x-responsive-nav-link>
+            @else
+                <x-responsive-nav-link :href="route('empleado.registrar-horas')" :active="request()->routeIs('empleado.registrar-horas')">
+                    {{ auth()->user()->is_manager ? 'Mis horas' : 'Registrar horas' }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('empleados.tasks.index')" :active="request()->routeIs('empleados.tasks.*')">
+                    Tareas
+                </x-responsive-nav-link>
+            @endif
+            
             <x-responsive-nav-link :href="route('chat')" :active="request()->routeIs('chatify')">
                 {{ __('Chat') }}
             </x-responsive-nav-link>

@@ -53,7 +53,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <form action="{{ route('manager.tasks.store') }}" method="POST" class="space-y-6">
+                    <form action="{{ route('manager.tasks.store') }}" method="POST" class="space-y-6" onsubmit="return handleTaskSubmit(event, 'managerCreateTaskBtn')">
                         @csrf
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="col-span-1 md:col-span-2">
@@ -100,8 +100,9 @@
                             <a href="{{ route('manager.tasks.index') }}" class="px-4 py-2 bg-red-400 text-white rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 mr-2">
                                 Cancelar
                             </a>
-                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition ease-in-out duration-150">
-                                Crear Tarea
+                            <button type="submit" id="managerCreateTaskBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition ease-in-out duration-150 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span class="submit-text">Crear Tarea</span>
+                                <span class="loading-text hidden">Creando...</span>
                             </button>
                         </div>
                     </form>
@@ -109,6 +110,29 @@
             </div>
         </div>
     </div>
+
+    <script>
+    function handleTaskSubmit(event, buttonId) {
+        const button = document.getElementById(buttonId);
+        if (button.disabled) {
+            event.preventDefault();
+            return false;
+        }
+        
+        // Disable button
+        button.disabled = true;
+        
+        // Toggle text
+        const submitText = button.querySelector('.submit-text');
+        const loadingText = button.querySelector('.loading-text');
+        if (submitText && loadingText) {
+            submitText.classList.add('hidden');
+            loadingText.classList.remove('hidden');
+        }
+        
+        return true;
+    }
+    </script>
 
     
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>

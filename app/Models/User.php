@@ -22,11 +22,14 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'job_title',
         'password',
         'tipo_usuario',
         'empleador_id',
         'is_manager',
         'is_superadmin',
+        'google_id',
+        'avatar',
     ];
 
 

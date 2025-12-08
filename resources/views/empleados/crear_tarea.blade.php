@@ -21,7 +21,7 @@
                                 </div>
                             @endif
 
-                            <form action="{{ route('tareas.store') }}" method="POST" class="space-y-4">
+                            <form action="{{ route('tareas.store') }}" method="POST" class="space-y-4" onsubmit="return handleTaskSubmit(event, 'createTaskBtn')">
                                 @csrf
                                 <div>
                                     <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Título</label>
@@ -55,8 +55,9 @@
                                     <label for="completed" class="ml-2 text-sm text-gray-600 dark:text-gray-400">Marcar como completada</label>
                                 </div>
                                 <div>
-                                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent bg-blue-500 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out">
-                                        Crear Tarea
+                                    <button type="submit" id="createTaskBtn" class="w-full inline-flex justify-center rounded-md border border-transparent bg-blue-500 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <span class="submit-text">Crear Tarea</span>
+                                        <span class="loading-text hidden">Creando...</span>
                                     </button>
                                 </div>
                             </form>
@@ -74,7 +75,29 @@
                     </div>
                 </div>
                 
-            </div>
         </div>
     </div>
+
+    <script>
+    function handleTaskSubmit(event, buttonId) {
+        const button = document.getElementById(buttonId);
+        if (button.disabled) {
+            event.preventDefault();
+            return false;
+        }
+        
+        // Disable button
+        button.disabled = true;
+        
+        // Toggle text
+        const submitText = button.querySelector('.submit-text');
+        const loadingText = button.querySelector('.loading-text');
+        if (submitText && loadingText) {
+            submitText.classList.add('hidden');
+            loadingText.classList.remove('hidden');
+        }
+        
+        return true;
+    }
+    </script>
 </x-app-layout>

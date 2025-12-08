@@ -54,9 +54,11 @@ class EmployeeDataService
             return [
                 'id' => $empleado->id,
                 'name' => $empleado->name,
+                'is_manager' => $empleado->is_manager,
                 'totalApprovedHours' => $totalApprovedHours,
                 'approvedWeeks' => $approvedWeeks
             ];
         });
     }
 }
+

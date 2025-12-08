@@ -43,15 +43,27 @@ Route::get('/', function () {
 // GET /dashboard - Main dashboard (redirects based on user role)
 Route::middleware(['auth'])->get('/dashboard', function () {
     $user = Auth::user();
-    $nombreUsuario = $user ? $user->name : 'Invitado';
-    return view('dashboard', ['nombreUsuario' => $nombreUsuario]);
-
+    
+    // Employers see the original dashboard with action cards
+    if ($user->tipo_usuario === 'empleador') {
+        return view('dashboard', ['nombreUsuario' => $user->name]);
+    }
+    
+    // Professionals (employees and managers) see their specific dashboard
+    return view('dashboard-professional');
 })->name('dashboard');
 
 // Mock Chat Route
 Route::middleware(['auth'])->get('/chat', function () {
     return view('chat.mock');
 })->name('chat');
+
+// Notification Routes
+Route::middleware(['auth'])->group(function () {
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::post('/notifications/tasks/{task}/mark-read', [App\Http\Controllers\NotificationController::class, 'markTaskAsRead'])->name('notifications.mark-task-read');
+});
+
 
 /*
 |--------------------------------------------------------------------------
@@ -81,3 +93,6 @@ require __DIR__.'/tasks.php';
 
 // Work hours management routes
 require __DIR__.'/work-hours.php';
+
+// Professional reports routes
+require __DIR__.'/reports.php';

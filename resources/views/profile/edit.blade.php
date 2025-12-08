@@ -41,20 +41,20 @@
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $empleado->name }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $empleado->email }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            {{ $empleado->is_manager ? 'Manager' : 'Empleado' }}
+                                            {{ $empleado->is_manager ? 'Gerente' : 'Profesional' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @if($empleado->is_manager)
                                                 <form action="{{ route('profile.degradar-manager', $empleado) }}" method="POST" class="mb-2">
                                                     @csrf
                                                     @method('PUT')
-                                                    <button type="submit" class="text-red-600 hover:text-red-900">Degradar de Manager</button>
+                                                    <button type="submit" class="text-red-600 hover:text-red-900">Degradar de Gerente</button>
                                                 </form>
                                             @else
                                                 <form action="{{ route('profile.promover-manager', $empleado) }}" method="POST" class="mb-2">
                                                     @csrf
                                                     @method('PUT')
-                                                    <button type="submit" class="text-green-600 hover:text-green-900">Promover a Manager</button>
+                                                    <button type="submit" class="text-green-600 hover:text-green-900">Promover a Gerente</button>
                                                 </form>
                                             @endif
 
@@ -69,7 +69,7 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <form action="{{ route('profile.eliminar-empleado', $empleado) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a este empleado?');">
+                                            <form action="{{ route('profile.eliminar-empleado', $empleado) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a este profesional?');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-red-600 hover:text-red-900">Eliminar</button>

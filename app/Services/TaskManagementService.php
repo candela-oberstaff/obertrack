@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Task;
+use App\Models\User;
 use App\Models\WorkHours;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -14,9 +15,12 @@ class TaskManagementService
      */
     public function createTask(array $data)
     {
-        return Task::create([
+        // Handle both 'employee_id' (from form) and 'visible_para' (legacy)
+        $visiblePara = $data['employee_id'] ?? $data['visible_para'] ?? Auth::user()->empleador_id;
+        
+        $task = Task::create([
             'created_by' => Auth::id(),
-            'visible_para' => $data['visible_para'] ?? Auth::user()->empleador_id,
+            'visible_para' => $visiblePara,
             'title' => $data['title'],
             'description' => $data['description'],
             'start_date' => $data['start_date'],
@@ -24,6 +28,37 @@ class TaskManagementService
             'priority' => $data['priority'],
             'completed' => $data['completed'] ?? false,
         ]);
+
+        // Send notification to assigned employee
+        if ($visiblePara && $visiblePara !== Auth::id()) {
+            $assignedUser = User::find($visiblePara);
+            if ($assignedUser && $assignedUser->email) {
+                try {
+                    $brevoService = app(\App\Services\BrevoEmailService::class);
+                    $brevoService->sendNewTaskNotification(
+                        $assignedUser->email,
+                        $assignedUser->name,
+                        [
+                            'id' => $task->id,
+                            'title' => $task->title,
+                            'description' => $task->description,
+                            'priority' => $task->priority,
+                            'start_date' => $task->start_date,
+                            'end_date' => $task->end_date,
+                            'assigned_by' => Auth::user()->name,
+                        ]
+                    );
+                } catch (\Exception $e) {
+                    // Log error but don't fail task creation
+                    Log::error('Failed to send task notification email', [
+                        'task_id' => $task->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+        }
+
+        return $task;
     }
 
     /**

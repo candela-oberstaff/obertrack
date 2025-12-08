@@ -40,7 +40,8 @@ FROM php:8.2-fpm-alpine
 RUN apk add --no-cache \
     postgresql-dev \
     nginx \
-    curl
+    curl \
+    supervisor
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo pdo_pgsql opcache
@@ -55,6 +56,16 @@ WORKDIR /var/www/html
 COPY --from=composer-deps /app/vendor ./vendor
 COPY --from=node-build /app/public ./public
 COPY . .
+
+# Copy Nginx configuration
+COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
+
+# Copy Supervisord configuration
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Copy entrypoint
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Set permissions
 RUN chown -R www-data:www-data \
@@ -71,5 +82,6 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
   CMD curl -f http://localhost:80/up || exit 1
 
-# Start command (JSON array format to avoid shell issues)
-CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=80"]
+# Start command
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+

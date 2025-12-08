@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    'brevo' => [
+        'api_key' => env('BREVO_API_KEY'),
+        'sender_email' => env('BREVO_SENDER_EMAIL', 'noreply@obertrack.com'),
+        'sender_name' => env('BREVO_SENDER_NAME', 'OberTrack'),
+    ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URL'),
+        'guzzle' => [
+            'verify' => false, // Bypass SSL certificate check for local development
+        ],
+    ],
+
 ];
