@@ -80,17 +80,17 @@
             <!-- Grid de tres elementos -->
             <div class="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
                 <div class="flex flex-col items-center border-2 border-blue-500 rounded-lg p-10">
-                    <i class="bi bi-clock text-4xl mb-4 text-blue-500"></i>
+                    <i class="bi bi-clock text-4xl mb-4 "></i>
                     <h3 class="text-xl font-bold mb-2 text-black">Registra Horas</h3>
                     <p class="text-gray-800 text-center">Lleva un control preciso del tiempo dedicado a cada tarea y proyecto.</p>
                 </div>
                 <div class="flex flex-col items-center border-2 border-blue-500 rounded-lg p-10">
-                    <i class="bi bi-file-earmark-text text-4xl mb-4 text-blue-500"></i>
+                    <i class="bi bi-file-earmark-text text-4xl mb-4 "></i>
                     <h3 class="text-xl font-bold mb-2 text-black">Crea Reportes</h3>
                     <p class="text-gray-800 text-center">Genera informes detallados para analizar la productividad y el progreso.</p>
                 </div>
                 <div class="flex flex-col items-center border-2 border-blue-500 rounded-lg p-10">
-                    <i class="bi bi-people text-4xl mb-4 text-blue-500"></i>
+                    <i class="bi bi-person-check text-4xl mb-4 "></i>
                     <h3 class="text-xl font-bold mb-2 text-black">Gestiona Profesionales</h3>
                     <p class="text-gray-800 text-center">Administra eficientemente tu equipo y optimiza la asignación de recursos.</p>
                 </div>
