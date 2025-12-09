@@ -115,14 +115,79 @@ class DashboardController extends Controller
     public function empleadorDashboard(Request $request)
     {
         $user = auth()->user();
-        $empleados = User::where('empleador_id', $user->id)->get();
+        
+        // Use service to get employees (consistent with other methods)
+        $empleados = $this->employeeDataService->getEmployeesForUser($user);
 
-        $weekStart = $request->week ? Carbon::parse($request->week) : Carbon::now()->startOfWeek(Carbon::MONDAY);
-        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::FRIDAY);
+        $currentMonth = $request->month ? Carbon::parse($request->month) : Carbon::now();
+        $startOfMonth = $currentMonth->copy()->startOfMonth();
+        $endOfMonth = $currentMonth->copy()->endOfMonth();
 
-        $workHoursSummary = $this->workHoursService->getWorkHoursSummary($empleados, $weekStart, $weekEnd);
+        // Get all work hours for the month for all employees to calculate stats and calendar
+        $monthlyHours = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+            ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
+            ->get();
+        
+        // Assign colors to employees for UI consistency
+        $colors = ['bg-pink-500', 'bg-cyan-500', 'bg-green-600', 'bg-blue-500', 'bg-purple-500', 'bg-orange-500'];
+        $employeeColors = [];
+        foreach($empleados as $index => $emp) {
+            $employeeColors[$emp->id] = $colors[$index % count($colors)];
+        }
 
-        // Redirect to the main tasks view which acts as the dashboard
-        return redirect()->route('empleador.tareas.index');
+        // Employee Summary Cards Data
+        $employeeSummaries = $empleados->map(function($employee) use ($monthlyHours, $startOfMonth, $endOfMonth, $employeeColors) {
+            $employeeHours = $monthlyHours->where('user_id', $employee->id);
+            return [
+                'user' => $employee,
+                'total_hours' => $employeeHours->sum('hours_worked'),
+                'target_hours' => 160,
+                'color' => $employeeColors[$employee->id] ?? 'bg-gray-500',
+                'role' => $employee->job_title ?? 'Sin puesto definido',
+                'initials' => strtoupper(substr($employee->name, 0, 1) . substr(strrchr($employee->name, ' ') ?: ' ' . substr($employee->name, 1), 1, 1)),
+            ];
+        });
+
+        // Calendar Data Generation
+        $calendar = [];
+        $currentDay = $startOfMonth->copy()->startOfWeek(Carbon::SUNDAY); 
+        $lastDay = $endOfMonth->copy()->endOfWeek(Carbon::SATURDAY);
+
+        while ($currentDay <= $lastDay) {
+            $dateStr = $currentDay->format('Y-m-d');
+            $dayData = [
+                'date' => $currentDay->copy(),
+                'day' => $currentDay->day,
+                'is_current_month' => $currentDay->month === $currentMonth->month,
+                'has_events' => false,
+                'employees' => []
+            ];
+
+            foreach ($empleados as $employee) {
+                $record = $monthlyHours->where('user_id', $employee->id)
+                    ->where('work_date', $dateStr)
+                    ->first();
+                
+                if ($record) {
+                    $dayData['has_events'] = true;
+                    $dayData['employees'][] = [
+                        'initials' => $employeeSummaries->firstWhere('user.id', $employee->id)['initials'],
+                        'hours' => $record->hours_worked,
+                        'approved' => $record->approved,
+                        'color_class' => $employeeColors[$employee->id] ?? 'bg-gray-500',
+                    ];
+                }
+            }
+            $calendar[] = $dayData;
+            $currentDay->addDay();
+        }
+
+        return view('empleadores.dashboard', compact(
+            'user',
+            'empleados',
+            'currentMonth',
+            'employeeSummaries',
+            'calendar'
+        ));
     }
 }

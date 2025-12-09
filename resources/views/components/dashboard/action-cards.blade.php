@@ -49,7 +49,7 @@
         </div>
         <div>
             @if(auth()->user()->tipo_usuario === 'empleador')
-                <a href="{{ route('empleadores.tareas-asignadas') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#0976D6] transition-colors">
+                <a href="{{ route('empleador.dashboard') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#0976D6] transition-colors">
                     Ver resumen
                 </a>
             @else

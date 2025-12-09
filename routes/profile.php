@@ -25,6 +25,14 @@ Route::middleware(['auth'])->group(function () {
     // PATCH /profile - Update profile information
     Route::patch('/profile', [ProfileController::class, 'update'])
         ->name('profile.update');
+
+    // POST /profile/send-password-code - Send OTP for password reset
+    Route::post('/profile/send-password-code', [ProfileController::class, 'sendPasswordCode'])
+        ->name('profile.send-password-code');
+    
+    // PUT /profile/update-password-with-code - Update password using OTP
+    Route::put('/profile/update-password-with-code', [ProfileController::class, 'updatePasswordWithCode'])
+        ->name('profile.update-password-with-code');
     
     // DELETE /profile - Delete user account
     Route::delete('/profile', [ProfileController::class, 'destroy'])

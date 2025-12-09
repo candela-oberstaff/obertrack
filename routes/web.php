@@ -58,6 +58,9 @@ Route::middleware(['auth'])->get('/chat', function () {
     return view('chat.mock');
 })->name('chat');
 
+// Contacto Route
+Route::view('/contacto', 'contacto')->name('contacto');
+
 // Notification Routes
 Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
