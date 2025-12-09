@@ -105,6 +105,37 @@ class BrevoEmailService
     }
 
     /**
+     * Send email functionality for password reset code
+     */
+    public function sendPasswordResetCode($recipientEmail, $recipientName, $code)
+    {
+        try {
+            $sendSmtpEmail = new SendSmtpEmail([
+                'subject' => 'Código de Verificación - Cambio de Contraseña',
+                'sender' => ['name' => $this->senderName, 'email' => $this->senderEmail],
+                'to' => [['email' => $recipientEmail, 'name' => $recipientName]],
+                'htmlContent' => view('emails.password-verification-code', ['code' => $code])->render(),
+            ]);
+
+            $result = $this->apiInstance->sendTransacEmail($sendSmtpEmail);
+
+            Log::info('Brevo: Password reset code sent', [
+                'recipient' => $recipientEmail,
+                'message_id' => $result->getMessageId()
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Brevo: Failed to send password reset code', [
+                'recipient' => $recipientEmail,
+                'error' => $e->getMessage()
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
      * Render HTML email for new task assignment
      */
     private function renderNewTaskEmail($taskData)
