@@ -17,47 +17,53 @@
             </div>
 
             <!-- Centered Navigation Links -->
-            <div class="hidden space-x-10 sm:flex items-center justify-center flex-1">
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+            <div class="hidden space-x-4 sm:flex items-center justify-center flex-1">
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                     Dashboard
                 </a>
                 
                 
                 @if(auth()->user()->tipo_usuario === 'empleador')
-                    <a href="{{ route('empleador.dashboard') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('empleador.dashboard') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Monitoreo de horas
                     </a>
-                    <a href="{{ route('empleador.tareas.index') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.tareas.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('empleador.tareas.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.tareas.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Tareas
                     </a>
-                    <a href="{{ route('reportes.index') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('reportes.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('reportes.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('reportes.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Reportes
                     </a>
                 @elseif(auth()->user()->is_manager)
-                    <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         <span class="flex items-center gap-2">
                             Mis horas
-                            <span class="px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">Gerente</span>
+                            <span class="px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">Manager</span>
                         </span>
                     </a>
-                    <a href="{{ route('empleados.tasks.index') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleados.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('empleador.dashboard') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                        Monitoreo
+                    </a>
+                    <a href="{{ route('empleados.tasks.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleados.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Tareas
                     </a>
+                    <a href="{{ route('reportes.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('reportes.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                        Reportes
+                    </a>
                 @else
-                    <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Registrar horas
                     </a>
-                    <a href="{{ route('empleados.tasks.index') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleados.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('empleados.tasks.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleados.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Tareas
                     </a>
                 @endif
 
 
-                <a href="{{ route('chat') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('chatify') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                <a href="{{ route('chat') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('chatify') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                     Chat
                 </a>
 
-                <a href="{{ route('contacto') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('contacto') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                <a href="{{ route('contacto') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('contacto') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                     Contacto
                 </a>
             </div>
@@ -184,9 +190,22 @@
                 <x-responsive-nav-link :href="route('empleado.registrar-horas')" :active="request()->routeIs('empleado.registrar-horas')">
                     {{ auth()->user()->is_manager ? 'Mis horas' : 'Registrar horas' }}
                 </x-responsive-nav-link>
+
+                @if(auth()->user()->is_manager)
+                    <x-responsive-nav-link :href="route('empleador.dashboard')" :active="request()->routeIs('empleador.dashboard')">
+                        Monitoreo
+                    </x-responsive-nav-link>
+                @endif
+
                 <x-responsive-nav-link :href="route('empleados.tasks.index')" :active="request()->routeIs('empleados.tasks.*')">
                     Tareas
                 </x-responsive-nav-link>
+                
+                @if(auth()->user()->is_manager)
+                    <x-responsive-nav-link :href="route('reportes.index')" :active="request()->routeIs('reportes.*')">
+                        Reportes
+                    </x-responsive-nav-link>
+                @endif
             @endif
             
             <x-responsive-nav-link :href="route('chat')" :active="request()->routeIs('chatify')">

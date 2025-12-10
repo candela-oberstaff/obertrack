@@ -136,7 +136,7 @@ class WorkHoursController extends Controller
     {
         $user = Auth::user();
         
-        if ($user->tipo_usuario !== 'empleador') {
+        if ($user->tipo_usuario !== 'empleador' && !$user->is_manager) {
             abort(403, 'No autorizado');
         }
 
@@ -146,7 +146,9 @@ class WorkHoursController extends Controller
         
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
 
-        $professionals = User::where('empleador_id', $user->id)
+        $employerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
+
+        $professionals = User::where('empleador_id', $employerId)
             ->orderBy('name')
             ->get()
             ->map(function ($professional, $index) use ($weekStart, $weekEnd) {
@@ -198,9 +200,10 @@ class WorkHoursController extends Controller
      */
     public function professionalReport(User $user, Request $request)
     {
-        $employer = Auth::user();
+        $currentUser = Auth::user();
+        $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
         
-        if ($user->empleador_id !== $employer->id) {
+        if ($user->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) {
             abort(403, 'No autorizado');
         }
 
@@ -259,8 +262,10 @@ class WorkHoursController extends Controller
      */
     public function downloadWeeklyReport(User $user, Request $request)
     {
-        $employer = Auth::user();
-        if ($user->empleador_id !== $employer->id) abort(403);
+        $currentUser = Auth::user();
+        $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
+        
+        if ($user->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) abort(403);
 
         $weekStart = $request->query('week') 
             ? Carbon::parse($request->query('week'))->startOfWeek(Carbon::MONDAY)
@@ -316,8 +321,10 @@ class WorkHoursController extends Controller
      */
     public function downloadMonthlyReportPdf(User $user, Request $request)
     {
-        $employer = Auth::user();
-        if ($user->empleador_id !== $employer->id) abort(403);
+        $currentUser = Auth::user();
+        $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
+
+        if ($user->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) abort(403);
 
         $date = $request->query('month') ? Carbon::parse($request->query('month')) : Carbon::now();
         $startOfMonth = $date->copy()->startOfMonth();

@@ -11,8 +11,8 @@ class ApproveWorkHoursRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Solo empleadores pueden aprobar horas
-        return auth()->check() && auth()->user()->tipo_usuario === 'empleador';
+        // Empleadores y Managers pueden aprobar horas
+        return auth()->check() && (auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager);
     }
 
     /**

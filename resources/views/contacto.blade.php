@@ -6,7 +6,7 @@
                 
                 <!-- Left Column: Text -->
                 <div class="space-y-8">
-                    <h1 class="text-5xl font-bold text-[#0976D6] uppercase tracking-wide">Contáctanos</h1>
+                    <h1 class="text-3xl md:text-5xl font-bold text-[#0976D6] uppercase tracking-wide">Contáctanos</h1>
                     
                     <div class="space-y-4 text-gray-800">
                         <h2 class="text-2xl font-bold text-[#0F172A]">
