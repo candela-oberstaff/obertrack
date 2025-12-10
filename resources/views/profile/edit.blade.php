@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12 bg-white min-h-screen">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
             
             <!-- System Messages -->
             @if (session('status') === 'profile-updated')
@@ -306,7 +306,7 @@
 
                     <div class="bg-[#F3F4F6] rounded-xl p-6">
                         <!-- Header Row -->
-                        <div class="grid grid-cols-12 gap-4 mb-4 px-4 text-sm font-bold text-black">
+                        <div class="hidden md:grid grid-cols-12 gap-4 mb-4 px-4 text-sm font-bold text-black">
                             <div class="col-span-3">Nombre</div>
                             <div class="col-span-4">Email</div>
                             <div class="col-span-2">Roll</div>
@@ -316,11 +316,20 @@
                         <!-- List Items -->
                         <div class="space-y-3">
                             @foreach($empleados as $empleado)
-                                <div class="bg-white rounded-lg border border-[#0976D6] shadow-sm p-4 grid grid-cols-12 gap-4 items-center">
-                                    <div class="col-span-3 font-medium text-gray-900">{{ $empleado->name }}</div>
-                                    <div class="col-span-4 text-gray-600 text-sm truncate">{{ $empleado->email }}</div>
-                                    <div class="col-span-2 text-gray-900">{{ $empleado->is_manager ? 'Gerente' : 'Profesional' }}</div>
-                                    <div class="col-span-3 flex justify-end items-center gap-3">
+                                <div class="bg-white rounded-lg border border-[#0976D6] shadow-sm p-4 flex flex-col md:grid md:grid-cols-12 gap-2 md:gap-4 items-start md:items-center">
+                                    <div class="w-full md:col-span-3 font-medium text-gray-900">
+                                        <span class="md:hidden text-xs text-gray-500 block">Nombre</span>
+                                        {{ $empleado->name }}
+                                    </div>
+                                    <div class="w-full md:col-span-4 text-gray-600 text-sm truncate">
+                                        <span class="md:hidden text-xs text-gray-500 block">Email</span>
+                                        {{ $empleado->email }}
+                                    </div>
+                                    <div class="w-full md:col-span-2 text-gray-900">
+                                        <span class="md:hidden text-xs text-gray-500 block">Rol</span>
+                                        {{ $empleado->is_manager ? 'Manager' : 'Profesional' }}
+                                    </div>
+                                    <div class="w-full md:col-span-3 flex justify-start md:justify-end items-center gap-3 mt-2 md:mt-0">
                                         @if(!$empleado->is_manager)
                                             <button 
                                                 @click="selectedUser = '{{ $empleado->name }}'; actionUrl = '{{ route('profile.promover-manager', $empleado) }}'; openPromoteModal = true"
@@ -420,6 +429,68 @@
 
                 </div>
             @endif
+
+            <!-- DANGER ZONE SECTION -->
+            <div x-data="{ openDeleteAccountModal: false }">
+                <h3 class="text-[#0976D6] font-medium text-lg mb-6">Zona peligrosa</h3>
+                
+                <div class="bg-[#F3F4F6] rounded-xl p-8">
+                    <div class="space-y-4">
+                        <h4 class="text-xl font-bold text-gray-900">Eliminar cuenta</h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            Una vez que se elimine tu cuenta, todos sus recursos y datos serán eliminados permanentemente. Antes de eliminar tu cuenta, por favor descarga cualquier dato o información que desees conservar.
+                        </p>
+                        <div class="pt-4">
+                            <button 
+                                @click="openDeleteAccountModal = true" 
+                                class="bg-[#EF4444] hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-lg transition duration-150">
+                                Eliminar cuenta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DELETE ACCOUNT CONFIRMATION MODAL -->
+                <div x-show="openDeleteAccountModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
+                    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <!-- Backdrop -->
+                        <div class="fixed inset-0 transition-opacity" aria-hidden="true" @click="openDeleteAccountModal = false">
+                            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                        </div>
+                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                        <!-- Modal Panel -->
+                        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                            <div class="bg-white px-6 pt-6 pb-4">
+                                <div class="text-center">
+                                    <h3 class="text-lg font-bold text-gray-900 mb-6">
+                                        ¿Estás seguro de que deseas<br>eliminar tu cuenta?
+                                    </h3>
+                                    
+                                    <form method="post" action="{{ route('profile.destroy') }}" id="deleteAccountForm">
+                                        @csrf
+                                        @method('delete')
+                                        
+                                        <div class="flex justify-center gap-3 mt-6 pb-2">
+                                            <button 
+                                                type="button" 
+                                                @click="openDeleteAccountModal = false" 
+                                                class="w-32 rounded-lg border-2 border-gray-300 py-2 text-gray-700 font-medium hover:bg-gray-50 transition">
+                                                Cancelar
+                                            </button>
+                                            <button 
+                                                type="submit" 
+                                                class="w-32 rounded-lg bg-[#EF4444] py-2 text-white font-medium hover:bg-red-700 transition">
+                                                Eliminar cuenta
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>

@@ -42,7 +42,7 @@
             </div>
 
             <!-- Outline Download Buttons -->
-            <div class="flex justify-center gap-6 mb-12">
+            <div class="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mb-12">
                 <a href="{{ route('reportes.download.weekly', ['user' => $professional->id, 'week' => $weekStart->format('Y-m-d')]) }}" 
                    class="px-8 py-2.5 bg-white text-blue-500 text-sm font-semibold rounded-full border-2 border-blue-500 hover:bg-blue-50 transition shadow-sm inline-block text-center no-underline">
                     Descargar reporte semanal
