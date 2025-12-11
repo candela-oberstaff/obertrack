@@ -139,9 +139,7 @@
         </div>
     </section>
 
-    <footer class="bg-white py-6 text-center text-gray-600">
-        &copy; 2025 Obertrack. Todos los derechos reservados.
-    </footer>
+    <x-layout.footer />
 
 
     <script>
