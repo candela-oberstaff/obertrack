@@ -65,13 +65,7 @@
 
                 <a href="{{ route('chat') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('chatify') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                     Chat
-<<<<<<< HEAD
                 </a>
-
-
-=======
-                </a> 
->>>>>>> 8ac89cad1e25bb1673c9d20dc05f2e139e239591
             </div>
 
             <!-- Notification Bell for Employers (Pending Work Hours) -->
@@ -187,17 +181,9 @@
                 <x-responsive-nav-link :href="route('empleador.dashboard')" :active="request()->routeIs('empleador.dashboard')">
                     Monitoreo de horas
                 </x-responsive-nav-link>
-<<<<<<< HEAD
                 <x-responsive-nav-link :href="route('empleador.tareas.index')" :active="request()->routeIs('empleador.tareas.*')">
                     Tareas
                 </x-responsive-nav-link>
-=======
-
-                <x-responsive-nav-link :href="route('empleadores.tareas')" :active="request()->routeIs('empleadores.tareas')">
-                    Tareas
-                 </x-responsive-nav-link>
-                 
->>>>>>> 8ac89cad1e25bb1673c9d20dc05f2e139e239591
             @else
                 <x-responsive-nav-link :href="route('empleado.registrar-horas')" :active="request()->routeIs('empleado.registrar-horas')">
                     {{ auth()->user()->is_manager ? 'Mis horas' : 'Registrar horas' }}
@@ -219,13 +205,9 @@
             <x-responsive-nav-link :href="route('chat')" :active="request()->routeIs('chatify')">
                 {{ __('Chat') }}
             </x-responsive-nav-link>
-<<<<<<< HEAD
 
 
         </div>
-=======
-        </div>  
->>>>>>> 8ac89cad1e25bb1673c9d20dc05f2e139e239591
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">

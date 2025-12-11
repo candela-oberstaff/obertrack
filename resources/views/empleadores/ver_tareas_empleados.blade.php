@@ -13,8 +13,6 @@
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">Gestión de Tareas</h2>
             </div>
 
-<<<<<<< HEAD
-=======
             <!-- Monthly Report Summary -->
             <x-reports.monthly-summary 
                 :empleadosInfo="$empleadosInfo" 
@@ -22,22 +20,15 @@
                 :totalApprovedHours="$totalApprovedHours" 
             />
 
-
-                                 <!--sección de tarea comentada-->
-            {{-- 
->>>>>>> 8ac89cad1e25bb1673c9d20dc05f2e139e239591
             <!-- Task Creation and Filtering -->
             <x-tasks.create-task-form :empleados="$empleados" />
 
             <!-- Task List -->
             <x-tasks.task-list :tareasEmpleador="$tareasEmpleador" /> 
-            --}}
 
         </div>
     </div>
 
-<<<<<<< HEAD
-=======
     <!-- Approval Modal -->
     <x-work-hours.approval-modal />
 
@@ -47,9 +38,7 @@
             approveWeekWithComment: "{{ route('work-hours.approve-week-with-comment') }}",
             downloadMonthlyReport: "{{ route('work-hours.download-monthly-report', ['month' => '__MONTH__']) }}"
         };
-    </script> 
-
->>>>>>> 8ac89cad1e25bb1673c9d20dc05f2e139e239591
+    </script>
     @vite([
         'resources/js/task-management.js'
     ])
