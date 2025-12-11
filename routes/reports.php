@@ -9,10 +9,10 @@
  */
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\WorkHoursController;
+use App\Http\Middleware\EnsureUserIsEmployer;
 
 // Professional Reports
-Route::middleware(['auth'])->prefix('reportes')->name('reportes.')->group(function () {
+Route::middleware(['auth', EnsureUserIsEmployer::class])->prefix('reportes')->name('reportes.')->group(function () {
     
     // GET /reportes - View list of all professionals with statistics
     Route::get('/', [WorkHoursController::class, 'reportsIndex'])

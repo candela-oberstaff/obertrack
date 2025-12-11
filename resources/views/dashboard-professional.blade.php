@@ -1,286 +1,377 @@
 <x-app-layout>
-    <div class="py-12 bg-white min-h-screen">
+    <div class="min-h-screen bg-white py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
-            <!-- Welcome Section -->
+            {{-- Header Section --}}
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">
-                    ¡Hola, {{ auth()->user()->name }}! 👋
+                    ¡Hola, <span class="text-blue-600">{{ auth()->user()->name }}</span>!
                 </h1>
-                <p class="text-gray-600 mt-2">
-                    @if(auth()->user()->is_manager)
-                        Bienvenido a tu panel de Manager
-                    @else
-                        Aquí está tu resumen de actividades
-                    @endif
+                <p class="text-gray-600 mt-1">
+                    Aquí está tu resumen de actividades
                 </p>
             </div>
 
-            <!-- Quick Stats -->
+            {{-- Summary Cards --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <!-- Pending Tasks -->
-                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-blue-100 text-sm font-medium">Tareas Pendientes</p>
-                            <p class="text-4xl font-bold mt-2">
-                                {{ auth()->user()->assignedTasks()->where('completed', false)->count() }}
-                            </p>
-                        </div>
-                        <div class="bg-white bg-opacity-20 rounded-full p-4">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Hours This Month (Amber/Orange Light Gradient matching Help Card) -->
-                <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 shadow-lg border border-amber-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-amber-700 text-sm font-medium">Horas Este Mes</p>
-                            <p class="text-4xl font-bold mt-2 text-gray-900">
-                                {{ auth()->user()->workHours()
-                                    ->whereYear('work_date', now()->year)
-                                    ->whereMonth('work_date', now()->month)
-                                    ->sum('hours_worked') ?? 0 }}
-                            </p>
-                        </div>
-                        <div class="bg-amber-200 rounded-full p-4">
-                            <svg class="w-8 h-8 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Completed Tasks (Green) -->
-                <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-green-100 text-sm font-medium">Tareas Completadas</p>
-                            <p class="text-4xl font-bold mt-2">
-                                {{ auth()->user()->assignedTasks()
-                                    ->where('completed', true)
-                                    ->whereYear('updated_at', now()->year)
-                                    ->whereMonth('updated_at', now()->month)
-                                    ->count() }}
-                            </p>
-                        </div>
-                        <div class="bg-white bg-opacity-20 rounded-full p-4">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Main Content Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
-                <!-- Left Column: Tasks -->
-                <div class="lg:col-span-2 space-y-6">
-                    <!-- Recent Tasks -->
-                    <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-                        <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-xl font-bold text-gray-900">Mis Tareas Recientes</h2>
-                            <a href="{{ route('empleados.tasks.index') }}" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                                Ver todas →
-                            </a>
-                        </div>
-                        
-                        @php
-                            $recentTasks = auth()->user()->assignedTasks()->latest()->take(5)->get();
-                        @endphp
+                {{-- Tareas Pendientes --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-6">
+                    <p class="text-sm text-gray-600 mb-2">Tareas pendientes</p>
+                    @php
+                        $totalPending = auth()->user()->assignedTasks()->where('completed', false)->count();
+                    @endphp
+                    <p class="text-5xl font-bold text-gray-900">{{ str_pad($totalPending, 2, '0', STR_PAD_LEFT) }}</p>
+                </div>
 
-                        @forelse($recentTasks as $task)
-                            <div class="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-lg transition mb-3">
-                                <div class="flex-shrink-0 mt-1">
-                                    @if($task->completed)
-                                        <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-                                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                            </svg>
-                                        </div>
-                                    @else
-                                        <div class="w-6 h-6 rounded-full border-2 border-gray-300"></div>
-                                    @endif
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="text-sm font-medium text-gray-900 {{ $task->completed ? 'line-through' : '' }}">
-                                        {{ $task->title }}
-                                    </h3>
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        Vence: {{ $task->end_date->format('d/m/Y') }}
-                                    </p>
-                                </div>
-                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $task->completed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                    {{ $task->completed ? 'Completada' : 'Pendiente' }}
-                                </span>
-                            </div>
-                        @empty
-                            <div class="text-center py-8">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                                </svg>
-                                <p class="mt-2 text-sm text-gray-500">No tienes tareas asignadas</p>
-                            </div>
-                        @endforelse
-                    </div>
-
-                    @if(auth()->user()->is_manager)
-                    <!-- Manager: Team Overview -->
-                    <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl shadow-lg p-6 border border-indigo-200">
-                        <h2 class="text-xl font-bold text-gray-900 mb-4">Panel de Manager</h2>
-                        <p class="text-gray-600 mb-4">Como manager, puedes asignar tareas a tu equipo</p>
-                        <a href="{{ route('empleadores.tareas-asignadas') }}" class="inline-block bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition">
-                            Gestionar Equipo
-                        </a>
-                    </div>
+                {{-- Horas Registradas --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-6">
+                    @php
+                        $currentPeriodStart = now()->startOfMonth();
+                        $currentPeriodEnd = now();
+                        $registeredHours = auth()->user()->workHours()
+                            ->whereBetween('work_date', [$currentPeriodStart, $currentPeriodEnd])
+                            ->get();
+                        $totalHours = $registeredHours->sum('hours_worked');
+                        $hasPendingApproval = $registeredHours->where('approved', false)->count() > 0;
+                    @endphp
+                    <p class="text-sm text-gray-600 mb-2">
+                        Horas registradas 
+                        <span class="text-gray-500">({{ $currentPeriodStart->format('M d') }} - {{ $currentPeriodEnd->format('M d') }})</span>
+                    </p>
+                    <p class="text-5xl font-bold text-gray-900 mb-2">{{ (int)$totalHours }} horas</p>
+                    @if($hasPendingApproval)
+                        <p class="text-xs text-red-600">
+                            Tus horas siguen pendientes de aprobación
+                        </p>
                     @endif
                 </div>
 
-                <!-- Right Column: Quick Actions & Info -->
-                <div class="space-y-6">
-                    <!-- Quick Hour Registration -->
-                    <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">Registro Rápido</h3>
-                        <div class="space-y-3">
-                            <a href="{{ route('empleado.registrar-horas') }}" class="block w-full bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700 transition font-medium">
-                                Registrar Horas
-                            </a>
+                {{-- Tareas Completadas --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-6">
+                    <p class="text-sm text-gray-600 mb-2">Tareas completadas con éxito</p>
+                    @php
+                        $completedTasks = auth()->user()->assignedTasks()
+                            ->where('completed', true)
+                            ->whereYear('updated_at', now()->year)
+                            ->whereMonth('updated_at', now()->month)
+                            ->count();
+                    @endphp
+                    <div class="flex items-center gap-3">
+                        <p class="text-5xl font-bold text-gray-900">{{ str_pad($completedTasks, 2, '0', STR_PAD_LEFT) }}</p>
+                        <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            {{-- Main Content Grid --}}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {{-- Últimas Tareas (2/3 width) --}}
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-lg border border-gray-200" x-data="{ 
+                        selectedTask: null, 
+                        isModalOpen: false,
+                        openModal(task) {
+                            this.selectedTask = task;
+                            this.isModalOpen = true;
+                        },
+                        closeModal() {
+                            this.isModalOpen = false;
+                            this.selectedTask = null;
+                        }
+                    }">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-900">Últimas tareas</h2>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha límite</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignado</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Archivos</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comentarios</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @php
+                                        $latestTasks = auth()->user()->assignedTasks()
+                                            ->with(['visibleTo', 'comments.user', 'attachments', 'createdBy'])
+                                            ->latest()
+                                            ->take(5)
+                                            ->get();
+                                    @endphp
+                                    
+                                    @forelse($latestTasks as $task)
+                                        <tr class="hover:bg-gray-50 cursor-pointer transition-colors duration-150 ease-in-out" 
+                                            @click="openModal({{ json_encode($task) }})">
+                                            <td class="px-6 py-4 text-sm text-gray-900">{{ $task->title }}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{{ $task->end_date->format('d-m-Y') }}</td>
+                                            <td class="px-6 py-4">
+                                                @if($task->visibleTo)
+                                                @if($task->visibleTo)
+                                                    <x-user-avatar :user="$task->visibleTo" size="8" />
+                                                @endif
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                @if($task->attachments->count() > 0)
+                                                    <div class="flex items-center gap-1 text-gray-600">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                                        </svg>
+                                                        <span class="text-sm font-medium">{{ $task->attachments->count() }}</span>
+                                                    </div>
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                @if($task->completed)
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        Completada
+                                                    </span>
+                                                @else
+                                                    @php
+                                                        $isOverdue = $task->end_date->endOfDay()->isPast();
+                                                    @endphp
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $isOverdue ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800' }}">
+                                                        {{ $isOverdue ? 'Vencida' : 'Pendiente' }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="flex items-center gap-1 text-gray-600">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                                    </svg>
+                                                    <span class="text-sm">{{ $task->comments->count() }}</span>
+                                                </div>
+                                            </td>
+
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                                No tienes tareas asignadas
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {{-- Task Details Modal --}}
+                        <div x-show="isModalOpen" 
+                             class="fixed inset-0 z-50 overflow-y-auto" 
+                             style="display: none;"
+                             x-transition:enter="transition ease-out duration-300"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             x-transition:leave="transition ease-in duration-200"
+                             x-transition:leave-start="opacity-100"
+                             x-transition:leave-end="opacity-0">
                             
-                            <div x-data="{ showModal: false }">
-                                <button @click="showModal = true" class="block w-full bg-white border-2 border-blue-600 text-blue-600 text-center py-3 rounded-lg hover:bg-blue-50 transition font-medium">
-                                    Reportar Actividad
-                                </button>
-
-                                <!-- Modal -->
-                                <div x-show="showModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-                                    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                                        <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showModal = false"></div>
-
-                                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-                                        <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                                            <form action="{{ route('empleador.crear-tarea') }}" method="POST" class="p-6">
-                                                @csrf
-                                                <input type="hidden" name="employee_id" value="{{ auth()->id() }}">
-                                                <input type="hidden" name="visible_para" value="{{ auth()->id() }}">
-                                                
-                                                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
-                                                    Reportar Nueva Actividad
-                                                </h3>
-
-                                                <div class="space-y-4">
-                                                    <div>
-                                                        <label for="title" class="block text-sm font-medium text-gray-700">Título</label>
-                                                        <input type="text" name="title" id="title" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                                                    </div>
-
-                                                    <div>
-                                                        <label for="description" class="block text-sm font-medium text-gray-700">Descripción</label>
-                                                        <textarea name="description" id="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
-                                                    </div>
-
-                                                    <div class="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label for="start_date" class="block text-sm font-medium text-gray-700">Fecha Inicio</label>
-                                                            <input type="date" name="start_date" id="start_date" value="{{ date('Y-m-d') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                                                        </div>
-                                                        <div>
-                                                            <label for="end_date" class="block text-sm font-medium text-gray-700">Fecha Fin</label>
-                                                            <input type="date" name="end_date" id="end_date" value="{{ date('Y-m-d') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                                                        </div>
-                                                    </div>
-
-                                                    <div>
-                                                        <label for="priority" class="block text-sm font-medium text-gray-700">Prioridad</label>
-                                                        <select name="priority" id="priority" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                                                            <option value="low">Baja</option>
-                                                            <option value="medium" selected>Media</option>
-                                                            <option value="high">Alta</option>
-                                                            <option value="urgent">Urgente</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                                                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm">
-                                                        Guardar
-                                                    </button>
-                                                    <button type="button" @click="showModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm">
-                                                        Cancelar
-                                                    </button>
-                                                </div>
-                                            </form>
+                            <!-- Backdrop -->
+                            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal()"></div>
+            
+                            <!-- Modal Panel -->
+                            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col max-h-[85vh]"
+                                     @click.stop>
+                                    
+                                    <!-- Header -->
+                                    <div class="bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-start flex-shrink-0 border-b border-gray-200">
+                                        <div>
+                                            <h3 class="text-lg font-semibold leading-6 text-gray-900" x-text="selectedTask?.title"></h3>
+                                            <p class="mt-1 text-sm text-gray-500" x-text="'Creada por: ' + (selectedTask?.created_by?.name || 'Sistema')"></p>
                                         </div>
+                                        <button type="button" @click="closeModal()" class="text-gray-400 hover:text-gray-500">
+                                            <span class="sr-only">Cerrar</span>
+                                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+            
+                                    <!-- Body -->
+                                    <div class="px-4 py-5 sm:p-6 overflow-y-auto flex-1">
+                                        <div class="space-y-4">
+                                            
+                                            <!-- Description -->
+                                            <div>
+                                                <h4 class="text-sm font-medium text-gray-900">Descripción</h4>
+                                                <p class="mt-1 text-sm text-gray-500 whitespace-pre-line" x-text="selectedTask?.description || 'Sin descripción'"></p>
+                                            </div>
+            
+                                            <!-- Stats Grid -->
+                                            <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md">
+                                                <div>
+                                                    <span class="text-xs font-medium text-gray-500 uppercase">Prioridad</span>
+                                                    <p class="text-sm font-semibold capitalize" 
+                                                       :class="{
+                                                            'text-red-600': selectedTask?.priority === 'high' || selectedTask?.priority === 'urgent',
+                                                            'text-yellow-600': selectedTask?.priority === 'medium',
+                                                            'text-blue-600': selectedTask?.priority === 'low'
+                                                       }"
+                                                       x-text="selectedTask?.priority"></p>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs font-medium text-gray-500 uppercase">Fecha Límite</span>
+                                                    <p class="text-sm font-semibold text-gray-900" 
+                                                       x-text="new Date(selectedTask?.end_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })"></p>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs font-medium text-gray-500 uppercase">Estado</span>
+                                                    <template x-if="selectedTask?.completed">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            Completada
+                                                        </span>
+                                                    </template>
+                                                    <template x-if="!selectedTask?.completed">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                              :class="new Date(selectedTask?.end_date) < new Date() ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'"
+                                                              x-text="new Date(selectedTask?.end_date) < new Date() ? 'Vencida' : 'Pendiente'">
+                                                        </span>
+                                                    </template>
+                                                </div>
+                                            </div>
+            
+                                            <!-- Attachments -->
+                                            <div>
+                                                <h4 class="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+                                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                                    </svg>
+                                                    Archivos adjuntos
+                                                </h4>
+                                                
+                                                <template x-if="selectedTask?.attachments && selectedTask.attachments.length > 0">
+                                                    <ul class="divide-y divide-gray-200 border border-gray-200 rounded-md">
+                                                        <template x-for="attachment in selectedTask.attachments" :key="attachment.id">
+                                                            <li class="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                                                                <div class="w-0 flex-1 flex items-center">
+                                                                    <!-- Icon based on mime/extension (simplified generic icon) -->
+                                                                    <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fill-rule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clip-rule="evenodd" />
+                                                                    </svg>
+                                                                    <span class="ml-2 flex-1 w-0 truncate" x-text="attachment.filename"></span>
+                                                                </div>
+                                                                <div class="ml-4 flex-shrink-0">
+                                                                    <a :href="'/tasks/attachments/' + attachment.id + '/download'" 
+                                                                       class="font-medium text-blue-600 hover:text-blue-500"
+                                                                       @click.stop>
+                                                                        Descargar
+                                                                    </a>
+                                                                </div>
+                                                            </li>
+                                                        </template>
+                                                    </ul>
+                                                </template>
+                                                <template x-if="!selectedTask?.attachments || selectedTask.attachments.length === 0">
+                                                    <p class="text-sm text-gray-500 italic">No hay archivos adjuntos.</p>
+                                                </template>
+                                            </div>
+
+                                            <!-- Comments -->
+                                            <div>
+                                                <h4 class="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+                                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                                    </svg>
+                                                    Comentarios
+                                                </h4>
+                                                
+                                                <template x-if="selectedTask?.comments && selectedTask.comments.length > 0">
+                                                    <ul class="divide-y divide-gray-200 border border-gray-200 rounded-md bg-gray-50">
+                                                        <template x-for="comment in selectedTask.comments" :key="comment.id">
+                                                            <li class="px-4 py-3">
+                                                                <div class="flex items-center justify-between">
+                                                                    <span class="text-xs font-semibold text-gray-900" x-text="comment.user?.name || 'Usuario'"></span>
+                                                                    <span class="text-xs text-gray-500" x-text="new Date(comment.created_at).toLocaleDateString() + ' ' + new Date(comment.created_at).toLocaleTimeString().slice(0,5)"></span>
+                                                                </div>
+                                                                <p class="mt-1 text-sm text-gray-600" x-text="comment.content"></p>
+                                                            </li>
+                                                        </template>
+                                                    </ul>
+                                                </template>
+                                                <template x-if="!selectedTask?.comments || selectedTask.comments.length === 0">
+                                                    <p class="text-sm text-gray-500 italic">No hay comentarios.</p>
+                                                </template>
+                                            </div>
+            
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Footer -->
+                                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse flex-shrink-0 border-t border-gray-200">
+                                        <button type="button" 
+                                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                                @click="closeModal()">
+                                            Cerrar
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-
-                    <!-- Quick Links -->
-                    <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">Accesos Rápidos</h3>
-                        <div class="space-y-3">
-                            <a href="{{ route('empleados.tasks.index') }}" class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition">
-                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">Mis Tareas</p>
-                                    <p class="text-xs text-gray-500">Ver todas</p>
-                                </div>
-                            </a>
-
-                            <a href="{{ route('chat') }}" class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition">
-                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">Mensajes</p>
-                                    <p class="text-xs text-gray-500">Chat</p>
-                                </div>
-                            </a>
-
-                            <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition">
-                                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">Mi Perfil</p>
-                                    <p class="text-xs text-gray-500">Configuración</p>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Help Card -->
-                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl shadow-lg p-6 border border-amber-200">
-                        <h3 class="text-lg font-bold text-gray-900 mb-2">¿Necesitas ayuda?</h3>
-                        <p class="text-sm text-gray-600 mb-4">Revisa nuestros recursos o contacta a soporte</p>
-                        <a href="#" class="text-sm text-amber-700 font-medium hover:text-amber-800">
-                            Ver recursos →
-                        </a>
                     </div>
                 </div>
+
+                {{-- Últimos Comentarios (1/3 width) --}}
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-lg border border-gray-200">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-900">Últimos comentarios</h2>
+                        </div>
+                        
+                        <div class="p-4 space-y-3">
+                            @php
+                                // Get latest comments from tasks the user is involved in
+                                $userTaskIds = auth()->user()->assignedTasks()->pluck('id');
+                                $latestComments = \App\Models\Comment::whereIn('task_id', $userTaskIds)
+                                    ->with(['user', 'task'])
+                                    ->latest()
+                                    ->take(3)
+                                    ->get();
+                            @endphp
+                            
+                            @forelse($latestComments as $comment)
+                                <div class="bg-gray-50 rounded-lg p-3">
+                                    <p class="text-sm text-gray-800 mb-2">{{ $comment->content }}</p>
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="text-gray-500">{{ $comment->created_at->format('Y.m.d') }}</span>
+                                        <div class="flex items-center gap-1 text-gray-600">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                            </svg>
+                                            <span>{{ $comment->user->tipo_usuario === 'empleador' ? 'Cliente' : 'Equipo' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-center py-8 text-gray-500 text-sm">
+                                    No hay comentarios recientes
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
         </div>
     </div>
 
-    <!-- Footer -->
+    {{-- Footer --}}
     <x-layout.footer />
-
 </x-app-layout>

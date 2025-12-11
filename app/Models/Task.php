@@ -55,4 +55,9 @@ class Task extends Model
     {
         return $this->readBy()->where('user_id', $userId)->exists();
     }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(TaskAttachment::class);
+    }
 }
