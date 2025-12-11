@@ -27,16 +27,16 @@
                     <a href="{{ route('empleador.dashboard') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Monitoreo de horas
                     </a>
-                    <a href="{{ route('empleador.tareas.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.tareas.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
-                        Tareas
-                    </a>
-                    <a href="{{ route('reportes.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('reportes.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('reportes.index') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('reportes.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Reportes
                     </a>
 
                     <a href="{{ route('empleadores.tareas') }}" class="inline-flex items-center px-6 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleadores.tareas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                        Tareas
                     </a>
+
+
+
 
 
                 @elseif(auth()->user()->is_manager)
@@ -181,9 +181,11 @@
                 <x-responsive-nav-link :href="route('empleador.dashboard')" :active="request()->routeIs('empleador.dashboard')">
                     Monitoreo de horas
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('empleador.tareas.index')" :active="request()->routeIs('empleador.tareas.*')">
+
+                <x-responsive-nav-link :href="route('empleadores.tareas')" :active="request()->routeIs('empleadores.tareas')">
                     Tareas
-                </x-responsive-nav-link>
+                 </x-responsive-nav-link>
+                 
             @else
                 <x-responsive-nav-link :href="route('empleado.registrar-horas')" :active="request()->routeIs('empleado.registrar-horas')">
                     {{ auth()->user()->is_manager ? 'Mis horas' : 'Registrar horas' }}
@@ -205,9 +207,7 @@
             <x-responsive-nav-link :href="route('chat')" :active="request()->routeIs('chatify')">
                 {{ __('Chat') }}
             </x-responsive-nav-link>
-
-
-        </div>
+        </div>  
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">

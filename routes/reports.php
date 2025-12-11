@@ -10,6 +10,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\EnsureUserIsEmployer;
+use App\Http\Controllers\WorkHoursController;
 
 // Professional Reports
 Route::middleware(['auth', EnsureUserIsEmployer::class])->prefix('reportes')->name('reportes.')->group(function () {

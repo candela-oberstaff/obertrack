@@ -20,11 +20,15 @@
                 :totalApprovedHours="$totalApprovedHours" 
             />
 
+
+                                 <!--sección de tarea comentada-->
+            {{-- 
             <!-- Task Creation and Filtering -->
             <x-tasks.create-task-form :empleados="$empleados" />
 
             <!-- Task List -->
             <x-tasks.task-list :tareasEmpleador="$tareasEmpleador" /> 
+            --}}
 
         </div>
     </div>
@@ -38,7 +42,8 @@
             approveWeekWithComment: "{{ route('work-hours.approve-week-with-comment') }}",
             downloadMonthlyReport: "{{ route('work-hours.download-monthly-report', ['month' => '__MONTH__']) }}"
         };
-    </script>
+    </script> 
+
     @vite([
         'resources/js/task-management.js'
     ])
