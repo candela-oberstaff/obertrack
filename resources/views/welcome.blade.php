@@ -70,7 +70,7 @@
             <h1 class="mb-6 text-4xl sm:text-5xl md:text-6xl font-bold uppercase leading-tight lg:text-7xl text-blue-600">
                 OBERTRACK
             </h1>
-            <p class="mb-8 text-lg sm:text-xl lg:text-2xl text-black">
+            <p class="mb-8 text-lg sm:text-xl lg:text-2xl text-[#09122C]">
                 Descubre un mundo de posibilidades y conecta con tu equipo como nunca antes.
             </p>
             <a href="/dashboard" class="inline-block rounded-full bg-[#09122C] px-12 py-2 text-lg font-semibold text-white transition-all duration-300 hover:bg-[#09122C] hover:scale-105">
@@ -80,27 +80,27 @@
             <!-- Grid de tres elementos -->
             <div class="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
                 <div class="flex flex-col items-center border-2 border-blue-500 rounded-lg p-10">
-                    <i class="bi bi-clock text-4xl mb-4 text-blue-500"></i>
-                    <h3 class="text-xl font-bold mb-2 text-black">Registra Horas</h3>
-                    <p class="text-gray-800 text-center">Lleva un control preciso del tiempo dedicado a cada tarea y proyecto.</p>
+                    <i class="bi bi-calendar4-event text-6xl mb-4 text-[#09122C]"></i>
+                    <h3 class="text-xl font-bold mb-2 text-[#09122C]">Registra Horas</h3>
+                    <p class="text-[#09122C] text-center">Lleva un control preciso del tiempo dedicado a cada tarea y proyecto.</p>
                 </div>
                 <div class="flex flex-col items-center border-2 border-blue-500 rounded-lg p-10">
-                    <i class="bi bi-file-earmark-text text-4xl mb-4 text-blue-500"></i>
-                    <h3 class="text-xl font-bold mb-2 text-black">Crea Reportes</h3>
-                    <p class="text-gray-800 text-center">Genera informes detallados para analizar la productividad y el progreso.</p>
+                    <i class="bi bi bi-file-earmark-text text-6xl mb-4 text-[#09122C] "></i>
+                    <h3 class="text-xl font-bold mb-2 text-[#09122C]">Crea Reportes</h3>
+                    <p class="text-[#09122C] text-center">Genera informes detallados para analizar la productividad y el progreso.</p>
                 </div>
                 <div class="flex flex-col items-center border-2 border-blue-500 rounded-lg p-10">
-                    <i class="bi bi-people text-4xl mb-4 text-blue-500"></i>
-                    <h3 class="text-xl font-bold mb-2 text-black">Gestiona Profesionales</h3>
-                    <p class="text-gray-800 text-center">Administra eficientemente tu equipo y optimiza la asignación de recursos.</p>
+                    <i class="bi bi-person-check text-6xl mb-4 text-[#09122C] "></i>
+                    <h3 class="text-xl font-bold mb-2 text-[#09122C]">Gestiona Profesionales</h3>
+                    <p class="text-[#09122C] text-center">Administra eficientemente tu equipo y optimiza la asignación de recursos.</p>
                 </div>
             </div>
 
             <!-- Nuevo elemento debajo del grid -->
             <div class="mt-8 flex flex-col items-center border-2 border-blue-500 rounded-lg p-10 max-w-6xl mx-auto">
-                <i class="bi bi-gear text-4xl mb-4 text-blue-500"></i>
-                <h3 class="text-xl font-bold mb-2 text-black">Centraliza tus procesos y toma decisiones con datos reales, en tiempo real</h3>
-                <p class="text-gray-800 text-center">Completa la función de reportes y gestión, apelando al valor estratégico.</p>
+                <i class="bi bi-gear text-6xl mb-4 text-[#09122C]"></i>
+                <h3 class="text-xl font-bold mb-2 text-[#09122C]">Centraliza tus procesos y toma decisiones con datos reales, en tiempo real</h3>
+                <p class="text-[#09122C] text-center">Completa la función de reportes y gestión, apelando al valor estratégico.</p>
             </div>
         </div>
     </main>

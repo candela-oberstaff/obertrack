@@ -98,3 +98,13 @@ Route::middleware(['auth'])->get('/empleadores/tareas-asignadas', [DashboardCont
 // Legacy route - kept for backward compatibility
 // GET /grafico-tareas - View tasks chart
 Route::middleware(['auth'])->get('/grafico-tareas', [DashboardController::class, 'verTareasEmpleados']);
+  
+
+
+
+
+
+
+//Nueva ruta para ocpión de tareas empleador
+Route::middleware(['auth'])->get('/empleadores/tareas', [DashboardController::class, 'verTareas'])
+    ->name('empleadores.tareas');
