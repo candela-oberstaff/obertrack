@@ -53,9 +53,22 @@ class ProfileController extends Controller
             $empleados = $user->empleados;
         }
 
+        // Fetch avatars from public/avatars
+        $avatars = [];
+        $avatarPath = public_path('avatars');
+        if (file_exists($avatarPath)) {
+            $files = scandir($avatarPath);
+            foreach ($files as $file) {
+                if (in_array(pathinfo($file, PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png', 'webp', 'svg'])) {
+                    $avatars[] = $file;
+                }
+            }
+        }
+
         return view('profile.edit', [
             'user' => $user,
             'empleados' => $empleados,
+            'avatars' => $avatars,
         ]);
     }
 

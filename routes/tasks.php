@@ -36,6 +36,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tasks/{task}/toggle-completion', [TaskController::class, 'toggleCompletion'])
         ->name('tasks.toggle-completion');
     
+    // File Attachments
+    // GET /tasks/attachments/{attachment}/download - Download a task attachment
+    Route::get('/tasks/attachments/{attachment}/download', [TaskController::class, 'downloadAttachment'])
+        ->name('tasks.attachments.download');
+    
     // Comments Management
     // GET /tasks/{taskId}/comments - Get all comments for a task
     Route::get('/tasks/{taskId}/comments', [CommentController::class, 'index'])

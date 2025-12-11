@@ -35,10 +35,27 @@ class DashboardController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'priority' => 'required|in:low,medium,high,urgent',
-            'employee_id' => 'required|exists:users,id'
+            'employee_id' => 'required|exists:users,id',
+            'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,txt,jpg,jpeg,png',
         ]);
 
-        $this->taskManagementService->createTask($request->all());
+        $task = $this->taskManagementService->createTask($request->all());
+
+        // Handle file uploads
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $storedFilename = $file->store('task_attachments', 'local');
+                
+                \App\Models\TaskAttachment::create([
+                    'task_id' => $task->id,
+                    'uploaded_by' => auth()->id(),
+                    'filename' => $file->getClientOriginalName(),
+                    'stored_filename' => $storedFilename,
+                    'mime_type' => $file->getMimeType(),
+                    'file_size' => $file->getSize(),
+                ]);
+            }
+        }
 
         // Clear dashboard cache so new task appears immediately
         $user = auth()->user();

@@ -168,4 +168,24 @@ class TaskController extends Controller
         $this->taskManagementService->updateTask($task, $request->validated());
         return redirect()->route('empleador.tareas.index')->with('success', 'Tarea actualizada con éxito');
     }
+
+    public function downloadAttachment(\App\Models\TaskAttachment $attachment)
+    {
+        $task = $attachment->task;
+        
+        // Check if user has access to this task
+        $user = auth()->user();
+        $canAccess = $user->id === $task->visible_para || 
+                     $user->id === $task->created_by ||
+                     $user->is_superadmin;
+        
+        if (!$canAccess) {
+            abort(403, 'No tienes permiso para descargar este archivo.');
+        }
+
+        return \Storage::disk('local')->download(
+            $attachment->stored_filename,
+            $attachment->filename
+        );
+    }
 }

@@ -84,6 +84,29 @@
                                         <x-input-error class="mt-2" :messages="$errors->get('name')" />
                                     </div>
 
+                                    <!-- Avatar Selection -->
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-2">Selecciona un Avatar</label>
+                                        <div class="grid grid-cols-4 gap-4 max-h-60 overflow-y-auto p-2 border rounded-md">
+                                            @foreach($avatars as $avatar)
+                                                <div class="relative">
+                                                    <input type="radio" name="avatar" id="avatar_{{ $loop->index }}" value="{{ $avatar }}" class="peer hidden" {{ old('avatar', $user->avatar) == $avatar ? 'checked' : '' }}>
+                                                    <label for="avatar_{{ $loop->index }}" class="block cursor-pointer rounded-full border-4 border-transparent peer-checked:border-blue-500 hover:opacity-80 transition-all">
+                                                        <img src="{{ asset('avatars/' . $avatar) }}" alt="Avatar" class="w-full h-auto rounded-full">
+                                                    </label>
+                                                </div>
+                                            @endforeach
+                                            
+                                            <!-- Option to remove avatar -->
+                                            <div class="relative flex items-center justify-center">
+                                                <input type="radio" name="avatar" id="avatar_none" value="" class="peer hidden" {{ empty(old('avatar', $user->avatar)) ? 'checked' : '' }}>
+                                                <label for="avatar_none" class="block cursor-pointer rounded-full border-4 border-transparent peer-checked:border-blue-500 hover:opacity-80 transition-all w-full aspect-square flex items-center justify-center bg-gray-200">
+                                                    <span class="text-xs text-center font-bold text-gray-500">Sin Avatar (Iniciales)</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div>
                                         <label for="company_dummy" class="block text-sm font-bold text-gray-700 mb-1">Empresa</label>
                                         <input type="text" id="company_dummy" value="{{ $user->email }}" readonly class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm text-gray-500 sm:text-sm py-3 px-4 cursor-not-allowed">

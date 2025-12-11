@@ -19,7 +19,7 @@
 
     <!-- Create Task Form -->
     <div x-show="activeTab === 'create'" class="p-6">
-        <form action="{{ route('empleador.crear-tarea') }}" method="POST" onsubmit="handleFormSubmit(this)">
+        <form action="{{ route('empleador.crear-tarea') }}" method="POST" enctype="multipart/form-data" onsubmit="handleFormSubmit(this)">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="col-span-2">
@@ -60,6 +60,30 @@
                 <div>
                     <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Fin</label>
                     <input type="date" name="end_date" id="end_date" value="{{ date('Y-m-d') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+
+                <div class="col-span-2">
+                    <label for="attachments" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Archivos Adjuntos (opcional)
+                    </label>
+                    <input 
+                        type="file" 
+                        name="attachments[]" 
+                        id="attachments"
+                        multiple 
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
+                        class="mt-1 block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-md file:border-0
+                            file:text-sm file:font-medium
+                            file:bg-blue-50 file:text-blue-700
+                            hover:file:bg-blue-100
+                            dark:file:bg-blue-900 dark:file:text-blue-300
+                            dark:text-gray-300"
+                    >
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Puedes subir múltiples archivos (PDF, Word, Excel, imágenes). Máximo 10MB por archivo.
+                    </p>
                 </div>
             </div>
 
