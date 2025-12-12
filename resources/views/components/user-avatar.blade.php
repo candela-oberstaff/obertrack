@@ -13,7 +13,7 @@
          alt="{{ $user->name }}" 
          class="{{ $sizeClass }} rounded-full object-cover shadow-sm {{ $classes }}">
 @else
-    <div class="{{ $sizeClass }} rounded-full bg-blue-500 flex items-center justify-center text-white font-bold {{ $fontSize }} shadow-md {{ $classes }}">
+    <div class="{{ $sizeClass }} rounded-full bg-primary flex items-center justify-center text-white font-bold {{ $fontSize }} shadow-md {{ $classes }}">
         {{ substr($user->name, 0, 1) }}
     </div>
 @endif

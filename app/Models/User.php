@@ -13,6 +13,29 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    protected static function booted()
+    {
+        static::addGlobalScope('chat_filter', function ($builder) {
+            // Apply only for Chatify routes to avoid breaking other app parts
+            if (request()->is('chatify') || request()->is('chatify/*')) {
+                if (!auth()->check()) return;
+                
+                $user = auth()->user();
+                
+                if ($user->tipo_usuario === 'empleador') {
+                    // Employers see their employees
+                    $builder->where('empleador_id', $user->id);
+                } elseif ($user->tipo_usuario === 'empleado') { 
+                    // Employees see their employer
+                    // Also maybe see other employees of same employer? 
+                    // User request said: "empresa ... a profesionales y viceversa". 
+                    // Implies mainly vertical communication. Let's stick to Employer <-> Employee for now.
+                    $builder->where('id', $user->empleador_id);
+                }
+            }
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -125,5 +148,31 @@ class User extends Authenticatable
                        ->where('id', '!=', $this->id)
                        ->get();
         }
+    }
+
+
+    // Chat Relationships
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'from_user_id');
+    }
+
+    public function receivedMessages()
+    {
+        return $this->hasMany(Message::class, 'to_user_id');
+    }
+
+    public function getChatContacts()
+    {
+        if ($this->tipo_usuario === 'empleador') {
+            return $this->empleados;
+        } else {
+            return User::where('id', $this->empleador_id)->get();
+        }
+    }
+
+    public function activeStatus()
+    {
+        return \Illuminate\Support\Facades\Cache::has('user-is-online-' . $this->id);
     }
 }

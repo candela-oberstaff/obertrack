@@ -31,7 +31,7 @@
         <div class="flex space-x-2">
             <button onclick="toggleTaskCompletion({{ $task->id }})" 
                     id="toggle-button-{{ $task->id }}" 
-                    class="flex-1 px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    class="flex-1 px-3 py-1 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
                 {{ $task->completed ? 'Marcar como Pendiente' : 'Marcar como Completada' }}
             </button>
             <button onclick="toggleComments({{ $task->id }})" 

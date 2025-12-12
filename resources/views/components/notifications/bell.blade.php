@@ -32,7 +32,7 @@
         style="display: none;"
     >
         <!-- Header -->
-        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3 flex items-center justify-between">
+        <div class="bg-gradient-to-r from-primary to-indigo-600 px-4 py-3 flex items-center justify-between">
             <h3 class="text-white font-semibold text-sm">Tareas Nuevas</h3>
             @if($unreadCount > 0)
                 <button 
@@ -50,7 +50,7 @@
                 <div class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 transition-colors">
                     <div class="flex items-start">
                         <div class="flex-shrink-0">
-                            <div class="w-2 h-2 bg-blue-500 rounded-full mt-2 animate-pulse"></div>
+                            <div class="w-2 h-2 bg-primary rounded-full mt-2 animate-pulse"></div>
                         </div>
                         <div class="ml-3 flex-1">
                             <p class="text-sm font-medium text-gray-900 dark:text-white">
@@ -88,7 +88,7 @@
         <!-- Footer -->
         @if(count($recentTasks) > 0)
             <div class="bg-gray-50 dark:bg-gray-700 px-4 py-2">
-                <a href="{{ route('empleados.tasks.index') }}" class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
+                <a href="{{ route('empleados.tasks.index') }}" class="text-sm text-primary dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
                     Ver todas las tareas →
                 </a>
             </div>

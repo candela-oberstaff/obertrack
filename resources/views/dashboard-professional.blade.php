@@ -5,7 +5,7 @@
             {{-- Header Section --}}
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">
-                    ¡Hola, <span class="text-blue-600">{{ auth()->user()->name }}</span>!
+                    ¡Hola, <span class="text-primary">{{ auth()->user()->name }}</span>!
                 </h1>
                 <p class="text-gray-600 mt-1">
                     Aquí está tu resumen de actividades
@@ -221,7 +221,7 @@
                                                        :class="{
                                                             'text-red-600': selectedTask?.priority === 'high' || selectedTask?.priority === 'urgent',
                                                             'text-yellow-600': selectedTask?.priority === 'medium',
-                                                            'text-blue-600': selectedTask?.priority === 'low'
+                                                            'text-primary': selectedTask?.priority === 'low'
                                                        }"
                                                        x-text="selectedTask?.priority"></p>
                                                 </div>
@@ -268,7 +268,7 @@
                                                                 </div>
                                                                 <div class="ml-4 flex-shrink-0">
                                                                     <a :href="'/tasks/attachments/' + attachment.id + '/download'" 
-                                                                       class="font-medium text-blue-600 hover:text-blue-500"
+                                                                       class="font-medium text-primary hover:text-primary"
                                                                        @click.stop>
                                                                         Descargar
                                                                     </a>

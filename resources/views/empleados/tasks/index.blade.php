@@ -33,7 +33,7 @@
                                                 {{ $task->completed ? 'Completada' : 'En progreso' }}
                                             </span>
                                         </div>
-                                        <a href="{{ route('empleados.tasks.show', $task) }}" class="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300">
+                                        <a href="{{ route('empleados.tasks.show', $task) }}" class="block w-full text-center bg-primary hover:bg-primary text-white font-bold py-2 px-4 rounded transition duration-300">
                                             Ver detalles
                                         </a>
                                     </div>

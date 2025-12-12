@@ -5,13 +5,13 @@
     <div class="flex border-b border-gray-200 dark:border-gray-700">
         <button 
             @click="activeTab = 'create'" 
-            :class="{'text-blue-600 bg-white dark:bg-gray-800 dark:text-blue-400 border-b-2 border-blue-500': activeTab === 'create', 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200': activeTab !== 'create'}"
+            :class="{'text-primary bg-white dark:bg-gray-800 dark:text-blue-400 border-b-2 border-primary': activeTab === 'create', 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200': activeTab !== 'create'}"
             class="flex-1 py-3 px-4 text-center font-medium transition-colors duration-200">
             Crear Nueva Tarea
         </button>
         <button 
             @click="activeTab = 'filter'" 
-            :class="{'text-blue-600 bg-white dark:bg-gray-800 dark:text-blue-400 border-b-2 border-blue-500': activeTab === 'filter', 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200': activeTab !== 'filter'}"
+            :class="{'text-primary bg-white dark:bg-gray-800 dark:text-blue-400 border-b-2 border-primary': activeTab === 'filter', 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200': activeTab !== 'filter'}"
             class="flex-1 py-3 px-4 text-center font-medium transition-colors duration-200">
             Filtrar Tareas
         </button>
@@ -24,17 +24,17 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="col-span-2">
                     <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Título de la Tarea</label>
-                    <input type="text" name="title" id="title" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <input type="text" name="title" id="title" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 </div>
 
                 <div class="col-span-2">
                     <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</label>
-                    <textarea name="description" id="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                    <textarea name="description" id="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
                 </div>
 
                 <div>
                     <label for="employee_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Asignar a</label>
-                    <select name="employee_id" id="employee_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <select name="employee_id" id="employee_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         <option value="">Seleccionar profesional...</option>
                         @foreach($empleados as $empleado)
                             <option value="{{ $empleado->id }}">{{ $empleado->name }}</option>
@@ -44,7 +44,7 @@
 
                 <div>
                     <label for="priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Prioridad</label>
-                    <select name="priority" id="priority" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <select name="priority" id="priority" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         <option value="low">Baja</option>
                         <option value="medium" selected>Media</option>
                         <option value="high">Alta</option>
@@ -54,12 +54,12 @@
 
                 <div>
                     <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Inicio</label>
-                    <input type="date" name="start_date" id="start_date" value="{{ date('Y-m-d') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <input type="date" name="start_date" id="start_date" value="{{ date('Y-m-d') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 </div>
 
                 <div>
                     <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Fin</label>
-                    <input type="date" name="end_date" id="end_date" value="{{ date('Y-m-d') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <input type="date" name="end_date" id="end_date" value="{{ date('Y-m-d') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 </div>
 
                 <div class="col-span-2">
@@ -76,7 +76,7 @@
                             file:mr-4 file:py-2 file:px-4
                             file:rounded-md file:border-0
                             file:text-sm file:font-medium
-                            file:bg-blue-50 file:text-blue-700
+                            file:bg-blue-50 file:text-primary-hover
                             hover:file:bg-blue-100
                             dark:file:bg-blue-900 dark:file:text-blue-300
                             dark:text-gray-300"
@@ -88,7 +88,7 @@
             </div>
 
             <div class="mt-6 flex justify-end">
-                <button type="submit" id="submitBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm transition duration-150 ease-in-out flex items-center">
+                <button type="submit" id="submitBtn" class="px-6 py-2 bg-primary hover:bg-primary-hover text-white font-medium rounded-md shadow-sm transition duration-150 ease-in-out flex items-center">
                     <span id="btnText">Crear Tarea</span>
                     <span id="loadingSpinner" class="hidden ml-2">
                         <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -107,7 +107,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>
-                    <select name="status" id="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <select name="status" id="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         <option value="all">Todas las tareas</option>
                         <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completadas</option>
                         <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pendientes</option>
@@ -116,7 +116,7 @@
                 <div class="md:col-span-2">
                     <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Buscar</label>
                     <div class="flex gap-2">
-                        <input type="text" id="search" name="search" placeholder="Buscar por título..." value="{{ request('search') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <input type="text" id="search" name="search" placeholder="Buscar por título..." value="{{ request('search') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         <button type="submit" class="mt-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md shadow-sm transition duration-150 ease-in-out">
                             Buscar
                         </button>

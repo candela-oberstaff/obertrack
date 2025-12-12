@@ -53,10 +53,10 @@ Route::middleware(['auth'])->get('/dashboard', function () {
     return view('dashboard-professional');
 })->name('dashboard');
 
-// Mock Chat Route
-Route::middleware(['auth'])->get('/chat', function () {
-    return view('chat.mock');
-})->name('chat');
+// Chat Route
+use App\Livewire\Chat;
+Route::middleware(['auth'])->get('/chat', Chat::class)->name('chat');
+
 
 // Contacto Route
 Route::view('/contacto', 'contacto')->name('contacto');

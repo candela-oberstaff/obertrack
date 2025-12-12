@@ -1,6 +1,6 @@
 @props(['tareasEmpleador'])
 
-<div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 md:p-8 rounded-t-xl shadow-lg p-12">
+<div class="bg-gradient-to-r from-primary to-indigo-600 p-6 md:p-8 rounded-t-xl shadow-lg p-12">
     <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">Asignaciones de mi equipo</h2>
     <p class="text-blue-100 text-sm md:text-base">Gestiona las tareas de tu equipo de forma eficiente</p>
 </div>
@@ -15,7 +15,7 @@
             </div>
         @else
             @foreach($tareasEmpleador as $tarea)
-                <div id="task-{{ $tarea->id }}" class="task-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition duration-300 ease-in-out hover:shadow-xl border-l-4 border-blue-500">
+                <div id="task-{{ $tarea->id }}" class="task-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition duration-300 ease-in-out hover:shadow-xl border-l-4 border-primary">
                     <div class="flex items-center justify-between p-4 cursor-pointer" onclick="toggleTaskDetails({{ $tarea->id }})">
                         <div class="flex-grow">
                             <h3 class="text-lg font-semibold text-gray-800 dark:text-white">{{ $tarea->title }}</h3>
@@ -52,7 +52,7 @@
                                 <i class="fas {{ $tarea->completed ? 'fa-undo' : 'fa-check' }} mr-1"></i>
                                 {{ $tarea->completed ? 'Marcar En Progreso' : 'Marcar Completada' }}
                             </button>
-                            <button onclick="showEmployerEditFields({{ $tarea->id }})" class="px-3 py-1.5 rounded text-sm font-medium transition duration-300 ease-in-out bg-blue-500 hover:bg-blue-600 text-white">
+                            <button onclick="showEmployerEditFields({{ $tarea->id }})" class="px-3 py-1.5 rounded text-sm font-medium transition duration-300 ease-in-out bg-primary hover:bg-primary text-white">
                                 <i class="fas fa-edit mr-1"></i>Editar
                             </button>
                             <form action="{{ route('tareas.destroy', $tarea->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de querer eliminar esta tarea?');" class="inline-block">
@@ -65,7 +65,7 @@
                             <button onclick="toggleEmployerComments({{ $tarea->id }})" class="px-3 py-1.5 rounded text-sm font-medium transition duration-300 ease-in-out bg-gray-300 hover:bg-gray-400 text-gray-800">
                                 <i class="fas fa-comments mr-1"></i>
                                 <span id="commentButtonText-{{ $tarea->id }}">Comentarios</span>
-                                <span id="commentCount-{{ $tarea->id }}" class="ml-1 bg-white text-blue-500 px-1.5 py-0.5 rounded-full text-xs font-bold">{{ $tarea->comments->count() }}</span>
+                                <span id="commentCount-{{ $tarea->id }}" class="ml-1 bg-white text-primary px-1.5 py-0.5 rounded-full text-xs font-bold">{{ $tarea->comments->count() }}</span>
                             </button>
                         </div>
 
@@ -120,7 +120,7 @@
                                             <p id="commentContent-{{ $comment->id }}" class="mt-1">{{ $comment->content }}</p>
                                             @if($comment->user_id == auth()->id())
                                                 <div class="mt-2 flex space-x-2">
-                                                    <button onclick="editEmployerComment({{ $comment->id }})" class="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-xs transition duration-150 ease-in-out">
+                                                    <button onclick="editEmployerComment({{ $comment->id }})" class="text-primary hover:text-primary-hover dark:text-blue-400 dark:hover:text-blue-300 text-xs transition duration-150 ease-in-out">
                                                         <i class="fas fa-edit"></i> Editar
                                                     </button>
                                                     <button onclick="deleteEmployerComment({{ $comment->id }}, {{ $tarea->id }})" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs transition duration-150 ease-in-out">
@@ -135,8 +135,8 @@
                             <form onsubmit="addEmployerTaskComment(event, {{ $tarea->id }})" class="mt-4">
                                 @csrf
                                 <div class="flex items-start space-x-4">
-                                    <textarea id="newComment-{{ $tarea->id }}" rows="3" class="flex-grow p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none dark:bg-gray-600 dark:border-gray-500 dark:text-white" placeholder="Añadir un comentario..."></textarea>
-                                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out transform hover:scale-105">
+                                    <textarea id="newComment-{{ $tarea->id }}" rows="3" class="flex-grow p-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary resize-none dark:bg-gray-600 dark:border-gray-500 dark:text-white" placeholder="Añadir un comentario..."></textarea>
+                                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition duration-300 ease-in-out transform hover:scale-105">
                                         <i class="fas fa-paper-plane mr-2"></i>Comentar
                                     </button>
                                 </div>

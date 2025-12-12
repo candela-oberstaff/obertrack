@@ -3,7 +3,7 @@
         <h2 class="font-bold text-3xl text-gray-900 leading-tight">
             Reportes de profesionales
         </h2>
-        <p class="text-blue-500 font-medium mt-2">Profesionales registrados</p>
+        <p class="text-primary font-medium mt-2">Profesionales registrados</p>
     </x-slot>
 
     <div class="py-8 bg-gray-50 min-h-screen">
@@ -18,7 +18,7 @@
                             <span class="text-6xl font-extrabold text-black tracking-tighter">
                                 {{ str_pad($prof['index'], 2, '0', STR_PAD_LEFT) }}
                             </span>
-                            <div class="h-2 w-full bg-blue-500 mt-[-5px] z-0"></div> <!-- Thicker blue underline effect -->
+                            <div class="h-2 w-full bg-primary mt-[-5px] z-0"></div> <!-- Thicker blue underline effect -->
                         </div>
                     </div>
 

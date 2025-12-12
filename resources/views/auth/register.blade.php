@@ -64,7 +64,7 @@
             <!-- Name -->
             <div>
                 <input id="name" name="name" type="text" placeholder="Nombre y apellido" required autofocus
-                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm"
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
                        value="{{ old('name') }}">
                 <x-input-error :messages="$errors->get('name')" class="mt-1 text-xs" />
             </div>
@@ -72,7 +72,7 @@
             <!-- Email -->
             <div>
                 <input id="email" name="email" type="email" placeholder="Email" required
-                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm"
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
                        value="{{ old('email') }}">
                 <x-input-error :messages="$errors->get('email')" class="mt-1 text-xs" />
             </div>
@@ -80,21 +80,21 @@
             <!-- Password -->
             <div>
                 <input id="password" name="password" type="password" placeholder="Contraseña" required
-                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm">
                 <x-input-error :messages="$errors->get('password')" class="mt-1 text-xs" />
             </div>
 
             <!-- Confirm Password -->
             <div>
                 <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Confirma la contraseña" required
-                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm">
                 <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1 text-xs" />
             </div>
 
             <!-- User Type -->
             <div>
                 <select id="tipo_usuario" name="tipo_usuario" required
-                        class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm text-gray-600 appearance-none">
+                        class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm text-gray-600 appearance-none">
                     <option value="" disabled selected>Tipo de usuario</option>
                     <option value="empleador">Empresa</option>
                     <option value="empleado">Profesional</option>
@@ -105,7 +105,7 @@
             <!-- Job Title (Hidden by default) -->
             <div id="job_title_container" class="hidden">
                  <input id="job_title" name="job_title" type="text" placeholder="Cargo / Profesión"
-                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm"
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
                        value="{{ old('job_title') }}">
                 <x-input-error :messages="$errors->get('job_title')" class="mt-1 text-xs" />
             </div>
@@ -113,7 +113,7 @@
             <!-- Employer Selection (Hidden by default) -->
             <div id="empleado_por_id_container" class="hidden">
                  <select name="empleado_por_id" id="empleado_por_id"
-                        class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm text-gray-600 appearance-none">
+                        class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm text-gray-600 appearance-none">
                     <option value="">Selecciona tu empresa</option>
                     @foreach ($empleadores as $empleadorId => $nombreEmpleador)
                         <option value="{{ $empleadorId }}">{{ $nombreEmpleador }}</option>
@@ -125,10 +125,10 @@
             <!-- Footer & Button -->
             <div class="pt-2 text-center">
                 <p class="text-xs font-semibold text-gray-600 mb-4">
-                    ¿Ya tienes una cuenta? <a href="{{ route('login') }}" class="text-blue-600 hover:text-blue-800 underline">Inicia sesión</a>
+                    ¿Ya tienes una cuenta? <a href="{{ route('login') }}" class="text-primary hover:text-blue-800 underline">Inicia sesión</a>
                 </p>
 
-                <button type="submit" class="bg-[#1D71B8] hover:bg-blue-700 text-white font-bold py-2.5 px-10 rounded-full transition duration-300 shadow-lg w-auto inline-block text-sm">
+                <button type="submit" class="bg-[#1D71B8] hover:bg-primary-hover text-white font-bold py-2.5 px-10 rounded-full transition duration-300 shadow-lg w-auto inline-block text-sm">
                     Registrarse
                 </button>
             </div>

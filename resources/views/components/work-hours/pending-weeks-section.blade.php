@@ -14,7 +14,7 @@
     <div class="space-y-4">
         @foreach($pendingWeeks as $index => $pendingWeek)
             <div x-data="{ open: false }" class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-                <div class="bg-gradient-to-r from-green-500 to-blue-500 p-4">
+                <div class="bg-gradient-to-r from-green-500 to-primary p-4">
                     <button @click="open = !open" class="w-full text-left focus:outline-none">
                         <div class="flex items-center justify-between">
                             <h3 class="text-xl font-semibold text-white">

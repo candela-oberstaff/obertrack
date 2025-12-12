@@ -11,10 +11,10 @@
                 <div class="p-6">
                     <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                         <div class="w-full md:w-1/2 relative">
-                            <input type="text" id="search" placeholder="Buscar tareas..." class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <input type="text" id="search" placeholder="Buscar tareas..." class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                             <svg class="w-6 h-6 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </div>
-                        <a href="{{ route('manager.tasks.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:border-blue-800 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150">
+                        <a href="{{ route('manager.tasks.create') }}" class="inline-flex items-center px-4 py-2 bg-primary border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-hover active:bg-blue-800 focus:outline-none focus:border-blue-800 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                             Crear Nueva Tarea
                         </a>
@@ -35,7 +35,7 @@
                                 @else bg-red-100 text-red-800 @endif">
                                 {{ ucfirst($tarea->priority) }}
                             </span>
-                            <button class="text-blue-600 hover:text-blue-800 focus:outline-none toggle-details flex items-center" data-task-id="{{ $tarea->id }}">
+                            <button class="text-primary hover:text-blue-800 focus:outline-none toggle-details flex items-center" data-task-id="{{ $tarea->id }}">
                                 <span class="mr-2 text-sm">Detalles</span>
                                 <svg class="w-4 h-4 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
@@ -75,7 +75,7 @@
                                             <span>{{ $comment->user->name }} - {{ $comment->created_at->diffForHumans() }}</span>
                                             @if($comment->user_id == Auth::id())
                                             <div>
-                                                <button class="edit-comment text-blue-500 hover:text-blue-700 mr-2 transition duration-150 ease-in-out" data-comment-id="{{ $comment->id }}">Editar</button>
+                                                <button class="edit-comment text-primary hover:text-primary-hover mr-2 transition duration-150 ease-in-out" data-comment-id="{{ $comment->id }}">Editar</button>
                                                 <button class="delete-comment text-red-500 hover:text-red-700 transition duration-150 ease-in-out" data-comment-id="{{ $comment->id }}">Eliminar</button>
                                             </div>
                                             @endif
@@ -86,8 +86,8 @@
                             </div>
                             <form class="add-comment-form mt-4" data-task-id="{{ $tarea->id }}">
                                 @csrf
-                                <textarea name="content" rows="3" class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white resize-none" placeholder="Añade un comentario..."></textarea>
-                                <button type="submit" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300 ease-in-out">
+                                <textarea name="content" rows="3" class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white resize-none" placeholder="Añade un comentario..."></textarea>
+                                <button type="submit" class="mt-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary transition duration-300 ease-in-out">
                                     Añadir comentario
                                 </button>
                             </form>
@@ -174,11 +174,11 @@
 
                 const textarea = document.createElement('textarea');
                 textarea.value = commentContent;
-                textarea.classList.add('w-full', 'px-3', 'py-2', 'text-gray-700', 'border', 'rounded-lg', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500', 'dark:bg-gray-700', 'dark:border-gray-600', 'dark:text-white', 'resize-none');
+                textarea.classList.add('w-full', 'px-3', 'py-2', 'text-gray-700', 'border', 'rounded-lg', 'focus:outline-none', 'focus:ring-2', 'focus:ring-primary', 'dark:bg-gray-700', 'dark:border-gray-600', 'dark:text-white', 'resize-none');
 
                 const saveButton = document.createElement('button');
                 saveButton.textContent = 'Guardar';
-                saveButton.classList.add('mt-2', 'px-4', 'py-2', 'bg-blue-500', 'text-white', 'rounded-md', 'hover:bg-blue-600', 'transition', 'duration-300', 'ease-in-out');
+                saveButton.classList.add('mt-2', 'px-4', 'py-2', 'bg-primary', 'text-white', 'rounded-md', 'hover:bg-primary', 'transition', 'duration-300', 'ease-in-out');
 
                 const cancelButton = document.createElement('button');
                 cancelButton.textContent = 'Cancelar';
@@ -277,7 +277,7 @@
                     <div class="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
                         <span>${comment.user.name} - ${new Date(comment.created_at).toLocaleString()}</span>
                         <div>
-                            <button class="edit-comment text-blue-500 hover:text-blue-700 mr-2 transition duration-150 ease-in-out" data-comment-id="${comment.id}">Editar</button>
+                            <button class="edit-comment text-primary hover:text-primary-hover mr-2 transition duration-150 ease-in-out" data-comment-id="${comment.id}">Editar</button>
                             <button class="delete-comment text-red-500 hover:text-red-700 transition duration-150 ease-in-out" data-comment-id="${comment.id}">Eliminar</button>
                         </div>
                     </div>
