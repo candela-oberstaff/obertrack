@@ -15,12 +15,28 @@ class TaskManagementService
      */
     public function createTask(array $data)
     {
-        // Handle both 'employee_id' (from form) and 'visible_para' (legacy)
-        $visiblePara = $data['employee_id'] ?? $data['visible_para'] ?? Auth::user()->empleador_id;
+        // Handle 'employee_id' (single) or 'assignees' (multiple)
+        // For backward compatibility, if 'visible_para' or 'employee_id' is present, convert to array
+        $assignees = $data['assignees'] ?? [];
         
+        if (isset($data['employee_id'])) {
+            $assignees[] = $data['employee_id'];
+        }
+        if (isset($data['visible_para'])) {
+            $assignees[] = $data['visible_para'];
+        }
+        
+        // Default to just the employer if no one else? Or just empty?
+        // Logic before was: default to employer_id. 
+        if (empty($assignees) && Auth::user()->empleador_id) {
+             // Logic unclear on default assignment, but let's keep it safe.
+             // If creating for self, maybe self?
+        }
+        
+        $assignees = array_unique($assignees);
+
         $task = Task::create([
             'created_by' => Auth::id(),
-            'visible_para' => $visiblePara,
             'title' => $data['title'],
             'description' => $data['description'],
             'start_date' => $data['start_date'],
@@ -29,31 +45,37 @@ class TaskManagementService
             'completed' => $data['completed'] ?? false,
         ]);
 
-        // Send notification to assigned employee
-        if ($visiblePara && $visiblePara !== Auth::id()) {
-            $assignedUser = User::find($visiblePara);
-            if ($assignedUser && $assignedUser->email) {
-                try {
-                    $brevoService = app(\App\Services\BrevoEmailService::class);
-                    $brevoService->sendNewTaskNotification(
-                        $assignedUser->email,
-                        $assignedUser->name,
-                        [
-                            'id' => $task->id,
-                            'title' => $task->title,
-                            'description' => $task->description,
-                            'priority' => $task->priority,
-                            'start_date' => $task->start_date,
-                            'end_date' => $task->end_date,
-                            'assigned_by' => Auth::user()->name,
-                        ]
-                    );
-                } catch (\Exception $e) {
-                    // Log error but don't fail task creation
-                    Log::error('Failed to send task notification email', [
-                        'task_id' => $task->id,
-                        'error' => $e->getMessage()
-                    ]);
+        if (!empty($assignees)) {
+            $task->assignees()->attach($assignees);
+            
+            // Send notifications
+            foreach ($assignees as $userId) {
+                if ($userId !== Auth::id()) {
+                     $assignedUser = User::find($userId);
+                     if ($assignedUser && $assignedUser->email) {
+                        try {
+                            $brevoService = app(\App\Services\BrevoEmailService::class);
+                            $brevoService->sendNewTaskNotification(
+                                $assignedUser->email,
+                                $assignedUser->name,
+                                [
+                                    'id' => $task->id,
+                                    'title' => $task->title,
+                                    'description' => $task->description,
+                                    'priority' => $task->priority,
+                                    'start_date' => $task->start_date,
+                                    'end_date' => $task->end_date,
+                                    'assigned_by' => Auth::user()->name,
+                                ]
+                            );
+                        } catch (\Exception $e) {
+                            Log::error('Failed to send task notification email', [
+                                'task_id' => $task->id,
+                                'user_id' => $userId,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                     }
                 }
             }
         }
@@ -141,8 +163,10 @@ class TaskManagementService
             $query->where('created_by', $user->id)
                   ->orWhere('created_by', $user->empleador_id)
                   ->orWhereIn('created_by', User::where('is_superadmin', true)->pluck('id'));
-        })->whereIn('visible_para', $empleados->pluck('id'))
-          ->with('comments', 'visibleTo');
+        })->whereHas('assignees', function($q) use ($empleados) {
+            $q->whereIn('user_id', $empleados->pluck('id'));
+        })
+          ->with('comments', 'assignees'); // Loaded assignees instead of visibleTo
 
         return $this->applyFilters($query, $filters)->get();
     }

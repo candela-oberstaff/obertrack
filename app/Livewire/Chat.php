@@ -45,10 +45,20 @@ class Chat extends Component
         
         if ($user->tipo_usuario === 'empleador') {
             // Employers see their professionals
-            $this->contacts = User::where('empleador_id', $user->id)->get();
+            $this->contacts = User::where('empleador_id', $user->id)
+                ->withCount(['sentMessages as unread_messages_count' => function ($query) {
+                    $query->where('to_user_id', Auth::id())
+                          ->whereNull('read_at');
+                }])
+                ->get();
         } else {
             // Professionals see their employer
-            $this->contacts = User::where('id', $user->empleador_id)->get();
+            $this->contacts = User::where('id', $user->empleador_id)
+                ->withCount(['sentMessages as unread_messages_count' => function ($query) {
+                    $query->where('to_user_id', Auth::id())
+                          ->whereNull('read_at');
+                }])
+                ->get();
         }
     }
 
@@ -118,6 +128,9 @@ class Chat extends Component
 
     public function render()
     {
+        // Refresh contacts to update unread counts and status
+        $this->loadContacts();
+
         $messages = [];
         
         if ($this->selectedUserId) {

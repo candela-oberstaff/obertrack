@@ -112,9 +112,9 @@ class User extends Authenticatable
         return $this->hasMany(Task::class, 'created_by');
     }
 
-    public function assignedTasks(): HasMany
+    public function assignedTasks(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->hasMany(Task::class, 'visible_para', 'id');
+        return $this->belongsToMany(Task::class, 'task_user');
     }
 
 

@@ -39,7 +39,7 @@
                             <select name="visible_para" id="visible_para" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                 <option value="">Seleccione un empleado</option>
                                 @foreach($empleados as $empleado)
-                                    <option value="{{ $empleado->id }}" {{ old('visible_para', $task->visible_para) == $empleado->id ? 'selected' : '' }}>
+                                    <option value="{{ $empleado->id }}" {{ old('visible_para', $task->assignees->first()->id ?? null) == $empleado->id ? 'selected' : '' }}>
                                         {{ $empleado->name }}
                                     </option>
                                 @endforeach

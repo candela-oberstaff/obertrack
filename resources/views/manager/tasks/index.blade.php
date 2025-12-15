@@ -48,7 +48,13 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
                                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Asignado a</p>
-                                <p class="mt-1 font-semibold text-gray-900 dark:text-gray-100">{{ $tarea->visibleTo->name }}</p>
+                                <p class="mt-1 font-semibold text-gray-900 dark:text-gray-100">
+                                    @forelse($tarea->assignees as $assignee)
+                                        {{ $assignee->name }}@if(!$loop->last), @endif
+                                    @empty
+                                        <span class="text-gray-400 italic">Sin asignar</span>
+                                    @endforelse
+                                </p>
                             </div>
                             <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
                                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Fechas</p>
@@ -68,7 +74,7 @@
                             <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Comentarios</h4>
                             <div class="comments-container space-y-4" id="comments-container-{{ $tarea->id }}">
                                 @foreach($tarea->comments as $comment)
-                                    @if($comment->user_id == Auth::id() || $comment->user_id == $tarea->visible_para)
+                                    @if($comment->user_id == Auth::id() || $tarea->assignees->contains($comment->user_id))
                                     <div class="comment bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600" id="comment-{{ $comment->id }}">
                                         <p class="text-gray-800 dark:text-gray-200 mb-2">{{ $comment->content }}</p>
                                         <div class="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">

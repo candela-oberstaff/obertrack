@@ -17,7 +17,7 @@ class NotificationController extends Controller
         $user = Auth::user();
 
         // Only allow marking as read if the task is assigned to the user
-        if ($task->visible_para !== $user->id) {
+        if (!$task->assignees->contains($user->id)) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -38,7 +38,9 @@ class NotificationController extends Controller
         $user = Auth::user();
 
         // Get all unread tasks assigned to the user
-        $unreadTasks = Task::where('visible_para', $user->id)
+        $unreadTasks = Task::whereHas('assignees', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
             ->whereDoesntHave('readBy', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             })

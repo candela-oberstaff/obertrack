@@ -32,8 +32,13 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex justify-between items-baseline mb-0.5">
                             <p class="font-semibold text-gray-900 truncate {{ $selectedUserId == $contact->id ? 'text-primary' : '' }}">{{ $contact->name }}</p>
+                            @if($contact->unread_messages_count > 0)
+                                <span class="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse">
+                                    {{ $contact->unread_messages_count }}
+                                </span>
+                            @endif
                         </div>
-                        <p class="text-sm text-gray-500 truncate group-hover:text-gray-600">
+                        <p class="text-sm text-gray-500 truncate group-hover:text-gray-600 font-{{ $contact->unread_messages_count > 0 ? 'bold text-gray-800' : 'normal' }}">
                             {{ $contact->job_title ?? 'Usuario' }}
                         </p>
                     </div>
