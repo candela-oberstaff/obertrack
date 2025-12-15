@@ -6,7 +6,7 @@
                 
                 <!-- Left Column: Text -->
                 <div class="space-y-8">
-                    <h1 class="text-3xl md:text-5xl font-bold text-[#0976D6] uppercase tracking-wide">Contáctanos</h1>
+                    <h1 class="text-3xl md:text-5xl font-bold text-[#22A9C8] uppercase tracking-wide">Contáctanos</h1>
                     
                     <div class="space-y-4 text-gray-800">
                         <h2 class="text-2xl font-bold text-[#0F172A]">
@@ -32,22 +32,22 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Name -->
                             <div>
-                                <input type="text" name="name" placeholder="Nombre y Apellido" class="w-full rounded-lg border-[#0976D6] border-2 px-4 py-3 placeholder-gray-300 focus:border-blue-600 focus:ring focus:ring-blue-200 transition outline-none" required>
+                                <input type="text" name="name" placeholder="Nombre y Apellido" class="w-full rounded-lg border-[#22A9C8] border-2 px-4 py-3 placeholder-gray-300 focus:border-primary focus:ring focus:ring-blue-200 transition outline-none" required>
                             </div>
                             <!-- Email -->
                             <div>
-                                <input type="email" name="email" placeholder="Email" class="w-full rounded-lg border-[#0976D6] border-2 px-4 py-3 placeholder-gray-300 focus:border-blue-600 focus:ring focus:ring-blue-200 transition outline-none" required>
+                                <input type="email" name="email" placeholder="Email" class="w-full rounded-lg border-[#22A9C8] border-2 px-4 py-3 placeholder-gray-300 focus:border-primary focus:ring focus:ring-blue-200 transition outline-none" required>
                             </div>
                         </div>
 
                         <!-- Company -->
                         <div>
-                            <input type="text" name="company" placeholder="Empresa" class="w-full rounded-lg border-[#0976D6] border-2 px-4 py-3 placeholder-gray-300 focus:border-blue-600 focus:ring focus:ring-blue-200 transition outline-none">
+                            <input type="text" name="company" placeholder="Empresa" class="w-full rounded-lg border-[#22A9C8] border-2 px-4 py-3 placeholder-gray-300 focus:border-primary focus:ring focus:ring-blue-200 transition outline-none">
                         </div>
 
                         <!-- Message -->
                         <div>
-                            <textarea name="message" rows="6" placeholder="Mensaje" class="w-full rounded-lg border-[#0976D6] border-2 px-4 py-3 placeholder-gray-300 focus:border-blue-600 focus:ring focus:ring-blue-200 transition outline-none resize-none" required></textarea>
+                            <textarea name="message" rows="6" placeholder="Mensaje" class="w-full rounded-lg border-[#22A9C8] border-2 px-4 py-3 placeholder-gray-300 focus:border-primary focus:ring focus:ring-blue-200 transition outline-none resize-none" required></textarea>
                         </div>
 
                         <!-- Submit Button -->

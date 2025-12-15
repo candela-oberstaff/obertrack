@@ -5,14 +5,14 @@
     <title>Reporte Semanal - {{ $professional->name }}</title>
     <style>
         body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; line-height: 1.6; }
-        .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #3b82f6; padding-bottom: 20px; }
-        .brand { color: #3b82f6; font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-        .report-title { font-size: 20px; margin-top: 10px; color: #1f2937; }
-        .meta-info { margin-bottom: 30px; background: #f3f4f6; padding: 15px; border-radius: 8px; }
-        .meta-item { margin-bottom: 5px; }
-        .label { font-weight: bold; color: #4b5563; }
+        .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #22A9C8; padding-bottom: 20px; }
+        .brand { color: #22A9C8; font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-top: 10px; }
+        .report-title { font-size: 20px; margin-top: 5px; color: #1f2937; }
+        .logo { width: 80px; height: auto; margin-bottom: 10px; }
         
-        .stats-grid { width: 100%; margin-bottom: 30px; }
+        /* ... existing styles ... */
+        .meta-info { margin-bottom: 30px; background: #f3f4f6; padding: 15px; border-radius: 8px; border-left: 4px solid #22A9C8; }
+        
         .stat-box { text-align: center; padding: 15px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; }
         .stat-value { font-size: 24px; font-weight: bold; color: #111827; display: block; margin-top: 5px; }
         .stat-label { font-size: 12px; text-transform: uppercase; color: #6b7280; }
@@ -28,6 +28,7 @@
 </head>
 <body>
     <div class="header">
+        <img src="{{ public_path('images/logo.png') }}" class="logo" alt="Obertrack Logo">
         <div class="brand">Obertrack</div>
         <div class="report-title">Reporte Semanal de Actividad</div>
     </div>

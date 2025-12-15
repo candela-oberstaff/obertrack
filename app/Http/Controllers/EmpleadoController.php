@@ -19,20 +19,24 @@ class EmpleadoController extends Controller
         
         $tareasCreadas = Task::where('created_by', $user->id)->get();
         $tareas = $tareasCreadas;
-        $tareasAsignadas = Task::where('visible_para', $user->id)->with('visibleTo')->get();
+        $tareasAsignadas = $user->assignedTasks()->with('assignees')->get(); // visible_para -> assignedTasks
         
         $tareasManageres = Task::whereHas('createdBy', function($query) use ($empleador) {
             $query->where('empleador_id', $empleador->id)
                   ->where('is_manager', true)
                   ->where('tipo_usuario', 'empleado');
         })
-        ->whereNotNull('visible_para')
-        ->with(['createdBy', 'visibleTo'])
+        ->whereHas('assignees', function($q) use ($user) { // whereNotNull('visible_para') implies assigned to someone? or specifically this user? Context implies tasks assigned to this user from managers.
+            $q->where('users.id', $user->id); 
+        })
+        ->with(['createdBy', 'assignees'])
         ->get();
 
         $tareasEmpleador = Task::where('created_by', $empleador->id)
-            ->where('visible_para', $user->id)
-            ->with(['createdBy', 'visibleTo', 'comments.user'])
+            ->whereHas('assignees', function($q) use ($user) {
+                $q->where('users.id', $user->id);
+            })
+            ->with(['createdBy', 'assignees', 'comments.user'])
             ->get();
 
         return view('empleados.crear_tarea', compact('tareas', 'tareasAsignadas', 'tareasManageres', 'tareasEmpleador', 'empleador'));

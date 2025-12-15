@@ -8,7 +8,7 @@
     <div class="space-y-6">
         @foreach($empleadosInfo as $empleado)
         <div x-data="{ open: false }" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
-            <div @click="open = !open" class="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-800 dark:to-indigo-800 p-4 cursor-pointer">
+            <div @click="open = !open" class="bg-gradient-to-r from-primary to-indigo-600 dark:from-blue-800 dark:to-indigo-800 p-4 cursor-pointer">
                 <div class="flex flex-wrap items-center justify-between">
                     <h3 class="text-lg sm:text-xl font-bold text-white flex items-center">
                         <svg class="h-6 w-6 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -55,14 +55,14 @@
 
                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 shadow-inner">
                     <div class="flex items-center mb-4">
-                        <input type="checkbox" id="certifyHours_{{ $empleado['id'] }}" class="form-checkbox h-5 w-5 text-blue-600 transition duration-150 ease-in-out">
+                        <input type="checkbox" id="certifyHours_{{ $empleado['id'] }}" class="form-checkbox h-5 w-5 text-primary transition duration-150 ease-in-out">
                         <label for="certifyHours_{{ $empleado['id'] }}" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
                             Certifico que las horas son correctas y autorizo el pago
                         </label>
                     </div>
                     <button
                         onclick="downloadReport({{ $empleado['id'] }}, '{{ $empleado['name'] }}', {{ $totalApprovedHours }}, '{{ $currentMonth->format('Y-m') }}')"
-                        class="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white {{ $canDownload ? 'bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500' : 'bg-gray-400 cursor-not-allowed' }} transition ease-in-out duration-150"
+                        class="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white {{ $canDownload ? 'bg-primary hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary' : 'bg-gray-400 cursor-not-allowed' }} transition ease-in-out duration-150"
                         {{ $canDownload ? '' : 'disabled' }}
                     >
                         <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">

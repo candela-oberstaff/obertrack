@@ -25,7 +25,7 @@ class ManagerTaskController extends Controller
     public function index()
     {
         $tareas = Task::where('created_by', Auth::id())
-                      ->with('visibleTo')
+                      ->with('assignees')
                       ->orderBy('created_at', 'desc')
                       ->paginate(10);
         return view('manager.tasks.index', compact('tareas'));
@@ -49,16 +49,19 @@ class ManagerTaskController extends Controller
             'title' => $validatedData['title'],
             'description' => $validatedData['description'],
             'created_by' => auth()->id(),
-            'visible_para' => $validatedData['visible_para'],
             'start_date' => $validatedData['start_date'],
             'end_date' => $validatedData['end_date'],
             'priority' => $validatedData['priority'],
             'completed' => false,
         ]);
 
-        // Enviar notificación al usuario asignado
-        $assignedUser = User::find($validatedData['visible_para']);
-        $assignedUser->notify(new NewTaskAssigned($task));
+        if (isset($validatedData['visible_para'])) {
+            $task->assignees()->attach($validatedData['visible_para']);
+            
+            // Enviar notificación al usuario asignado
+            $assignedUser = User::find($validatedData['visible_para']);
+            $assignedUser->notify(new NewTaskAssigned($task));
+        }
 
         return redirect()->route('manager.tasks.index')->with('success', 'Tarea creada y asignada exitosamente.');
     }
@@ -75,7 +78,13 @@ class ManagerTaskController extends Controller
         Gate::authorize('update', $task);
 
         try {
-            $task->update($request->validated());
+            $validatedData = $request->validated();
+            $task->update($validatedData);
+            
+            if (isset($validatedData['visible_para'])) {
+                $task->assignees()->sync([$validatedData['visible_para']]);
+            }
+
             if ($request->ajax()) {
                 return response()->json(['success' => true]);
             }

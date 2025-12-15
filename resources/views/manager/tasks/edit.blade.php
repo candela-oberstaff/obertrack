@@ -39,7 +39,7 @@
                             <select name="visible_para" id="visible_para" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                 <option value="">Seleccione un empleado</option>
                                 @foreach($empleados as $empleado)
-                                    <option value="{{ $empleado->id }}" {{ old('visible_para', $task->visible_para) == $empleado->id ? 'selected' : '' }}>
+                                    <option value="{{ $empleado->id }}" {{ old('visible_para', $task->assignees->first()->id ?? null) == $empleado->id ? 'selected' : '' }}>
                                         {{ $empleado->name }}
                                     </option>
                                 @endforeach
@@ -84,7 +84,7 @@
                             <a href="{{ route('manager.tasks.index') }}" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 mr-2">
                                 Cancelar
                             </a>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
                                 Actualizar Tarea
                             </button>
                         </div>

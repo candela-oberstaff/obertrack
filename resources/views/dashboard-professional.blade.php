@@ -5,7 +5,7 @@
             {{-- Header Section --}}
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">
-                    ¡Hola, <span class="text-blue-600">{{ auth()->user()->name }}</span>!
+                    ¡Hola, <span class="text-primary">{{ auth()->user()->name }}</span>!
                 </h1>
                 <p class="text-gray-600 mt-1">
                     Aquí está tu resumen de actividades
@@ -53,8 +53,8 @@
                     @php
                         $completedTasks = auth()->user()->assignedTasks()
                             ->where('completed', true)
-                            ->whereYear('updated_at', now()->year)
-                            ->whereMonth('updated_at', now()->month)
+                            ->whereYear('tasks.updated_at', now()->year)
+                            ->whereMonth('tasks.updated_at', now()->month)
                             ->count();
                     @endphp
                     <div class="flex items-center gap-3">
@@ -106,7 +106,7 @@
                                     @php
                                         $latestTasks = auth()->user()->assignedTasks()
                                             ->with(['visibleTo', 'comments.user', 'attachments', 'createdBy'])
-                                            ->latest()
+                                            ->latest('tasks.created_at')
                                             ->take(5)
                                             ->get();
                                     @endphp
@@ -221,7 +221,7 @@
                                                        :class="{
                                                             'text-red-600': selectedTask?.priority === 'high' || selectedTask?.priority === 'urgent',
                                                             'text-yellow-600': selectedTask?.priority === 'medium',
-                                                            'text-blue-600': selectedTask?.priority === 'low'
+                                                            'text-primary': selectedTask?.priority === 'low'
                                                        }"
                                                        x-text="selectedTask?.priority"></p>
                                                 </div>
@@ -268,7 +268,7 @@
                                                                 </div>
                                                                 <div class="ml-4 flex-shrink-0">
                                                                     <a :href="'/tasks/attachments/' + attachment.id + '/download'" 
-                                                                       class="font-medium text-blue-600 hover:text-blue-500"
+                                                                       class="font-medium text-primary hover:text-primary"
                                                                        @click.stop>
                                                                         Descargar
                                                                     </a>
@@ -337,7 +337,7 @@
                         <div class="p-4 space-y-3">
                             @php
                                 // Get latest comments from tasks the user is involved in
-                                $userTaskIds = auth()->user()->assignedTasks()->pluck('id');
+                                $userTaskIds = auth()->user()->assignedTasks()->pluck('tasks.id');
                                 $latestComments = \App\Models\Comment::whereIn('task_id', $userTaskIds)
                                     ->with(['user', 'task'])
                                     ->latest()

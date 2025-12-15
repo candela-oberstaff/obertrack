@@ -31,7 +31,7 @@
                     <div class="flex-1 overflow-y-auto">
                         <!-- Active Contact -->
                         <div class="flex items-center p-3 bg-gray-100 cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition">
-                            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold mr-3 flex-shrink-0">
+                            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-primary font-bold mr-3 flex-shrink-0">
                                 S
                             </div>
                             <div class="flex-1 min-w-0">
@@ -77,7 +77,7 @@
                     <!-- Chat Header -->
                     <div class="bg-gray-100 p-4 border-b border-gray-200 flex justify-between items-center z-10">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-primary font-bold">
                                 S
                             </div>
                             <div>

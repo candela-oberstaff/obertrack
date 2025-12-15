@@ -6,7 +6,7 @@
             <i class="fas fa-user-circle mr-2"></i> {{ $summary['name'] }}
         </h4>
         <div class="flex flex-wrap gap-2">
-            <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-semibold">
+            <span class="px-3 py-1 bg-blue-50 text-primary-hover rounded-full text-sm font-semibold">
                 <i class="fas fa-clock mr-1"></i> {{ $summary['total_hours'] }}/40h semanales
             </span>
             @if($summary['pending_hours'] > 0)
@@ -51,7 +51,7 @@
                     <i class="fas fa-check mr-1"></i> Aprobar
                 </button>
             </form>
-            <button onclick="showCommentModal({{ $employeeId }}, '{{ $weekStart }}')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold transition duration-300">
+            <button onclick="showCommentModal({{ $employeeId }}, '{{ $weekStart }}')" class="bg-primary hover:bg-primary text-white px-4 py-2 rounded-full text-sm font-semibold transition duration-300">
                 <i class="fas fa-comment mr-1"></i> Aprobar con comentarios
             </button>
         </div>

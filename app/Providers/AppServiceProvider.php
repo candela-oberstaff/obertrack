@@ -27,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Establecer el locale en español
         Carbon::setLocale('es');
-        Paginator::defaultView('pagination::tailwind');  
+        Paginator::defaultView('pagination::tailwind');
     }
 
 }

@@ -37,7 +37,7 @@
                     <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         <span class="flex items-center gap-2">
                             Mis horas
-                            <span class="px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">Manager</span>
+                            <span class="px-2 py-0.5 bg-primary text-white text-xs rounded-full">Manager</span>
                         </span>
                     </a>
                     <a href="{{ route('empleador.dashboard') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
@@ -57,9 +57,7 @@
                 @endif
 
 
-                <a href="{{ route('chat') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('chatify') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
-                    Chat
-                </a>
+                <livewire:chat-notification />
 
 
             </div>
@@ -111,7 +109,9 @@
             <!-- Notification Bell (for employees) -->
             @if(auth()->user()->tipo_usuario === 'empleado')
                 @php
-                    $recentTasks = \App\Models\Task::where('visible_para', auth()->id())
+                    $recentTasks = \App\Models\Task::whereHas('assignees', function($q) {
+                            $q->where('user_id', auth()->id());
+                        })
                         ->where('completed', false)
                         ->where('created_at', '>=', now()->subDays(7))
                         ->whereDoesntHave('readBy', function ($query) {
@@ -138,7 +138,7 @@
 
                     <x-slot name="content">
                         <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
+                            Configuración
                         </x-dropdown-link>
 
                         <!-- Authentication -->
@@ -147,7 +147,7 @@
                             <x-dropdown-link :href="route('logout')"
                                     onclick="event.preventDefault();
                                                 this.closest('form').submit();">
-                                {{ __('Log Out') }}
+                                Cerrar sesión
                             </x-dropdown-link>
                         </form>
                     </x-slot>
@@ -198,7 +198,7 @@
 
             @endif
             
-            <x-responsive-nav-link :href="route('chat')" :active="request()->routeIs('chatify')">
+            <x-responsive-nav-link :href="route('chat')" :active="request()->routeIs('chat')">
                 {{ __('Chat') }}
             </x-responsive-nav-link>
 
@@ -214,7 +214,7 @@
 
             <div class="mt-3 space-y-1">
                 <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
+                    Configuración
                 </x-responsive-nav-link>
 
                 <!-- Authentication -->
@@ -223,7 +223,7 @@
                     <x-responsive-nav-link :href="route('logout')"
                             onclick="event.preventDefault();
                                         this.closest('form').submit();">
-                        {{ __('Log Out') }}
+                        Cerrar sesión
                     </x-responsive-nav-link>
                 </form>
             </div>

@@ -12,7 +12,7 @@
                     </div>
                     @if($comment->user_id == auth()->id())
                         <div class="flex space-x-1">
-                            <button onclick="editComment({{ $comment->id }})" class="text-blue-600 hover:text-blue-800">
+                            <button onclick="editComment({{ $comment->id }})" class="text-primary hover:text-blue-800">
                                 <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                 </svg>
@@ -30,8 +30,8 @@
     </div>
     <form onsubmit="addTaskComment(event, {{ $task->id }})" class="mt-2">
         @csrf
-        <textarea id="newComment-{{ $task->id }}" rows="2" class="w-full px-3 py-2 text-sm border rounded-md resize-none focus:ring-blue-500 focus:border-blue-500" placeholder="Añadir un comentario..."></textarea>
-        <button type="submit" class="mt-2 w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <textarea id="newComment-{{ $task->id }}" rows="2" class="w-full px-3 py-2 text-sm border rounded-md resize-none focus:ring-primary focus:border-primary" placeholder="Añadir un comentario..."></textarea>
+        <button type="submit" class="mt-2 w-full px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
             Comentar
         </button>
     </form>

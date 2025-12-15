@@ -18,7 +18,7 @@ class EmployerTaskController extends Controller
 
     public function index()
     {
-        $tasks = Task::where('created_by', Auth::id())->with('visibleTo')->get();
+        $tasks = Task::where('created_by', Auth::id())->with('assignees')->get();
         return view('empleadores.ver_tareas_empleados', compact('tasks'));
     }
 
@@ -39,8 +39,8 @@ class EmployerTaskController extends Controller
             'employee_id' => 'required|exists:users,id',
         ]);
 
-        // Map employee_id to visible_para for service compatibility
-        $validatedData['visible_para'] = $validatedData['employee_id'];
+        // Service now handles 'employee_id' or 'assignees'
+        // $validatedData['assignees'] = [$validatedData['employee_id']]; // Handled in Service
 
         $this->taskManagementService->createTask($validatedData);
 
@@ -66,9 +66,6 @@ class EmployerTaskController extends Controller
             'priority' => 'required|in:low,medium,high,urgent',
             'employee_id' => 'required|exists:users,id',
         ]);
-
-        // Map employee_id to visible_para for service compatibility
-        $validatedData['visible_para'] = $validatedData['employee_id'];
 
         $this->taskManagementService->updateTask($task, $validatedData);
 

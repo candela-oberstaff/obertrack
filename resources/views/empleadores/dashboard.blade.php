@@ -10,7 +10,7 @@
             </div>
 
             <!-- Subtitle -->
-            <h3 class="text-[#0976D6] font-medium text-base mb-6">Horas totales registradas por los profesionales</h3>
+            <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas totales registradas por los profesionales</h3>
             
             <!-- Employee Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
@@ -47,7 +47,7 @@
                                  <!-- Progress Arc -->
                                   <path d="M 10,10 A 40,40 0 0 0 90,10" 
                                        fill="none" 
-                                       stroke="#0976D6" 
+                                       stroke="#22A9C8" 
                                        stroke-width="8" 
                                        stroke-linecap="round"
                                        stroke-dasharray="{{ 126 }}" 
@@ -76,7 +76,7 @@
                 
                 <!-- Month Navigation -->
                 <div class="flex items-center gap-4 mb-6">
-                   <a href="{{ route('empleador.dashboard', ['month' => $currentMonth->copy()->subMonth()->format('Y-m')]) }}" class="bg-[#0976D6] text-white rounded p-1.5 hover:bg-blue-700 transition">
+                   <a href="{{ route('empleador.dashboard', ['month' => $currentMonth->copy()->subMonth()->format('Y-m')]) }}" class="bg-[#22A9C8] text-white rounded p-1.5 hover:bg-primary-hover transition">
                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                        </svg>
@@ -84,7 +84,7 @@
                    
                    <span class="font-bold text-xl text-gray-900">{{ ucfirst($currentMonth->translatedFormat('F Y')) }}</span>
                    
-                   <a href="{{ route('empleador.dashboard', ['month' => $currentMonth->copy()->addMonth()->format('Y-m')]) }}" class="bg-[#0976D6] text-white rounded p-1.5 hover:bg-blue-700 transition">
+                   <a href="{{ route('empleador.dashboard', ['month' => $currentMonth->copy()->addMonth()->format('Y-m')]) }}" class="bg-[#22A9C8] text-white rounded p-1.5 hover:bg-primary-hover transition">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
@@ -93,7 +93,7 @@
 
                 <!-- Calendar Grid -->
                 <div class="overflow-x-auto pb-4">
-                    <div class="min-w-[1000px] border border-[#0976D6] rounded-xl p-6 bg-white">
+                    <div class="min-w-[1000px] border border-[#22A9C8] rounded-xl p-6 bg-white">
                         <!-- Headers -->
                          <div class="grid grid-cols-7 gap-4 mb-4">
                             @foreach(['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as $dayName)
@@ -108,7 +108,7 @@
                                     @if($day['is_current_month'])
                                         <!-- Date Badge -->
                                         <div class="mb-3">
-                                            <div class="bg-[#0976D6] text-white w-12 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
+                                            <div class="bg-[#22A9C8] text-white w-12 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
                                                 {{ str_pad($day['day'], 2, '0', STR_PAD_LEFT) }}
                                             </div>
                                         </div>
