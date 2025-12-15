@@ -52,8 +52,14 @@ class Chat extends Component
                 }])
                 ->get();
         } else {
-            // Professionals see their employer
-            $this->contacts = User::where('id', $user->empleador_id)
+            // Professionals see their employer AND colleagues
+            $this->contacts = User::where(function($query) use ($user) {
+                    $query->where('id', $user->empleador_id) // Employer
+                        ->orWhere(function($q) use ($user) { // Colleagues (same employer)
+                            $q->where('empleador_id', $user->empleador_id)
+                              ->where('id', '!=', $user->id); // Exclude self
+                        });
+                })
                 ->withCount(['sentMessages as unread_messages_count' => function ($query) {
                     $query->where('to_user_id', Auth::id())
                           ->whereNull('read_at');

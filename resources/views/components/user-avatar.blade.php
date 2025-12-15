@@ -9,7 +9,12 @@
 @endphp
 
 @if($user->avatar)
-    <img src="{{ asset('avatars/' . $user->avatar) }}" 
+    @php
+        $avatarSrc = filter_var($user->avatar, FILTER_VALIDATE_URL) 
+            ? $user->avatar 
+            : asset('avatars/' . $user->avatar);
+    @endphp
+    <img src="{{ $avatarSrc }}" 
          alt="{{ $user->name }}" 
          class="{{ $sizeClass }} rounded-full object-cover shadow-sm {{ $classes }}">
 @else

@@ -44,7 +44,7 @@
             {{-- Team Assignments Table --}}
             <section>
                 <h3 class="text-primary font-medium text-lg mb-4">Mis asignaciones en equipo</h3>
-                <div class="bg-white rounded-3xl border-2 border-primary p-4 overflow-hidden">
+                <div class="bg-white rounded-3xl border-2 border-primary p-4">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-separate border-spacing-y-2">
                             <thead>
@@ -113,7 +113,7 @@
             {{-- Individual Assignments Table --}}
             <section>
                  <h3 class="text-primary font-medium text-lg mb-4">Mis asignaciones individuales</h3>
-                <div class="bg-white rounded-3xl border-2 border-primary p-4 overflow-hidden">
+                <div class="bg-white rounded-3xl border-2 border-primary p-4">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-separate border-spacing-y-2">
                             <thead>

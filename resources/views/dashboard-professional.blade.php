@@ -53,8 +53,8 @@
                     @php
                         $completedTasks = auth()->user()->assignedTasks()
                             ->where('completed', true)
-                            ->whereYear('updated_at', now()->year)
-                            ->whereMonth('updated_at', now()->month)
+                            ->whereYear('tasks.updated_at', now()->year)
+                            ->whereMonth('tasks.updated_at', now()->month)
                             ->count();
                     @endphp
                     <div class="flex items-center gap-3">
@@ -106,7 +106,7 @@
                                     @php
                                         $latestTasks = auth()->user()->assignedTasks()
                                             ->with(['visibleTo', 'comments.user', 'attachments', 'createdBy'])
-                                            ->latest()
+                                            ->latest('tasks.created_at')
                                             ->take(5)
                                             ->get();
                                     @endphp
@@ -337,7 +337,7 @@
                         <div class="p-4 space-y-3">
                             @php
                                 // Get latest comments from tasks the user is involved in
-                                $userTaskIds = auth()->user()->assignedTasks()->pluck('id');
+                                $userTaskIds = auth()->user()->assignedTasks()->pluck('tasks.id');
                                 $latestComments = \App\Models\Comment::whereIn('task_id', $userTaskIds)
                                     ->with(['user', 'task'])
                                     ->latest()
