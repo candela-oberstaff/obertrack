@@ -28,6 +28,11 @@ class AppServiceProvider extends ServiceProvider
         // Establecer el locale en español
         Carbon::setLocale('es');
         Paginator::defaultView('pagination::tailwind');
+        
+        // Force HTTPS in production (for apps behind proxies like Coolify)
+        if (config('app.env') === 'production') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 
 }
