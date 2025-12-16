@@ -13,7 +13,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
 
 class RegisteredUserController extends Controller
 {

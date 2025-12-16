@@ -91,44 +91,118 @@
                    </a>
                 </div>
 
-                <!-- Calendar Grid -->
-                <div class="overflow-x-auto pb-4">
-                    <div class="min-w-[1000px] border border-[#22A9C8] rounded-xl p-6 bg-white">
+                <!-- Calendar Grid (Interactive) -->
+                <div class="overflow-x-auto pb-4" x-data="{ 
+                    selectedDay: null,
+                    showModal: false,
+                    openDetails(day) {
+                        this.selectedDay = day;
+                        this.showModal = true;
+                    }
+                }">
+                    <div class="w-full md:min-w-[1000px] border border-[#22A9C8] rounded-xl p-6 bg-white">
                         <!-- Headers -->
-                         <div class="grid grid-cols-7 gap-4 mb-4">
-                            @foreach(['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as $dayName)
-                                <div class="text-center font-bold text-gray-700 text-sm">{{ $dayName }}</div>
+                         <div class="grid grid-cols-7 gap-4 mb-8">
+                            @foreach(['Dom', 'Lun', 'Mar', 'Mier', 'Jue', 'Vie', 'Sab'] as $dayName)
+                                <div class="text-center font-bold text-gray-900 text-base">{{ $dayName }}</div>
                             @endforeach
                          </div>
 
                         <!-- Days -->
-                        <div class="grid grid-cols-7 gap-4">
+                        <div class="grid grid-cols-7 gap-y-6 gap-x-4">
                             @foreach($calendar as $day)
-                                <div class="min-h-[180px] bg-[#F8F9FA] rounded-2xl p-3 flex flex-col items-center {{ !$day['is_current_month'] ? 'opacity-0' : '' }}">
+                                <div class="flex flex-col items-center justify-start min-h-[60px]">
                                     @if($day['is_current_month'])
-                                        <!-- Date Badge -->
-                                        <div class="mb-3">
-                                            <div class="bg-[#22A9C8] text-white w-12 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
-                                                {{ str_pad($day['day'], 2, '0', STR_PAD_LEFT) }}
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Events -->
-                                        <div class="space-y-2 w-full px-1">
-                                            @foreach($day['employees'] as $emp)
-                                                <div class="flex items-center space-x-2">
-                                                    <div class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] text-white font-bold uppercase {{ $emp['color_class'] }}">
-                                                        {{ $emp['initials'] }}
-                                                    </div>
-                                                    <span class="text-xs font-medium text-gray-600 whitespace-nowrap">
-                                                        {{ round($emp['hours']) }} horas
-                                                    </span>
-                                                </div>
-                                            @endforeach
-                                        </div>
+                                        <button 
+                                            @click="openDetails({{ json_encode($day) }})"
+                                            class="relative w-12 h-12 rounded-full flex items-center justify-center text-base transition-colors
+                                            {{ count($day['employees']) > 0 ? 'bg-gray-200 hover:bg-gray-300 text-gray-800' : 'bg-transparent text-gray-800 hover:bg-gray-100' }}"
+                                        >
+                                            <span class="z-10">{{ str_pad($day['day'], 2, '0', STR_PAD_LEFT) }}</span>
+                                            
+                                            <!-- Red Dot Indicator -->
+                                            @if(count($day['employees']) > 0)
+                                                <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                                            @endif
+                                        </button>
                                     @endif
                                 </div>
                             @endforeach
+                        </div>
+                    </div>
+
+                    <!-- Custom Backdrop & Modal -->
+                    <div
+                        x-show="showModal"
+                        style="display: none;"
+                        class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-0"
+                    >
+                        <!-- Dimmed Background -->
+                        <div
+                            x-show="showModal"
+                            x-transition:enter="ease-out duration-300"
+                            x-transition:enter-start="opacity-0"
+                            x-transition:enter-end="opacity-100"
+                            x-transition:leave="ease-in duration-200"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="fixed inset-0 transform transition-all"
+                            @click="showModal = false"
+                        >
+                            <div class="absolute inset-0 bg-gray-600 opacity-50"></div>
+                        </div>
+
+                        <!-- Modal Content -->
+                        <div
+                            x-show="showModal"
+                            x-transition:enter="ease-out duration-300"
+                            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                            x-transition:leave="ease-in duration-200"
+                            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                            class="relative bg-white rounded-[30px] shadow-xl transform transition-all w-full max-w-sm mx-auto p-10"
+                        >
+                            <div class="text-center" x-show="selectedDay">
+                                <h2 class="text-xl font-bold text-gray-900 mb-8 leading-tight">
+                                    Horas registradas por los profesionales
+                                </h2>
+                                
+                                <div class="space-y-6 flex flex-col items-center">
+                                    <template x-for="emp in selectedDay?.employees" :key="emp.initials">
+                                        <div class="flex items-center gap-4 w-full justify-center">
+                                            <!-- Avatar / Initials -->
+                                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold uppercase shrink-0 overflow-hidden"
+                                                 :class="emp.avatar ? 'bg-transparent' : emp.color_class">
+                                                <template x-if="emp.avatar">
+                                                    <img :src="emp.avatar" class="w-full h-full object-cover">
+                                                </template>
+                                                <template x-if="!emp.avatar">
+                                                    <span x-text="emp.initials" class="text-white"></span>
+                                                </template>
+                                            </div>
+                                            
+                                            <!-- Hours -->
+                                            <span class="text-lg text-gray-800 font-normal">
+                                                <span x-text="Math.round(emp.hours)"></span> horas
+                                            </span>
+                                        </div>
+                                    </template>
+                                    
+                                    <div x-show="!selectedDay?.employees?.length" class="text-gray-500">
+                                        No hay horas registradas para este día.
+                                    </div>
+                                </div>
+
+                                <div class="mt-8">
+                                    <button 
+                                        @click="showModal = false"
+                                        class="text-gray-500 hover:text-gray-700 font-medium text-sm underline transition-colors"
+                                    >
+                                        Cerrar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

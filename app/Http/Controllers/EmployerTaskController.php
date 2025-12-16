@@ -18,8 +18,33 @@ class EmployerTaskController extends Controller
 
     public function index()
     {
-        $tasks = Task::where('created_by', Auth::id())->with('assignees')->get();
-        return view('empleadores.ver_tareas_empleados', compact('tasks'));
+        $userId = Auth::id();
+        
+        // Fetch all task creation related data
+        $teamTasks = Task::where('created_by', $userId)
+            ->with(['assignees', 'comments.user', 'attachments.uploader'])
+            ->get()
+            ->filter(function($task) {
+                return $task->assignees->count() > 1;
+            })->values();
+
+        // 2. Employees with their individual tasks
+        // We need to fetch employees and load tasks where they are the single assignee
+        $employees = \App\Models\User::where('empleador_id', $userId)->get();
+        
+        foreach ($employees as $employee) {
+            $employee->individualTasks = Task::where('created_by', $userId)
+                ->whereHas('assignees', function($q) use ($employee) {
+                    $q->where('user_id', $employee->id);
+                })
+                ->with(['assignees', 'comments.user', 'attachments.uploader'])
+                ->get()
+                ->filter(function($task) {
+                    return $task->assignees->count() === 1;
+                })->values();
+        }
+
+        return view('empleadores.ver_tareas_empleados', compact('teamTasks', 'employees'));
     }
 
     public function create()
@@ -36,15 +61,16 @@ class EmployerTaskController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'priority' => 'required|in:low,medium,high,urgent',
-            'employee_id' => 'required|exists:users,id',
+            'assignees' => 'required|array|min:1',
+            'assignees.*' => 'exists:users,id',
         ]);
 
-        // Service now handles 'employee_id' or 'assignees'
+        // Service handles 'assignees' directly
         // $validatedData['assignees'] = [$validatedData['employee_id']]; // Handled in Service
 
         $this->taskManagementService->createTask($validatedData);
 
-        return redirect()->route('empleadores.ver_tareas_empleados')->with('success', 'Tarea creada y asignada exitosamente.');
+        return redirect()->route('empleador.tareas.index')->with('success', 'Tarea creada y asignada exitosamente.');
     }
 
     public function edit(Task $task)
@@ -69,14 +95,14 @@ class EmployerTaskController extends Controller
 
         $this->taskManagementService->updateTask($task, $validatedData);
 
-        return redirect()->route('empleadores.ver_tareas_empleados')->with('success', 'Tarea actualizada exitosamente.');
+        return redirect()->route('empleador.tareas.index')->with('success', 'Tarea actualizada exitosamente.');
     }
 
     public function destroy(Task $task)
     {
         $this->authorize('delete', $task);
         $this->taskManagementService->deleteTask($task->id);
-        return redirect()->route('empleadores.ver_tareas_empleados')->with('success', 'Tarea eliminada exitosamente.');
+        return redirect()->route('empleador.tareas.index')->with('success', 'Tarea eliminada exitosamente.');
     }
 
     public function toggleCompletion(Request $request, Task $task)
@@ -133,5 +159,35 @@ class EmployerTaskController extends Controller
     {
         $this->taskCommentService->deleteComment($taskId, $commentId);
         return response()->json(['success' => true]);
+    }
+
+    public function uploadFile(Request $request, $taskId)
+    {
+        $request->validate([
+            'file' => 'required|file|max:10240', // 10MB max
+        ]);
+
+        $task = Task::findOrFail($taskId);
+        $file = $request->file('file');
+
+        $filename = $file->getClientOriginalName();
+        $path = $file->store('task-attachments', 'public');
+
+        $attachment = new \App\Models\TaskAttachment();
+        $attachment->task_id = $task->id;
+        $attachment->uploaded_by = Auth::id();
+        $attachment->filename = $filename;
+        $attachment->stored_filename = $path;
+        $attachment->mime_type = $file->getMimeType();
+        $attachment->file_size = $file->getSize();
+        $attachment->save();
+
+        // Load uploader for response
+        $attachment->load('uploader');
+
+        return response()->json([
+            'success' => true,
+            'attachment' => $attachment
+        ]);
     }
 }
