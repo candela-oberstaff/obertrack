@@ -13,7 +13,7 @@
             </div>
 
             {{-- Summary Cards --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div id="dashboard-stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 
                 {{-- Tareas Pendientes --}}
                 <div class="bg-white rounded-lg border border-gray-200 p-6">
@@ -73,7 +73,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {{-- Últimas Tareas (2/3 width) --}}
-                <div class="lg:col-span-2">
+                <div class="lg:col-span-2" id="dashboard-latest-tasks">
                     <div class="bg-white rounded-lg border border-gray-200" x-data="{ 
                         selectedTask: null, 
                         isModalOpen: false,
@@ -328,7 +328,7 @@
                 </div>
 
                 {{-- Últimos Comentarios (1/3 width) --}}
-                <div class="lg:col-span-1">
+                <div class="lg:col-span-1" id="dashboard-latest-comments">
                     <div class="bg-white rounded-lg border border-gray-200">
                         <div class="px-6 py-4 border-b border-gray-200">
                             <h2 class="text-lg font-semibold text-gray-900">Últimos comentarios</h2>

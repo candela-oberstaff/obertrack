@@ -23,7 +23,7 @@
             @endif
 
             <!-- INFORMATION SECTION (Personal Data Only) -->
-            <div x-data="{ openProfileModal: false }">
+            <div id="profile-personal-info" x-data="{ openProfileModal: false }">
                 <h3 class="text-[#22A9C8] font-medium text-lg mb-6">Información registrada</h3>
                 
                 <div class="border border-[#22A9C8] rounded-xl p-8 bg-white relative">
@@ -108,7 +108,7 @@
             </div>
 
             <!-- ACCOUNT CONFIGURATION SECTION (Security: Email & Password) -->
-            <div x-data="{ openEmailModal: false, openPasswordModal: false }">
+            <div id="profile-account-config" x-data="{ openEmailModal: false, openPasswordModal: false }">
                 <h3 class="text-[#0F172A] font-extrabold text-2xl mb-2">Configuración de la cuenta</h3>
                 <h4 class="text-[#22A9C8] font-medium text-lg mb-6">Configuración de acceso</h4>
 
@@ -305,7 +305,7 @@
 
             <!-- Professionals Section -->
             @if(Auth::user()->tipo_usuario === 'empleador')
-                <div x-data="{ openDeleteModal: false, openPromoteModal: false, selectedUser: null, actionUrl: '' }">
+                <div id="profile-professionals-list" x-data="{ openDeleteModal: false, openPromoteModal: false, selectedUser: null, actionUrl: '' }">
                     <h3 class="text-[#22A9C8] font-medium text-lg mb-6">Profesionales registrados</h3>
 
                     <div class="bg-[#F3F4F6] rounded-xl p-6">
@@ -435,7 +435,7 @@
             @endif
 
             <!-- DANGER ZONE SECTION -->
-            <div x-data="{ openDeleteAccountModal: false }">
+            <div id="profile-danger-zone" x-data="{ openDeleteAccountModal: false }">
                 <h3 class="text-[#22A9C8] font-medium text-lg mb-6">Zona peligrosa</h3>
                 
                 <div class="bg-[#F3F4F6] rounded-xl p-8">

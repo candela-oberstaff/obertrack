@@ -12,9 +12,8 @@
         @endif
     </a>
 
-    <!-- Audio Element -->
     <audio id="notification-sound" preload="auto">
-        <source src="{{ asset('sounds/chatify/new-message-sound.wav') }}" type="audio/wav">
+        <source src="{{ asset('sounds/Sfx_Common_001 Notice1.ogg') }}" type="audio/ogg">
     </audio>
 
     <script>

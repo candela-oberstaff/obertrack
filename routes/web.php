@@ -65,6 +65,10 @@ Route::view('/contacto', 'contacto')->name('contacto');
 Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     Route::post('/notifications/tasks/{task}/mark-read', [App\Http\Controllers\NotificationController::class, 'markTaskAsRead'])->name('notifications.mark-task-read');
+    Route::post('/notifications/tasks/{task}/mark-read', [App\Http\Controllers\NotificationController::class, 'markTaskAsRead'])->name('notifications.mark-task-read');
+    
+    // Tour Route
+    Route::post('/user/tour-completed', [App\Http\Controllers\TourController::class, 'complete'])->name('tour.complete');
 });
 
 
