@@ -33,24 +33,24 @@
     }"
     x-init="
         $watch('visiblySelectedUser', value => {
-            if (value) setTimeout(() => scrollToBottom(), 100);
+            if (value) setTimeout(() => this.scrollToBottom(), 100);
         });
         
         Livewire.hook('morph.updated', () => {
              // Only scroll if we are already near bottom or it's a new message
-             scrollToBottom();
+             this.scrollToBottom();
         });
         
         // Listen for new message events (with error handling)
         if (typeof Livewire !== 'undefined') {
             try {
                 Livewire.on('new-message-received', (event) => {
-                    newMessageFrom = event[0];
-                    showNewMessageToast = true;
+                    this.newMessageFrom = event[0];
+                    this.showNewMessageToast = true;
                     
                     // Auto-hide after 4 seconds
                     setTimeout(() => {
-                        showNewMessageToast = false;
+                        this.showNewMessageToast = false;
                     }, 4000);
                 });
             } catch (error) {
