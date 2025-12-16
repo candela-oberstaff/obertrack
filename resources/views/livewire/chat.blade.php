@@ -3,7 +3,7 @@
     wire:poll.3s="refreshMessages"
     x-data="{ 
         mobileView: false,
-        visiblySelectedUser: @entangle('selectedUserId'),
+        visiblySelectedUser: $wire.entangle('selectedUserId'),
         isUploading: false,
         uploadProgress: 0,
         tempAttachmentName: '',
