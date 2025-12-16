@@ -41,16 +41,22 @@
              scrollToBottom();
         });
         
-        // Listen for new message events
-        Livewire.on('new-message-received', (event) => {
-            newMessageFrom = event[0];
-            showNewMessageToast = true;
-            
-            // Auto-hide after 4 seconds
-            setTimeout(() => {
-                showNewMessageToast = false;
-            }, 4000);
-        });
+        // Listen for new message events (with error handling)
+        if (typeof Livewire !== 'undefined') {
+            try {
+                Livewire.on('new-message-received', (event) => {
+                    newMessageFrom = event[0];
+                    showNewMessageToast = true;
+                    
+                    // Auto-hide after 4 seconds
+                    setTimeout(() => {
+                        showNewMessageToast = false;
+                    }, 4000);
+                });
+            } catch (error) {
+                console.error('Error setting up Livewire listener:', error);
+            }
+        }
     "
 >
     <!-- Mobile New Message Toast -->
