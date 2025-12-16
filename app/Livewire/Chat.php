@@ -20,6 +20,7 @@ class Chat extends Component
     public $messageText = '';
     public $attachment;
     public $contacts;
+    public $previousUnreadCounts = [];
 
     protected $listeners = ['refreshMessages' => '$refresh'];
 
@@ -36,6 +37,10 @@ class Chat extends Component
     public function mount()
     {
         $this->loadContacts();
+        // Initialize previous counts
+        foreach ($this->contacts as $contact) {
+            $this->previousUnreadCounts[$contact->id] = $contact->unread_messages_count;
+        }
     }
 
     public function loadContacts()
@@ -144,6 +149,35 @@ class Chat extends Component
     {
         // Refresh contacts to update unread counts and status
         $this->loadContacts();
+
+        // Detect new messages and dispatch event
+        foreach ($this->contacts as $contact) {
+            $previousCount = $this->previousUnreadCounts[$contact->id] ?? 0;
+            $currentCount = $contact->unread_messages_count;
+            
+            // If there are new unread messages and we're not viewing this contact
+            if ($currentCount > $previousCount && $this->selectedUserId != $contact->id) {
+                // Get initials
+                $nameParts = explode(' ', $contact->name);
+                $initials = '';
+                foreach ($nameParts as $part) {
+                    if (!empty($part)) {
+                        $initials .= strtoupper(substr($part, 0, 1));
+                        if (strlen($initials) >= 2) break;
+                    }
+                }
+                
+                // Dispatch browser event
+                $this->dispatch('new-message-received', [
+                    'name' => $contact->name,
+                    'initials' => $initials,
+                    'userId' => $contact->id
+                ]);
+            }
+            
+            // Update previous count
+            $this->previousUnreadCounts[$contact->id] = $currentCount;
+        }
 
         $messages = [];
         

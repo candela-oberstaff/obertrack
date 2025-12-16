@@ -13,7 +13,7 @@
             <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas totales registradas por los profesionales</h3>
             
             <!-- Employee Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
                 @foreach($employeeSummaries as $summary)
                     @php
                         $percentage = $summary['target_hours'] > 0 ? min(100, ($summary['total_hours'] / $summary['target_hours']) * 100) : 0;
@@ -92,7 +92,7 @@
                 </div>
 
                 <!-- Calendar Grid (Interactive) -->
-                <div class="overflow-x-auto pb-4" x-data="{ 
+                <div id="employer-calendar" x-data="{ 
                     selectedDay: null,
                     showModal: false,
                     openDetails(day) {
@@ -100,7 +100,8 @@
                         this.showModal = true;
                     }
                 }">
-                    <div class="w-full md:min-w-[1000px] border border-[#22A9C8] rounded-xl p-6 bg-white">
+                    <!-- MOBILE VIEW: Simple calendar with modal (current behavior) -->
+                    <div class="block md:hidden w-full border border-[#22A9C8] rounded-xl p-6 bg-white">
                         <!-- Headers -->
                          <div class="grid grid-cols-7 gap-4 mb-8">
                             @foreach(['Dom', 'Lun', 'Mar', 'Mier', 'Jue', 'Vie', 'Sab'] as $dayName)
@@ -131,11 +132,73 @@
                         </div>
                     </div>
 
-                    <!-- Custom Backdrop & Modal -->
+                    <!-- DESKTOP VIEW: Detailed calendar showing all hours -->
+                    <div class="hidden md:block w-full border border-[#22A9C8] rounded-xl p-6 bg-white">
+                        <!-- Headers -->
+                        <div class="grid grid-cols-7 gap-3 mb-6">
+                            @foreach(['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as $dayName)
+                                <div class="text-center font-bold text-gray-900 text-sm">{{ $dayName }}</div>
+                            @endforeach
+                        </div>
+
+                        <!-- Days Grid -->
+                        <div class="grid grid-cols-7 gap-3">
+                            @foreach($calendar as $day)
+                                <div class="bg-gray-50 rounded-lg p-3 min-h-[120px] flex flex-col">
+                                    @if($day['is_current_month'])
+                                        <!-- Day Number Badge -->
+                                        <div class="flex justify-center mb-3">
+                                            <span class="bg-[#22A9C8] text-white rounded-full px-3 py-1 text-xs font-bold">
+                                                {{ str_pad($day['day'], 2, '0', STR_PAD_LEFT) }}
+                                            </span>
+                                        </div>
+
+                                        <!-- Professionals Hours -->
+                                        @if(count($day['employees']) > 0)
+                                            <div class="space-y-2 flex-1">
+                                                @foreach($day['employees'] as $employee)
+                                                    <div class="flex items-center gap-2">
+                                                        <!-- Avatar / Initials -->
+                                                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase shrink-0 overflow-hidden {{ isset($employee['avatar']) && $employee['avatar'] ? 'bg-transparent' : ($employee['color_class'] ?? 'bg-gray-400') }}">
+                                                            @if(isset($employee['avatar']) && $employee['avatar'])
+                                                                <img src="{{ $employee['avatar'] }}" class="w-full h-full object-cover">
+                                                            @else
+                                                                <span class="text-white">{{ $employee['initials'] ?? 'NA' }}</span>
+                                                            @endif
+                                                        </div>
+                                                        
+                                                        <!-- Hours -->
+                                                        <span class="text-xs text-gray-700 font-medium">
+                                                            {{ round($employee['hours']) }} horas
+                                                        </span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <div class="flex-1 flex items-center justify-center">
+                                                <span class="text-xs text-gray-400">-</span>
+                                            </div>
+                                        @endif
+                                    @else
+                                        <!-- Empty cell for days outside current month -->
+                                        <div class="opacity-30">
+                                            <div class="flex justify-center mb-3">
+                                                <span class="bg-gray-300 text-gray-500 rounded-full px-3 py-1 text-xs font-bold">
+                                                    {{ str_pad($day['day'], 2, '0', STR_PAD_LEFT) }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- Custom Backdrop & Modal (Mobile Only) -->
                     <div
                         x-show="showModal"
                         style="display: none;"
-                        class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-0"
+                        class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-0 md:hidden"
                     >
                         <!-- Dimmed Background -->
                         <div

@@ -380,13 +380,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             {{-- Header --}}
-            <div class="mb-8 px-4 sm:px-0">
+            <div id="registrar-horas-header" class="mb-8 px-4 sm:px-0">
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">Registro de horas</h1>
                 <p class="text-primary font-medium text-sm">Total de horas trabajadas hasta el momento</p>
             </div>
 
             {{-- Summary Card --}}
-            <div class="bg-gray-50 rounded-2xl p-6 mb-12 flex flex-col md:flex-row items-center justify-between mx-4 sm:mx-0">
+            <div id="registrar-horas-summary" class="bg-gray-50 rounded-2xl p-6 mb-12 flex flex-col md:flex-row items-center justify-between mx-4 sm:mx-0">
                 <div class="mb-4 md:mb-0">
                     <h2 class="text-xl font-bold text-gray-900">Tu registro de horas</h2>
                     <p class="text-gray-500 text-sm">
@@ -426,10 +426,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="mx-4 sm:mx-0">
                 <h3 class="text-lg font-bold text-gray-800 mb-4">Registro actual</h3>
                 
-                <div class="border border-blue-400 rounded-3xl p-6 bg-white min-h-[600px]">
+                <div id="registrar-horas-calendar" class="border border-blue-400 rounded-3xl p-6 bg-white min-h-[600px]">
                     
                     {{-- Month Navigator --}}
-                    <div class="flex items-center gap-4 mb-8">
+                    <div id="registrar-horas-month-nav" class="flex items-center gap-4 mb-8">
                         <a href="{{ route('empleado.registrar-horas', ['month' => $currentMonth->copy()->subMonth()->format('Y-m-d')]) }}" class="bg-[#0066CC] text-white p-1 rounded-md text-xs hover:bg-primary-hover">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         </a>

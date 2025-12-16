@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
+    <x-slot name="header" id="reportes-header">
         <h2 class="font-bold text-3xl text-gray-900 leading-tight">
             Reportes de profesionales
         </h2>
@@ -7,10 +7,10 @@
     </x-slot>
 
     <div class="py-8 bg-gray-50 min-h-screen">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div id="reportes-professionals-list" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             
             @forelse($professionals as $prof)
-            <div class="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm relative overflow-hidden">
+            <div class="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm relative overflow-hidden reportes-professional-card">
                 <div class="flex flex-col md:flex-row items-start gap-6 md:gap-8">
                     <!-- Number Badge with Blue Underline -->
                     <div class="flex-shrink-0 w-full md:w-auto flex justify-center md:block">
@@ -54,6 +54,7 @@
                 <div class="mt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
                     <div class="w-full md:w-auto">
                         <a href="{{ route('reportes.show', $prof['id']) }}" 
+                           {{ $loop->first ? 'id=reportes-view-button' : '' }}
                            class="inline-block px-8 py-2.5 bg-[#0f172a] text-white text-sm font-medium rounded-full hover:bg-black transition shadow-lg w-full md:w-auto">
                             Ver reporte completo
                         </a>

@@ -8,12 +8,13 @@
             </div>
 
             <!-- Team Assignments Section -->
-            <div class="mb-12">
+            <div id="team-tasks-section" class="mb-12">
                 <div class="hidden md:flex justify-between items-center mb-6">
                     <h3 class="text-[#22A9C8] font-medium text-lg">Asignaciones en equipo</h3>
                     <button 
                         @click="openCreateTaskModal(null, true)"
                         class="bg-[#22A9C8] hover:bg-[#1B8BA6] text-white font-medium py-2 px-6 rounded-full text-sm transition-colors shadow-sm"
+                        id="create-team-task-btn"
                     >
                         Agregar tarea en equipo
                     </button>
@@ -87,7 +88,7 @@
             </div>
 
             <!-- Individual Assignments Header (Desktop) -->
-            <div class="mb-8 hidden md:block">
+            <div id="individual-tasks-section" class="mb-8 hidden md:block">
                 <h2 class="text-2xl font-bold text-[#0D1E4C]">Asignaciones individuales</h2>
             </div>
 
