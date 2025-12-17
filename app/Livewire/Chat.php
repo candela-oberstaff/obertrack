@@ -84,6 +84,15 @@ class Chat extends Component
 
     public function sendMessage()
     {
+        // 1. Authorization: Verify the recipient is in the allowed contacts list
+        // Reload contacts to ensure valid state
+        $this->loadContacts();
+        
+        if (!$this->contacts->contains('id', $this->selectedUserId)) {
+            $this->addError('messageText', 'Error de seguridad: No tienes permiso para enviar mensajes a este usuario.');
+            return;
+        }
+
         // Validate that at least one is present
         if (empty($this->messageText) && !$this->attachment) {
             $this->addError('messageText', 'Debes escribir un mensaje o adjuntar un archivo.');
@@ -92,12 +101,29 @@ class Chat extends Component
 
         $this->validate();
 
-        $messageText = $this->messageText;
+        // 2. Sanitization & Spam Protection
+        $rawMessage = $this->messageText;
+        
+        // Simple Spam Filter (Blocking the specific attack pattern)
+        $spamKeywords = ['primefisolutions', 'credit available', 'urgent transfer'];
+        foreach ($spamKeywords as $keyword) {
+            if (stripos($rawMessage, $keyword) !== false) {
+                 $this->addError('messageText', 'Tu mensaje ha sido bloqueado por contener términos sospechosos.');
+                 return;
+            }
+        }
+
+        // Strip tags to prevent XSS (although Blade escapes output, this keeps DB clean)
+        $messageText = strip_tags($rawMessage);
+
         $attachmentFile = $this->attachment;
+        // ... (rest is same)
 
         // Clear input immediately
         $this->messageText = '';
         $this->attachment = null;
+        
+        // ... (upload logic)
 
         $attachmentPath = null;
         
