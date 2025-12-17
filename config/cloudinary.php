@@ -13,13 +13,27 @@ return [
     |
     */
 
-    'cloud' => [
-        'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
-        'api_key'    => env('CLOUDINARY_API_KEY'),
-        'api_secret' => env('CLOUDINARY_API_SECRET'),
-        'url'        => [
-            'secure' => true
-        ]
-    ],
+    /*
+    |--------------------------------------------------------------------------
+    | Cloudinary Configuration
+    |--------------------------------------------------------------------------
+    */
+    'cloud_url' => env('CLOUDINARY_URL'),
+
     'notification_url' => env('CLOUDINARY_NOTIFICATION_URL'),
+    
+    /**
+     * Upload Preset Configuration
+     */
+    'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
+    
+    /**
+     * Upload Route Configuration
+     */
+    'upload_route' => env('CLOUDINARY_UPLOAD_ROUTE'),
+
+    /**
+     * Upload Action Configuration
+     */
+    'upload_action' => env('CLOUDINARY_UPLOAD_ACTION'),
 ];
