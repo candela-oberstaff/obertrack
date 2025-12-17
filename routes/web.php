@@ -36,11 +36,11 @@ Route::get('/', function () {
 Route::get('/internal/livewire.js', function () {
     $path = base_path('vendor/livewire/livewire/dist/livewire.js');
     if (!file_exists($path)) {
-        abort(404);
+        return response("Livewire asset not found at path: " . $path, 404, ['Content-Type' => 'text/plain']);
     }
     return response()->file($path, [
         'Content-Type' => 'application/javascript',
-        'Cache-Control' => 'public, max-age=31536000',
+        'Cache-Control' => 'no-store, no-cache, must-revalidate',
     ]);
 });
 
