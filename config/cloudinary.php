@@ -20,6 +20,22 @@ return [
     */
     'cloud_url' => env('CLOUDINARY_URL'),
 
+    /**
+     * Cloudinary Configuration (Explicit)
+     */
+    'cloud' => (function() {
+        $url = env('CLOUDINARY_URL');
+        if (!$url || strpos($url, 'cloudinary://') !== 0) {
+             return [];
+        }
+        $parsed = parse_url($url);
+        return [
+            'cloud_name' => $parsed['host'] ?? null,
+            'api_key'    => $parsed['user'] ?? null,
+            'api_secret' => $parsed['pass'] ?? null,
+        ];
+    })(),
+
     'notification_url' => env('CLOUDINARY_NOTIFICATION_URL'),
     
     /**
