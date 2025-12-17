@@ -73,7 +73,7 @@
                     
                     // Check ALL pending hours (not just by week)
                     $totalPendingHours = \App\Models\WorkHours::whereIn('user_id', $empleados->pluck('id'))
-                        ->where('approved', false)
+                        ->whereRaw('approved IS FALSE')
                         ->exists();
                     
                     if ($totalPendingHours && $empleados->count() > 0) {
@@ -81,7 +81,7 @@
                         $workHoursSummary = [];
                         foreach ($empleados as $empleado) {
                             $pendingHours = \App\Models\WorkHours::where('user_id', $empleado->id)
-                                ->where('approved', false)
+                                ->whereRaw('approved IS FALSE')
                                 ->sum('hours_worked');
                             
                             if ($pendingHours > 0) {
