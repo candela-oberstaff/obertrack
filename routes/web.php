@@ -33,7 +33,8 @@ Route::get('/', function () {
 });
 
 // Fallback Livewire Asset Route (Bypasses public folder issues)
-Route::get('/internal/livewire.js', function () {
+// Fallback Livewire Asset Route (Bypasses public folder and Nginx static rules)
+Route::get('/livewire-script', function () {
     $path = base_path('vendor/livewire/livewire/dist/livewire.js');
     if (!file_exists($path)) {
         return response("Livewire asset not found at path: " . $path, 404, ['Content-Type' => 'text/plain']);
