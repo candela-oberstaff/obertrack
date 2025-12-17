@@ -34,7 +34,7 @@
         <x-application-logo class="h-16 w-auto object-contain" />
         <div class="flex flex-col">
             <div class="relative inline-block">
-                <span class="font-bold text-2xl tracking-tight text-[#22A9C8] leading-none">Obertrack</span>
+                <span class="font-bold text-2xl tracking-tight text-[#0976D6] leading-none">Obertrack</span>
                 <span class="absolute -top-1 -right-3 text-[0.5rem] font-bold text-gray-900">TM</span>
             </div>
             <span class="text-[0.6rem] font-bold tracking-widest text-gray-500 uppercase leading-none mt-0.5">
@@ -54,31 +54,19 @@
            class="rounded-full bg-[#22A9C8] px-4 py-2 text-white hover:bg-[#0D5C7D] transition">
             Iniciar sesión
         </a>
-            <button class="inline-flex items-center justify-center p-2 rounded-md text-primary hover:text-primary-hover hover:bg-gray-100 lg:hidden transition" onclick="toggleMenu()" aria-label="menu">
-                <svg class="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
-                    <circle cx="5" cy="5" r="2" />
-                    <circle cx="12" cy="5" r="2" />
-                    <circle cx="19" cy="5" r="2" />
-                    <circle cx="5" cy="12" r="2" />
-                    <circle cx="12" cy="12" r="2" />
-                    <circle cx="19" cy="12" r="2" />
-                    <circle cx="5" cy="19" r="2" />
-                    <circle cx="12" cy="19" r="2" />
-                    <circle cx="19" cy="19" r="2" />
-                </svg>
-            </button>
+        <button class="text-blue-600 text-3xl lg:hidden" onclick="toggleMenu()" aria-label="menu">
+            <i class="bi bi-list"></i>
+        </button>
     </div>
 </header>
 
 <!-- Mobile menu -->
 <div id="mobile-menu"
      class="fixed inset-0 bg-white z-30 transform translate-x-full transition-transform duration-300 ease-in-out lg:hidden">
-        <div class="flex flex-col h-full justify-center items-center space-y-6 relative px-6">
-            <button onclick="toggleMenu()" class="absolute top-6 right-6 text-primary hover:text-primary-hover transition" aria-label="Close menu">
-                <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
+    <div class="flex flex-col h-full justify-center items-center space-y-4 relative">
+        <button onclick="toggleMenu()" class="absolute top-4 right-4 text-3xl text-blue-600">
+            <i class="bi bi-x"></i>
+        </button>
         <a href="{{ url('/register') }}"
            class="rounded-full border-2 border-[#22A9C8] px-6 py-3 text-black bg-white hover:bg-blue-50 transition">
             Registrarse
@@ -94,8 +82,8 @@
 <div class="relative mt-16 overflow-hidden">
 
     <!-- Imagen de fondo (solo hero, desde header hasta botón) -->
-    <div class="absolute top-0 left-0 w-full h-[300px] sm:h-[400px] bg-cover bg-center"
-         style="background-image: url('{{ asset('images/fondo-hero.png') }}'); opacity:0.3; transform: scaleY(-1); z-index:0;">
+    <div class="absolute top-0 left-0 w-full h-[400px] bg-cover bg-center"
+         style="background-image: url('{{ asset('images/fondo-hero.png') }}'); opacity:0.5; transform: scaleY(-1); z-index:0;">
     </div>
 
     <!--  Degradado radial extendido más grande -->
@@ -127,7 +115,7 @@
                     Gestión inteligente para equipos que necesitan claridad y resultados
                 </h1>
 
-                <p class="mb-10 text-base sm:text-xl lg:text-2xl text-[#485156] max-w-3xl mx-auto">
+                <p class="mb-8 text-lg sm:text-xl lg:text-2xl text-[#485156]">
                     Unifica tus procesos, registra horas, genera reportes y administra talento con datos en tiempo real.
                 </p>
 
@@ -210,7 +198,7 @@
                    class="border rounded-lg px-4 py-2 border-[#22A9C8]" />
 
             <textarea name="mensaje" placeholder="Mensaje" rows="4"
-                       class="border rounded-lg px-4 py-2 border-[#22A9C8]" required></textarea>
+                      class="border rounded-lg px-4 py-2 border-[#22A9C8]" required></textarea>
 
             <button type="submit"
                     class="rounded-full bg-[#22A9C8] text-white px-6 py-3 hover:bg-[#0D5C7D]">

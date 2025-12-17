@@ -11,7 +11,7 @@
     <style>
         body { font-family: 'Montserrat', sans-serif; }
         .bg-gradient-brand {
-            background: linear-gradient(180deg, #FFFFFF 0%, #E0F2FE 40%, #3B82F6 100%);
+            background: linear-gradient(180deg, #FFFFFF 0%, #E0F7FA 40%, #22A9C8 100%);
         }
         .glass-card {
             background: rgba(255, 255, 255, 0.45);
@@ -32,7 +32,7 @@
         }
         .form-input-custom:focus {
             ring: 2px;
-            ring-color: #3B82F6;
+            ring-color: #22A9C8;
         }
         /* Custom scrollbar handling for modal if needed on small screens */
         .glass-card {
@@ -125,10 +125,10 @@
             <!-- Footer & Button -->
             <div class="pt-2 text-center">
                 <p class="text-xs font-semibold text-gray-600 mb-4">
-                    ¿Ya tienes una cuenta? <a href="{{ route('login') }}" class="text-primary hover:text-blue-800 underline">Inicia sesión</a>
+                    ¿Ya tienes una cuenta? <a href="{{ route('login') }}" class="text-primary hover:text-primary-hover underline">Inicia sesión</a>
                 </p>
 
-                <button type="submit" class="bg-[#1D71B8] hover:bg-primary-hover text-white font-bold py-2.5 px-10 rounded-full transition duration-300 shadow-lg w-auto inline-block text-sm">
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white font-bold py-2.5 px-10 rounded-full transition duration-300 shadow-lg w-auto inline-block text-sm">
                     Registrarse
                 </button>
             </div>
