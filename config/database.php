@@ -94,8 +94,8 @@ return [
             'sslmode' => env('DB_SSL_MODE', 'prefer'),
             // Connection pooling and performance optimization
             'options' => [
-                PDO::ATTR_PERSISTENT => true, // Enable persistent connections
-                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_PERSISTENT => false, // Disable persistent connections to fix prepared statement errors
+                PDO::ATTR_EMULATE_PREPARES => true,
                 PDO::ATTR_TIMEOUT => 5,
             ],
         ],

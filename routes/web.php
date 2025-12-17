@@ -32,6 +32,18 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Fallback Livewire Asset Route (Bypasses public folder issues)
+// Fallback Livewire Asset Route (Bypasses public folder and Nginx static rules)
+Route::get('/livewire-script', function () {
+    $path = base_path('vendor/livewire/livewire/dist/livewire.js');
+    if (!file_exists($path)) {
+        return response("Livewire asset not found at path: " . $path, 404, ['Content-Type' => 'text/plain']);
+    }
+    return response()->file($path, [
+        'Content-Type' => 'application/javascript',
+        'Cache-Control' => 'no-store, no-cache, must-revalidate',
+    ]);
+});
 
 
 /*
@@ -53,10 +65,10 @@ Route::middleware(['auth'])->get('/dashboard', function () {
     return view('dashboard-professional');
 })->name('dashboard');
 
-// Mock Chat Route
-Route::middleware(['auth'])->get('/chat', function () {
-    return view('chat.mock');
-})->name('chat');
+// Chat Route
+use App\Livewire\Chat;
+Route::middleware(['auth'])->get('/chat', Chat::class)->name('chat');
+
 
 // Contacto Route
 Route::view('/contacto', 'contacto')->name('contacto');
@@ -65,6 +77,10 @@ Route::view('/contacto', 'contacto')->name('contacto');
 Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     Route::post('/notifications/tasks/{task}/mark-read', [App\Http\Controllers\NotificationController::class, 'markTaskAsRead'])->name('notifications.mark-task-read');
+    Route::post('/notifications/tasks/{task}/mark-read', [App\Http\Controllers\NotificationController::class, 'markTaskAsRead'])->name('notifications.mark-task-read');
+    
+    // Tour Route
+    Route::post('/user/tour-completed', [App\Http\Controllers\TourController::class, 'complete'])->name('tour.complete');
 });
 
 

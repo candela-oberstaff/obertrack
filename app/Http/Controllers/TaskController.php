@@ -100,8 +100,7 @@ class TaskController extends Controller
     public function storeForEmployee(StoreTaskRequest $request)
     {
         $validatedData = $request->validated();
-        // Map employee_id to visible_para for service compatibility
-        $validatedData['visible_para'] = $validatedData['employee_id'];
+        // Service handles 'employee_id' mapping to assignees
         
         $this->taskManagementService->createTask($validatedData);
         return redirect()->route('empleador.tareas.index')->with('success', 'Tarea creada y asignada exitosamente.');
@@ -113,13 +112,11 @@ class TaskController extends Controller
         return redirect()->route('empleador.tareas.index');
     }
 
-
     public function updateForEmployer(UpdateTaskRequest $request, Task $task)
     {
         $validatedData = $request->validated();
-        // Map employee_id to visible_para for service compatibility
-        $validatedData['visible_para'] = $validatedData['employee_id'];
-
+        // Service handles updates
+        
         $this->taskManagementService->updateTask($task, $validatedData);
         return redirect()->route('empleador.tareas.index')->with('success', 'Tarea actualizada exitosamente.');
     }
@@ -129,7 +126,7 @@ class TaskController extends Controller
         $task = Task::findOrFail($taskId);
         
         // Verificar si el usuario autenticado es el empleador de esta tarea
-        if ($task->createdBy->id !== Auth::id()) {
+        if ($task->created_by !== Auth::id()) { // Using created_by instead of relation for now, simplified
             return response()->json(['success' => false, 'message' => 'No tienes permiso para modificar esta tarea'], 403);
         }
 
@@ -149,7 +146,7 @@ class TaskController extends Controller
         $task = Task::findOrFail($taskId);
         
         // Verificar si el usuario autenticado es el empleador de esta tarea
-        if ($task->createdBy->id !== Auth::id()) {
+        if ($task->created_by !== Auth::id()) {
             return redirect()->back()->with('error', 'No tienes permiso para editar esta tarea');
         }
 
@@ -161,7 +158,7 @@ class TaskController extends Controller
         $task = Task::findOrFail($taskId);
         
         // Verificar si el usuario autenticado es el empleador de esta tarea
-        if ($task->createdBy->id !== Auth::id()) {
+        if ($task->created_by !== Auth::id()) {
             return redirect()->back()->with('error', 'No tienes permiso para actualizar esta tarea');
         }
 
@@ -175,8 +172,9 @@ class TaskController extends Controller
         
         // Check if user has access to this task
         $user = auth()->user();
-        $canAccess = $user->id === $task->visible_para || 
-                     $user->id === $task->created_by ||
+        
+        $canAccess = $user->id === $task->created_by ||
+                     $task->assignees->contains($user->id) ||
                      $user->is_superadmin;
         
         if (!$canAccess) {

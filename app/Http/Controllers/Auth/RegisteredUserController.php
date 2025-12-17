@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\File;
 
 class RegisteredUserController extends Controller
 {
@@ -43,6 +44,15 @@ class RegisteredUserController extends Controller
             'job_title' => 'nullable|string|max:100',
         ]);
 
+
+
+        $avatar = null;
+        $files = File::files(public_path('avatars'));
+        if (count($files) > 0) {
+            $randomFile = $files[array_rand($files)];
+            $avatar = $randomFile->getFilename();
+        }
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -50,6 +60,7 @@ class RegisteredUserController extends Controller
             'tipo_usuario' => $request->tipo_usuario,
             'empleador_id' => $request->tipo_usuario === 'empleado' ? $request->empleado_por_id : null,
             'job_title' => $request->tipo_usuario === 'empleado' ? $request->job_title : null,
+            'avatar' => $avatar,
         ]);
 
         Auth::login($user);

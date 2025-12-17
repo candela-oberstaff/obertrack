@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center gap-3">
-            <a href="{{ route('reportes.index') }}" class="text-blue-500 hover:text-blue-700 p-1 bg-blue-50 rounded">
+            <a href="{{ route('reportes.index') }}" class="text-primary hover:text-primary-hover p-1 bg-blue-50 rounded">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                 </svg>
@@ -21,20 +21,20 @@
             <!-- Week Navigation -->
             <div class="flex items-center justify-between mb-8 max-w-4xl mx-auto">
                 <a href="{{ route('reportes.show', ['user' => $professional->id, 'week' => $weekStart->copy()->subWeek()->format('Y-m-d')]) }}" 
-                   class="text-blue-500 hover:text-blue-700">
+                   class="text-primary hover:text-primary-hover">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                     </svg>
                 </a>
                 
                 <div class="text-center group cursor-pointer">
-                    <p class="text-gray-400 text-sm underline group-hover:text-gray-600 transition">
+                    <p class="text-primary text-xl font-bold underline transition">
                         Semana del {{ $weekStart->format('Y-m-d') }} al {{ $weekEnd->format('Y-m-d') }}
                     </p>
                 </div>
                 
                 <a href="{{ route('reportes.show', ['user' => $professional->id, 'week' => $weekStart->copy()->addWeek()->format('Y-m-d')]) }}" 
-                   class="text-blue-500 hover:text-blue-700">
+                   class="text-primary hover:text-primary-hover">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
@@ -44,11 +44,11 @@
             <!-- Outline Download Buttons -->
             <div class="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mb-12">
                 <a href="{{ route('reportes.download.weekly', ['user' => $professional->id, 'week' => $weekStart->format('Y-m-d')]) }}" 
-                   class="px-8 py-2.5 bg-white text-blue-500 text-sm font-semibold rounded-full border-2 border-blue-500 hover:bg-blue-50 transition shadow-sm inline-block text-center no-underline">
+                   class="px-8 py-2.5 bg-white text-primary text-sm font-semibold rounded-full border-2 border-primary hover:bg-blue-50 transition shadow-sm inline-block text-center no-underline">
                     Descargar reporte semanal
                 </a>
                 <a href="{{ route('reportes.download.monthly', ['user' => $professional->id, 'month' => $weekStart->format('Y-m-d')]) }}" 
-                   class="px-8 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-full border-2 border-blue-600 hover:bg-blue-700 transition shadow-lg inline-block text-center no-underline">
+                   class="px-8 py-2.5 bg-primary text-white text-sm font-semibold rounded-full border-2 border-primary hover:bg-primary-hover transition shadow-lg inline-block text-center no-underline">
                     Descargar reporte mensual
                 </a>
             </div>
@@ -58,7 +58,7 @@
                 
                 <!-- Weekly Average Card (Blue Border) -->
                 <div class="bg-white rounded-3xl p-8 shadow-sm border-2 border-blue-400 h-full relative">
-                    <div class="absolute top-6 right-6 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
+                    <div class="absolute top-6 right-6 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-xs">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
@@ -110,7 +110,7 @@
                 <!-- Incomplete Tasks Card (Blue Border) -->
                 <div class="bg-white rounded-3xl p-8 shadow-sm border-2 border-blue-400 h-full relative">
                     <div class="absolute top-6 right-6 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
                     </div>

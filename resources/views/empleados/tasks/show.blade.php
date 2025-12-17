@@ -17,7 +17,7 @@
 
             
             <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden mb-8">
-                <div class="px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-600">
+                <div class="px-6 py-4 bg-gradient-to-r from-primary to-indigo-600">
                     <h2 class="text-2xl font-bold text-white">{{ $task->title }}</h2>
                 </div>
                 <div class="p-6">
@@ -112,7 +112,7 @@
                                         <span>{{ $comment->created_at->diffForHumans() }}</span>
                                         @if($comment->user_id == Auth::id())
                                             <div class="flex space-x-2">
-                                                <button class="edit-comment text-blue-500 hover:text-blue-600 transition duration-300" data-comment-id="{{ $comment->id }}">Editar</button>
+                                                <button class="edit-comment text-primary hover:text-primary transition duration-300" data-comment-id="{{ $comment->id }}">Editar</button>
                                                 <button class="delete-comment text-red-500 hover:text-red-600 transition duration-300" data-comment-id="{{ $comment->id }}">Eliminar</button>
                                             </div>
                                         @endif
@@ -125,8 +125,8 @@
                 <div class="p-6 bg-gray-50 dark:bg-gray-700">
                     <form id="add-comment-form" data-task-id="{{ $task->id }}">
                         @csrf
-                        <textarea name="content" rows="3" class="w-full px-3 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300 resize-none" placeholder="Añade un comentario..."></textarea>
-                        <button type="submit" class="mt-3 w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                        <textarea name="content" rows="3" class="w-full px-3 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition duration-300 resize-none" placeholder="Añade un comentario..."></textarea>
+                        <button type="submit" class="mt-3 w-full bg-primary hover:bg-primary text-white font-medium py-2 px-4 rounded-md transition duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50">
                             Añadir comentario
                         </button>
                     </form>
@@ -207,7 +207,7 @@
                     const editForm = `
                         <form class="edit-comment-form" data-comment-id="${commentId}">
                             <textarea class="w-full p-2 border rounded-lg resize-none">${commentContent}</textarea>
-                            <button type="submit" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded transition duration-300">Guardar</button>
+                            <button type="submit" class="mt-2 bg-primary hover:bg-primary text-white font-bold py-1 px-3 rounded transition duration-300">Guardar</button>
                             <button type="button" class="cancel-edit mt-2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded transition duration-300">Cancelar</button>
                         </form>
                     `;
@@ -296,7 +296,7 @@
                                     <span>${new Date(comment.created_at).toLocaleString()}</span>
                                     ${isCurrentUser ? `
                                         <div class="flex space-x-2">
-                                            <button class="edit-comment text-blue-500 hover:text-blue-600 transition duration-300" data-comment-id="${comment.id}">Editar</button>
+                                            <button class="edit-comment text-primary hover:text-primary transition duration-300" data-comment-id="${comment.id}">Editar</button>
                                             <button class="delete-comment text-red-500 hover:text-red-600 transition duration-300" data-comment-id="${comment.id}">Eliminar</button>
                                         </div>
                                     ` : ''}

@@ -24,7 +24,7 @@
                                                 @csrf
                                                 <input type="hidden" name="work_date" value="{{ $day['date']->format('Y-m-d') }}">
                                                 <input type="number" name="hours_worked" step="0.5" min="0" max="24" class="w-full text-xs p-1 border rounded" placeholder="Horas">
-                                                <button type="submit" class="mt-1 w-full bg-blue-500 text-white text-xs p-1 rounded">Guardar</button>
+                                                <button type="submit" class="mt-1 w-full bg-primary text-white text-xs p-1 rounded">Guardar</button>
                                             </form>
                                         @endif
                                     @endif
@@ -74,7 +74,7 @@
                                                 @csrf
                                                 <input type="hidden" name="work_date" value="{{ $day['date']->format('Y-m-d') }}">
                                                 <input type="number" name="hours_worked" step="0.5" min="0" max="24" class="w-full text-xs p-1 border rounded" placeholder="Horas">
-                                                <button type="submit" class="mt-1 w-full bg-blue-500 text-white text-xs p-1 rounded">Guardar</button>
+                                                <button type="submit" class="mt-1 w-full bg-primary text-white text-xs p-1 rounded">Guardar</button>
                                             </form>
                                         @else
                                             <div class="text-sm text-gray-400">Futuro</div>
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 @csrf
                                                 <input type="hidden" name="work_date" value="{{ $day['date']->format('Y-m-d') }}">
                                                 <input type="number" name="hours_worked" step="0.5" min="0" max="24" class="w-full text-xs p-1 border rounded" placeholder="Horas">
-                                                <button type="submit" class="mt-1 w-full bg-blue-500 text-white text-xs p-1 rounded">Guardar</button>
+                                                <button type="submit" class="mt-1 w-full bg-primary text-white text-xs p-1 rounded">Guardar</button>
                                             </form>
                                         @else
                                             <div class="text-sm text-gray-400">Futuro</div>
@@ -380,13 +380,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             {{-- Header --}}
-            <div class="mb-8 px-4 sm:px-0">
+            <div id="registrar-horas-header" class="mb-8 px-4 sm:px-0">
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">Registro de horas</h1>
-                <p class="text-blue-500 font-medium text-sm">Total de horas trabajadas hasta el momento</p>
+                <p class="text-primary font-medium text-sm">Total de horas trabajadas hasta el momento</p>
             </div>
 
             {{-- Summary Card --}}
-            <div class="bg-gray-50 rounded-2xl p-6 mb-12 flex flex-col md:flex-row items-center justify-between mx-4 sm:mx-0">
+            <div id="registrar-horas-summary" class="bg-gray-50 rounded-2xl p-6 mb-12 flex flex-col md:flex-row items-center justify-between mx-4 sm:mx-0">
                 <div class="mb-4 md:mb-0">
                     <h2 class="text-xl font-bold text-gray-900">Tu registro de horas</h2>
                     <p class="text-gray-500 text-sm">
@@ -426,15 +426,15 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="mx-4 sm:mx-0">
                 <h3 class="text-lg font-bold text-gray-800 mb-4">Registro actual</h3>
                 
-                <div class="border border-blue-400 rounded-3xl p-6 bg-white min-h-[600px]">
+                <div id="registrar-horas-calendar" class="border border-blue-400 rounded-3xl p-6 bg-white min-h-[600px]">
                     
                     {{-- Month Navigator --}}
-                    <div class="flex items-center gap-4 mb-8">
-                        <a href="{{ route('empleado.registrar-horas', ['month' => $currentMonth->copy()->subMonth()->format('Y-m-d')]) }}" class="bg-[#0066CC] text-white p-1 rounded-md text-xs hover:bg-blue-700">
+                    <div id="registrar-horas-month-nav" class="flex items-center gap-4 mb-8">
+                        <a href="{{ route('empleado.registrar-horas', ['month' => $currentMonth->copy()->subMonth()->format('Y-m-d')]) }}" class="bg-[#0066CC] text-white p-1 rounded-md text-xs hover:bg-primary-hover">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         </a>
                         <h2 class="text-xl font-bold text-gray-900">{{ $currentMonth->format('F Y') }}</h2>
-                        <a href="{{ route('empleado.registrar-horas', ['month' => $currentMonth->copy()->addMonth()->format('Y-m-d')]) }}" class="bg-[#0066CC] text-white p-1 rounded-md text-xs hover:bg-blue-700">
+                        <a href="{{ route('empleado.registrar-horas', ['month' => $currentMonth->copy()->addMonth()->format('Y-m-d')]) }}" class="bg-[#0066CC] text-white p-1 rounded-md text-xs hover:bg-primary-hover">
                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </a>
                     </div>
@@ -483,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <input type="hidden" name="work_date" value="{{ $day['date']->format('Y-m-d') }}">
                                                 <input type="hidden" name="hours_worked" value="8">
                                                 <button type="submit" class="w-full flex items-center justify-center gap-1 bg-white border border-gray-200 shadow-sm rounded-lg py-2 px-1 text-xs font-bold text-gray-600 hover:bg-gray-50 transition">
-                                                    <span class="text-blue-500 font-bold">+</span> Registrar horas
+                                                    <span class="text-primary font-bold">+</span> Registrar horas
                                                 </button>
                                             </form>
                                         @endif

@@ -26,7 +26,7 @@ Route::middleware(['auth'])->prefix('empleador')->name('empleador.')->group(func
     
     // Task Management
     // GET /empleador/tareas - View all employee tasks with filters and charts
-    Route::get('/tareas', [DashboardController::class, 'verTareasEmpleados'])
+    Route::get('/tareas', [EmployerTaskController::class, 'index'])
         ->name('tareas.index');
     
     // GET /empleador/tareas/crear - Show form to create a task for an employee
@@ -34,7 +34,7 @@ Route::middleware(['auth'])->prefix('empleador')->name('empleador.')->group(func
         ->name('tareas.create');
     
     // POST /empleador/tareas - Store a new task for an employee
-    Route::post('/tareas', [TaskController::class, 'storeForEmployee'])
+    Route::post('/tareas', [EmployerTaskController::class, 'store'])
         ->name('tareas.store');
     
     // POST /empleador/crear-tarea - Alternative endpoint to create task for employee
@@ -82,6 +82,10 @@ Route::middleware(['auth'])->prefix('empleador')->name('empleador.')->group(func
     // DELETE /empleador/tareas/{taskId}/comments/{commentId} - Delete a task comment
     Route::delete('/tareas/{taskId}/comments/{commentId}', [EmployerTaskController::class, 'deleteComment'])
         ->name('tareas.comments.delete');
+
+    // POST /empleador/tareas/{taskId}/files - Upload a file to a task
+    Route::post('/tareas/{taskId}/files', [EmployerTaskController::class, 'uploadFile'])
+        ->name('tareas.files.upload');
 
     // Employee Management
     // POST /empleador/empleados/{employee}/toggle-manager - Toggle manager status

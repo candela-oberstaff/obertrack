@@ -5,7 +5,7 @@
             {{-- Header Section --}}
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">
-                    ¡Hola, <span class="text-blue-600">{{ auth()->user()->name }}</span>!
+                    ¡Hola, <span class="text-primary">{{ auth()->user()->name }}</span>!
                 </h1>
                 <p class="text-gray-600 mt-1">
                     Aquí está tu resumen de actividades
@@ -13,7 +13,7 @@
             </div>
 
             {{-- Summary Cards --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div id="dashboard-stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 
                 {{-- Tareas Pendientes --}}
                 <div class="bg-white rounded-lg border border-gray-200 p-6">
@@ -53,8 +53,8 @@
                     @php
                         $completedTasks = auth()->user()->assignedTasks()
                             ->where('completed', true)
-                            ->whereYear('updated_at', now()->year)
-                            ->whereMonth('updated_at', now()->month)
+                            ->whereYear('tasks.updated_at', now()->year)
+                            ->whereMonth('tasks.updated_at', now()->month)
                             ->count();
                     @endphp
                     <div class="flex items-center gap-3">
@@ -73,7 +73,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {{-- Últimas Tareas (2/3 width) --}}
-                <div class="lg:col-span-2">
+                <div class="lg:col-span-2" id="dashboard-latest-tasks">
                     <div class="bg-white rounded-lg border border-gray-200" x-data="{ 
                         selectedTask: null, 
                         isModalOpen: false,
@@ -106,7 +106,7 @@
                                     @php
                                         $latestTasks = auth()->user()->assignedTasks()
                                             ->with(['visibleTo', 'comments.user', 'attachments', 'createdBy'])
-                                            ->latest()
+                                            ->latest('tasks.created_at')
                                             ->take(5)
                                             ->get();
                                     @endphp
@@ -221,7 +221,7 @@
                                                        :class="{
                                                             'text-red-600': selectedTask?.priority === 'high' || selectedTask?.priority === 'urgent',
                                                             'text-yellow-600': selectedTask?.priority === 'medium',
-                                                            'text-blue-600': selectedTask?.priority === 'low'
+                                                            'text-primary': selectedTask?.priority === 'low'
                                                        }"
                                                        x-text="selectedTask?.priority"></p>
                                                 </div>
@@ -268,7 +268,7 @@
                                                                 </div>
                                                                 <div class="ml-4 flex-shrink-0">
                                                                     <a :href="'/tasks/attachments/' + attachment.id + '/download'" 
-                                                                       class="font-medium text-blue-600 hover:text-blue-500"
+                                                                       class="font-medium text-primary hover:text-primary"
                                                                        @click.stop>
                                                                         Descargar
                                                                     </a>
@@ -328,7 +328,7 @@
                 </div>
 
                 {{-- Últimos Comentarios (1/3 width) --}}
-                <div class="lg:col-span-1">
+                <div class="lg:col-span-1" id="dashboard-latest-comments">
                     <div class="bg-white rounded-lg border border-gray-200">
                         <div class="px-6 py-4 border-b border-gray-200">
                             <h2 class="text-lg font-semibold text-gray-900">Últimos comentarios</h2>
@@ -337,7 +337,7 @@
                         <div class="p-4 space-y-3">
                             @php
                                 // Get latest comments from tasks the user is involved in
-                                $userTaskIds = auth()->user()->assignedTasks()->pluck('id');
+                                $userTaskIds = auth()->user()->assignedTasks()->pluck('tasks.id');
                                 $latestComments = \App\Models\Comment::whereIn('task_id', $userTaskIds)
                                     ->with(['user', 'task'])
                                     ->latest()

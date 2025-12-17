@@ -28,18 +28,18 @@
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100 transform scale-100"
         x-transition:leave-end="opacity-0 transform scale-95"
-        class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50 overflow-hidden"
+        class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 overflow-hidden border border-gray-100"
         style="display: none;"
     >
         <!-- Header -->
-        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3 flex items-center justify-between">
-            <h3 class="text-white font-semibold text-sm">Tareas Nuevas</h3>
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-gray-100">
+            <h3 class="text-gray-900 font-bold text-sm">Tareas Nuevas</h3>
             @if($unreadCount > 0)
                 <button 
                     onclick="markAllAsRead()"
-                    class="text-xs text-white hover:text-blue-100 underline transition-colors"
+                    class="text-xs text-[#22A9C8] hover:text-[#1b8fa8] hover:underline transition-colors"
                 >
-                    Marcar todas como leídas
+                    Marcar toads como leídas
                 </button>
             @endif
         </div>
@@ -47,16 +47,16 @@
         <!-- Notifications List -->
         <div class="max-h-96 overflow-y-auto">
             @forelse($recentTasks as $task)
-                <div class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 transition-colors">
+                <div class="px-4 py-3 hover:bg-gray-50 border-b border-gray-100 transition-colors">
                     <div class="flex items-start">
                         <div class="flex-shrink-0">
-                            <div class="w-2 h-2 bg-blue-500 rounded-full mt-2 animate-pulse"></div>
+                            <div class="w-2 h-2 bg-[#22A9C8] rounded-full mt-2"></div>
                         </div>
                         <div class="ml-3 flex-1">
-                            <p class="text-sm font-medium text-gray-900 dark:text-white">
+                            <p class="text-sm font-medium text-gray-900">
                                 {{ $task->title }}
                             </p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <p class="text-xs text-gray-500 mt-1">
                                 Asignada por {{ $task->createdBy->name }}
                             </p>
                             <div class="flex items-center mt-2 space-x-2">
@@ -68,7 +68,7 @@
                                     @endif">
                                     {{ ucfirst($task->priority) }}
                                 </span>
-                                <span class="text-xs text-gray-500 dark:text-gray-400">
+                                <span class="text-xs text-gray-500">
                                     Vence: {{ $task->end_date->format('d/m/Y') }}
                                 </span>
                             </div>
@@ -77,18 +77,18 @@
                 </div>
             @empty
                 <div class="px-4 py-8 text-center">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No tienes tareas nuevas</p>
+                    <p class="mt-2 text-sm text-gray-500">No tienes tareas nuevas</p>
                 </div>
             @endforelse
         </div>
 
         <!-- Footer -->
         @if(count($recentTasks) > 0)
-            <div class="bg-gray-50 dark:bg-gray-700 px-4 py-2">
-                <a href="{{ route('empleados.tasks.index') }}" class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
+            <div class="bg-gray-50 px-4 py-2 border-t border-gray-100">
+                <a href="{{ route('empleados.tasks.index') }}" class="text-sm text-[#22A9C8] hover:text-[#1b8fa8] font-medium">
                     Ver todas las tareas →
                 </a>
             </div>

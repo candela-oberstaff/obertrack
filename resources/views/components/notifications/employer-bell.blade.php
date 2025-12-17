@@ -28,23 +28,23 @@
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100 transform scale-100"
         x-transition:leave-end="opacity-0 transform scale-95"
-        class="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50 overflow-hidden"
+        class="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl z-50 overflow-hidden border border-gray-100"
         style="display: none;"
     >
         <!-- Header -->
-        <div class="bg-gradient-to-r from-orange-500 to-red-600 px-4 py-3">
-            <h3 class="text-white font-semibold text-sm">Horas Pendientes de Aprobación</h3>
+        <div class="bg-white px-4 py-3 border-b border-gray-100">
+            <h3 class="text-gray-900 font-bold text-sm">Horas Pendientes de Aprobación</h3>
         </div>
 
         <!-- Notifications List -->
         <div class="max-h-96 overflow-y-auto">
             @forelse($pendingWeeks as $week)
-                <div class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 transition-colors">
+                <div class="px-4 py-3 hover:bg-gray-50 border-b border-gray-100 transition-colors">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
                             <div class="flex items-center mb-2">
-                                <div class="w-2 h-2 bg-orange-500 rounded-full mr-2 animate-pulse"></div>
-                                <p class="text-sm font-semibold text-gray-900 dark:text-white">
+                                <div class="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                                <p class="text-sm font-semibold text-gray-900">
                                     Semana {{ $week['start']->format('d/m') }} - {{ $week['end']->format('d/m/Y') }}
                                 </p>
                             </div>
@@ -58,10 +58,10 @@
                             <div class="ml-4 space-y-1">
                                 @foreach($employeesWithPending as $employeeId => $employee)
                                     <div class="flex items-center justify-between text-xs">
-                                        <span class="text-gray-600 dark:text-gray-400">
+                                        <span class="text-gray-600">
                                             {{ $employee['name'] }}
                                         </span>
-                                        <span class="font-medium text-orange-600 dark:text-orange-400">
+                                        <span class="font-medium text-orange-600">
                                             {{ number_format($employee['pending_hours'], 2) }}h pendientes
                                         </span>
                                     </div>
@@ -72,18 +72,18 @@
                 </div>
             @empty
                 <div class="px-4 py-8 text-center">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No hay horas pendientes de aprobación</p>
+                    <p class="mt-2 text-sm text-gray-500">No hay horas pendientes de aprobación</p>
                 </div>
             @endforelse
         </div>
 
         <!-- Footer -->
         @if(count($pendingWeeks) > 0)
-            <div class="bg-gray-50 dark:bg-gray-700 px-4 py-2">
-                <a href="{{ route('empleadores.tareas-asignadas') }}" class="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 font-medium">
+            <div class="bg-gray-50 px-4 py-2 border-t border-gray-100">
+                <a href="{{ route('empleadores.tareas-asignadas') }}" class="text-sm text-orange-600 hover:text-orange-800 font-medium">
                     Ir a aprobar horas →
                 </a>
             </div>

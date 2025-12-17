@@ -87,7 +87,7 @@
             <!-- Email -->
             <div>
                 <input id="email" name="email" type="email" placeholder="Email" required autofocus
-                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm"
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
                        value="{{ old('email') }}">
                 <x-input-error :messages="$errors->get('email')" class="mt-2 text-xs" />
             </div>
@@ -95,21 +95,21 @@
             <!-- Password -->
             <div>
                 <input id="password" name="password" type="password" placeholder="Contraseña" required
-                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm">
                 <x-input-error :messages="$errors->get('password')" class="mt-2 text-xs" />
             </div>
 
             <!-- Remember Me -->
              <div class="flex items-center justify-between">
                 <label for="remember_me" class="inline-flex items-center">
-                    <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500" name="remember">
+                    <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-primary shadow-sm focus:ring-primary" name="remember">
                     <span class="ml-2 text-sm text-gray-600 font-medium">Recuérdame</span>
                 </label>
             </div>
 
             <!-- Submit Button -->
             <div class="pt-2 text-center">
-                <button type="submit" class="bg-[#1D71B8] hover:bg-blue-700 text-white font-bold py-2.5 px-10 rounded-full transition duration-300 shadow-lg w-auto inline-block text-sm">
+                <button type="submit" class="bg-[#1D71B8] hover:bg-primary-hover text-white font-bold py-2.5 px-10 rounded-full transition duration-300 shadow-lg w-auto inline-block text-sm">
                     Iniciar sesión
                 </button>
             </div>
@@ -119,11 +119,11 @@
                 <p class="text-xs text-gray-600 font-medium">
                     ¿Olvidaste tu contraseña? 
                     @if (Route::has('password.request'))
-                    <a href="{{ route('password.request') }}" class="text-blue-600 hover:text-blue-800 underline">Recupérala</a>
+                    <a href="{{ route('password.request') }}" class="text-primary hover:text-blue-800 underline">Recupérala</a>
                     @endif
                 </p>
                  <p class="text-xs text-gray-600 font-medium mt-2">
-                    ¿No tienes una cuenta? <a href="{{ route('register') }}" class="text-blue-600 hover:text-blue-800 underline">Regístrate aquí</a>
+                    ¿No tienes una cuenta? <a href="{{ route('register') }}" class="text-primary hover:text-blue-800 underline">Regístrate aquí</a>
                 </p>
             </div>
         </form>

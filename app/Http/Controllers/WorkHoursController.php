@@ -170,7 +170,7 @@ class WorkHoursController extends Controller
                     }
                 }
 
-                $incompleteTasks = Task::where('visible_para', $professional->id)
+                $incompleteTasks = $professional->assignedTasks()
                     ->where('completed', false)
                     ->count();
 
@@ -235,7 +235,7 @@ class WorkHoursController extends Controller
 
         $absences = collect($dailyHours)->where('hours', 0)->count();
 
-        $incompleteTasks = Task::where('visible_para', $user->id)
+        $incompleteTasks = $user->assignedTasks()
             ->where('completed', false)
             ->count();
 
@@ -291,7 +291,7 @@ class WorkHoursController extends Controller
         $totalHours = $weekHours->sum('hours_worked');
         $weeklyAverage = $totalHours > 0 ? round($totalHours / 5, 1) : 0;
         
-        $incompleteTasks = Task::where('visible_para', $user->id)
+        $incompleteTasks = $user->assignedTasks()
             ->where('completed', false)
             ->count();
 

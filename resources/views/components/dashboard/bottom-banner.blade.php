@@ -1,4 +1,4 @@
-<div class="border-2 border-[#0976D6] rounded-2xl p-12 text-center mb-16">
+<div class="border-2 border-[#22A9C8] rounded-2xl p-12 text-center mb-16">
     <h3 class="text-xl font-medium text-gray-800 mb-6 max-w-3xl mx-auto">
         ¿Buscas un plan de telefonía que te ayude a mantenerte conectado con tus clientes? Adquiere nuestros servicios y optimiza tu comunicación de manera efectiva.
     </h3>
