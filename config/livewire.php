@@ -120,7 +120,7 @@ return [
     |
     */
 
-    'asset_url' => '/vendor/livewire/livewire.js',
+    'asset_url' => '/internal/livewire.js',
 
     /*
     |--------------------------------------------------------------------------

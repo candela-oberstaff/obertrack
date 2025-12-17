@@ -32,6 +32,17 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Fallback Livewire Asset Route (Bypasses public folder issues)
+Route::get('/internal/livewire.js', function () {
+    $path = base_path('vendor/livewire/livewire/dist/livewire.js');
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    return response()->file($path, [
+        'Content-Type' => 'application/javascript',
+        'Cache-Control' => 'public, max-age=31536000',
+    ]);
+});
 
 
 /*
