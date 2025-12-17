@@ -177,7 +177,7 @@ class TaskManagementService
     private function applyFilters($query, $filters)
     {
         if (isset($filters['status']) && $filters['status'] !== 'all') {
-            $query->where('completed', $filters['status'] === 'completed' ? 1 : 0);
+            $query->where('completed', $filters['status'] === 'completed' ? true : false);
         }
 
         if (isset($filters['search']) && $filters['search']) {
