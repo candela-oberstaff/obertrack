@@ -112,7 +112,7 @@
                     $recentTasks = \App\Models\Task::whereHas('assignees', function($q) {
                             $q->where('user_id', auth()->id());
                         })
-                        ->where('completed', false)
+                        ->whereRaw('completed IS FALSE')
                         ->where('created_at', '>=', now()->subDays(7))
                         ->whereDoesntHave('readBy', function ($query) {
                             $query->where('user_id', auth()->id());

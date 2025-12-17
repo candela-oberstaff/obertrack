@@ -19,7 +19,7 @@
                 <div class="bg-white rounded-lg border border-gray-200 p-6">
                     <p class="text-sm text-gray-600 mb-2">Tareas pendientes</p>
                     @php
-                        $totalPending = auth()->user()->assignedTasks()->where('completed', false)->count();
+                        $totalPending = auth()->user()->assignedTasks()->whereRaw('completed IS FALSE')->count();
                     @endphp
                     <p class="text-5xl font-bold text-gray-900">{{ str_pad($totalPending, 2, '0', STR_PAD_LEFT) }}</p>
                 </div>
@@ -52,7 +52,7 @@
                     <p class="text-sm text-gray-600 mb-2">Tareas completadas con éxito</p>
                     @php
                         $completedTasks = auth()->user()->assignedTasks()
-                            ->where('completed', true)
+                            ->whereRaw('completed IS TRUE')
                             ->whereYear('tasks.updated_at', now()->year)
                             ->whereMonth('tasks.updated_at', now()->month)
                             ->count();

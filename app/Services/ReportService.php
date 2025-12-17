@@ -144,7 +144,7 @@ class ReportService
         // Obtener las horas trabajadas para el mes especificado
         $workHours = WorkHours::where('user_id', $employee->id)
             ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
-            ->where('approved', true)
+            ->whereRaw('approved IS TRUE')
             ->get();
 
         // Calcular el total de horas aprobadas

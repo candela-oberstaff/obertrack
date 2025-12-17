@@ -68,7 +68,7 @@ class WorkHoursSummaryService
             
             $pendingHours = WorkHours::whereIn('user_id', $empleados->pluck('id'))
                 ->whereBetween('work_date', [$weekStart, $weekEnd])
-                ->where('approved', false)
+                ->whereRaw('approved IS FALSE')
                 ->exists();
             
             if ($pendingHours) {
@@ -102,7 +102,7 @@ class WorkHoursSummaryService
             if ($weekStart->lte($endOfMonth)) {
                 $isApproved = WorkHours::whereIn('user_id', $empleados->pluck('id'))
                     ->whereBetween('work_date', [$weekStart, $weekEnd])
-                    ->where('approved', true)
+                    ->whereRaw('approved IS TRUE')
                     ->exists();
 
                 $approvedWeeks[] = [
@@ -126,7 +126,7 @@ class WorkHoursSummaryService
         return WorkHours::whereIn('user_id', $empleados->pluck('id'))
             ->whereYear('work_date', $month->year)
             ->whereMonth('work_date', $month->month)
-            ->where('approved', true)
+            ->whereRaw('approved IS TRUE')
             ->sum('hours_worked');
     }
 
@@ -137,7 +137,7 @@ class WorkHoursSummaryService
     {
         return WorkHours::where('user_id', $employeeId)
             ->whereBetween('work_date', [$startDate, $endDate])
-            ->where('approved', true)
+            ->whereRaw('approved IS TRUE')
             ->sum('hours_worked');
     }
 }

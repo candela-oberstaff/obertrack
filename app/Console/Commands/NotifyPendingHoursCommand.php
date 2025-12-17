@@ -50,7 +50,7 @@ class NotifyPendingHoursCommand extends Command
 
             // Check for pending hours
             $pendingHours = WorkHours::whereIn('user_id', $employeeIds)
-                ->where('approved', false)
+                ->whereRaw('approved IS FALSE')
                 ->where('created_at', '<=', $cutoffDate)
                 ->with('user')
                 ->get();
