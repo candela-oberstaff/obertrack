@@ -11,6 +11,11 @@ class WorkHours extends Model
 
     protected $fillable = ['user_id', 'work_date', 'hours_worked', 'approved', 'approval_comment',];
 
+    protected $casts = [
+        'approved' => 'boolean',
+        'work_date' => 'date',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
