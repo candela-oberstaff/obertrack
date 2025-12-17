@@ -171,7 +171,7 @@ class WorkHoursController extends Controller
                 }
 
                 $incompleteTasks = $professional->assignedTasks()
-                    ->where('completed', false)
+                    ->whereRaw('completed IS FALSE')
                     ->count();
 
                 $hasPendingWeeks = $pendingHours > 0;
@@ -236,7 +236,7 @@ class WorkHoursController extends Controller
         $absences = collect($dailyHours)->where('hours', 0)->count();
 
         $incompleteTasks = $user->assignedTasks()
-            ->where('completed', false)
+            ->whereRaw('completed IS FALSE')
             ->count();
 
         $comments = WorkHours::where('user_id', $user->id)
@@ -292,7 +292,7 @@ class WorkHoursController extends Controller
         $weeklyAverage = $totalHours > 0 ? round($totalHours / 5, 1) : 0;
         
         $incompleteTasks = $user->assignedTasks()
-            ->where('completed', false)
+            ->whereRaw('completed IS FALSE')
             ->count();
 
         $comments = WorkHours::where('user_id', $user->id)

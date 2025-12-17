@@ -145,6 +145,11 @@ class DashboardController extends Controller
             ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
             ->get();
         
+        // Group by date for faster/correct lookup in the calendar loop
+        $hoursByDate = $monthlyHours->groupBy(function($item) {
+            return $item->work_date->format('Y-m-d');
+        });
+        
         // Assign colors to employees for UI consistency
         $colors = ['bg-pink-500', 'bg-cyan-500', 'bg-green-600', 'bg-blue-500', 'bg-purple-500', 'bg-orange-500'];
         $employeeColors = [];
@@ -153,7 +158,7 @@ class DashboardController extends Controller
         }
 
         // Employee Summary Cards Data
-        $employeeSummaries = $empleados->map(function($employee) use ($monthlyHours, $startOfMonth, $endOfMonth, $employeeColors) {
+        $employeeSummaries = $empleados->map(function($employee) use ($monthlyHours, $employeeColors) {
             $employeeHours = $monthlyHours->where('user_id', $employee->id);
             return [
                 'user' => $employee,
@@ -180,14 +185,16 @@ class DashboardController extends Controller
                 'employees' => []
             ];
 
+            $dayRecords = $hoursByDate->get($dateStr, collect());
+
             foreach ($empleados as $employee) {
-                $record = $monthlyHours->where('user_id', $employee->id)
-                    ->where('work_date', $dateStr)
-                    ->first();
+                $record = $dayRecords->where('user_id', $employee->id)->first();
                 
                 if ($record) {
                     $dayData['has_events'] = true;
                     $dayData['employees'][] = [
+                        'name' => $employee->name,
+                        'avatar' => $employee->avatar,
                         'initials' => $employeeSummaries->firstWhere('user.id', $employee->id)['initials'],
                         'hours' => $record->hours_worked,
                         'approved' => $record->approved,

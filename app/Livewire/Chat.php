@@ -9,7 +9,7 @@ use Livewire\WithFileUploads;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+// Cloudinary removed
 
 #[Layout('layouts.app')]
 class Chat extends Component
@@ -128,11 +128,9 @@ class Chat extends Component
         $attachmentPath = null;
         
         if ($attachmentFile) {
-            // Upload to Cloudinary
-            $uploadedFile = Cloudinary::upload($attachmentFile->getRealPath(), [
-                'folder' => 'chat_attachments'
-            ]);
-            $attachmentPath = $uploadedFile->getSecurePath(); // Store the URL
+            // Upload to Local Storage (public disk)
+            $filename = $attachmentFile->store('chat_attachments', 'public');
+            $attachmentPath = Storage::url($filename); // Generates /storage/chat_attachments/...
         }
 
         // Save to database

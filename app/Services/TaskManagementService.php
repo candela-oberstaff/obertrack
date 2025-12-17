@@ -42,7 +42,7 @@ class TaskManagementService
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],
             'priority' => $data['priority'],
-            'completed' => $data['completed'] ?? false,
+            'completed' => ($data['completed'] ?? false) ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false'),
         ]);
 
         if (!empty($assignees)) {
@@ -120,8 +120,10 @@ class TaskManagementService
             
             Log::info('Current task data: ' . json_encode($task->toArray()));
 
-            $task->completed = !$task->completed;
-            $result = $task->save();
+            $newStatus = !$task->completed;
+            $result = $task->update([
+                'completed' => $newStatus ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false')
+            ]);
 
             Log::info('Update result: ' . ($result ? 'true' : 'false'));
             Log::info('New task data: ' . json_encode($task->fresh()->toArray()));
@@ -177,7 +179,7 @@ class TaskManagementService
     private function applyFilters($query, $filters)
     {
         if (isset($filters['status']) && $filters['status'] !== 'all') {
-            $query->where('completed', $filters['status'] === 'completed' ? 1 : 0);
+            $query->whereRaw($filters['status'] === 'completed' ? 'completed IS TRUE' : 'completed IS FALSE');
         }
 
         if (isset($filters['search']) && $filters['search']) {

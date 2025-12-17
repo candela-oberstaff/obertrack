@@ -22,7 +22,9 @@ class CalendarService
         $endDate = $month->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
 
         $workHours = $this->getWorkHoursForPeriod($startDate, $endDate, $userId)
-            ->keyBy('work_date');
+            ->keyBy(function($item) {
+                return $item->work_date->format('Y-m-d');
+            });
 
         for ($date = $startDate; $date->lte($endDate); $date->addDay()) {
             $calendar[] = [

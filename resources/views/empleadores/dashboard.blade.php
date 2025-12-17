@@ -63,7 +63,7 @@
                         <!-- Footer Text -->
                         <div class="text-center mt-auto mb-2">
                             <p class="text-gray-500 text-[10px] leading-tight max-w-[180px] mx-auto">
-                                {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas registradas actualmente (Dec 1 - Dec 12)
+                                {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas registradas actualmente ({{ $dateRange }})
                             </p>
                         </div>
                     </div>
@@ -157,11 +157,11 @@
                                         @if(count($day['employees']) > 0)
                                             <div class="space-y-2 flex-1">
                                                 @foreach($day['employees'] as $employee)
-                                                    <div class="flex items-center gap-2">
+                                                    <div class="flex items-center gap-2" title="{{ $employee['name'] }}">
                                                         <!-- Avatar / Initials -->
                                                         <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase shrink-0 overflow-hidden {{ isset($employee['avatar']) && $employee['avatar'] ? 'bg-transparent' : ($employee['color_class'] ?? 'bg-gray-400') }}">
                                                             @if(isset($employee['avatar']) && $employee['avatar'])
-                                                                <img src="{{ $employee['avatar'] }}" class="w-full h-full object-cover">
+                                                                <img src="{{ Str::startsWith($employee['avatar'], 'http') ? $employee['avatar'] : asset('storage/' . $employee['avatar']) }}" class="w-full h-full object-cover">
                                                             @else
                                                                 <span class="text-white">{{ $employee['initials'] ?? 'NA' }}</span>
                                                             @endif
@@ -169,7 +169,7 @@
                                                         
                                                         <!-- Hours -->
                                                         <span class="text-xs text-gray-700 font-medium">
-                                                            {{ round($employee['hours']) }} horas
+                                                            {{ round($employee['hours']) }}h
                                                         </span>
                                                     </div>
                                                 @endforeach
@@ -238,17 +238,20 @@
                                             <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold uppercase shrink-0 overflow-hidden"
                                                  :class="emp.avatar ? 'bg-transparent' : emp.color_class">
                                                 <template x-if="emp.avatar">
-                                                    <img :src="emp.avatar" class="w-full h-full object-cover">
+                                                    <img :src="emp.avatar.startsWith('http') ? emp.avatar : '/storage/' + emp.avatar" class="w-full h-full object-cover">
                                                 </template>
                                                 <template x-if="!emp.avatar">
                                                     <span x-text="emp.initials" class="text-white"></span>
                                                 </template>
                                             </div>
                                             
-                                            <!-- Hours -->
-                                            <span class="text-lg text-gray-800 font-normal">
-                                                <span x-text="Math.round(emp.hours)"></span> horas
-                                            </span>
+                                            <!-- Name & Hours -->
+                                            <div class="flex flex-col items-start">
+                                                <span class="text-sm font-bold text-gray-900" x-text="emp.name"></span>
+                                                <span class="text-lg text-gray-800 font-normal">
+                                                    <span x-text="Math.round(emp.hours)"></span> horas
+                                                </span>
+                                            </div>
                                         </div>
                                     </template>
                                     
