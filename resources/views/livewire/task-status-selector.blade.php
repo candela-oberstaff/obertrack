@@ -1,5 +1,5 @@
-<div class="relative" x-data="{ open: @entangle('isOpen') }">
-    <button @click="open = !open" @click.away="open = false" type="button" 
+<div class="relative" x-data="{ open: @entangle('isOpen').live }" @click.away="open = false">
+    <button @click="open = !open" type="button" 
         class="flex items-center justify-between w-40 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white rounded-full focus:outline-none transition-all duration-300 shadow-sm
         @if($status === \App\Models\Task::STATUS_COMPLETED) bg-green-500 hover:bg-green-600
         @elseif($status === \App\Models\Task::STATUS_IN_PROGRESS) bg-yellow-500 hover:bg-yellow-600
@@ -21,32 +21,32 @@
     </button>
 
     <div x-show="open" 
+         x-cloak
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="transform opacity-0 scale-95 -translate-y-2"
          x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
          x-transition:leave="transition ease-in duration-100"
          x-transition:leave-start="transform opacity-100 scale-100 translate-y-0"
          x-transition:leave-end="transform opacity-0 scale-95 -translate-y-2"
-         class="absolute right-0 z-[100] w-48 mt-2 bg-white rounded-3xl shadow-2xl ring-1 ring-black/5 p-2 space-y-1 overflow-hidden"
-         style="display: none;">
+         class="absolute right-0 z-[100] w-48 mt-2 bg-white rounded-3xl shadow-2xl ring-1 ring-black/5 p-2 space-y-1 overflow-hidden">
         
         <div class="px-3 py-2 border-b border-gray-50 mb-1">
             <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Cambiar estado</span>
         </div>
 
-        <button wire:click="updateStatus('{{ \App\Models\Task::STATUS_COMPLETED }}')" 
+        <button type="button" wire:click="updateStatus('{{ \App\Models\Task::STATUS_COMPLETED }}')" 
             class="w-full px-4 py-2.5 text-[9px] font-bold text-green-600 bg-green-50 rounded-2xl hover:bg-green-100 transition-colors flex items-center gap-3 uppercase tracking-widest group">
             <span class="w-2 h-2 rounded-full bg-green-500 group-hover:scale-125 transition-transform"></span>
             Finalizado
         </button>
         
-        <button wire:click="updateStatus('{{ \App\Models\Task::STATUS_IN_PROGRESS }}')" 
+        <button type="button" wire:click="updateStatus('{{ \App\Models\Task::STATUS_IN_PROGRESS }}')" 
             class="w-full px-4 py-2.5 text-[9px] font-bold text-yellow-600 bg-yellow-50 rounded-2xl hover:bg-yellow-100 transition-colors flex items-center gap-3 uppercase tracking-widest group">
             <span class="w-2 h-2 rounded-full bg-yellow-500 group-hover:scale-125 transition-transform"></span>
             En proceso
         </button>
         
-        <button wire:click="updateStatus('{{ \App\Models\Task::STATUS_TODO }}')" 
+        <button type="button" wire:click="updateStatus('{{ \App\Models\Task::STATUS_TODO }}')" 
             class="w-full px-4 py-2.5 text-[9px] font-bold text-red-600 bg-red-50 rounded-2xl hover:bg-red-100 transition-colors flex items-center gap-3 uppercase tracking-widest group">
             <span class="w-2 h-2 rounded-full bg-red-500 group-hover:scale-125 transition-transform"></span>
             Por hacer
