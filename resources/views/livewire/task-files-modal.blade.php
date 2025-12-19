@@ -10,7 +10,7 @@
      style="display: none;">
     
     <div class="bg-white rounded-3xl shadow-xl w-full max-w-4xl p-8 max-h-[90vh] flex flex-col relative"
-         @click.away="open = false">
+         @click.away="isModalOpen = false">
         
         {{-- Close Button --}}
         <button @click="isModalOpen = false" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 z-10">
