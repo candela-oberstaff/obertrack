@@ -270,51 +270,15 @@
                                                     </div>
 
                                                     <!-- Comment Section -->
-                                                    <div x-data="{ 
-                                                        comment: emp.comment || '', 
-                                                        isSaving: false,
-                                                        saveComment() {
-                                                            this.isSaving = true;
-                                                            fetch(`/work-hours/update-comment/${emp.record_id}`, {
-                                                                method: 'POST',
-                                                                headers: {
-                                                                    'Content-Type': 'application/json',
-                                                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
-                                                                },
-                                                                body: JSON.stringify({ comment: this.comment })
-                                                            })
-                                                            .then(response => response.json())
-                                                            .then(data => {
-                                                                this.isSaving = false;
-                                                                if(data.success) {
-                                                                    // Optional: Show success toast
-                                                                }
-                                                            })
-                                                            .catch(error => {
-                                                                this.isSaving = false;
-                                                                console.error('Error:', error);
-                                                            });
-                                                        }
-                                                    }">
-                                                        <label class="block text-xs font-medium text-gray-700 mb-1">Comentario / Observación</label>
-                                                        <div class="relative">
-                                                            <textarea 
-                                                                x-model="comment"
-                                                                class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-50"
-                                                                rows="2"
-                                                                placeholder="Agregar comentario..."
-                                                            ></textarea>
-                                                            <button 
-                                                                @click="saveComment()"
-                                                                class="absolute bottom-2 right-2 p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-[#22A9C8] transition-colors"
-                                                                :class="{'opacity-50 cursor-not-allowed': isSaving}"
-                                                                :disabled="isSaving"
-                                                                title="Guardar comentario"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                                    <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6a1 1 0 10-2 0v5.586l-1.293-1.293z" />
-                                                                </svg>
-                                                            </button>
+                                                    <div class="mt-2">
+                                                        <label class="block text-xs font-bold text-primary uppercase tracking-wider mb-1">Comentario / Observación</label>
+                                                        <div class="bg-white rounded-lg p-3 border border-gray-100 shadow-sm italic text-sm text-gray-700">
+                                                            <template x-if="emp.comment && emp.comment.trim() !== ''">
+                                                                <p x-text="emp.comment"></p>
+                                                            </template>
+                                                            <template x-if="!emp.comment || emp.comment.trim() === ''">
+                                                                <p class="text-gray-400">Sin observaciones para este día.</p>
+                                                            </template>
                                                         </div>
                                                     </div>
                                                 </div>
