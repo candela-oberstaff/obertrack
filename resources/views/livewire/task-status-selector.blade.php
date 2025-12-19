@@ -1,5 +1,5 @@
-<div class="relative" x-data="{ open: @entangle('isOpen').live }" @click.away="open = false">
-    <button @click="open = !open" type="button" 
+<div class="relative" x-data="{ dropdownOpen: @entangle('isOpen') }" @click.away="dropdownOpen = false">
+    <button @click="dropdownOpen = !dropdownOpen" type="button" 
         class="flex items-center justify-between w-40 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white rounded-full focus:outline-none transition-all duration-300 shadow-sm
         @if($status === \App\Models\Task::STATUS_COMPLETED) bg-green-500 hover:bg-green-600
         @elseif($status === \App\Models\Task::STATUS_IN_PROGRESS) bg-yellow-500 hover:bg-yellow-600
@@ -15,13 +15,14 @@
             @endif
         </span>
         
-        <svg class="w-3 h-3 ml-2 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-3 h-3 ml-2 transition-transform duration-200" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path>
         </svg>
     </button>
 
-    <div x-show="open" 
+    <div x-show="dropdownOpen" 
          x-cloak
+         style="display: none;"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="transform opacity-0 scale-95 -translate-y-2"
          x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
