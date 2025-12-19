@@ -18,16 +18,18 @@
 
             <!-- Centered Navigation Links -->
             <div class="hidden space-x-4 sm:flex items-center justify-center flex-1">
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
-                    Dashboard
-                </a>
+                @if(auth()->user()->tipo_usuario !== 'empleador')
+                    <a href="{{ route('dashboard') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                        Dashboard
+                    </a>
+                @endif
                 
                 
                 @if(auth()->user()->tipo_usuario === 'empleador')
                     <a href="{{ route('empleador.dashboard') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Monitoreo de horas
                     </a>
-                    <a href="{{ route('empleador.tareas.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.tareas.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('empleadores.tareas-asignadas') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleadores.tareas-asignadas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Tareas
                     </a>
                     <a href="{{ route('reportes.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('reportes.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
@@ -43,7 +45,7 @@
                     <a href="{{ route('empleador.dashboard') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Monitoreo
                     </a>
-                    <a href="{{ route('empleados.tasks.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleados.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('empleadores.tareas-asignadas') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleadores.tareas-asignadas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Tareas
                     </a>
 
@@ -180,15 +182,18 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden absolute top-full left-0 w-full z-50 bg-white shadow-lg border-b border-gray-200" @toggle-mobile-menu.window="open = ! open">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
+        <div class="pt-2 pb-3 space-y-1">
+            @if(auth()->user()->tipo_usuario !== 'empleador')
+                <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                    {{ __('Dashboard') }}
+                </x-responsive-nav-link>
+            @endif
             
             @if(auth()->user()->tipo_usuario === 'empleador')
                 <x-responsive-nav-link :href="route('empleador.dashboard')" :active="request()->routeIs('empleador.dashboard')">
                     Monitoreo de horas
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('empleador.tareas.index')" :active="request()->routeIs('empleador.tareas.*')">
+                <x-responsive-nav-link :href="route('empleadores.tareas-asignadas')" :active="request()->routeIs('empleadores.tareas-asignadas')">
                     Tareas
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('reportes.index')" :active="request()->routeIs('reportes.*')">
@@ -205,7 +210,7 @@
                     </x-responsive-nav-link>
                 @endif
 
-                <x-responsive-nav-link :href="route('empleados.tasks.index')" :active="request()->routeIs('empleados.tasks.*')">
+                <x-responsive-nav-link :href="route('empleadores.tareas-asignadas')" :active="request()->routeIs('empleadores.tareas-asignadas')">
                     Tareas
                 </x-responsive-nav-link>
                 

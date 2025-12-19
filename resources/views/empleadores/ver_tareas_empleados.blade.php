@@ -7,6 +7,46 @@
                 <h2 class="text-3xl font-extrabold text-[#0D1E4C]">Seguimiento de tareas</h2>
             </div>
 
+            <!-- Pending Hours Approval -->
+            @if(count($pendingWeeks) > 0)
+                <div id="pending-hours-section" class="mb-12">
+                    <h3 class="text-[#22A9C8] font-bold text-xl mb-8 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-[#22A9C8]/10 flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        Semanas pendientes por aprobación
+                    </h3>
+                    <div class="space-y-6">
+                        @foreach($pendingWeeks as $week)
+                            <div class="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm transition-all hover:shadow-md">
+                                <div class="flex items-center gap-3 mb-8">
+                                    <div class="px-4 py-1.5 bg-[#0D1E4C] text-white rounded-full text-xs font-extrabold uppercase tracking-widest">
+                                        Período
+                                    </div>
+                                    <h4 class="text-[#0D1E4C] font-extrabold text-lg">
+                                        {{ $week['start']->format('d/m/Y') }} — {{ $week['end']->format('d/m/Y') }}
+                                    </h4>
+                                </div>
+                                <div class="space-y-12">
+                                    @foreach($week['summary'] as $employeeId => $summary)
+                                        @if($summary['pending_hours'] > 0)
+                                            <x-work-hours.employee-week-card 
+                                                :summary="$summary" 
+                                                :employeeId="$employeeId" 
+                                                :weekStart="$week['start']->format('Y-m-d')" 
+                                                :isPending="true" 
+                                            />
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
             <!-- Team Assignments Section -->
             <div id="team-tasks-section" class="mb-12">
                 <div class="hidden md:flex justify-between items-center mb-6">
@@ -35,20 +75,14 @@
                         <tbody>
                             @forelse($teamTasks as $task)
                                 <tr class="group transition-colors">
-                                    <td class="py-6 pl-6 font-medium text-gray-900 bg-gray-50 rounded-l-2xl border-l border-y border-[#22A9C8]">{{ $task->title }}</td>
-                                    <td class="py-6 text-center text-red-500 font-medium bg-gray-50 border-y border-[#22A9C8]">
+                                    <td class="py-6 pl-6 font-medium text-gray-900 bg-white rounded-l-2xl border-l border-y border-[#22A9C8]">{{ $task->title }}</td>
+                                    <td class="py-6 text-center text-red-500 font-medium bg-white border-y border-[#22A9C8]">
                                         {{ \Carbon\Carbon::parse($task->end_date)->format('d-m-Y') }}
                                     </td>
-                                    <td class="py-6 bg-gray-50 border-y border-[#22A9C8]">
+                                    <td class="py-6 bg-white border-y border-[#22A9C8]">
                                         <div class="flex justify-center -space-x-2">
                                             @foreach($task->assignees->take(3) as $assignee)
-                                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold uppercase ring-2 ring-white overflow-hidden {{ $assignee->avatar ? 'bg-transparent' : ($assignee->color_class ?? 'bg-gray-400') }}" title="{{ $assignee->name }}">
-                                                    @if($assignee->avatar)
-                                                        <img src="{{ $assignee->avatar }}" alt="{{ $assignee->name }}" class="w-full h-full object-cover">
-                                                    @else
-                                                        <span class="text-white">{{ substr($assignee->name, 0, 2) }}</span>
-                                                    @endif
-                                                </div>
+                                                <x-user-avatar :user="$assignee" size="8" classes="ring-2 ring-white" />
                                             @endforeach
                                             @if($task->assignees->count() > 3)
                                                 <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600 font-bold ring-2 ring-white">
@@ -57,23 +91,23 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="py-6 text-center bg-gray-50 border-y border-[#22A9C8]">
+                                    <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
                                         <x-tasks.status-badge :status="$task->status" :priority="$task->priority" />
                                     </td>
-                                    <td class="py-6 text-center bg-gray-50 border-y border-[#22A9C8]">
+                                    <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
                                         <button @click="openComments({{ $task->id }})" class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                             </svg>
-                                            <span class="text-sm font-medium">{{ $task->comments->count() }}</span>
+                                            <span class="text-sm font-medium" x-text="tasks[{{ $task->id }}]?.comments?.length || 0"></span>
                                         </button>
                                     </td>
-                                    <td class="py-6 text-center pr-6 bg-gray-50 rounded-r-2xl border-r border-y border-[#22A9C8]">
+                                    <td class="py-6 text-center pr-6 bg-white rounded-r-2xl border-r border-y border-[#22A9C8]">
                                         <button @click="openFiles({{ $task->id }})" class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                             </svg>
-                                            <span class="text-sm font-medium">{{ $task->attachments->count() }}</span>
+                                            <span class="text-sm font-medium" x-text="tasks[{{ $task->id }}]?.attachments?.length || 0"></span>
                                         </button>
                                     </td>
                                 </tr>
@@ -107,7 +141,7 @@
                         </button>
                     </div>
 
-                    <div class="bg-gray-50 rounded-3xl p-8 border border-gray-100 shadow-sm overflow-x-auto">
+                    <div class="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm overflow-x-auto">
                          <table class="w-full min-w-[800px] border-separate border-spacing-y-4">
                             <thead>
                                 <tr class="text-left text-sm font-bold text-gray-900 border-b border-gray-200">
@@ -128,13 +162,7 @@
                                         </td>
                                         <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
                                             <div class="flex justify-center">
-                                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold uppercase overflow-hidden {{ $employee->avatar ? 'bg-transparent' : ($employee->color_class ?? 'bg-pink-400') }}">
-                                                    @if($employee->avatar)
-                                                        <img src="{{ $employee->avatar }}" alt="{{ $employee->name }}" class="w-full h-full object-cover">
-                                                    @else
-                                                        <span class="text-white">{{ substr($employee->name, 0, 2) }}</span>
-                                                    @endif
-                                                </div>
+                                                <x-user-avatar :user="$employee" size="8" />
                                             </div>
                                         </td>
                                         <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
@@ -145,7 +173,7 @@
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                                 </svg>
-                                                <span class="text-sm font-medium">{{ $task->comments->count() }}</span>
+                                                <span class="text-sm font-medium" x-text="tasks[{{ $task->id }}]?.comments?.length || 0"></span>
                                             </button>
                                         </td>
                                         <td class="py-6 text-center pr-6 bg-white rounded-r-2xl border-r border-y border-[#22A9C8]">
@@ -153,7 +181,7 @@
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                                 </svg>
-                                                <span class="text-sm font-medium">{{ $task->attachments->count() }}</span>
+                                                <span class="text-sm font-medium" x-text="tasks[{{ $task->id }}]?.attachments?.length || 0"></span>
                                             </button>
                                         </td>
                                     </tr>
@@ -219,13 +247,7 @@
                                 <div class="text-gray-600 font-medium">Asignado</div>
                                 <div class="flex justify-end -space-x-2">
                                      @foreach($task->assignees->take(3) as $assignee)
-                                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold uppercase ring-2 ring-white overflow-hidden {{ $assignee->avatar ? 'bg-transparent' : ($assignee->color_class ?? 'bg-gray-400') }}">
-                                            @if($assignee->avatar)
-                                                <img src="{{ $assignee->avatar }}" alt="{{ $assignee->name }}" class="w-full h-full object-cover">
-                                            @else
-                                                <span class="text-white">{{ substr($assignee->name, 0, 2) }}</span>
-                                            @endif
-                                        </div>
+                                                <x-user-avatar :user="$assignee" size="7" classes="ring-2 ring-white" />
                                     @endforeach
                                     @if($task->assignees->count() > 3)
                                         <div class="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600 font-bold ring-2 ring-white">+{{ $task->assignees->count() - 3 }}</div>
@@ -290,13 +312,7 @@
                                     
                                     <div class="text-gray-600 font-medium">Asignado</div>
                                     <div class="flex justify-end">
-                                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold uppercase overflow-hidden {{ $employee->avatar ? 'bg-transparent' : ($employee->color_class ?? 'bg-pink-400') }}">
-                                            @if($employee->avatar)
-                                                <img src="{{ $employee->avatar }}" alt="{{ $employee->name }}" class="w-full h-full object-cover">
-                                            @else
-                                                <span class="text-white">{{ substr($employee->name, 0, 2) }}</span>
-                                            @endif
-                                        </div>
+                                            <x-user-avatar :user="$employee" size="7" />
                                     </div>
                                     
                                     <div class="text-gray-600 font-medium self-center">Estado</div>
@@ -335,12 +351,25 @@
         @include('empleadores.tareas.partials.create-modal')
         @include('empleadores.tareas.partials.comments-modal')
         @include('empleadores.tareas.partials.files-modal')
+        <x-work-hours.approval-modal />
 
     </div>
 
     <!-- Alpine Logic -->
     <script>
-        const tasksData = @json($teamTasks->merge($employees->pluck('individualTasks')->collapse())->keyBy('id'));
+        // Inject current user data for optimistic UI
+        // Inject current user data for optimistic UI
+        @php
+            $currentUserData = [
+                'id' => auth()->id(),
+                'name' => auth()->user()->name,
+                'avatar' => auth()->user()->avatar ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : asset('storage/' . auth()->user()->avatar)) : '',
+                'initials' => substr(auth()->user()->name, 0, 1)
+            ];
+        @endphp
+        const currentUser = @json($currentUserData);
+        
+        const initialTasksData = @json($teamTasks->merge($employees->pluck('individualTasks')->collapse())->keyBy('id'));
 
         function taskManager() {
             return {
@@ -360,6 +389,9 @@
                     // Initialize events
                 },
 
+                // Reactive tasks store
+                tasks: initialTasksData,
+                
                 openCreateTaskModal(employeeId = null, isTeam = false) {
                     this.isTeamTask = isTeam;
                     this.targetEmployeeId = employeeId;
@@ -367,16 +399,42 @@
                 },
 
                 openComments(taskId) {
-                    this.activeTask = tasksData[taskId];
+                    this.activeTask = this.tasks[taskId];
                     this.isCommentsModalOpen = true;
                 },
 
                 openFiles(taskId) {
-                    this.activeTask = tasksData[taskId];
+                    this.activeTask = this.tasks[taskId];
                     this.isFilesModalOpen = true;
                 },
 
                 async submitComment(taskId, content) {
+                    if (!content.trim()) return false;
+                    
+                    // 1. Optimistic Update
+                    const tempId = 'temp_' + Date.now();
+                    const optimisticComment = {
+                        id: tempId,
+                        content: content,
+                        created_at: new Date().toISOString(),
+                        user: {
+                            id: currentUser.id,
+                            name: currentUser.name,
+                            avatar: currentUser.avatar
+                        },
+                        task_id: taskId
+                    };
+                    
+                    if (!this.activeTask.comments) this.activeTask.comments = [];
+                    // Push to top immediately
+                    this.activeTask.comments.unshift(optimisticComment);
+                    
+                    // Scroll immediately
+                    this.$nextTick(() => {
+                        const modalList = document.querySelector('[x-show="isCommentsModalOpen"] .overflow-y-auto');
+                        if (modalList) modalList.scrollTop = 0;
+                    });
+
                     try {
                         const response = await fetch(`/empleador/tareas/${taskId}/comments`, {
                             method: 'POST',
@@ -389,19 +447,33 @@
 
                         if (response.ok) {
                             const data = await response.json();
-                            // Refresh tasks data or push comment locally
-                            // For simplicity, pushing locally if structure matches, or reload helper
-                            if (!this.activeTask.comments) this.activeTask.comments = [];
-                            this.activeTask.comments.unshift(data.comment);
-                            // Also update global tasksData
-                            tasksData[taskId].comments.unshift(data.comment);
+                            
+                            // 2. Replace optimistic comment with real one
+                            const index = this.activeTask.comments.findIndex(c => c.id === tempId);
+                            if (index !== -1) {
+                                this.activeTask.comments[index] = data.comment;
+                            } else {
+                                // Fallback if list changed wildly (unlikely)
+                                this.activeTask.comments.unshift(data.comment);
+                            }
+                            
+                            // Update global store (if needed for persistence across closes)
+                            this.tasks[taskId].comments = this.activeTask.comments;
+
+                            return true;
                         } else {
+                            // Revert on failure
+                            this.activeTask.comments = this.activeTask.comments.filter(c => c.id !== tempId);
                             console.error('Error submitting comment');
                             alert('Error al enviar el comentario.');
+                            return false;
                         }
                     } catch (error) {
+                        // Revert on error
+                        this.activeTask.comments = this.activeTask.comments.filter(c => c.id !== tempId);
                         console.error('Error:', error);
                         alert('Error de conexión.');
+                        return false;
                     }
                 },
 
@@ -426,8 +498,8 @@
                             const data = await response.json();
                             if (!this.activeTask.attachments) this.activeTask.attachments = [];
                             this.activeTask.attachments.unshift(data.attachment);
-                             // Also update global tasksData
-                            tasksData[taskId].attachments.unshift(data.attachment);
+                             // Also update store
+                            this.tasks[taskId].attachments.unshift(data.attachment);
                         } else {
                             console.error('Error uploading file');
                              alert('Error al subir el archivo.');
@@ -439,5 +511,67 @@
                 }
             }
         }
+
+        // Approval Modal Functions
+        let currentEmployeeId = null;
+        let currentDates = [];
+
+        function showCommentModal(employeeId, dates) {
+            currentEmployeeId = employeeId;
+            currentDates = dates;
+            document.getElementById('commentModal').classList.remove('hidden');
+        }
+
+        function closeCommentModal() {
+            document.getElementById('commentModal').classList.add('hidden');
+            document.getElementById('approvalComment').value = '';
+        }
+
+        function approveWithComment() {
+            const comment = document.getElementById('approvalComment').value;
+            if (!comment.trim()) {
+                alert('Por favor, ingrese un comentario.');
+                return;
+            }
+
+            fetch("{{ route('work-hours.approve-days') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    employee_id: currentEmployeeId,
+                    dates: currentDates,
+                    comment: comment
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error al aprobar las horas');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error de conexión');
+            });
+        }
+
+        function saveScrollPosition(form) {
+            localStorage.setItem('scrollPosition', window.scrollY);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const scrollPosition = localStorage.getItem('scrollPosition');
+            if (scrollPosition) {
+                window.scrollTo(0, parseInt(scrollPosition));
+                localStorage.removeItem('scrollPosition');
+            }
+        });
     </script>
 </x-app-layout>

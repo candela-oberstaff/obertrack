@@ -72,9 +72,7 @@
                                         <td class="p-4">
                                             <div class="flex -space-x-2 overflow-hidden">
                                                 @foreach($task->assignees->take(3) as $assignee)
-                                                     <div class="w-8 h-8 rounded-full bg-pink-400 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white" title="{{ $assignee->name }}">
-                                                        {{ strtoupper(substr($assignee->name, 0, 2)) }}
-                                                     </div>
+                                                     <x-user-avatar :user="$assignee" size="8" class="ring-2 ring-white -ml-2 first:ml-0" title="{{ $assignee->name }}" />
                                                 @endforeach
                                                 @if($task->assignees->count() > 3)
                                                     <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 text-xs font-bold ring-2 ring-white">
@@ -139,9 +137,7 @@
                                             </span>
                                         </td>
                                         <td class="p-4">
-                                            <div class="w-8 h-8 rounded-full bg-pink-400 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white" >
-                                                {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-                                            </div>
+                                            <x-user-avatar :user="Auth::user()" size="8" class="ring-2 ring-white" />
                                         </td>
                                         <td class="p-4">
                                             <livewire:task-status-selector :task="$task" :wire:key="'task-status-individual-'.$task->id" />

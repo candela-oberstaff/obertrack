@@ -151,7 +151,7 @@ class TaskManagementService
     public function getEmployeeTasks($empleados, $filters = [])
     {
         $query = Task::whereIn('created_by', $empleados->pluck('id'))
-            ->with('comments', 'createdBy');
+            ->with('comments.user', 'createdBy');
 
         return $this->applyFilters($query, $filters)->get();
     }
@@ -164,11 +164,11 @@ class TaskManagementService
         $query = Task::where(function ($query) use ($user) {
             $query->where('created_by', $user->id)
                   ->orWhere('created_by', $user->empleador_id)
-                  ->orWhereIn('created_by', User::where('is_superadmin', true)->pluck('id'));
+                  ->orWhereIn('created_by', User::whereRaw('is_superadmin IS TRUE')->pluck('id'));
         })->whereHas('assignees', function($q) use ($empleados) {
             $q->whereIn('user_id', $empleados->pluck('id'));
         })
-          ->with('comments', 'assignees'); // Loaded assignees instead of visibleTo
+          ->with('comments.user', 'assignees'); // Loaded assignees instead of visibleTo
 
         return $this->applyFilters($query, $filters)->get();
     }

@@ -85,36 +85,41 @@ class DashboardController extends Controller
         // Cachear por 60 segundos para evitar queries repetidas
         $data = cache()->remember($cacheKey, 60, function () use ($user, $request) {
             // Obtener los empleados
-            $empleados = $this->employeeDataService->getEmployeesForUser($user);
+            $employees = $this->employeeDataService->getEmployeesForUser($user);
 
             // Obtener las tareas creadas por los empleados
-            $tareas = $this->taskManagementService->getEmployeeTasks($empleados, $request->all());
+            $tasks = $this->taskManagementService->getEmployeeTasks($employees, $request->all());
 
             // Obtener las tareas creadas para los empleados (por el empleador, manager o superadmin)
-            $tareasEmpleador = $this->taskManagementService->getEmployerTasks($user, $empleados, $request->all());
+            $teamTasks = $this->taskManagementService->getEmployerTasks($user, $employees, $request->all());
+
+            // Asignar las tareas individuales a cada empleado
+            $employees->each(function ($employee) use ($tasks) {
+                $employee->individualTasks = $tasks->where('created_by', $employee->id);
+            });
 
             // Preparar datos para el gráfico
-            $chartData = $this->taskDataService->prepareChartData($tareas->concat($tareasEmpleador));
+            $chartData = $this->taskDataService->prepareChartData($tasks->concat($teamTasks));
 
             // Obtener las horas trabajadas de los empleados por semana
             $weekStart = $request->week ? Carbon::parse($request->week) : Carbon::now()->startOfWeek(Carbon::MONDAY);
             $weekEnd = $weekStart->copy()->endOfWeek(Carbon::FRIDAY);
-            $workHoursSummary = $this->workHoursService->getWorkHoursSummary($empleados, $weekStart, $weekEnd);
+            $workHoursSummary = $this->workHoursService->getWorkHoursSummary($employees, $weekStart, $weekEnd);
 
             // Obtener las semanas pendientes
-            $pendingWeeks = $this->workHoursService->getPendingWeeks($empleados);
+            $pendingWeeks = $this->workHoursService->getPendingWeeks($employees);
 
             $currentMonth = Carbon::now()->startOfMonth();
 
             // Calcular el total de horas aprobadas para el mes actual
-            $totalApprovedHours = $this->workHoursService->getTotalApprovedHoursForMonth($empleados, $currentMonth);
+            $totalApprovedHours = $this->workHoursService->getTotalApprovedHoursForMonth($employees, $currentMonth);
 
             // Obtener información detallada de los empleados
-            $empleadosInfo = $this->employeeDataService->getEmployeesInfo($empleados, $currentMonth, $this->workHoursService);
+            $empleadosInfo = $this->employeeDataService->getEmployeesInfo($employees, $currentMonth, $this->workHoursService);
 
             return compact(
-                'tareas',
-                'tareasEmpleador',
+                'tasks',
+                'teamTasks',
                 'chartData',
                 'workHoursSummary',
                 'weekStart',
@@ -122,7 +127,7 @@ class DashboardController extends Controller
                 'totalApprovedHours',
                 'pendingWeeks',
                 'empleadosInfo',
-                'empleados'
+                'employees'
             );
         });
 
@@ -193,11 +198,14 @@ class DashboardController extends Controller
                 if ($record) {
                     $dayData['has_events'] = true;
                     $dayData['employees'][] = [
+                        'record_id' => $record->id,
+                        'id' => $employee->id,
                         'name' => $employee->name,
                         'avatar' => $employee->avatar,
                         'initials' => $employeeSummaries->firstWhere('user.id', $employee->id)['initials'],
                         'hours' => $record->hours_worked,
                         'approved' => $record->approved,
+                        'comment' => $record->approval_comment,
                         'color_class' => $employeeColors[$employee->id] ?? 'bg-gray-500',
                     ];
                 }

@@ -73,9 +73,25 @@
                                     </button>
                                 </div>
                                 
-                                <form method="post" action="{{ route('profile.update') }}" id="updateProfileForm" class="space-y-4">
+                                <form method="post" action="{{ route('profile.update') }}" id="updateProfileForm" class="space-y-4" enctype="multipart/form-data">
                                     @csrf
                                     @method('patch')
+                                    
+                                    <!-- Avatar Upload -->
+                                    <div class="flex flex-col items-center mb-6">
+                                        <div class="relative group">
+                                            <x-user-avatar :user="$user" size="24" classes="border-4 border-primary/20 shadow-lg" />
+                                            <label for="avatar" class="absolute bottom-0 right-0 bg-[#22A9C8] text-white p-2 rounded-full cursor-pointer shadow-md hover:bg-primary-hover transition-colors">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                </svg>
+                                            </label>
+                                            <input type="file" name="avatar" id="avatar" class="hidden" accept="image/*" onchange="previewAvatar(this)">
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-2">Haz clic en la cámara para cambiar tu foto</p>
+                                        <x-input-error class="mt-2" :messages="$errors->get('avatar')" />
+                                    </div>
                                     
                                     <!-- Visible Fields -->
                                     <div>

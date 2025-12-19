@@ -78,9 +78,9 @@
                         <div class="flex items-center gap-4 ml-4 shrink-0">
                             <span class="text-gray-800 text-sm font-medium" x-text="new Date(comment.created_at).toLocaleDateString()"></span>
                            <div class="flex items-center gap-2">
-                                <span class="bg-[#0D1E4C] text-white p-1 rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                                     <span x-text="comment.user ? comment.user.name.substring(0,1) : '?'"></span>
-                                </span>
+                                <img :src="comment.user.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : '{{ asset('avatars') }}/' + (comment.user.avatar.includes('/') ? comment.user.avatar.split('/').pop() : comment.user.avatar)) : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(comment.user.name) + '&color=FFFFFF&background=22A9C8'" 
+                                     class="w-6 h-6 rounded-full border border-gray-200 object-cover"
+                                     x-on:error="$el.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(comment.user.name) + '&color=FFFFFF&background=22A9C8'">
                             </div>
                         </div>
                     </div>
@@ -92,21 +92,46 @@
         </div>
 
         <!-- Footer / Add Comment -->
-        <div class="p-8 shrink-0 bg-white" x-data="{ isAddingComment: false, commentText: '' }">
+        <div class="p-8 shrink-0 bg-white" x-data="{ 
+            isAddingComment: false, 
+            commentText: '', 
+            isSubmitting: false
+        }">
              <div x-show="!isAddingComment" class="flex justify-center">
                  <button 
-                    @click="isAddingComment = true"
+                    @click="isAddingComment = true; $nextTick(() => $refs.commentInput.focus())"
                     class="border border-[#22A9C8] text-[#0D1E4C] hover:bg-[#22A9C8] hover:text-white font-medium py-2 px-10 rounded-full transition-colors shadow-sm"
                 >
                     Añadir comentario
                 </button>
              </div>
 
-             <form x-show="isAddingComment" @submit.prevent="submitComment(activeTask.id, commentText); isAddingComment = false; commentText = ''" class="flex flex-col gap-4">
-                 <textarea x-model="commentText" class="w-full bg-gray-50 border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#22A9C8]" placeholder="Escribe tu comentario..." rows="3" required></textarea>
+             <form x-show="isAddingComment" 
+                   @submit.prevent="
+                        isSubmitting = true;
+                        if (await submitComment(activeTask.id, commentText)) {
+                            isAddingComment = false;
+                            commentText = '';
+                        }
+                        isSubmitting = false;
+                   " 
+                   class="flex flex-col gap-4"
+             >
+                 <textarea 
+                    x-ref="commentInput"
+                    x-model="commentText" 
+                    class="w-full bg-gray-50 border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#22A9C8]" 
+                    placeholder="Escribe tu comentario..." 
+                    rows="3" 
+                    required
+                    :disabled="isSubmitting"
+                 ></textarea>
                  <div class="flex justify-end gap-2">
-                     <button type="button" @click="isAddingComment = false" class="text-gray-500 hover:text-gray-700 text-sm font-medium px-4 py-2">Cancelar</button>
-                     <button type="submit" class="bg-[#22A9C8] text-white hover:bg-[#1B8BA6] font-medium py-2 px-6 rounded-full text-sm transition-colors shadow-sm">Enviar</button>
+                     <button type="button" @click="isAddingComment = false" class="text-gray-500 hover:text-gray-700 text-sm font-medium px-4 py-2" :disabled="isSubmitting">Cancelar</button>
+                     <button type="submit" class="bg-[#22A9C8] text-white hover:bg-[#1B8BA6] font-medium py-2 px-6 rounded-full text-sm transition-colors shadow-sm flex items-center gap-2" :disabled="isSubmitting">
+                        <span x-show="isSubmitting" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                        <span x-text="isSubmitting ? 'Enviando...' : 'Enviar'"></span>
+                     </button>
                  </div>
              </form>
         </div>

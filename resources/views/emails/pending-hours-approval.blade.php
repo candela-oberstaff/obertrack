@@ -1,175 +1,83 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horas Pendientes por Aprobar</title>
+@extends('emails.layout')
+
+@section('title', 'Horas Pendientes por Aprobar - Obertrack')
+
+@section('styles')
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f4f4f5;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: #ffffff;
-            padding: 30px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-        }
-        .content {
-            padding: 30px;
-        }
-        .summary-card {
-            background-color: #fef3c7;
-            border-left: 4px solid #f59e0b;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 4px;
-        }
-        .summary-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #92400e;
-            margin: 0 0 15px 0;
-        }
         .hours-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+            width: 100%;
+            margin-bottom: 24px;
         }
-        .hours-item {
-            padding: 12px;
-            margin: 8px 0;
-            background-color: #ffffff;
-            border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid #fde68a;
+        .hours-row {
+            border-bottom: 1px solid #edf2f7;
         }
-        .hours-date {
+        .hours-row:last-child {
+            border-bottom: none;
+        }
+        .employee-cell {
+            padding: 12px 0;
             font-weight: 600;
-            color: #374151;
+            color: #2d3748;
         }
-        .hours-amount {
+        .amount-cell {
+            padding: 12px 0;
+            text-align: right;
+            font-weight: 700;
+            color: #22A9C8;
             font-size: 18px;
-            font-weight: 700;
-            color: #f59e0b;
         }
-        .total-hours {
-            background-color: #f59e0b;
+        .total-box {
+            background-color: #22A9C8;
             color: #ffffff;
-            padding: 15px;
-            border-radius: 6px;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .total-hours .label {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        .total-hours .amount {
-            font-size: 32px;
-            font-weight: 700;
-            margin-top: 5px;
-        }
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #f59e0b;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-            margin-top: 20px;
-            transition: background-color 0.3s;
-        }
-        .button:hover {
-            background-color: #d97706;
-        }
-        .footer {
-            background-color: #f9fafb;
+            border-radius: 8px;
             padding: 20px;
             text-align: center;
-            font-size: 12px;
-            color: #6b7280;
-            border-top: 1px solid #e5e7eb;
-        }
-        .intro-text {
-            color: #6b7280;
-            font-size: 14px;
-            margin-bottom: 20px;
+            margin: 24px 0;
         }
     </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>⏰ Horas Pendientes por Aprobar</h1>
-        </div>
+@endsection
+
+@section('content')
+    <h1 class="title">⏰ Horas Pendientes por Aprobar</h1>
+    
+    <p class="text">
+        Tienes horas de trabajo pendientes de aprobación para tus empleados. 
+        Por favor, revísalas para mantener el control de tu equipo.
+    </p>
+    
+    <div class="highlight-box">
+        <h2 style="font-size: 18px; color: #2d3748; margin-top: 0; margin-bottom: 16px;">Resumen por empleado</h2>
         
-        <div class="content">
-            <p class="intro-text">
-                Tienes horas de trabajo pendientes de aprobación para tus empleados.
-            </p>
-            
-            <div class="summary-card">
-                <h2 class="summary-title">Resumen de Horas Pendientes</h2>
-                
-                @if(count($pendingHours) > 0)
-                    <ul class="hours-list">
-                        @foreach($pendingHours as $item)
-                            <li class="hours-item">
-                                <span class="hours-date">
-                                    {{ $item['employee_name'] ?? 'Empleado' }}
-                                    @if(isset($item['week']))
-                                        - Semana {{ $item['week'] }}
-                                    @endif
-                                </span>
-                                <span class="hours-amount">{{ $item['hours'] }} hs</span>
-                            </li>
-                        @endforeach
-                    </ul>
-                @else
-                    <p style="color: #6b7280; margin: 0;">No hay detalles específicos disponibles.</p>
-                @endif
-            </div>
-            
-            <div class="total-hours">
-                <div class="label">Total de Horas Pendientes</div>
-                <div class="amount">{{ $totalHours }} hs</div>
-            </div>
-            
-            <div style="text-align: center;">
-                <a href="{{ $approvalUrl }}" class="button">Ir a Aprobar Horas</a>
-            </div>
-            
-            <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
-                💡 <strong>Recordatorio:</strong> Es importante aprobar las horas de trabajo de tus empleados 
-                de manera oportuna para mantener un registro preciso y actualizado.
-            </p>
-        </div>
-        
-        <div class="footer">
-            <p>Este es un correo automático de OberTrack. Por favor no respondas a este mensaje.</p>
-            <p>&copy; {{ date('Y') }} OberTrack. Todos los derechos reservados.</p>
-        </div>
+        @if(count($pendingHours) > 0)
+            <table class="hours-list">
+                @foreach($pendingHours as $item)
+                    <tr class="hours-row">
+                        <td class="employee-cell">
+                            {{ $item['employee_name'] ?? 'Empleado' }}
+                            @if(isset($item['week']))
+                                <br><span style="font-size: 12px; color: #718096; font-weight: normal;">Semana {{ $item['week'] }}</span>
+                            @endif
+                        </td>
+                        <td class="amount-cell">{{ $item['hours'] }} hs</td>
+                    </tr>
+                @endforeach
+            </table>
+        @else
+            <p style="color: #718096; margin: 0; font-style: italic;">No hay detalles específicos disponibles.</p>
+        @endif
     </div>
-</body>
-</html>
+    
+    <div class="total-box">
+        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px; font-weight: 600;">Total de Horas Pendientes</div>
+        <div style="font-size: 36px; font-weight: 800;">{{ $totalHours }} hs</div>
+    </div>
+    
+    <div class="button-container">
+        <a href="{{ $approvalUrl }}" class="button">Ir a Aprobar Horas</a>
+    </div>
+    
+    <p class="text" style="font-size: 14px; color: #718096; margin-top: 30px; border-top: 1px solid #edf2f7; padding-top: 20px;">
+        💡 <strong>Recordatorio:</strong> Es importante aprobar las horas de trabajo de tus empleados 
+        de manera oportuna para mantener un registro preciso y actualizado.
+    </p>
+@endsection

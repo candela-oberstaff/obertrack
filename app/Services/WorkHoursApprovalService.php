@@ -37,6 +37,23 @@ class WorkHoursApprovalService
     }
 
     /**
+     * Approve specific work hours by date
+     */
+    public function approveDates($employeeId, array $dates, $comment = null)
+    {
+        $query = WorkHours::where('user_id', $employeeId)
+            ->whereIn('work_date', $dates);
+
+        $data = ['approved' => \Illuminate\Support\Facades\DB::raw('true')];
+        
+        if ($comment !== null) {
+            $data['approval_comment'] = $comment;
+        }
+
+        return $query->update($data);
+    }
+
+    /**
      * Approve work hours for an entire month
      */
     public function approveMonth($userId, $month)

@@ -58,7 +58,7 @@ Route::middleware(['auth'])->get('/dashboard', function () {
     
     // Employers see the original dashboard with action cards
     if ($user->tipo_usuario === 'empleador') {
-        return view('dashboard', ['nombreUsuario' => $user->name]);
+        return redirect()->route('empleador.dashboard');
     }
     
     // Professionals (employees and managers) see their specific dashboard

@@ -364,6 +364,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <x-app-layout>
+    <style>
+        @keyframes pulse-once {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .animate-pulse-once {
+            animation: pulse-once 0.5s ease-out;
+        }
+    </style>
     <div class="py-8 bg-white min-h-screen">
         @php
             $currentDate = now();
@@ -405,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     @endphp
                     <svg class="w-full h-full transform -rotate-90">
                         <circle cx="50%" cy="50%" r="40" stroke="#E5E7EB" stroke-width="8" fill="transparent" />
-                        <circle cx="50%" cy="50%" r="40" stroke="#0066CC" stroke-width="8" fill="transparent" 
+                        <circle cx="50%" cy="50%" r="40" class="text-primary" stroke="currentColor" stroke-width="8" fill="transparent" 
                                 stroke-dasharray="{{ $strokeDasharray }}" 
                                 stroke-dashoffset="{{ $strokeDashoffset }}" 
                                 stroke-linecap="round" />
@@ -426,15 +436,15 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="mx-4 sm:mx-0">
                 <h3 class="text-lg font-bold text-gray-800 mb-4">Registro actual</h3>
                 
-                <div id="registrar-horas-calendar" class="border border-blue-400 rounded-3xl p-6 bg-white min-h-[600px]">
+                <div id="registrar-horas-calendar" class="border border-primary rounded-3xl p-6 bg-white min-h-[600px]">
                     
                     {{-- Month Navigator --}}
                     <div id="registrar-horas-month-nav" class="flex items-center gap-4 mb-8">
-                        <a href="{{ route('empleado.registrar-horas', ['month' => $currentMonth->copy()->subMonth()->format('Y-m-d')]) }}" class="bg-[#0066CC] text-white p-1 rounded-md text-xs hover:bg-primary-hover">
+                        <a href="{{ route('empleado.registrar-horas', ['month' => $currentMonth->copy()->subMonth()->format('Y-m-d')]) }}" class="bg-primary text-white p-1 rounded-md text-xs hover:bg-primary-hover">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         </a>
                         <h2 class="text-xl font-bold text-gray-900">{{ $currentMonth->format('F Y') }}</h2>
-                        <a href="{{ route('empleado.registrar-horas', ['month' => $currentMonth->copy()->addMonth()->format('Y-m-d')]) }}" class="bg-[#0066CC] text-white p-1 rounded-md text-xs hover:bg-primary-hover">
+                        <a href="{{ route('empleado.registrar-horas', ['month' => $currentMonth->copy()->addMonth()->format('Y-m-d')]) }}" class="bg-primary text-white p-1 rounded-md text-xs hover:bg-primary-hover">
                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </a>
                     </div>
@@ -463,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     
                                     {{-- Date Pill --}}
                                     @if($day['inMonth'])
-                                        <div class="bg-[#0066CC] text-white rounded-full px-6 py-1 text-sm font-bold mb-2">
+                                        <div class="bg-primary text-white rounded-full px-6 py-1 text-sm font-bold mb-2">
                                             {{ $day['date']->format('d') }}
                                         </div>
                                     @endif
@@ -471,20 +481,32 @@ document.addEventListener('DOMContentLoaded', function() {
                                     @if ($day['inMonth'] && !$isWeekend)
                                         @if ($hasHours)
                                             <div class="flex flex-col items-center gap-1 w-full">
-                                                <div class="flex items-center gap-2 bg-pink-100 rounded-full px-3 py-1 w-full justify-center">
+                                                <div class="flex items-center gap-2 {{ $day['workHours']->hours_worked == 0 ? 'bg-red-100' : 'bg-pink-100' }} rounded-full px-3 py-1 w-full justify-center">
                                                      {{-- Use User Avatar Component --}}
                                                     <x-user-avatar :user="auth()->user()" size="6" classes="border-2 border-white" />
-                                                    <span class="text-sm font-bold text-gray-700">{{ $day['workHours']->hours_worked }} horas</span>
+                                                    <span class="text-sm font-bold text-gray-700">{{ $day['workHours']->hours_worked == 0 ? 'Ausente' : $day['workHours']->hours_worked . ' horas' }}</span>
                                                 </div>
                                             </div>
-                                        @elseif (true)
-                                            <form action="{{ route('work-hours.store') }}" method="POST" class="hours-form w-full">
+                                        @elseif ($day['date']->lte(\Carbon\Carbon::now()))
+                                            <form action="{{ route('work-hours.store') }}" method="POST" class="hours-form w-full flex flex-col gap-2">
                                                 @csrf
                                                 <input type="hidden" name="work_date" value="{{ $day['date']->format('Y-m-d') }}">
-                                                <input type="hidden" name="hours_worked" value="8">
-                                                <button type="submit" class="w-full flex items-center justify-center gap-1 bg-white border border-gray-200 shadow-sm rounded-lg py-2 px-1 text-xs font-bold text-gray-600 hover:bg-gray-50 transition">
-                                                    <span class="text-primary font-bold">+</span> Registrar horas
-                                                </button>
+                                                
+                                                <div class="flex items-center gap-1">
+                                                    <input type="number" name="hours_worked" step="0.5" min="0" max="8" value="8" class="w-full text-xs p-1 border border-primary/20 rounded focus:ring-primary focus:border-primary text-primary" placeholder="Hrs" required>
+                                                    <span class="text-[10px] text-gray-500 whitespace-nowrap">Max 8h</span>
+                                                </div>
+
+                                                <textarea name="user_comment" class="w-full text-xs p-1 border border-primary/20 rounded resize-none focus:ring-primary focus:border-primary" rows="2" placeholder="Comentario (opcional)..."></textarea>
+                                                
+                                                <div class="flex gap-1">
+                                                    <button type="button" class="btn-absence w-1/3 flex items-center justify-center bg-transparent text-red-500 rounded-lg py-1.5 px-1 text-[10px] font-bold hover:text-red-700 hover:bg-red-50 transition" title="Marcar Ausencia">
+                                                        Ausencia
+                                                    </button>
+                                                    <button type="submit" class="w-2/3 flex items-center justify-center gap-1 bg-primary text-white shadow-sm rounded-lg py-1.5 px-1 text-xs font-bold hover:bg-primary-hover transition">
+                                                        Registrar
+                                                    </button>
+                                                </div>
                                             </form>
                                         @endif
                                     @endif
@@ -506,44 +528,141 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
     </div>
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+            
+            toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-y-full opacity-0 flex items-center gap-2`;
+            toast.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    ${type === 'success' 
+                        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>' 
+                        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'}
+                </svg>
+                <span class="font-medium">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-full', 'opacity-0');
+            });
+            
+            // Remove after 3s
+            setTimeout(() => {
+                toast.classList.add('translate-y-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Absence Button Logic
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-absence');
+            if (btn) {
+                const form = btn.closest('form');
+                const hoursInput = form.querySelector('input[name="hours_worked"]');
+                const commentInput = form.querySelector('textarea[name="user_comment"]');
+                
+                hoursInput.value = 0;
+                commentInput.value = commentInput.value || 'Ausencia';
+                
+                form.requestSubmit(); 
+            }
+        });
+
         // Hour Registration Logic (Event Delegation)
         document.addEventListener('submit', function(e) {
             if (e.target.classList.contains('hours-form')) {
                 e.preventDefault();
                 const form = e.target;
                 const formData = new FormData(form);
-                const button = form.querySelector('button');
-                const originalText = button.innerHTML;
+                const button = form.querySelector('button[type="submit"]');
+                const originalContent = button.innerHTML;
                 
-                button.disabled = true;
-                button.innerHTML = '...';
+                // Loading State
+                const allInputs = form.querySelectorAll('input, textarea, button');
+                allInputs.forEach(el => el.disabled = true);
+                button.innerHTML = '<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
 
                 fetch(form.action, {
                     method: 'POST',
                     body: formData,
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Reload to update total hours chart and UI correctly
-                        location.reload(); 
+                        const hours = parseFloat(formData.get('hours_worked'));
+                        const isAbsence = hours === 0;
+                        const cell = form.closest('.bg-gray-50'); 
+                        const dateNum = formData.get('work_date').split('-')[2];
+                        
+                        // Construct the "Registered" state HTML
+                        const newContent = `
+                            <div class="bg-primary text-white rounded-full px-6 py-1 text-sm font-bold mb-2">
+                                ${dateNum}
+                            </div>
+                            <div class="flex flex-col items-center gap-1 w-full">
+                                <div class="flex items-center gap-2 ${isAbsence ? 'bg-red-100' : 'bg-pink-100'} rounded-full px-3 py-1 w-full justify-center animate-pulse-once">
+                                <div class="w-6 h-6 rounded-full border-2 border-white overflow-hidden bg-gray-100 flex-shrink-0 animate-pulse-once">
+                                    <img src="{{ auth()->user()->avatar ? (filter_var(auth()->user()->avatar, FILTER_VALIDATE_URL) ? auth()->user()->avatar : asset('avatars/' . auth()->user()->avatar)) : 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&color=FFFFFF&background=22A9C8' }}" 
+                                         alt="" class="w-full h-full object-cover"
+                                         onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&color=FFFFFF&background=22A9C8'">
+                                </div>
+                                    <span class="text-sm font-bold text-gray-700">${isAbsence ? 'Ausente' : hours + ' horas'}</span>
+                                </div>
+                            </div>
+                        `;
+                        
+                        cell.innerHTML = newContent; 
+                        
+                        // Update Total Hours Circle
+                        const totalHoursEl = document.querySelector('.relative span.text-3xl');
+                        if(totalHoursEl) {
+                            const currentTotal = parseFloat(totalHoursEl.innerText);
+                            const newTotal = currentTotal + hours;
+                            totalHoursEl.innerText = parseInt(newTotal); // Display as int
+                            
+                            // Update Circle Stroke
+                            const circle = document.querySelector('.relative svg circle:last-child');
+                            if(circle) {
+                                const targetHours = 160;
+                                const percentage = Math.min((newTotal / targetHours) * 100, 100);
+                                const circumference = 2 * 3.14159 * 40;
+                                const offset = circumference - (percentage / 100) * circumference;
+                                circle.style.strokeDashoffset = offset;
+                            }
+
+                            // Update Text Summary
+                            const summaryText = document.querySelector('.text-right p:first-child'); 
+                            if(summaryText) summaryText.innerText = `${parseInt(newTotal)} de 160 horas registradas`;
+                        }
+
+                        showToast('Registrado correctamente');
+
                     } else {
-                        alert(data.message || 'Error al guardar');
-                        button.disabled = false;
-                        button.innerHTML = originalText;
+                        showToast(data.message || 'Error al guardar', 'error');
+                        allInputs.forEach(el => el.disabled = false);
+                        button.innerHTML = originalContent;
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error de conexión');
-                    button.disabled = false;
-                    button.innerHTML = originalText;
+                    showToast('Error de conexión', 'error');
+                    allInputs.forEach(el => el.disabled = false);
+                    button.innerHTML = originalContent;
                 });
             }
         });

@@ -15,7 +15,7 @@ class WorkHoursSummaryService
     {
         // Single query for all employees - NO N+1!
         $allWorkHours = WorkHours::whereIn('user_id', $empleados->pluck('id'))
-            ->whereBetween('work_date', [$weekStart, $weekEnd])
+            ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
             ->get()
             ->groupBy('user_id');
 
@@ -26,8 +26,8 @@ class WorkHoursSummaryService
             $summary[$empleado->id] = [
                 'name' => $empleado->name,
                 'total_hours' => $workHours->sum('hours_worked'),
-                'approved_hours' => $workHours->where('approved', true)->sum('hours_worked'),
-                'pending_hours' => $workHours->where('approved', false)->sum('hours_worked'),
+                'approved_hours' => $workHours->filter(fn($h) => (bool)$h->approved)->sum('hours_worked'),
+                'pending_hours' => $workHours->filter(fn($h) => !(bool)$h->approved)->sum('hours_worked'),
                 'days' => $this->getDailyHours($workHours, $weekStart, $weekEnd),
             ];
         }
@@ -42,11 +42,16 @@ class WorkHoursSummaryService
         $days = [];
         $currentDay = $weekStart->copy();
         while ($currentDay <= $weekEnd) {
-            $dayHours = $workHours->where('work_date', $currentDay->format('Y-m-d'))->first();
+            $dateStr = $currentDay->format('Y-m-d');
+            // Compare as strings to avoid Carbon instance mismatches in collection where()
+            $dayHours = $workHours->first(fn($h) => 
+                ($h->work_date instanceof Carbon ? $h->work_date->format('Y-m-d') : substr($h->work_date, 0, 10)) === $dateStr
+            );
+
             $days[] = [
-                'date' => $currentDay->format('Y-m-d'),
+                'date' => $dateStr,
                 'hours' => $dayHours ? $dayHours->hours_worked : 0,
-                'approved' => $dayHours ? $dayHours->approved : false,
+                'approved' => $dayHours ? (bool)$dayHours->approved : false,
             ];
             $currentDay->addDay();
         }
@@ -61,17 +66,17 @@ class WorkHoursSummaryService
         $pendingWeeks = [];
         $currentWeek = Carbon::now()->startOfWeek(Carbon::MONDAY);
         
-        // Buscar hasta 4 semanas atrás, excluyendo la semana actual
-        for ($i = 1; $i <= 4; $i++) {
+        // Buscar hasta 4 semanas atrás, incluyendo la semana actual
+        for ($i = 0; $i <= 4; $i++) {
             $weekStart = $currentWeek->copy()->subWeeks($i);
-            $weekEnd = $weekStart->copy()->endOfWeek(Carbon::FRIDAY);
+            $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
             
-            $pendingHours = WorkHours::whereIn('user_id', $empleados->pluck('id'))
-                ->whereBetween('work_date', [$weekStart, $weekEnd])
+            $pendingHoursExists = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+                ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
                 ->whereRaw('approved IS FALSE')
                 ->exists();
             
-            if ($pendingHours) {
+            if ($pendingHoursExists) {
                 $pendingWeeks[] = [
                     'start' => $weekStart,
                     'end' => $weekEnd,

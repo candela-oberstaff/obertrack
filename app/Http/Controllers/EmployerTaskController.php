@@ -138,6 +138,7 @@ class EmployerTaskController extends Controller
                 'user' => [
                     'id' => $comment->user->id,
                     'name' => $comment->user->name,
+                    'avatar' => $comment->user->avatar,
                 ],
                 'task_id' => $comment->task_id
             ]

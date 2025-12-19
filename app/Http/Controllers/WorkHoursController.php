@@ -23,7 +23,8 @@ class WorkHoursController extends Controller
         private ReportService $reportService,
         private ZapierService $zapierService,
         private WorkHoursApprovalService $approvalService,
-        private CalendarService $calendarService
+        private CalendarService $calendarService,
+        private \App\Services\BrevoEmailService $emailService
     ) {}
 
     public function store(StoreWorkHoursRequest $request)
@@ -31,6 +32,9 @@ class WorkHoursController extends Controller
         $workDate = Carbon::parse($request->work_date);
         
         if ($workDate->isWeekend()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No se pueden registrar horas en fines de semana.']);
+            }
             return back()->with('error', 'No se pueden registrar horas en fines de semana.');
         }
     
@@ -39,15 +43,26 @@ class WorkHoursController extends Controller
     
         $totalHoursThisWeek = WorkHours::where('user_id', auth()->id())
             ->whereBetween('work_date', [$weekStart, $weekEnd])
+            ->where('work_date', '!=', $request->work_date) // Exclude current day if updating
             ->sum('hours_worked');
     
+        if ($request->hours_worked > 8) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No puedes registrar más de 8 horas por día.']);
+            }
+            return back()->with('error', 'No puedes registrar más de 8 horas por día.');
+        }
+
         if ($totalHoursThisWeek + $request->hours_worked > 40) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No puedes exceder 40 horas por semana hábil.']);
+            }
             return back()->with('error', 'No puedes exceder 40 horas por semana hábil.');
         }
     
         WorkHours::updateOrCreate(
             ['user_id' => auth()->id(), 'work_date' => $request->work_date],
-            ['hours_worked' => $request->hours_worked]
+            ['hours_worked' => $request->hours_worked, 'user_comment' => $request->user_comment]
         );
     
         $currentMonth = Carbon::parse($request->work_date)->startOfMonth();
@@ -56,6 +71,53 @@ class WorkHoursController extends Controller
             ->whereMonth('work_date', $currentMonth->month)
             ->sum('hours_worked');
     
+        // Send notification to employer with cooldown
+        try {
+            $user = auth()->user();
+            $employer = $user->empleador_id ? User::find($user->empleador_id) : null;
+
+            if ($employer) {
+                $cacheKey = "pending_hours_notification_{$employer->id}_{$user->id}";
+                
+                if (!cache()->has($cacheKey)) {
+                    $pendingHoursCount = WorkHours::where('user_id', $user->id)
+                        ->whereRaw('approved IS FALSE')
+                        ->sum('hours_worked');
+
+                    if ($pendingHoursCount > 0) {
+                        $this->emailService->sendPendingHoursNotification(
+                            $employer->email,
+                            $employer->name,
+                            [
+                                'employee_name' => $user->name,
+                                'total_hours' => $pendingHoursCount,
+                                'pending_hours' => [
+                                    [
+                                        'employee_name' => $user->name,
+                                        'hours' => $pendingHoursCount,
+                                        'week' => $workDate->startOfWeek()->format('d/m/Y')
+                                    ]
+                                ]
+                            ]
+                        );
+
+                        // Set cooldown for 24 hours
+                        cache()->put($cacheKey, true, now()->addDay());
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error sending pending hours notification: ' . $e->getMessage());
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true, 
+                'message' => 'Horas registradas correctamente.',
+                'totalHours' => $totalHours
+            ]);
+        }
+
         return redirect()->route('empleado.registrar-horas')->with([
             'success' => 'Horas registradas correctamente.',
             'totalHours' => $totalHours
@@ -92,6 +154,27 @@ class WorkHoursController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function approveDays(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:users,id',
+            'dates' => 'required|array',
+            'comment' => 'nullable|string'
+        ]);
+
+        $this->approvalService->approveDates(
+            $request->employee_id,
+            $request->dates,
+            $request->comment
+        );
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Horas aprobadas correctamente.');
+    }
+
     public function approveMonth(Request $request)
     {
         $month = $request->input('month');
@@ -99,8 +182,32 @@ class WorkHoursController extends Controller
 
         $success = $this->approvalService->approveMonth($user->id, $month);
 
-        return response()->json(['success' => $success]);
+        if ($success) {
+            return back()->with('success', 'Todas las horas del mes han sido aprobadas.');
+        }
+
+        return back()->with('error', 'No se pudieron aprobar las horas.');
     }
+
+    public function updateComment(Request $request, $id)
+    {
+        $request->validate([
+            'comment' => 'nullable|string|max:500',
+        ]);
+
+        $workHour = WorkHours::findOrFail($id);
+        
+        // Ensure the user has permission (employer of the employee)
+        $employee = User::find($workHour->user_id);
+        if (Auth::user()->tipo_usuario !== 'empleador' || $employee->empleador_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $workHour->update(['approval_comment' => $request->comment]);
+
+        return response()->json(['success' => true, 'message' => 'Comentario actualizado.']);
+    }
+
 
     public function downloadMonthlyReport($month, Request $request)
     {
@@ -145,27 +252,33 @@ class WorkHoursController extends Controller
             : Carbon::now()->startOfWeek(Carbon::MONDAY);
         
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
+        $today = Carbon::today();
 
         $employerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
 
         $professionals = User::where('empleador_id', $employerId)
             ->orderBy('name')
             ->get()
-            ->map(function ($professional, $index) use ($weekStart, $weekEnd) {
+            ->map(function ($professional, $index) use ($weekStart, $weekEnd, $today) {
                 $weekHours = WorkHours::where('user_id', $professional->id)
-                    ->whereBetween('work_date', [$weekStart, $weekEnd])
+                    ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
                     ->get();
 
                 $totalHours = $weekHours->sum('hours_worked');
                 $pendingHours = $weekHours->where('approved', false)->sum('hours_worked');
 
-                $weeklyAverage = $totalHours > 0 ? round($totalHours / 5, 1) : 0;
-
+                // Logic for absences: only count days up to today or week end, whichever is first
                 $absences = 0;
-                for ($i = 0; $i < 5; $i++) {
+                $daysToCheck = min(5, $today->diffInDays($weekStart) + 1);
+                if ($today->lt($weekStart)) $daysToCheck = 0;
+                if ($weekEnd->lt($today)) $daysToCheck = 5;
+
+                for ($i = 0; $i < $daysToCheck; $i++) {
                     $date = $weekStart->copy()->addDays($i);
-                    $dayHours = $weekHours->where('work_date', $date->format('Y-m-d'))->sum('hours_worked');
-                    if ($dayHours == 0) {
+                    $dayRecord = $weekHours->first(fn($h) => 
+                        ($h->work_date instanceof Carbon ? $h->work_date->format('Y-m-d') : substr($h->work_date, 0, 10)) === $date->format('Y-m-d')
+                    );
+                    if (!$dayRecord || $dayRecord->hours_worked == 0) {
                         $absences++;
                     }
                 }
@@ -174,17 +287,24 @@ class WorkHoursController extends Controller
                     ->whereRaw('completed IS FALSE')
                     ->count();
 
-                $hasPendingWeeks = $pendingHours > 0;
+                // Monthly stats
+                $monthStart = Carbon::now()->startOfMonth();
+                $monthHours = WorkHours::where('user_id', $professional->id)
+                    ->whereBetween('work_date', [$monthStart->format('Y-m-d'), Carbon::now()->format('Y-m-d')])
+                    ->whereRaw('approved IS TRUE')
+                    ->sum('hours_worked');
 
                 return [
                     'id' => $professional->id,
                     'name' => $professional->name,
-                    'job_title' => $professional->job_title ?? 'Sin especificar',
-                    'weekly_average' => $weeklyAverage,
+                    'job_title' => $professional->job_title ?? 'Profesional',
+                    'registered_hours' => $totalHours,
                     'absences' => $absences,
                     'incomplete_tasks' => $incompleteTasks,
-                    'has_pending_weeks' => $hasPendingWeeks,
+                    'has_pending_weeks' => $pendingHours > 0,
+                    'month_hours' => $monthHours,
                     'index' => $index + 1,
+                    'professional' => $professional
                 ];
             });
 
@@ -212,9 +332,10 @@ class WorkHoursController extends Controller
             : Carbon::now()->startOfWeek(Carbon::MONDAY);
         
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
+        $today = Carbon::today();
 
         $weekHours = WorkHours::where('user_id', $user->id)
-            ->whereBetween('work_date', [$weekStart, $weekEnd])
+            ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
             ->get();
 
         $dailyHours = [];
@@ -222,39 +343,66 @@ class WorkHoursController extends Controller
 
         for ($i = 0; $i < 5; $i++) {
             $date = $weekStart->copy()->addDays($i);
-            $hours = $weekHours->where('work_date', $date->format('Y-m-d'))->first();
+            $hours = $weekHours->first(fn($h) => 
+                ($h->work_date instanceof Carbon ? $h->work_date->format('Y-m-d') : substr($h->work_date, 0, 10)) === $date->format('Y-m-d')
+            );
+            
+            $status = 'Pendiente';
+            if ($date->lt($today)) {
+                $status = $hours && $hours->hours_worked > 0 ? 'Presente' : 'Ausente';
+            } elseif ($date->isToday()) {
+                $status = $hours && $hours->hours_worked > 0 ? 'Presente' : 'En curso';
+            }
+
             $dailyHours[] = [
                 'day' => $daysOfWeek[$i],
+                'date' => $date->format('d/m'),
                 'hours' => $hours ? $hours->hours_worked : 0,
-                'status' => $hours ? ($hours->hours_worked > 0 ? 'Presente' : 'Ausente') : 'Ausente',
+                'status' => $status,
+                'is_approved' => $hours ? (bool)$hours->approved : false
             ];
         }
 
         $totalHours = $weekHours->sum('hours_worked');
-        $weeklyAverage = $totalHours > 0 ? round($totalHours / 5, 1) : 0;
-
-        $absences = collect($dailyHours)->where('hours', 0)->count();
+        $absences = collect($dailyHours)->where('status', 'Ausente')->count();
 
         $incompleteTasks = $user->assignedTasks()
             ->whereRaw('completed IS FALSE')
             ->count();
 
         $comments = WorkHours::where('user_id', $user->id)
-            ->whereBetween('work_date', [$weekStart, $weekEnd])
+            ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
             ->whereNotNull('approval_comment')
             ->pluck('approval_comment')
             ->filter()
             ->unique();
 
+        $professionalComments = WorkHours::where('user_id', $user->id)
+            ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
+            ->whereNotNull('user_comment')
+            ->pluck('user_comment')
+            ->filter()
+            ->unique();
+
+        // Monthly context
+        $monthStart = $weekStart->copy()->startOfMonth();
+        $monthEnd = $weekStart->copy()->endOfMonth();
+        $monthHours = WorkHours::where('user_id', $user->id)
+            ->whereBetween('work_date', [$monthStart->format('Y-m-d'), min($today, $monthEnd)->format('Y-m-d')])
+            ->whereRaw('approved IS TRUE')
+            ->sum('hours_worked');
+
         return view('reportes.show', [
             'professional' => $user,
             'weekStart' => $weekStart,
             'weekEnd' => $weekEnd,
-            'weeklyAverage' => $weeklyAverage,
+            'registeredHours' => $totalHours,
             'absences' => $absences,
             'incompleteTasks' => $incompleteTasks,
             'dailyHours' => $dailyHours,
             'comments' => $comments,
+            'professionalComments' => $professionalComments,
+            'monthHours' => $monthHours,
         ]);
     }
     /**

@@ -73,8 +73,10 @@
     >
         <template x-if="newMessageFrom">
             <div class="flex items-center gap-3 flex-1">
-                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                    <span x-text="newMessageFrom.initials"></span>
+                <div class="flex-shrink-0">
+                    <img :src="newMessageFrom.avatar ? (newMessageFrom.avatar.startsWith('http') ? newMessageFrom.avatar : '{{ asset('avatars') }}/' + newMessageFrom.avatar) : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(newMessageFrom.name) + '&color=FFFFFF&background=22A9C8'" 
+                         class="w-10 h-10 rounded-full border-2 border-white object-cover"
+                         x-on:error="$el.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(newMessageFrom.name) + '&color=FFFFFF&background=22A9C8'">
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="font-bold text-gray-900 text-sm">Nuevo mensaje</p>

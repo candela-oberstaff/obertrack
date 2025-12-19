@@ -26,9 +26,11 @@ class BrevoEmailService
             'timeout' => 30,
         ];
 
-        // For development: disable SSL verification if needed
-        // For production: ensure proper SSL certificates are configured
-        if (config('app.env') === 'local' || config('app.env') === 'development') {
+        // SSL verification logic
+        $sslVerify = config('services.brevo.ssl_verify');
+        if ($sslVerify !== null) {
+            $guzzleConfig['verify'] = filter_var($sslVerify, FILTER_VALIDATE_BOOLEAN);
+        } elseif (config('app.env') === 'local' || config('app.env') === 'development') {
             $guzzleConfig['verify'] = false; // Disable SSL verification in development
         }
 
