@@ -1,4 +1,4 @@
-<div class="relative" x-data="{ dropdownOpen: @entangle('isOpen') }" @click.away="dropdownOpen = false">
+<div class="relative" x-data="{ dropdownOpen: @entangle('isOpen').live }" @click.away="dropdownOpen = false">
     <button @click="dropdownOpen = !dropdownOpen" type="button" 
         class="flex items-center justify-between w-40 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white rounded-full focus:outline-none transition-all duration-300 shadow-sm
         @if($status === \App\Models\Task::STATUS_COMPLETED) bg-green-500 hover:bg-green-600
@@ -35,19 +35,19 @@
             <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Cambiar estado</span>
         </div>
 
-        <button type="button" wire:click="updateStatus('{{ \App\Models\Task::STATUS_COMPLETED }}')" 
+        <button type="button" wire:click.stop="updateStatus('{{ \App\Models\Task::STATUS_COMPLETED }}')" @click="dropdownOpen = false"
             class="w-full px-4 py-2.5 text-[9px] font-bold text-green-600 bg-green-50 rounded-2xl hover:bg-green-100 transition-colors flex items-center gap-3 uppercase tracking-widest group">
             <span class="w-2 h-2 rounded-full bg-green-500 group-hover:scale-125 transition-transform"></span>
             Finalizado
         </button>
         
-        <button type="button" wire:click="updateStatus('{{ \App\Models\Task::STATUS_IN_PROGRESS }}')" 
+        <button type="button" wire:click.stop="updateStatus('{{ \App\Models\Task::STATUS_IN_PROGRESS }}')" @click="dropdownOpen = false"
             class="w-full px-4 py-2.5 text-[9px] font-bold text-yellow-600 bg-yellow-50 rounded-2xl hover:bg-yellow-100 transition-colors flex items-center gap-3 uppercase tracking-widest group">
             <span class="w-2 h-2 rounded-full bg-yellow-500 group-hover:scale-125 transition-transform"></span>
             En proceso
         </button>
         
-        <button type="button" wire:click="updateStatus('{{ \App\Models\Task::STATUS_TODO }}')" 
+        <button type="button" wire:click.stop="updateStatus('{{ \App\Models\Task::STATUS_TODO }}')" @click="dropdownOpen = false"
             class="w-full px-4 py-2.5 text-[9px] font-bold text-red-600 bg-red-50 rounded-2xl hover:bg-red-100 transition-colors flex items-center gap-3 uppercase tracking-widest group">
             <span class="w-2 h-2 rounded-full bg-red-500 group-hover:scale-125 transition-transform"></span>
             Por hacer
