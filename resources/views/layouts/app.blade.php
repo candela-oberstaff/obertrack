@@ -303,13 +303,5 @@
                 @endauth
             });
         </script>
-        <script src="{{ url('/livewire-script') }}" data-csrf="{{ csrf_token() }}" data-update-uri="/livewire/update" data-navigate-once="true"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                if (window.Livewire) {
-                    window.Livewire.start();
-                }
-            });
-        </script>
     </body>
 </html>

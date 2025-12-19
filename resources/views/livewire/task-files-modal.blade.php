@@ -1,5 +1,5 @@
-<div x-data="{ open: @entangle('isOpen') }"
-     x-show="open"
+<div x-data="{ isModalOpen: @entangle('isOpen') }"
+     x-show="isModalOpen"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
@@ -13,7 +13,7 @@
          @click.away="open = false">
         
         {{-- Close Button --}}
-        <button @click="open = false" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 z-10">
+        <button @click="isModalOpen = false" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 z-10">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
