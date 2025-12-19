@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Task;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class TaskStatusSelector extends Component
@@ -26,9 +27,11 @@ class TaskStatusSelector extends Component
         $this->status = $newStatus;
         
         // Update both status and completed boolean for backward compatibility
+        // Using DB::raw for completed because PostgreSQL with ATTR_EMULATE_PREPARES=true
+        // might send booleans as integers (1/0), which fails.
         $this->task->update([
             'status' => $newStatus,
-            'completed' => $newStatus === Task::STATUS_COMPLETED
+            'completed' => DB::raw($newStatus === Task::STATUS_COMPLETED ? 'true' : 'false')
         ]);
 
         $this->isOpen = false;
