@@ -33,6 +33,9 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') === 'production') {
             \Illuminate\Support\Facades\URL::forceScheme('https');
             \Illuminate\Support\Facades\URL::forceRootUrl('https://obertrack.com');
+            
+            // Explicitly set the Google redirect URI to use HTTPS to avoid redirect_uri_mismatch
+            config(['services.google.redirect' => 'https://obertrack.com/auth/google/callback']);
         }
     }
 
