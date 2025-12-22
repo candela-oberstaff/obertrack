@@ -62,7 +62,11 @@ class WorkHoursController extends Controller
     
         WorkHours::updateOrCreate(
             ['user_id' => auth()->id(), 'work_date' => $request->work_date],
-            ['hours_worked' => $request->hours_worked, 'user_comment' => $request->user_comment]
+            [
+                'hours_worked' => $request->hours_worked, 
+                'user_comment' => $request->user_comment,
+                'absence_reason' => $request->absence_reason
+            ]
         );
     
         $currentMonth = Carbon::parse($request->work_date)->startOfMonth();
