@@ -299,6 +299,13 @@ class WorkHoursController extends Controller
                     ->whereRaw('completed IS FALSE')
                     ->count();
 
+                $commentsCount = WorkHours::where('user_id', $professional->id)
+                    ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
+                    ->where(function($q) {
+                        $q->whereNotNull('approval_comment')->orWhereNotNull('user_comment');
+                    })
+                    ->count();
+
                 // Monthly stats
                 $monthStart = Carbon::now()->startOfMonth();
                 $monthHours = WorkHours::where('user_id', $professional->id)
@@ -313,6 +320,7 @@ class WorkHoursController extends Controller
                     'registered_hours' => $totalHours,
                     'absences' => $absences,
                     'incomplete_tasks' => $incompleteTasks,
+                    'comment_count' => $commentsCount,
                     'has_pending_weeks' => $pendingHours > 0,
                     'month_hours' => $monthHours,
                     'index' => $index + 1,
