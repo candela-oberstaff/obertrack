@@ -142,13 +142,20 @@
 
                                     @if ($day['inMonth'] && !$isWeekend)
                                         @if ($hasHours)
-                                            <div class="flex flex-col items-center gap-1 w-full px-2" title="{{ $statusText }}">
-                                                <div class="flex items-center gap-2 mb-1">
-                                                     <x-user-avatar :user="auth()->user()" size="5" />
+                                            <div class="flex flex-col items-center gap-1 w-full px-1 text-center">
+                                                <div class="mb-2">
+                                                     <x-user-avatar :user="auth()->user()" size="8" />
                                                 </div>
-                                                <span class="text-xs font-bold text-gray-600">{{ $isAbsence ? '0h' : $hours . 'h' }}</span>
-                                                @if($isAbsence)
-                                                    <span class="text-[10px] text-red-500 font-medium">Ausente</span>
+                                                
+                                                @if($hours < 8)
+                                                     @if($hours > 0)
+                                                        <span class="text-sm font-medium text-gray-900 leading-tight">{{ $hours + 0 }} horas trabajadas</span>
+                                                     @endif
+                                                     <span class="text-sm font-medium text-red-500 {{ $hours > 0 ? '' : 'mt-1' }} leading-tight">
+                                                         {{ 8 - $hours }} horas ausente
+                                                     </span>
+                                                @else
+                                                     <span class="text-sm font-medium text-gray-900 leading-tight">{{ $hours + 0 }} horas trabajadas</span>
                                                 @endif
                                             </div>
                                         @elseif($isFuture)
@@ -196,10 +203,10 @@
                      x-transition:leave="ease-in duration-200"
                      x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                      x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                     class="relative inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+                     class="relative inline-block align-bottom bg-white rounded-2xl text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
                     
                     {{-- Modal Header --}}
-                    <div class="bg-gray-50 px-4 py-4 sm:px-6 flex justify-between items-center border-b border-gray-100">
+                    <div class="bg-gray-50 px-4 py-4 sm:px-6 flex justify-between items-center border-b border-gray-100 rounded-t-2xl">
                         <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">
                             Registrar horas o ausencia
                         </h3>
@@ -337,7 +344,7 @@
                     </div>
                     
                     {{-- Footer Actions --}}
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100">
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100 rounded-b-2xl">
                         <button type="button" 
                                 @click="saveHours()"
                                 :disabled="isSaving"

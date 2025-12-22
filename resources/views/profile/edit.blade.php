@@ -22,6 +22,33 @@
                 </div>
             @endif
 
+            @if (session('error'))
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <strong class="font-bold">Aviso:</strong>
+                    <span class="block sm:inline">{{ session('error') }}</span>
+                </div>
+            @endif
+
+            @if (auth()->user()->tipo_usuario === 'empleado' && (empty($user->phone_number) || empty($user->location)))
+                <div class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-8">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-amber-700 font-bold">
+                                Perfil incompleto
+                            </p>
+                            <p class="text-sm text-amber-700">
+                                Debes completar tu <strong>teléfono</strong> y <strong>ubicación</strong> para que se habilite la opción de registrar horas.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <!-- INFORMATION SECTION (Personal Data Only) -->
             <div id="profile-personal-info" x-data="{ openProfileModal: false }">
                 <h3 class="text-[#22A9C8] font-medium text-lg mb-6">Información registrada</h3>
@@ -36,13 +63,55 @@
                             </div>
                         </div>
 
-                        <!-- Company (Static) -->
+                        <!-- Email -->
                         <div>
-                            <label class="block text-sm font-bold text-gray-900 mb-2">Empresa</label>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Correo electrónico</label>
                             <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
-                                {{ $user->email }} <!-- Placeholder/Dual-purpose field as per design -->
+                                {{ $user->email }}
                             </div>
                         </div>
+
+                        <!-- Phone -->
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Teléfono</label>
+                            <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
+                                {{ $user->phone_number ?? 'No registrado' }}
+                            </div>
+                        </div>
+
+                        <!-- Location -->
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Ubicación</label>
+                            <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
+                                {{ $user->location ?? 'No registrado' }}
+                            </div>
+                        </div>
+
+                        @if($user->tipo_usuario === 'empleador')
+                            <!-- Company Name -->
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">Nombre de Empresa</label>
+                                <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
+                                    {{ $user->company_name ?? 'No registrado' }}
+                                </div>
+                            </div>
+
+                            <!-- Related Contact -->
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">Contacto Relacionado</label>
+                                <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
+                                    {{ $user->related_contact ?? 'No registrado' }}
+                                </div>
+                            </div>
+
+                            <!-- Country -->
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">País</label>
+                                <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
+                                    {{ $user->country ?? 'No registrado' }}
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="mt-8 flex justify-center">
@@ -100,11 +169,42 @@
                                         <x-input-error class="mt-2" :messages="$errors->get('name')" />
                                     </div>
 
-                                    <!-- Company (Static) -->
+                                    <!-- Phone -->
                                     <div>
-                                        <label for="company_dummy" class="block text-sm font-bold text-gray-700 mb-1">Empresa</label>
-                                        <input type="text" id="company_dummy" value="{{ $user->email }}" readonly class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm text-gray-500 sm:text-sm py-3 px-4 cursor-not-allowed">
+                                        <label for="phone_number" class="block text-sm font-bold text-gray-700 mb-1">Teléfono</label>
+                                        <input type="text" name="phone_number" id="phone_number" value="{{ old('phone_number', $user->phone_number) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                        <x-input-error class="mt-2" :messages="$errors->get('phone_number')" />
                                     </div>
+
+                                    <!-- Location -->
+                                    <div>
+                                        <label for="location" class="block text-sm font-bold text-gray-700 mb-1">Ubicación</label>
+                                        <input type="text" name="location" id="location" value="{{ old('location', $user->location) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                        <x-input-error class="mt-2" :messages="$errors->get('location')" />
+                                    </div>
+
+                                    @if($user->tipo_usuario === 'empleador')
+                                        <!-- Company Name -->
+                                        <div>
+                                            <label for="company_name" class="block text-sm font-bold text-gray-700 mb-1">Nombre de Empresa</label>
+                                            <input type="text" name="company_name" id="company_name" value="{{ old('company_name', $user->company_name) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                            <x-input-error class="mt-2" :messages="$errors->get('company_name')" />
+                                        </div>
+
+                                        <!-- Related Contact -->
+                                        <div>
+                                            <label for="related_contact" class="block text-sm font-bold text-gray-700 mb-1">Contacto Relacionado</label>
+                                            <input type="text" name="related_contact" id="related_contact" value="{{ old('related_contact', $user->related_contact) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                            <x-input-error class="mt-2" :messages="$errors->get('related_contact')" />
+                                        </div>
+
+                                        <!-- Country -->
+                                        <div>
+                                            <label for="country" class="block text-sm font-bold text-gray-700 mb-1">País</label>
+                                            <input type="text" name="country" id="country" value="{{ old('country', $user->country) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                            <x-input-error class="mt-2" :messages="$errors->get('country')" />
+                                        </div>
+                                    @endif
 
                                     <!-- Hidden Required Field -->
                                     <input type="hidden" name="email" value="{{ $user->email }}">

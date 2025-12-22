@@ -29,6 +29,14 @@ class WorkHoursController extends Controller
 
     public function store(StoreWorkHoursRequest $request)
     {
+        $user = auth()->user();
+        if (empty($user->phone_number) || empty($user->location)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Por favor, completa tus datos personales en tu perfil antes de registrar horas.']);
+            }
+            return redirect()->route('profile.edit')->with('error', 'Por favor, completa tus datos personales antes de registrar horas.');
+        }
+
         $workDate = Carbon::parse($request->work_date);
         
         if ($workDate->isWeekend()) {

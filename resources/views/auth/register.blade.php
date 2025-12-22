@@ -110,6 +110,34 @@
                 <x-input-error :messages="$errors->get('job_title')" class="mt-1 text-xs" />
             </div>
 
+            <!-- Company Specific Fields (Hidden by default) -->
+            <div id="company_fields_container" class="hidden space-y-3">
+                <div>
+                    <input id="company_name" name="company_name" type="text" placeholder="Nombre de empresa"
+                           class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
+                           value="{{ old('company_name') }}">
+                    <x-input-error :messages="$errors->get('company_name')" class="mt-1 text-xs" />
+                </div>
+                <div>
+                    <input id="related_contact" name="related_contact" type="text" placeholder="Contacto relacionado"
+                           class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
+                           value="{{ old('related_contact') }}">
+                    <x-input-error :messages="$errors->get('related_contact')" class="mt-1 text-xs" />
+                </div>
+                <div>
+                    <input id="phone_number" name="phone_number" type="text" placeholder="Teléfono"
+                           class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
+                           value="{{ old('phone_number') }}">
+                    <x-input-error :messages="$errors->get('phone_number')" class="mt-1 text-xs" />
+                </div>
+                <div>
+                    <input id="country" name="country" type="text" placeholder="País"
+                           class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
+                           value="{{ old('country') }}">
+                    <x-input-error :messages="$errors->get('country')" class="mt-1 text-xs" />
+                </div>
+            </div>
+
             <!-- Employer Selection (Hidden by default) -->
             <div id="empleado_por_id_container" class="hidden">
                  <select name="empleado_por_id" id="empleado_por_id"
@@ -142,9 +170,15 @@
                 if (selectedValue === 'empleado') {
                     $('#empleado_por_id_container').slideDown(200);
                     $('#job_title_container').slideDown(200);
+                    $('#company_fields_container').slideUp(200);
+                } else if (selectedValue === 'empleador') {
+                    $('#empleado_por_id_container').slideUp(200);
+                    $('#job_title_container').slideUp(200);
+                    $('#company_fields_container').slideDown(200);
                 } else {
                     $('#empleado_por_id_container').slideUp(200);
                     $('#job_title_container').slideUp(200);
+                    $('#company_fields_container').slideUp(200);
                 }
             });
             // Trigger change on load if value is pre-selected
@@ -152,6 +186,11 @@
             if(currentVal === 'empleado') {
                  $('#empleado_por_id_container').show();
                  $('#job_title_container').show();
+                 $('#company_fields_container').hide();
+            } else if(currentVal === 'empleador') {
+                 $('#empleado_por_id_container').hide();
+                 $('#job_title_container').hide();
+                 $('#company_fields_container').show();
             }
         });
     </script>

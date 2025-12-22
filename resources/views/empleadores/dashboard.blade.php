@@ -262,12 +262,21 @@
                                                                 <p class="font-medium text-gray-900" x-text="emp.name"></p>
                                                                 <p class="text-xs text-gray-500">
                                                                     <span x-text="emp.hours"></span> horas registradas
+                                                                    <span x-show="parseFloat(emp.hours) < 8" class="text-red-500 font-semibold ml-1" x-text="'• ' + (8 - parseFloat(emp.hours)) + 'h ausente'"></span>
                                                                     <span x-show="emp.approved" class="text-green-600 ml-1 font-semibold">(Aprobado)</span>
                                                                     <span x-show="!emp.approved" class="text-orange-500 ml-1 font-semibold">(Pendiente)</span>
                                                                 </p>
                                                             </div>
                                                         </div>
                                                     </div>
+
+                                                    <!-- Absence Reason Section -->
+                                                    <template x-if="parseFloat(emp.hours) < 8 && emp.absence_reason">
+                                                        <div class="mb-3 bg-red-50 rounded-lg p-3 border border-red-100">
+                                                            <label class="block text-xs font-bold text-red-600 uppercase tracking-wider mb-1">Motivo de Ausencia</label>
+                                                            <p class="text-sm text-gray-800 font-medium" x-text="emp.absence_reason"></p>
+                                                        </div>
+                                                    </template>
 
                                                     <!-- Comment Section -->
                                                     <div class="mt-2">

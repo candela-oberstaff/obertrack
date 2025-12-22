@@ -206,6 +206,7 @@ class DashboardController extends Controller
                         'hours' => $record->hours_worked,
                         'approved' => $record->approved,
                         'comment' => $record->approval_comment,
+                        'absence_reason' => $record->absence_reason,
                         'color_class' => $employeeColors[$employee->id] ?? 'bg-gray-500',
                     ];
                 }
