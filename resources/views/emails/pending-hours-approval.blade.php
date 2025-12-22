@@ -41,19 +41,19 @@
     <h1 class="title">⏰ Horas Pendientes por Aprobar</h1>
     
     <p class="text">
-        Tienes horas de trabajo pendientes de aprobación para tus empleados. 
+        Tienes horas de trabajo pendientes de aprobación para tus profesionales. 
         Por favor, revísalas para mantener el control de tu equipo.
     </p>
     
     <div class="highlight-box">
-        <h2 style="font-size: 18px; color: #2d3748; margin-top: 0; margin-bottom: 16px;">Resumen por empleado</h2>
+        <h2 style="font-size: 18px; color: #2d3748; margin-top: 0; margin-bottom: 16px;">Resumen por profesional</h2>
         
         @if(count($pendingHours) > 0)
             <table class="hours-list">
                 @foreach($pendingHours as $item)
                     <tr class="hours-row">
                         <td class="employee-cell">
-                            {{ $item['employee_name'] ?? 'Empleado' }}
+                            {{ $item['employee_name'] ?? 'Profesional' }}
                             @if(isset($item['week']))
                                 <br><span style="font-size: 12px; color: #718096; font-weight: normal;">Semana {{ $item['week'] }}</span>
                             @endif
@@ -77,7 +77,7 @@
     </div>
     
     <p class="text" style="font-size: 14px; color: #718096; margin-top: 30px; border-top: 1px solid #edf2f7; padding-top: 20px;">
-        💡 <strong>Recordatorio:</strong> Es importante aprobar las horas de trabajo de tus empleados 
+        💡 <strong>Recordatorio:</strong> Es importante aprobar las horas de trabajo de tus profesionales 
         de manera oportuna para mantener un registro preciso y actualizado.
     </p>
 @endsection

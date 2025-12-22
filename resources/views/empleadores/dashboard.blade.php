@@ -9,6 +9,18 @@
                 </div>
             </div>
 
+            @if(session('success'))
+                <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-400 text-green-700">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <!-- Subtitle -->
             <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas totales registradas por los profesionales</h3>
             
@@ -29,7 +41,20 @@
                     <div class="bg-[#F8F9FA] rounded-[20px] p-6 relative flex flex-col items-center shadow-sm h-[320px]">
                         
                         <!-- Header -->
-                        <div class="w-full text-center mb-8 mt-6">
+                        <div class="w-full text-center mb-8 mt-6 relative">
+                            <!-- Status Indicator -->
+                            @if($summary['activity_status'] === 'red')
+                                <div class="absolute -top-4 right-0 flex items-center gap-1">
+                                    <span class="flex h-3 w-3 rounded-full bg-red-500 animate-pulse"></span>
+                                    <span class="text-[10px] font-bold text-red-600 uppercase">Inactivo 2+ días</span>
+                                </div>
+                            @elseif($summary['activity_status'] === 'yellow')
+                                <div class="absolute -top-4 right-0 flex items-center gap-1">
+                                    <span class="flex h-3 w-3 rounded-full bg-yellow-400 animate-pulse"></span>
+                                    <span class="text-[10px] font-bold text-yellow-600 uppercase">Inactivo 1 día</span>
+                                </div>
+                            @endif
+
                             <h4 class="text-xl font-bold text-gray-900">{{ $summary['user']->name }}</h4>
                             <p class="text-gray-500 text-sm font-light">{{ $summary['role'] }}</p>
                         </div>
@@ -317,6 +342,47 @@
                 </div>
 
             </div>
+
+            <!-- Mass Communication Section -->
+            <div class="mt-16 bg-[#F8F9FA] rounded-[20px] p-8 shadow-sm border border-gray-100">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="bg-[#22A9C8] p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Comunicación Masiva</h3>
+                        <p class="text-gray-500 text-sm">Envía un correo electrónico a todo tu equipo de profesionales simultáneamente.</p>
+                    </div>
+                </div>
+
+                <form action="{{ route('empleador.mass-email') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label for="subject" class="block text-sm font-semibold text-gray-700 mb-1">Asunto del mensaje</label>
+                        <input type="text" name="subject" id="subject" required
+                               class="w-full rounded-xl border-gray-200 shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all"
+                               placeholder="Ej: Anuncio importante sobre el proyecto">
+                    </div>
+                    <div>
+                        <label for="message" class="block text-sm font-semibold text-gray-700 mb-1">Cuerpo del mensaje</label>
+                        <textarea name="message" id="message" rows="4" required
+                                  class="w-full rounded-xl border-gray-200 shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all"
+                                  placeholder="Escribe aquí tu mensaje para el equipo..."></textarea>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" 
+                                class="bg-[#22A9C8] hover:bg-[#1C8CA8] text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md flex items-center gap-2">
+                            <span>Enviar a todo el equipo</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
         </div>
     </div>
 </x-app-layout>

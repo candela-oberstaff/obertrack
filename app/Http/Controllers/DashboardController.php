@@ -19,7 +19,8 @@ class DashboardController extends Controller
         private WorkHoursSummaryService $workHoursService,
         private TaskDataService $taskDataService,
         private EmployeeDataService $employeeDataService,
-        private TaskManagementService $taskManagementService
+        private TaskManagementService $taskManagementService,
+        private \App\Services\ProfessionalActivityService $activityService
     ) {}
 
     public function show($role)
@@ -162,9 +163,14 @@ class DashboardController extends Controller
             $employeeColors[$emp->id] = $colors[$index % count($colors)];
         }
 
+        // Professional Activity Statuses
+        $professionalStatuses = $this->activityService->getStatusesForUsers($empleados);
+
         // Employee Summary Cards Data
-        $employeeSummaries = $empleados->map(function($employee) use ($monthlyHours, $employeeColors) {
+        $employeeSummaries = $empleados->map(function($employee) use ($monthlyHours, $employeeColors, $professionalStatuses) {
             $employeeHours = $monthlyHours->where('user_id', $employee->id);
+            $statusData = $professionalStatuses->firstWhere('user.id', $employee->id);
+            
             return [
                 'user' => $employee,
                 'total_hours' => $employeeHours->sum('hours_worked'),
@@ -172,6 +178,8 @@ class DashboardController extends Controller
                 'color' => $employeeColors[$employee->id] ?? 'bg-gray-500',
                 'role' => $employee->job_title ?? 'Sin puesto definido',
                 'initials' => strtoupper(substr($employee->name, 0, 1) . substr(strrchr($employee->name, ' ') ?: ' ' . substr($employee->name, 1), 1, 1)),
+                'activity_status' => $statusData['status'] ?? 'active',
+                'days_inactive' => $statusData['days_inactive'] ?? 0,
             ];
         });
 
@@ -222,5 +230,39 @@ class DashboardController extends Controller
             'employeeSummaries',
             'calendar'
         ));
+    }
+
+    public function sendMassEmail(Request $request, \App\Services\BrevoEmailService $emailService)
+    {
+        $request->validate([
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+        ]);
+
+        $user = auth()->user();
+        if ($user->tipo_usuario !== 'empleador') {
+            return redirect()->back()->with('error', 'No tienes permiso para realizar esta acción.');
+        }
+
+        $employees = $this->employeeDataService->getEmployeesForUser($user);
+
+        if ($employees->isEmpty()) {
+            return redirect()->back()->with('error', 'No tienes profesionales a cargo para enviar correos.');
+        }
+
+        $successCount = 0;
+        foreach ($employees as $employee) {
+            if ($employee->email) {
+                $sent = $emailService->sendEmail(
+                    $employee->email,
+                    $employee->name,
+                    $request->subject,
+                    nl2br(e($request->message))
+                );
+                if ($sent) $successCount++;
+            }
+        }
+
+        return redirect()->back()->with('success', "Se han enviado {$successCount} correos correctamente a tu equipo.");
     }
 }

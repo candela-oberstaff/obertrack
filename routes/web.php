@@ -56,6 +56,11 @@ Route::get('/livewire-script', function () {
 Route::middleware(['auth'])->get('/dashboard', function () {
     $user = Auth::user();
     
+    // Analysts (Superadmins) see the admin dashboard
+    if ($user->is_superadmin) {
+        return redirect()->route('admin.dashboard');
+    }
+
     // Employers see the original dashboard with action cards
     if ($user->tipo_usuario === 'empleador') {
         return redirect()->route('empleador.dashboard');
@@ -64,6 +69,12 @@ Route::middleware(['auth'])->get('/dashboard', function () {
     // Professionals (employees and managers) see their specific dashboard
     return view('dashboard-professional');
 })->name('dashboard');
+
+// Admin / Analyst Routes
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::post('/mass-email', [\App\Http\Controllers\AdminDashboardController::class, 'sendMassEmail'])->name('mass-email');
+});
 
 // Chat Route
 use App\Livewire\Chat;

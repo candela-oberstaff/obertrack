@@ -29,9 +29,10 @@ class AppServiceProvider extends ServiceProvider
         Carbon::setLocale('es');
         Paginator::defaultView('pagination::tailwind');
         
-        // Force HTTPS in production (for apps behind proxies like Coolify)
+        // Force HTTPS and correct root URL in production (for apps behind proxies like Coolify)
         if (config('app.env') === 'production') {
             \Illuminate\Support\Facades\URL::forceScheme('https');
+            \Illuminate\Support\Facades\URL::forceRootUrl('https://obertrack.com');
         }
     }
 
