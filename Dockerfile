@@ -10,7 +10,8 @@ RUN apk add --no-cache \
     libpng-dev \
     libwebp-dev \
     libjpeg-turbo-dev \
-    freetype-dev
+    freetype-dev \
+    zlib-dev
 
 # Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
@@ -50,7 +51,8 @@ RUN apk add --no-cache \
     libpng \
     libwebp \
     libjpeg-turbo \
-    freetype
+    freetype \
+    zlib
 
 # Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
