@@ -12,22 +12,22 @@
             @include('admin.partials.nav')
             
             <!-- Overall Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 border-blue-500">
-                    <div class="text-sm font-medium text-gray-500">Total Profesionales</div>
-                    <div class="text-2xl font-bold">{{ $stats['total_professionals'] }}</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 md:p-6 border-l-4 border-blue-500">
+                    <div class="text-[10px] md:text-sm font-medium text-gray-500 uppercase tracking-wider">Total Profesionales</div>
+                    <div class="text-xl md:text-2xl font-bold">{{ $stats['total_professionals'] }}</div>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 border-indigo-500">
-                    <div class="text-sm font-medium text-gray-500">Total Empresas</div>
-                    <div class="text-2xl font-bold">{{ $stats['total_companies'] }}</div>
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 md:p-6 border-l-4 border-indigo-500">
+                    <div class="text-[10px] md:text-sm font-medium text-gray-500 uppercase tracking-wider">Total Empresas</div>
+                    <div class="text-xl md:text-2xl font-bold">{{ $stats['total_companies'] }}</div>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 border-yellow-500">
-                    <div class="text-sm font-medium text-gray-500">Alertas Amarillas</div>
-                    <div class="text-2xl font-bold">{{ $stats['yellow_alerts'] }}</div>
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 md:p-6 border-l-4 border-yellow-500">
+                    <div class="text-[10px] md:text-sm font-medium text-gray-500 uppercase tracking-wider">Alertas Amarillas</div>
+                    <div class="text-xl md:text-2xl font-bold">{{ $stats['yellow_alerts'] }}</div>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 border-red-500">
-                    <div class="text-sm font-medium text-gray-500">Alertas Rojas</div>
-                    <div class="text-2xl font-bold">{{ $stats['red_alerts'] }}</div>
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 md:p-6 border-l-4 border-red-500">
+                    <div class="text-[10px] md:text-sm font-medium text-gray-500 uppercase tracking-wider">Alertas Rojas</div>
+                    <div class="text-xl md:text-2xl font-bold">{{ $stats['red_alerts'] }}</div>
                 </div>
             </div>
 
@@ -41,7 +41,7 @@
                         <thead>
                             <tr class="bg-gray-50 uppercase text-xs font-bold text-gray-500">
                                 <th class="px-4 py-3">Nombre</th>
-                                <th class="px-4 py-3">Última Actividad</th>
+                                <th class="px-4 py-3 hidden sm:table-cell">Última Actividad</th>
                                 <th class="px-4 py-3">Estado</th>
                                 <th class="px-4 py-3">Acciones</th>
                             </tr>
@@ -53,7 +53,7 @@
                                         <div class="font-medium text-gray-900">{{ $p['user']->name }}</div>
                                         <div class="text-xs text-gray-500">{{ $p['user']->email }}</div>
                                     </td>
-                                    <td class="px-4 py-4">
+                                    <td class="px-4 py-4 hidden sm:table-cell text-gray-600">
                                         {{ $p['last_registration'] ? \Carbon\Carbon::parse($p['last_registration'])->format('d/m/Y') : 'Nunca' }}
                                     </td>
                                     <td class="px-4 py-4">

@@ -17,9 +17,9 @@
             @endif
 
             <div class="bg-white rounded-[2rem] shadow-sm overflow-hidden border border-gray-100">
-                <div class="p-8 border-b border-gray-100 flex justify-between items-center">
-                    <h3 class="text-2xl font-bold text-gray-900">Listado de Empresas</h3>
-                    <span class="text-sm font-medium text-gray-400">{{ $companies->total() }} registros encontrados</span>
+                <div class="p-4 md:p-8 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="text-xl md:text-2xl font-bold text-gray-900">Empresas Registradas</h3>
+                    <span class="text-xs md:text-sm font-medium text-gray-400">{{ $companies->count() }} resultados</span>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -28,9 +28,9 @@
                             <tr class="bg-gray-50 uppercase text-[10px] font-bold text-gray-400 tracking-widest">
                                 <th class="px-8 py-4">Empresa</th>
                                 <th class="px-8 py-4">Contacto Relacionado</th>
-                                <th class="px-8 py-4">Profesionales</th>
-                                <th class="px-8 py-4">País</th>
-                                <th class="px-8 py-4 text-right">Acciones</th>
+                                <th class="px-4 md:px-8 py-4">Profesionales</th>
+                                <th class="px-4 md:px-8 py-4 hidden sm:table-cell">País</th>
+                                <th class="px-4 md:px-8 py-4 text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -48,16 +48,16 @@
                                     <td class="px-8 py-5 text-gray-600 font-medium">
                                         {{ $company->related_contact ?? 'N/A' }}
                                     </td>
-                                    <td class="px-8 py-5">
+                                    <td class="px-4 md:px-8 py-5">
                                         <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full font-bold text-xs">
                                             {{ $company->empleados_count }} profesionales
                                         </span>
                                     </td>
-                                    <td class="px-8 py-5 text-gray-500 font-medium italic">
+                                    <td class="px-4 md:px-8 py-5 hidden sm:table-cell text-gray-600">
                                         {{ $company->country ?? 'No especificado' }}
                                     </td>
-                                    <td class="px-8 py-5 text-right">
-                                        <a href="{{ route('admin.professionals', ['company_id' => $company->id]) }}" class="text-[#22A9C8] hover:text-[#1a8ba6] font-bold text-xs uppercase tracking-wider">Detalles</a>
+                                    <td class="px-4 md:px-8 py-5 text-right">
+                                        <a href="{{ route('admin.professionals', ['company_id' => $company->id]) }}" class="text-[#22A9C8] hover:text-[#1a8ba6] font-bold text-xs uppercase tracking-wider text-right">Detalles</a>
                                     </td>
                                 </tr>
                             @endforeach

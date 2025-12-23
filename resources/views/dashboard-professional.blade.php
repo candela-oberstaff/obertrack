@@ -16,16 +16,16 @@
             <div id="dashboard-stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 
                 {{-- Tareas Pendientes --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                    <p class="text-sm text-gray-600 mb-2">Tareas pendientes</p>
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
+                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas pendientes</p>
                     @php
                         $totalPending = auth()->user()->assignedTasks()->whereRaw('completed IS FALSE')->count();
                     @endphp
-                    <p class="text-5xl font-bold text-gray-900">{{ str_pad($totalPending, 2, '0', STR_PAD_LEFT) }}</p>
+                    <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C]">{{ str_pad($totalPending, 2, '0', STR_PAD_LEFT) }}</p>
                 </div>
 
                 {{-- Horas Registradas --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-6">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
                     @php
                         $currentPeriodStart = now()->startOfMonth();
                         $currentPeriodEnd = now();
@@ -35,21 +35,21 @@
                         $totalHours = $registeredHours->sum('hours_worked');
                         $hasPendingApproval = $registeredHours->where('approved', false)->count() > 0;
                     @endphp
-                    <p class="text-sm text-gray-600 mb-2">
+                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">
                         Horas registradas 
-                        <span class="text-gray-500">({{ $currentPeriodStart->format('M d') }} - {{ $currentPeriodEnd->format('M d') }})</span>
+                        <span class="text-[8px] md:text-[10px] text-gray-400 font-medium">({{ $currentPeriodStart->format('M d') }} - {{ $currentPeriodEnd->format('M d') }})</span>
                     </p>
-                    <p class="text-5xl font-bold text-gray-900 mb-2">{{ (int)$totalHours }} horas</p>
+                    <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C] mb-2">{{ (int)$totalHours }} h</p>
                     @if($hasPendingApproval)
-                        <p class="text-xs text-red-600">
-                            Tus horas siguen pendientes de aprobación
+                        <p class="text-[10px] text-red-500 font-bold italic line-clamp-1">
+                            Pendientes de aprobación
                         </p>
                     @endif
                 </div>
 
                 {{-- Tareas Completadas --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                    <p class="text-sm text-gray-600 mb-2">Tareas completadas con éxito</p>
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
+                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas finalizadas</p>
                     @php
                         $completedTasks = auth()->user()->assignedTasks()
                             ->whereRaw('completed IS TRUE')
@@ -58,10 +58,10 @@
                             ->count();
                     @endphp
                     <div class="flex items-center gap-3">
-                        <p class="text-5xl font-bold text-gray-900">{{ str_pad($completedTasks, 2, '0', STR_PAD_LEFT) }}</p>
-                        <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C]">{{ str_pad($completedTasks, 2, '0', STR_PAD_LEFT) }}</p>
+                        <div class="w-8 h-8 md:w-10 md:h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                             </svg>
                         </div>
                     </div>
@@ -94,12 +94,12 @@
                             <table class="w-full">
                                 <thead class="bg-gray-50 border-b border-gray-200">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha límite</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignado</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Archivos</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comentarios</th>
+                                        <th class="px-4 md:px-6 py-3 text-left text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest">Título</th>
+                                        <th class="px-4 md:px-6 py-3 text-left text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest hidden sm:table-cell">Límite</th>
+                                        <th class="px-4 md:px-6 py-3 text-left text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest hidden lg:table-cell">Asignado</th>
+                                        <th class="px-4 md:px-6 py-3 text-left text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest hidden md:table-cell">Archivos</th>
+                                        <th class="px-4 md:px-6 py-3 text-left text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest">Estado</th>
+                                        <th class="px-4 md:px-6 py-3 text-left text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest hidden lg:table-cell">Comentarios</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -112,51 +112,51 @@
                                     @endphp
                                     
                                     @forelse($latestTasks as $task)
-                                        <tr class="hover:bg-gray-50 cursor-pointer transition-colors duration-150 ease-in-out" 
+                                        <tr class="hover:bg-gray-50 cursor-pointer transition-colors duration-150 ease-in-out border-b border-gray-50" 
                                             @click="openModal({{ json_encode($task) }})">
-                                            <td class="px-6 py-4 text-sm text-gray-900">{{ $task->title }}</td>
-                                            <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{{ $task->end_date->format('d-m-Y') }}</td>
-                                            <td class="px-6 py-4">
-                                                @if($task->visibleTo)
+                                            <td class="px-4 md:px-6 py-4">
+                                                <div class="text-sm font-bold text-gray-900 line-clamp-1">{{ $task->title }}</div>
+                                                <div class="text-[10px] text-gray-400 mt-0.5 sm:hidden">{{ $task->end_date->format('d/m/Y') }}</div>
+                                            </td>
+                                            <td class="px-4 md:px-6 py-4 text-sm text-gray-600 whitespace-nowrap hidden sm:table-cell">{{ $task->end_date->format('d/m/Y') }}</td>
+                                            <td class="px-4 md:px-6 py-4 hidden lg:table-cell">
                                                 @if($task->visibleTo)
                                                     <x-user-avatar :user="$task->visibleTo" size="8" />
                                                 @endif
-                                                @endif
                                             </td>
-                                            <td class="px-6 py-4">
+                                            <td class="px-4 md:px-6 py-4 hidden md:table-cell">
                                                 @if($task->attachments->count() > 0)
-                                                    <div class="flex items-center gap-1 text-gray-600">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                                    <div class="flex items-center gap-1 text-gray-500">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
                                                         </svg>
-                                                        <span class="text-sm font-medium">{{ $task->attachments->count() }}</span>
+                                                        <span class="text-xs font-bold">{{ $task->attachments->count() }}</span>
                                                     </div>
                                                 @else
-                                                    <span class="text-gray-400">-</span>
+                                                    <span class="text-gray-300">-</span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4">
+                                            <td class="px-4 md:px-6 py-4">
                                                 @if($task->completed)
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                        Completada
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-green-100 text-green-700">
+                                                        Hecho
                                                     </span>
                                                 @else
-                                                    @php
-                                                        $isOverdue = $task->end_date->endOfDay()->isPast();
-                                                    @endphp
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $isOverdue ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800' }}">
+                                                    @php $isOverdue = $task->end_date->endOfDay()->isPast(); @endphp
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider {{ $isOverdue ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700' }}">
                                                         {{ $isOverdue ? 'Vencida' : 'Pendiente' }}
                                                     </span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4">
-                                                <div class="flex items-center gap-1 text-gray-600">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                            <td class="px-4 md:px-6 py-4 hidden lg:table-cell">
+                                                <div class="flex items-center gap-1 text-gray-500">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                                                     </svg>
-                                                    <span class="text-sm">{{ $task->comments->count() }}</span>
+                                                    <span class="text-xs font-bold">{{ $task->comments->count() }}</span>
                                                 </div>
                                             </td>
+                                        </tr>
 
                                         </tr>
                                     @empty

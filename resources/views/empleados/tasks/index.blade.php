@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center max-w-7xl mx-auto">
-             <h2 class="font-bold text-3xl text-gray-800 dark:text-gray-800 leading-tight">
+        <div class="flex justify-between items-center max-w-7xl mx-auto px-4 sm:px-0">
+             <h2 class="font-bold text-2xl md:text-3xl text-gray-800 dark:text-gray-800 leading-tight">
                 {{ __('Seguimiento de tareas') }}
             </h2>
         </div>
@@ -11,29 +11,29 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
 
             {{-- Vistazo General Cards --}}
-            <section>
-                <h3 class="text-primary font-medium text-lg mb-4">Vistazo general</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <section class="px-2 sm:px-0">
+                <h3 class="text-primary font-medium text-base md:text-lg mb-4">Vistazo general</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                     {{-- Pending Tasks Card --}}
-                    <div class="bg-gray-100 rounded-3xl p-8 flex justify-between items-center shadow-none">
+                    <div class="bg-gray-100 rounded-3xl p-6 md:p-8 flex justify-between items-center shadow-none">
                         <div>
-                            <p class="text-gray-800 font-bold mb-2">Tareas pendientes</p>
-                            <p class="text-6xl font-extrabold text-black">{{ str_pad($pendingTasksCount, 2, '0', STR_PAD_LEFT) }}</p>
+                            <p class="text-gray-800 font-bold mb-2 text-sm md:text-base">Tareas pendientes</p>
+                            <p class="text-4xl md:text-6xl font-extrabold text-black">{{ str_pad($pendingTasksCount, 2, '0', STR_PAD_LEFT) }}</p>
                         </div>
-                        <div class="text-right text-sm text-gray-500">
+                        <div class="text-right text-[10px] md:text-sm text-gray-500">
                             <p>Individuales: {{ $individualTasks->where('completed', false)->count() }}</p>
                             <p>Grupales: {{ $teamTasks->where('completed', false)->count() }}</p>
                         </div>
                     </div>
 
                     {{-- Completed Tasks Card --}}
-                    <div class="bg-gray-100 rounded-3xl p-8 flex justify-between items-center shadow-none">
+                    <div class="bg-gray-100 rounded-3xl p-6 md:p-8 flex justify-between items-center shadow-none">
                         <div>
-                            <p class="text-gray-800 font-bold mb-2">Tareas completadas con éxito</p>
+                            <p class="text-gray-800 font-bold mb-2 text-sm md:text-base">Tareas completadas con éxito</p>
                             <div class="flex items-center">
-                                <p class="text-6xl font-extrabold text-black">{{ str_pad($completedTasksCount, 2, '0', STR_PAD_LEFT) }}</p>
-                                <div class="ml-4 bg-green-500 rounded-full p-2 text-white">
-                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                <p class="text-4xl md:text-6xl font-extrabold text-black">{{ str_pad($completedTasksCount, 2, '0', STR_PAD_LEFT) }}</p>
+                                <div class="ml-4 bg-green-500 rounded-full p-1.5 md:p-2 text-white">
+                                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                 </div>
                             </div>
                         </div>
@@ -42,9 +42,9 @@
             </section>
 
             {{-- Team Assignments Table --}}
-            <section>
-                <h3 class="text-primary font-medium text-lg mb-4">Mis asignaciones en equipo</h3>
-                <div class="bg-white rounded-3xl border-2 border-primary p-4">
+            <section class="px-2 sm:px-0">
+                <h3 class="text-primary font-medium text-base md:text-lg mb-4">Mis asignaciones en equipo</h3>
+                <div class="bg-white rounded-3xl border-2 border-primary p-2 md:p-4">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-separate border-spacing-y-2">
                             <thead>
@@ -109,9 +109,9 @@
             </section>
 
             {{-- Individual Assignments Table --}}
-            <section>
-                 <h3 class="text-primary font-medium text-lg mb-4">Mis asignaciones individuales</h3>
-                <div class="bg-white rounded-3xl border-2 border-primary p-4">
+            <section class="px-2 sm:px-0 pb-10">
+                 <h3 class="text-primary font-medium text-base md:text-lg mb-4">Mis asignaciones individuales</h3>
+                <div class="bg-white rounded-3xl border-2 border-primary p-2 md:p-4">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-separate border-spacing-y-2">
                             <thead>

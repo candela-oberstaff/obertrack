@@ -3,8 +3,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
             <!-- Header -->
-            <div class="mb-8">
-                <h2 class="text-3xl font-extrabold text-[#0D1E4C]">Seguimiento de tareas</h2>
+            <div class="mb-8 px-4 sm:px-0">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-[#0D1E4C]">Seguimiento de tareas</h2>
             </div>
 
             @if(session('success'))
@@ -173,7 +173,7 @@
 
         <!-- Modals would go here. I'll insert logic in next steps -->
         <!-- MOBILE VIEW (Hidden on desktop) -->
-        <div class="md:hidden space-y-6 mt-8 max-w-lg mx-auto pb-10 mx-6">
+        <div class="md:hidden space-y-6 mt-8 max-w-lg mx-auto pb-10 px-4 sm:px-6">
             <!-- Selector Dropdown -->
             <div class="relative">
                 <select 
@@ -335,12 +335,12 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-xl font-bold text-gray-900">Comunicación con profesionales</h3>
-                    <p class="text-gray-500 text-sm">Envía un correo electrónico a todo tu equipo o a un profesional seleccionado.</p>
+                    <h3 class="text-lg md:text-xl font-bold text-gray-900">Comunicación con profesionales</h3>
+                    <p class="text-gray-500 text-xs md:text-sm">Envía un correo electrónico a todo tu equipo o a un profesional seleccionado.</p>
                 </div>
             </div>
 
-            <form action="{{ route('empleador.mass-email') }}" method="POST" enctype="multipart/form-data" class="space-y-4" onsubmit="saveScrollPosition(this)">
+            <form action="{{ route('empleador.mass-email') }}" method="POST" enctype="multipart/form-data" class="space-y-4 px-2 sm:px-0" onsubmit="saveScrollPosition(this)">
                 @csrf
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>

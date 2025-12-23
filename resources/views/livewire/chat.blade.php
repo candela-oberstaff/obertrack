@@ -4,6 +4,8 @@
     x-data="{ 
         mobileView: false,
         visiblySelectedUser: $wire.entangle('selectedUserId'),
+        visiblyBroadcastMode: $wire.entangle('isBroadcastMode'),
+        broadcastTarget: $wire.entangle('broadcastTarget'),
         isUploading: false,
         uploadProgress: 0,
         tempAttachmentName: '',
@@ -15,7 +17,10 @@
             this.mobileView = true;
             $wire.selectContact(userId);
             // Scroll to bottom after short delay to allow rendering
-            setTimeout(() => this.scrollToBottom(), 300);
+            setTimeout(() => {
+                const container = document.getElementById('messages-container');
+                if (container) container.scrollTop = container.scrollHeight;
+            }, 300);
         },
 
         scrollToBottom() {
@@ -28,17 +33,23 @@
         closeMobileChat() {
             this.mobileView = false;
             this.visiblySelectedUser = null;
+            this.visiblyBroadcastMode = false;
             $wire.set('selectedUserId', null);
+            $wire.set('isBroadcastMode', false);
         }
     }"
     x-init="
+        const scrollToBottom = () => {
+            const container = document.getElementById('messages-container');
+            if (container) container.scrollTop = container.scrollHeight;
+        };
+
         $watch('visiblySelectedUser', value => {
-            if (value) setTimeout(() => this.scrollToBottom(), 100);
+            if (value) setTimeout(scrollToBottom, 100);
         });
         
         Livewire.hook('morph.updated', () => {
-             // Only scroll if we are already near bottom or it's a new message
-             this.scrollToBottom();
+             scrollToBottom();
         });
         
         // Listen for new message events (with error handling)
@@ -94,25 +105,43 @@
     <div 
         id="chat-contacts-sidebar"
         class="w-full md:w-1/3 lg:w-1/4 flex flex-col border-r border-gray-100 transition-transform duration-300 ease-in-out"
-        :class="visiblySelectedUser ? 'hidden md:flex' : 'flex'"
+        :class="(visiblySelectedUser || visiblyBroadcastMode) ? 'hidden md:flex' : 'flex'"
     >
         <!-- Header -->
         <div class="p-4 bg-white border-b border-gray-100 flex justify-between items-center no-select">
             <h2 class="text-xl font-bold text-gray-800 tracking-tight">Mensajes</h2>
-            <!-- Connection Status Indicator (Simulated) -->
-            <div class="flex items-center gap-1.5" title="Estado de conexión">
-                <span class="relative flex h-2.5 w-2.5">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-                </span>
-                <span class="text-[10px] font-medium text-gray-400">En línea</span>
+            <div class="flex items-center gap-2">
+                @if(auth()->user()->is_superadmin)
+                    <button 
+                        @click.stop="$wire.toggleBroadcastMode()"
+                        class="p-2 rounded-xl transition-all shadow-sm"
+                        :class="visiblyBroadcastMode ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-primary/10 hover:text-primary'"
+                        title="Mensaje Masivo"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                        </svg>
+                    </button>
+                @endif
+                <div class="flex items-center gap-1.5" title="Estado de conexión">
+                    <span class="relative flex h-2.5 w-2.5">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                    </span>
+                    <span class="text-[10px] font-medium text-gray-400 hidden sm:block">En línea</span>
+                </div>
             </div>
         </div>
 
         <!-- Search (Visual only for now) -->
         <div class="p-4 pt-2" id="chat-search-bar">
             <div class="relative">
-                <input type="text" placeholder="Buscar..." class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                <input 
+                    type="text" 
+                    wire:model.live.debounce.300ms="search"
+                    placeholder="Buscar contacto..." 
+                    class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                >
                 <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -148,7 +177,10 @@
                             @endif
                         </div>
                         <p class="text-sm text-gray-500 truncate group-hover:text-gray-600 font-{{ $contact->unread_messages_count > 0 ? 'bold text-gray-800' : 'normal' }}">
-                            {{ $contact->job_title ?? 'Usuario' }}
+                            @if(auth()->user()->is_superadmin && $contact->company_name)
+                                <span class="text-primary/70 font-bold">[{{ $contact->company_name }}]</span>
+                            @endif
+                            {{ $contact->job_title ?? ($contact->tipo_usuario == 'empleador' ? 'Empresa' : 'Profesional') }}
                         </p>
                     </div>
                 </button>
@@ -169,8 +201,91 @@
     <div 
         id="chat-messages-area"
         class="flex-1 flex flex-col bg-[#F3F4F6] relative transition-all duration-300"
-        :class="visiblySelectedUser ? 'flex fixed inset-0 z-50 md:static md:z-auto' : 'hidden md:flex'"
+        :class="(visiblySelectedUser || visiblyBroadcastMode) ? 'flex fixed inset-0 z-50 md:static md:z-auto' : 'hidden md:flex'"
     >
+        @if($isBroadcastMode)
+            <div class="flex flex-col h-full w-full">
+                <!-- Broadcast Header -->
+                <div class="px-4 py-3 bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-10 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <button @click.stop="closeMobileChat()" class="md:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <div>
+                             <h3 class="font-bold text-gray-900 leading-tight">Envío de Mensaje Masivo</h3>
+                             <p class="text-xs text-primary font-medium">Transmitir a múltiples usuarios</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Broadcast Config -->
+                <div class="flex-1 p-8 flex flex-col items-center justify-center text-center">
+                    <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 text-primary">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                        </svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-800 mb-4">Selecciona tu audiencia</h4>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl">
+                        <button 
+                            wire:click="setBroadcastTarget('all')"
+                            class="p-6 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 {{ $broadcastTarget === 'all' ? 'border-primary bg-primary/5 shadow-md' : 'border-gray-100 bg-white hover:border-primary/20' }}"
+                        >
+                            <span class="text-2xl">👥</span>
+                            <span class="font-bold">Todos</span>
+                            <span class="text-xs text-gray-500">Empresas y Profesionales</span>
+                        </button>
+                        
+                        <button 
+                            wire:click="setBroadcastTarget('professionals')"
+                            class="p-6 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 {{ $broadcastTarget === 'professionals' ? 'border-primary bg-primary/5 shadow-md' : 'border-gray-100 bg-white hover:border-primary/20' }}"
+                        >
+                            <span class="text-2xl">👨‍💻</span>
+                            <span class="font-bold">Profesionales</span>
+                            <span class="text-xs text-gray-500">Solo empleados</span>
+                        </button>
+                        
+                        <button 
+                            wire:click="setBroadcastTarget('companies')"
+                            class="p-6 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 {{ $broadcastTarget === 'companies' ? 'border-primary bg-primary/5 shadow-md' : 'border-gray-100 bg-white hover:border-primary/20' }}"
+                        >
+                            <span class="text-2xl">🏢</span>
+                            <span class="font-bold">Empresas</span>
+                            <span class="text-xs text-gray-500">Solo empleadores</span>
+                        </button>
+                    </div>
+
+                    <p class="mt-8 text-sm text-gray-500 max-w-md">
+                        * El mensaje se enviará como una conversación individual a cada usuario del grupo seleccionado.
+                    </p>
+                </div>
+
+                <!-- Mass Message Input Area -->
+                <div class="p-4 bg-white border-t border-gray-100">
+                    <form wire:submit.prevent="sendMessage" class="flex items-end gap-2">
+                         <div class="flex-1 bg-primary/5 border border-primary/20 rounded-2xl transition-all shadow-inner">
+                            <input 
+                                wire:model="messageText"
+                                type="text" 
+                                placeholder="Escribe el mensaje masivo..." 
+                                class="w-full px-4 py-3 bg-transparent border-none focus:ring-0 text-gray-800 placeholder-primary/40 font-medium"
+                            >
+                        </div>
+                        <button 
+                            type="submit" 
+                            class="p-3 bg-primary hover:bg-primary-hover text-white rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @else
         <template x-if="visiblySelectedUser">
             <div class="flex flex-col h-full w-full">
                 <!-- Chat Header -->
@@ -415,8 +530,9 @@
                 </div>
             </div>
         </template>
+        @endif
 
-        <template x-if="!visiblySelectedUser">
+        <template x-if="!visiblySelectedUser && !visiblyBroadcastMode">
              <!-- Desktop Placeholder State -->
             <div class="hidden md:flex flex-col items-center justify-center h-full bg-white/50">
                 <div class="w-32 h-32 bg-primary/5 rounded-full flex items-center justify-center mb-6 animate-pulse">

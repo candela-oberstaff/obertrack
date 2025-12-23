@@ -103,11 +103,14 @@
                      </div>
                 </div>
                 
-                <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+                <div class="bg-white rounded-3xl border border-[#22A9C8] shadow-sm p-6">
                     {{-- Grid Headers --}}
-                    <div class="grid grid-cols-7 gap-4 mb-4 text-center">
-                         @foreach(['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as $dayName)
-                            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider">{{ $dayName }}</div>
+                    <div class="grid grid-cols-7 gap-1 md:gap-4 mb-6">
+                        @foreach(['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'] as $dayName)
+                            <div class="text-center font-bold text-gray-400 text-[10px] md:hidden uppercase tracking-wider">{{ $dayName }}</div>
+                        @endforeach
+                        @foreach(['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as $dayName)
+                            <div class="text-center font-bold text-gray-900 text-sm hidden md:block uppercase tracking-wider">{{ $dayName }}</div>
                         @endforeach
                     </div>
 
@@ -126,45 +129,49 @@
                                     $statusText = $hasHours ? ($day['workHours']->approved ? '(Aprobado)' : '(Pendiente)') : '';
                                 @endphp
                                 
-                                <div class="relative min-h-[140px] flex flex-col items-center justify-start py-4 rounded-xl transition-all duration-200 group
-                                    {{ $day['inMonth'] ? ($isWeekend ? 'bg-gray-50/50 cursor-not-allowed opacity-60' : 'hover:bg-gray-50 cursor-pointer') : 'opacity-20' }}
-                                    {{ $isToday ? 'bg-blue-50/50 ring-1 ring-primary/20' : '' }}"
+                                <div class="relative min-h-[100px] md:min-h-[140px] flex flex-col items-center justify-start py-3 md:py-4 px-1 md:px-2 rounded-xl border border-transparent transition-all duration-200 group
+                                    {{ $day['inMonth'] ? ($isWeekend ? 'bg-gray-50/20 cursor-not-allowed opacity-60' : 'bg-gray-50 hover:bg-gray-100 hover:border-[#22A9C8] cursor-pointer') : 'opacity-20' }}
+                                    {{ $isToday ? 'bg-[#22A9C8]/5 ring-1 ring-[#22A9C8]/30 shadow-sm' : '' }}"
                                     @if($day['inMonth'] && !$isWeekend && !$isFuture)
                                         @click="openModal('{{ $day['date']->format('Y-m-d') }}', {{ $hasHours ? json_encode($day['workHours']) : 'null' }})"
                                     @endif
                                     >
                                     
                                     @if($day['inMonth'])
-                                        <div class="mb-3 {{ $isToday ? 'bg-primary text-white shadow-md' : ($hasHours ? 'bg-primary/10 text-primary' : ($isWeekend ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-gray-400')) }} rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold transition-colors">
-                                            {{ $day['date']->format('d') }}
+                                        <div class="flex justify-center mb-2 md:mb-4">
+                                            <span class="{{ $isToday ? 'bg-[#22A9C8] text-white shadow-md' : ($hasHours ? 'bg-[#22A9C8] text-white' : ($isWeekend ? 'bg-gray-200 text-gray-400' : 'bg-gray-300 text-white')) }} rounded-full px-2 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-bold transition-all">
+                                                {{ $day['date']->format('d') }}
+                                            </span>
                                         </div>
                                     @endif
 
                                     @if ($day['inMonth'] && !$isWeekend)
-                                        @if ($hasHours)
-                                            <div class="flex flex-col items-center gap-1 w-full px-1 text-center">
-                                                <div class="mb-2">
-                                                     <x-user-avatar :user="auth()->user()" size="8" />
+                                        <div class="flex-1 w-full flex flex-col items-center justify-center">
+                                            @if ($hasHours)
+                                                <div class="flex flex-col items-center gap-0.5 md:gap-1 w-full text-center">
+                                                    <div class="mb-2 hidden lg:block">
+                                                         <x-user-avatar :user="auth()->user()" size="6" />
+                                                    </div>
+                                                    
+                                                    @if($hours < 8)
+                                                         @if($hours > 0)
+                                                            <span class="text-[10px] md:text-xs font-bold text-gray-900 leading-tight">{{ $hours + 0 }}h</span>
+                                                         @endif
+                                                         <span class="text-[8px] md:text-[10px] font-bold text-red-500 leading-tight">
+                                                             {{ 8 - $hours }}h ausente
+                                                         </span>
+                                                    @else
+                                                         <span class="text-[10px] md:text-xs font-bold text-gray-900 leading-tight">{{ $hours + 0 }}h</span>
+                                                    @endif
                                                 </div>
-                                                
-                                                @if($hours < 8)
-                                                     @if($hours > 0)
-                                                        <span class="text-sm font-medium text-gray-900 leading-tight">{{ $hours + 0 }} horas trabajadas</span>
-                                                     @endif
-                                                     <span class="text-sm font-medium text-red-500 {{ $hours > 0 ? '' : 'mt-1' }} leading-tight">
-                                                         {{ 8 - $hours }} horas ausente
-                                                     </span>
-                                                @else
-                                                     <span class="text-sm font-medium text-gray-900 leading-tight">{{ $hours + 0 }} horas trabajadas</span>
-                                                @endif
-                                            </div>
-                                        @elseif($isFuture)
-                                             <span class="text-xs text-gray-300">-</span>
-                                        @else
-                                            <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-                                                 <span class="text-primary text-2xl font-light hover:scale-110 transform transition">+</span>
-                                            </div>
-                                        @endif
+                                            @elseif($isFuture)
+                                                 <span class="text-[10px] text-gray-300">-</span>
+                                            @else
+                                                <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                     <span class="bg-[#22A9C8]/10 text-[#22A9C8] w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-sm md:text-lg font-bold hover:scale-110 transform transition">+</span>
+                                                </div>
+                                            @endif
+                                        </div>
                                     @endif
                                 </div>
                             @endforeach

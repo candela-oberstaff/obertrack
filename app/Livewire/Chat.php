@@ -21,6 +21,11 @@ class Chat extends Component
     public $attachment;
     public $contacts;
     public $previousUnreadCounts = [];
+    public $search = '';
+    
+    // Broadcast properties
+    public $isBroadcastMode = false;
+    public $broadcastTarget = 'all'; // 'all', 'professionals', 'companies'
 
     protected $listeners = ['refreshMessages' => '$refresh'];
 
@@ -52,9 +57,18 @@ class Chat extends Component
     {
         $user = Auth::user();
         
-        $contactsQuery = User::query();
+        $contactsQuery = User::query()->where('id', '!=', $user->id);
 
-        if ($user->tipo_usuario === 'empleador') {
+        if ($user->is_superadmin) {
+            // Superadmins see everyone
+            if (!empty($this->search)) {
+                $contactsQuery->where(function($q) {
+                    $q->where('name', 'ilike', '%' . $this->search . '%')
+                      ->orWhere('company_name', 'ilike', '%' . $this->search . '%')
+                      ->orWhere('job_title', 'ilike', '%' . $this->search . '%');
+                });
+            }
+        } elseif ($user->tipo_usuario === 'empleador') {
             $contactsQuery->where('empleador_id', $user->id);
         } else {
             $contactsQuery->where(function($query) use ($user) {
@@ -68,16 +82,38 @@ class Chat extends Component
 
         // Optimize: Select only needed columns
         $this->contacts = $contactsQuery
-            ->select('id', 'name', 'job_title', 'avatar', 'active_status') // specific columns
+            ->select('id', 'name', 'job_title', 'avatar', 'company_name', 'tipo_usuario')
             ->withCount(['sentMessages as unread_messages_count' => function ($query) {
                 $query->where('to_user_id', Auth::id())
                       ->whereNull('read_at');
             }])
+            ->orderBy('name')
             ->get();
+    }
+
+    public function updatedSearch()
+    {
+        $this->loadContacts();
+    }
+
+    public function toggleBroadcastMode()
+    {
+        if (!Auth::user()->is_superadmin) return;
+        
+        $this->isBroadcastMode = !$this->isBroadcastMode;
+        if ($this->isBroadcastMode) {
+            $this->selectedUserId = null;
+        }
+    }
+
+    public function setBroadcastTarget($target)
+    {
+        $this->broadcastTarget = $target;
     }
 
     public function selectContact($userId)
     {
+        $this->isBroadcastMode = false;
         $this->selectedUserId = $userId;
         $this->markMessagesAsRead();
     }
@@ -89,13 +125,24 @@ class Chat extends Component
 
     public function sendMessage()
     {
-        // 1. Authorization: Verify the recipient is in the allowed contacts list
-        // Reload contacts to ensure valid state
-        $this->loadContacts();
-        
-        if (!$this->contacts->contains('id', $this->selectedUserId)) {
-            $this->addError('messageText', 'Error de seguridad: No tienes permiso para enviar mensajes a este usuario.');
-            return;
+        $user = Auth::user();
+
+        // 1. Authorization & Target Selection
+        if ($this->isBroadcastMode && $user->is_superadmin) {
+            $recipientsQuery = User::query()->where('id', '!=', $user->id);
+            if ($this->broadcastTarget === 'professionals') {
+                $recipientsQuery->where('tipo_usuario', 'empleado');
+            } elseif ($this->broadcastTarget === 'companies') {
+                $recipientsQuery->where('tipo_usuario', 'empleador');
+            }
+            $recipientIds = $recipientsQuery->pluck('id');
+        } else {
+            $this->loadContacts();
+            if (!$this->contacts->contains('id', $this->selectedUserId)) {
+                $this->addError('messageText', 'Error de seguridad: No tienes permiso para enviar mensajes a este usuario.');
+                return;
+            }
+            $recipientIds = [$this->selectedUserId];
         }
 
         // Validate that at least one is present
@@ -122,14 +169,6 @@ class Chat extends Component
         $messageText = strip_tags($rawMessage);
 
         $attachmentFile = $this->attachment;
-        // ... (rest is same)
-
-        // Clear input immediately
-        $this->messageText = '';
-        $this->attachment = null;
-        
-        // ... (upload logic)
-
         $attachmentPath = null;
         
         if ($attachmentFile) {
@@ -138,13 +177,24 @@ class Chat extends Component
             $attachmentPath = Storage::url($filename); // Generates /storage/chat_attachments/...
         }
 
-        // Save to database
-        Message::create([
-            'from_user_id' => Auth::id(),
-            'to_user_id' => $this->selectedUserId,
-            'message' => $messageText,
-            'attachment_path' => $attachmentPath,
-        ]);
+        // Save to database (multiple if broadcast)
+        foreach ($recipientIds as $recipientId) {
+            Message::create([
+                'from_user_id' => $user->id,
+                'to_user_id' => $recipientId,
+                'message' => $messageText,
+                'attachment_path' => $attachmentPath,
+            ]);
+        }
+
+        // Clear input immediately
+        $this->messageText = '';
+        $this->attachment = null;
+        
+        if ($this->isBroadcastMode) {
+            $this->isBroadcastMode = false;
+            session()->flash('message', 'Mensaje masivo enviado con éxito.');
+        }
     }
 
     public function markMessagesAsRead()
