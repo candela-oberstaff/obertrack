@@ -48,11 +48,11 @@ RUN apk add --no-cache \
     nginx \
     curl \
     supervisor \
-    libpng \
-    libwebp \
-    libjpeg-turbo \
-    freetype \
-    zlib
+    libpng-dev \
+    libwebp-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    zlib-dev
 
 # Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
