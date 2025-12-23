@@ -40,6 +40,18 @@
             </main>
         </div>
         <script>
+            // Handle Session Expiration (419 Page Expired)
+            document.addEventListener('livewire:initialized', () => {
+                Livewire.hook('request', ({ fail }) => {
+                    fail(({ status, preventDefault }) => {
+                        if (status === 419) {
+                            preventDefault();
+                            location.reload();
+                        }
+                    });
+                });
+            });
+
             document.addEventListener('DOMContentLoaded', function() {
                 // Initialize Intro.js logic
                 window.startTour = function() {

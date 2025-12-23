@@ -266,8 +266,14 @@ class WorkHoursController extends Controller
     {
         $user = Auth::user();
         
-        if ($user->tipo_usuario !== 'empleador' && !$user->is_manager) {
-            abort(403, 'No autorizado');
+        if ($user->is_superadmin) {
+            $professionalsQuery = User::where('tipo_usuario', 'empleado');
+        } else {
+            if ($user->tipo_usuario !== 'empleador' && !$user->is_manager) {
+                abort(403, 'No autorizado');
+            }
+            $employerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
+            $professionalsQuery = User::where('empleador_id', $employerId);
         }
 
         $weekStart = $request->query('week') 
@@ -277,9 +283,7 @@ class WorkHoursController extends Controller
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
         $today = Carbon::today();
 
-        $employerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
-
-        $professionals = User::where('empleador_id', $employerId)
+        $professionals = $professionalsQuery
             ->orderBy('name')
             ->get()
             ->map(function ($professional, $index) use ($weekStart, $weekEnd, $today) {
@@ -352,10 +356,12 @@ class WorkHoursController extends Controller
     public function professionalReport(User $user, Request $request)
     {
         $currentUser = Auth::user();
-        $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
         
-        if ($user->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) {
-            abort(403, 'No autorizado');
+        if (!$currentUser->is_superadmin) {
+            $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
+            if ($user->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) {
+                abort(403, 'No autorizado');
+            }
         }
 
         $weekStart = $request->query('week') 
@@ -435,9 +441,13 @@ class WorkHoursController extends Controller
     public function downloadWeeklyReport(User $user, Request $request)
     {
         $currentUser = Auth::user();
-        $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
         
-        if ($user->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) abort(403);
+        if (!$currentUser->is_superadmin) {
+            $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
+            if ($user->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) {
+                abort(403);
+            }
+        }
 
         $weekStart = $request->query('week') 
             ? Carbon::parse($request->query('week'))->startOfWeek(Carbon::MONDAY)

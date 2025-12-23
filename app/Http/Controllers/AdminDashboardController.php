@@ -16,12 +16,6 @@ class AdminDashboardController extends Controller
 
     public function index()
     {
-        // Only superadmins (Analyst) can access
-        // Temporarily allowing candela@oberstaff.com to fix the 403
-        if (!auth()->user()->is_superadmin && auth()->user()->email !== 'candela@oberstaff.com') {
-            abort(403);
-        }
-
         $professionals = $this->activityService->getProfessionalsStatus();
         
         $stats = [
@@ -71,5 +65,66 @@ class AdminDashboardController extends Controller
         }
 
         return back()->with('status', "Comunicación enviada a {$count} destinatarios con éxito.");
+    }
+
+    public function companies()
+    {
+        $companies = User::where('tipo_usuario', 'empleador')
+            ->withCount('empleados')
+            ->orderBy('name')
+            ->paginate(15);
+
+        return view('admin.companies.index', compact('companies'));
+    }
+
+    public function professionals(Request $request)
+    {
+        $professionalsData = $this->activityService->getProfessionalsStatus();
+        
+        $companyId = $request->query('company_id');
+        if ($companyId) {
+            $professionalsData = $professionalsData->filter(function($p) use ($companyId) {
+                return $p['user']->empleador_id == $companyId;
+            });
+        }
+
+        // Paginate manually since it's a collection from service
+        $page = $request->get('page', 1);
+        $perPage = 15;
+        $professionals = new \Illuminate\Pagination\LengthAwarePaginator(
+            $professionalsData->forPage($page, $perPage),
+            $professionalsData->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        $companies = User::where('tipo_usuario', 'empleador')->get();
+        $selectedCompany = $companyId ? User::find($companyId) : null;
+
+        return view('admin.professionals.index', compact('professionals', 'companies', 'selectedCompany'));
+    }
+
+    public function assignProfessional(Request $request)
+    {
+        $request->validate([
+            'professional_id' => 'required|exists:users,id',
+            'company_id' => 'nullable|exists:users,id',
+        ]);
+
+        $professional = User::findOrFail($request->professional_id);
+        $professional->empleador_id = $request->company_id;
+        $professional->save();
+
+        return back()->with('status', 'Relación actualizada correctamente.');
+    }
+
+    public function unlinkProfessional($id)
+    {
+        $professional = User::findOrFail($id);
+        $professional->empleador_id = null;
+        $professional->save();
+
+        return back()->with('status', 'Profesional desvinculado correctamente.');
     }
 }

@@ -34,9 +34,14 @@ class Chat extends Component
         'attachment.max' => 'El archivo no puede superar los 10MB.',
     ];
 
-    public function mount()
+    public function mount($userId = null)
     {
         $this->loadContacts();
+        
+        if ($userId && $this->contacts->contains('id', $userId)) {
+            $this->selectContact($userId);
+        }
+
         // Initialize previous counts
         foreach ($this->contacts as $contact) {
             $this->previousUnreadCounts[$contact->id] = $contact->unread_messages_count;

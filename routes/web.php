@@ -71,14 +71,18 @@ Route::middleware(['auth'])->get('/dashboard', function () {
 })->name('dashboard');
 
 // Admin / Analyst Routes
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\AdminDashboardController::class, 'index'])->name('dashboard');
     Route::post('/mass-email', [\App\Http\Controllers\AdminDashboardController::class, 'sendMassEmail'])->name('mass-email');
+    Route::get('/companies', [\App\Http\Controllers\AdminDashboardController::class, 'companies'])->name('companies');
+    Route::get('/professionals', [\App\Http\Controllers\AdminDashboardController::class, 'professionals'])->name('professionals');
+    Route::post('/assign-professional', [\App\Http\Controllers\AdminDashboardController::class, 'assignProfessional'])->name('assign-professional');
+    Route::delete('/unlink-professional/{id}', [\App\Http\Controllers\AdminDashboardController::class, 'unlinkProfessional'])->name('unlink-professional');
 });
 
 // Chat Route
 use App\Livewire\Chat;
-Route::middleware(['auth'])->get('/chat', Chat::class)->name('chat');
+Route::middleware(['auth'])->get('/chat/{userId?}', Chat::class)->name('chat');
 
 
 // Contacto Route
