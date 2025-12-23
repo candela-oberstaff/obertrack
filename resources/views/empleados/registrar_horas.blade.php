@@ -127,7 +127,7 @@
                                 @endphp
                                 
                                 <div class="relative min-h-[140px] flex flex-col items-center justify-start py-4 rounded-xl transition-all duration-200 group
-                                    {{ $day['inMonth'] ? 'hover:bg-gray-50' : 'opacity-30' }}
+                                    {{ $day['inMonth'] ? ($isWeekend ? 'bg-gray-50/50 cursor-not-allowed opacity-60' : 'hover:bg-gray-50 cursor-pointer') : 'opacity-20' }}
                                     {{ $isToday ? 'bg-blue-50/50 ring-1 ring-primary/20' : '' }}"
                                     @if($day['inMonth'] && !$isWeekend && !$isFuture)
                                         @click="openModal('{{ $day['date']->format('Y-m-d') }}', {{ $hasHours ? json_encode($day['workHours']) : 'null' }})"
@@ -135,7 +135,7 @@
                                     >
                                     
                                     @if($day['inMonth'])
-                                        <div class="mb-3 {{ $isToday ? 'bg-primary text-white shadow-md' : ($hasHours ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400') }} rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold transition-colors">
+                                        <div class="mb-3 {{ $isToday ? 'bg-primary text-white shadow-md' : ($hasHours ? 'bg-primary/10 text-primary' : ($isWeekend ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-gray-400')) }} rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold transition-colors">
                                             {{ $day['date']->format('d') }}
                                         </div>
                                     @endif
@@ -239,18 +239,21 @@
                             <h4 class="text-sm font-semibold text-gray-700 mb-3">Predeterminado</h4>
                             <div class="grid grid-cols-3 gap-3">
                                 <button @click="setHours(8)" 
+                                        :disabled="existingRecord?.approved"
                                         :class="hours === 8 ? 'bg-primary text-white ring-2 ring-primary ring-offset-2' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
-                                        class="py-2.5 px-4 rounded-xl font-semibold text-sm transition-all text-center">
+                                        class="py-2.5 px-4 rounded-xl font-semibold text-sm transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed">
                                     8 horas
                                 </button>
                                 <button @click="setHours(6)" 
+                                        :disabled="existingRecord?.approved"
                                         :class="hours === 6 ? 'bg-primary text-white ring-2 ring-primary ring-offset-2' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
-                                        class="py-2.5 px-4 rounded-xl font-semibold text-sm transition-all text-center">
+                                        class="py-2.5 px-4 rounded-xl font-semibold text-sm transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed">
                                     6 horas
                                 </button>
                                 <button @click="setHours(4)" 
+                                        :disabled="existingRecord?.approved"
                                         :class="hours === 4 ? 'bg-primary text-white ring-2 ring-primary ring-offset-2' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
-                                        class="py-2.5 px-4 rounded-xl font-semibold text-sm transition-all text-center">
+                                        class="py-2.5 px-4 rounded-xl font-semibold text-sm transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed">
                                     4 horas
                                 </button>
                             </div>
@@ -263,17 +266,21 @@
                                 <p class="text-xs text-gray-500 italic max-w-[150px]">
                                     Ingresa el tiempo exacto trabajado en el día
                                 </p>
-                                <div class="flex items-center gap-4">
+                                 <div class="flex items-center gap-4">
                                      <span class="text-5xl font-bold text-gray-900 tabular-nums tracking-tight" x-text="formatTime(hours)"></span>
                                      <div class="flex flex-col gap-1">
-                                         <button @click="incrementHours()" class="p-1 bg-white hover:bg-gray-100 rounded shadow-sm border border-gray-200 text-primary">
+                                         <button @click="incrementHours()" 
+                                                :disabled="existingRecord?.approved"
+                                                class="p-1 bg-white hover:bg-gray-100 rounded shadow-sm border border-gray-200 text-primary disabled:opacity-50">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                                          </button>
-                                         <button @click="decrementHours()" class="p-1 bg-white hover:bg-gray-100 rounded shadow-sm border border-gray-200 text-primary">
+                                         <button @click="decrementHours()" 
+                                                :disabled="existingRecord?.approved"
+                                                class="p-1 bg-white hover:bg-gray-100 rounded shadow-sm border border-gray-200 text-primary disabled:opacity-50">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                                          </button>
                                      </div>
-                                </div>
+                                 </div>
                             </div>
                         </div>
 
@@ -287,9 +294,10 @@
                             
                             {{-- Dropdown Trigger --}}
                             <div class="relative">
-                                <button type="button" 
+                                 <button type="button" 
                                         @click="isDropdownOpen = !isDropdownOpen"
-                                        class="relative w-full bg-white border border-gray-300 rounded-xl pl-4 pr-10 py-3 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm shadow-sm">
+                                        :disabled="existingRecord?.approved"
+                                        class="relative w-full bg-white border border-gray-300 rounded-xl pl-4 pr-10 py-3 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm shadow-sm disabled:bg-gray-50 disabled:text-gray-500">
                                     <span class="block truncate" :class="!absenceReason ? 'text-gray-400' : 'text-gray-900'" x-text="absenceReason || 'Seleccionar motivo...'"></span>
                                     <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                                         <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="none" stroke="currentColor">
@@ -325,21 +333,49 @@
                              </div>
                         </div>
 
+                         {{-- User Comment --}}
+                         <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Comentario / Nota personal</label>
+                            <textarea x-model="userComment"
+                                      rows="2"
+                                      class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-xl" 
+                                      placeholder="Agrega una nota adicional sobre tu jornada..."></textarea>
+                         </div>
+
                          <!-- Comment Info Message -->
-                        <div class="rounded-md bg-blue-50 p-4 mb-4">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                                    </svg>
-                                </div>
-                                <div class="ml-3 flex-1 md:flex md:justify-between">
-                                    <p class="text-sm text-blue-700">
-                                        Si registras menos de 8 horas, se marcará automáticamente un tiempo de ausencia por la diferencia.
-                                    </p>
+                        <template x-if="!existingRecord?.approved">
+                            <div class="rounded-md bg-blue-50 p-4 mb-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3 flex-1 md:flex md:justify-between">
+                                        <p class="text-sm text-blue-700">
+                                            Si registras menos de 8 horas, se marcará automáticamente un tiempo de ausencia por la diferencia.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </template>
+
+                        <template x-if="existingRecord?.approved">
+                            <div class="rounded-md bg-green-50 p-4 mb-4 border border-green-100">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-green-800">
+                                            Estas horas ya han sido aprobadas y no pueden modificarse. Solo puedes actualizar tu comentario.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
 
                     </div>
                     
@@ -376,9 +412,10 @@
                  selectedDate: null,
                  existingRecord: null,
                  hours: 8,
-                 absenceReason: null,
-                 otherReasonText: '',
-                 isSaving: false,
+                  absenceReason: null,
+                  otherReasonText: '',
+                  userComment: '',
+                  isSaving: false,
                  
                  absenceOptions: [
                      'Cita médica',
@@ -404,13 +441,16 @@
                              this.absenceReason = 'Otro';
                          }
                      } else {
-                         this.hours = 8;
-                         this.absenceReason = null;
-                         this.otherReasonText = '';
-                     }
-                     
-                     this.isModalOpen = true;
-                 },
+                          this.hours = 8;
+                          this.absenceReason = null;
+                          this.otherReasonText = '';
+                          this.userComment = '';
+                      }
+                      
+                      this.userComment = record ? (record.user_comment || '') : '';
+                      
+                      this.isModalOpen = true;
+                  },
 
                  closeModal() {
                      this.isModalOpen = false;
@@ -467,11 +507,11 @@
                              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                          },
                          body: JSON.stringify({
-                             work_date: this.selectedDate,
-                             hours_worked: this.hours,
-                             absence_reason: finalReason,
-                             user_comment: '' // user_comment can be mapped if needed, using absence reason instead now mostly
-                         })
+                              work_date: this.selectedDate,
+                              hours_worked: this.hours,
+                              absence_reason: finalReason,
+                              user_comment: this.userComment
+                          })
                      })
                      .then(response => response.json())
                      .then(data => {

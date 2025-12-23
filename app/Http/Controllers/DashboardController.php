@@ -212,8 +212,10 @@ class DashboardController extends Controller
                         'avatar' => $employee->avatar,
                         'initials' => $employeeSummaries->firstWhere('user.id', $employee->id)['initials'],
                         'hours' => $record->hours_worked,
-                        'approved' => $record->approved,
+                        'approved' => (bool)$record->approved,
+                        'user_comment' => $record->user_comment,
                         'comment' => $record->approval_comment,
+                        'new_comment' => '',
                         'absence_reason' => $record->absence_reason,
                         'color_class' => $employeeColors[$employee->id] ?? 'bg-gray-500',
                     ];
@@ -237,32 +239,53 @@ class DashboardController extends Controller
         $request->validate([
             'subject' => 'required|string|max:255',
             'message' => 'required|string',
+            'recipient_id' => 'nullable|exists:users,id',
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:10240',
         ]);
 
         $user = auth()->user();
-        if ($user->tipo_usuario !== 'empleador') {
-            return redirect()->back()->with('error', 'No tienes permiso para realizar esta acción.');
+        $companyName = $user->company_name ?? $user->name;
+
+        if ($request->recipient_id) {
+            $employees = \App\Models\User::where('id', $request->recipient_id)
+                ->where('empleador_id', $user->id)
+                ->get();
+            $targetLabel = "al profesional seleccionado";
+        } else {
+            $employees = $this->employeeDataService->getEmployeesForUser($user);
+            $targetLabel = "a tu equipo de profesionales";
         }
 
-        $employees = $this->employeeDataService->getEmployeesForUser($user);
-
         if ($employees->isEmpty()) {
-            return redirect()->back()->with('error', 'No tienes profesionales a cargo para enviar correos.');
+            return redirect()->back()->with('error', 'No se encontró el destinatario o no tienes profesionales a cargo.');
+        }
+
+        // Process attachments
+        $processedAttachments = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $processedAttachments[] = [
+                    'path' => $file->getRealPath(),
+                    'name' => $file->getClientOriginalName()
+                ];
+            }
         }
 
         $successCount = 0;
         foreach ($employees as $employee) {
             if ($employee->email) {
-                $sent = $emailService->sendEmail(
+                $sent = $emailService->sendMassCommunication(
                     $employee->email,
                     $employee->name,
                     $request->subject,
-                    nl2br(e($request->message))
+                    nl2br(e($request->message)),
+                    $companyName,
+                    $processedAttachments
                 );
                 if ($sent) $successCount++;
             }
         }
 
-        return redirect()->back()->with('success', "Se han enviado {$successCount} correos correctamente a tu equipo.");
+        return redirect()->back()->with('success', "Se han enviado {$successCount} correos correctamente {$targetLabel}.");
     }
 }

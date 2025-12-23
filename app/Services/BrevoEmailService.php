@@ -252,4 +252,48 @@ class BrevoEmailService
             return false;
         }
     }
+
+    /**
+     * Send mass communication email with attachments
+     */
+    public function sendMassCommunication(string $toEmail, string $toName, string $subject, string $htmlMessage, string $companyName, array $attachments = []): bool
+    {
+        try {
+            $htmlContent = view('emails.mass-communication', [
+                'subject' => $subject,
+                'htmlMessage' => $htmlMessage,
+                'companyName' => $companyName,
+                'attachments' => $attachments // Just for the view, Brevo handles the actual attachments separately
+            ])->render();
+
+            $sendSmtpEmail = new SendSmtpEmail([
+                'subject' => $subject,
+                'sender' => ['name' => $companyName . ' (via Obertrack)', 'email' => $this->senderEmail],
+                'to' => [['email' => $toEmail, 'name' => $toName]],
+                'htmlContent' => $htmlContent,
+            ]);
+
+            // Add attachments if present
+            if (!empty($attachments)) {
+                $brevoAttachments = [];
+                foreach ($attachments as $file) {
+                    $brevoAttachments[] = [
+                        'content' => base64_encode(file_get_contents($file['path'])),
+                        'name' => $file['name']
+                    ];
+                }
+                $sendSmtpEmail['attachment'] = $brevoAttachments;
+            }
+
+            $this->apiInstance->sendTransacEmail($sendSmtpEmail);
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Brevo: Mass communication failed', [
+                'recipient' => $toEmail,
+                'subject' => $subject,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
 }

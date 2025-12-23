@@ -120,9 +120,81 @@
                 <div id="employer-calendar" x-data="{ 
                     selectedDay: null,
                     showModal: false,
+                    isApproving: false,
                     openDetails(day) {
-                        this.selectedDay = day;
+                        this.selectedDay = JSON.parse(JSON.stringify(day)); // Deep copy to isolate state
+                        this.selectedDay.employees.forEach(emp => {
+                            if (!emp.hasOwnProperty('new_comment')) emp.new_comment = '';
+                        });
                         this.showModal = true;
+                    },
+                    async approveDay(emp) {
+                        if (this.isApproving) return;
+                        this.isApproving = true;
+                        
+                        try {
+                            const response = await fetch('{{ route('work-hours.approve-days') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    employee_id: emp.id,
+                                    dates: [
+                                        (typeof this.selectedDay.date === 'string' ? this.selectedDay.date : (this.selectedDay.date.date || this.selectedDay.date)).split(' ')[0].split('T')[0]
+                                    ],
+                                    comment: emp.new_comment || ''
+                                })
+                            });
+                            
+                            const data = await response.json();
+                            if (data.success) {
+                                emp.approved = true;
+                                emp.comment = emp.new_comment;
+                                // Optional: Update total hours or reload if needed. 
+                                // For now, just mark as approved visually in the modal.
+                                window.location.reload(); 
+                            } else {
+                                alert(data.message || 'Error al aprobar las horas');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Error de conexión al intentar aprobar');
+                        } finally {
+                            this.isApproving = false;
+                        }
+                    },
+                    async updateComment(emp) {
+                        if (this.isApproving) return;
+                        this.isApproving = true;
+                        
+                        try {
+                            const response = await fetch(`/work-hours/update-comment/${emp.record_id}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    comment: emp.comment
+                                })
+                            });
+                            
+                            const data = await response.json();
+                            if (data.success) {
+                                // Visual feedback
+                            } else {
+                                alert(data.message || 'Error al actualizar el comentario');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Error de conexión');
+                        } finally {
+                            this.isApproving = false;
+                        }
                     }
                 }">
                     <!-- MOBILE VIEW: Simple calendar with modal (current behavior) -->
@@ -273,7 +345,7 @@
                                 <div class="bg-white px-4 py-4 sm:p-6 max-h-[60vh] overflow-y-auto">
                                     <template x-if="selectedDay && selectedDay.employees.length > 0">
                                         <div class="space-y-6">
-                                            <template x-for="emp in selectedDay.employees" :key="emp.initials">
+                                            <template x-for="emp in selectedDay.employees" :key="emp.record_id">
                                                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
                                                     <!-- Employee Header -->
                                                     <div class="flex items-center justify-between mb-3">
@@ -303,22 +375,66 @@
                                                         </div>
                                                     </template>
 
-                                                    <!-- Comment Section -->
-                                                    <div class="mt-2">
-                                                        <label class="block text-xs font-bold text-primary uppercase tracking-wider mb-1">Comentario / Observación</label>
-                                                        <div class="bg-white rounded-lg p-3 border border-gray-100 shadow-sm italic text-sm text-gray-700">
-                                                            <template x-if="emp.comment && emp.comment.trim() !== ''">
-                                                                <p x-text="emp.comment"></p>
-                                                            </template>
-                                                            <template x-if="!emp.comment || emp.comment.trim() === ''">
-                                                                <p class="text-gray-400">Sin observaciones para este día.</p>
-                                                            </template>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </template>
+                                                     <!-- Comment Section (Professional) -->
+                                                     <div class="mt-4">
+                                                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nota del Profesional</label>
+                                                         <div class="bg-white rounded-lg p-3 border border-gray-100 shadow-sm italic text-sm text-gray-700">
+                                                             <template x-if="emp.user_comment && emp.user_comment.trim() !== ''">
+                                                                 <p x-text="emp.user_comment"></p>
+                                                             </template>
+                                                             <template x-if="!emp.user_comment || emp.user_comment.trim() === ''">
+                                                                 <p class="text-gray-400">Sin notas del profesional.</p>
+                                                             </template>
+                                                         </div>
+                                                     </div>
+
+                                                     <!-- Comment Section (Employer / Response) -->
+                                                     <div class="mt-4">
+                                                         <label class="block text-xs font-bold text-primary uppercase tracking-wider mb-1">Tu Observación / Feedback</label>
+                                                                                                                  <!-- If already approved, allow editing feedback -->
+                                                          <template x-if="emp.approved">
+                                                              <div class="space-y-3">
+                                                                  <textarea 
+                                                                      x-model="emp.comment"
+                                                                      @blur="updateComment(emp)"
+                                                                      placeholder="Agregar o editar feedback..."
+                                                                      class="w-full rounded-xl border-gray-100 text-sm shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all italic text-gray-700 bg-gray-50/50"
+                                                                      rows="2"
+                                                                  ></textarea>
+                                                                  <p class="text-[10px] text-gray-400 italic">El feedback se guarda automáticamente al salir del campo.</p>
+                                                              </div>
+                                                          </template>
+
+                                                         <!-- If NOT approved, show approval form -->
+                                                         <template x-if="!emp.approved || emp.approved === false || emp.approved === 0">
+                                                             <div class="space-y-3">
+                                                                 <textarea 
+                                                                     x-model="emp.new_comment"
+                                                                     placeholder="Deja un comentario opcional antes de aprobar..."
+                                                                     class="w-full rounded-xl border-gray-200 text-sm shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all"
+                                                                     rows="2"
+                                                                 ></textarea>
+                                                                 <button 
+                                                                     @click="approveDay(emp)"
+                                                                     :disabled="isApproving"
+                                                                     class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                                                                 >
+                                                                     <svg x-show="!isApproving" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                                     </svg>
+                                                                     <svg x-show="isApproving" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                     </svg>
+                                                                     <span x-text="isApproving ? 'Aprobando...' : 'Aprobar Horas'"></span>
+                                                                 </button>
+                                                             </div>
+                                                         </template>
+                                                     </div>
+                                                 </div>
+                                             </template>
+                                         </div>
+                                     </template>
                                     
                                     <template x-if="!selectedDay || selectedDay.employees.length === 0">
                                         <div class="text-center py-8">
@@ -343,45 +459,6 @@
 
             </div>
 
-            <!-- Mass Communication Section -->
-            <div class="mt-16 bg-[#F8F9FA] rounded-[20px] p-8 shadow-sm border border-gray-100">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="bg-[#22A9C8] p-2 rounded-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-900">Comunicación Masiva</h3>
-                        <p class="text-gray-500 text-sm">Envía un correo electrónico a todo tu equipo de profesionales simultáneamente.</p>
-                    </div>
-                </div>
-
-                <form action="{{ route('empleador.mass-email') }}" method="POST" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label for="subject" class="block text-sm font-semibold text-gray-700 mb-1">Asunto del mensaje</label>
-                        <input type="text" name="subject" id="subject" required
-                               class="w-full rounded-xl border-gray-200 shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all"
-                               placeholder="Ej: Anuncio importante sobre el proyecto">
-                    </div>
-                    <div>
-                        <label for="message" class="block text-sm font-semibold text-gray-700 mb-1">Cuerpo del mensaje</label>
-                        <textarea name="message" id="message" rows="4" required
-                                  class="w-full rounded-xl border-gray-200 shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all"
-                                  placeholder="Escribe aquí tu mensaje para el equipo..."></textarea>
-                    </div>
-                    <div class="flex justify-end">
-                        <button type="submit" 
-                                class="bg-[#22A9C8] hover:bg-[#1C8CA8] text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md flex items-center gap-2">
-                            <span>Enviar a todo el equipo</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                            </svg>
-                        </button>
-                    </div>
-                </form>
-            </div>
 
         </div>
     </div>

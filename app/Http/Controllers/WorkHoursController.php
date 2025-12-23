@@ -68,14 +68,25 @@ class WorkHoursController extends Controller
             return back()->with('error', 'No puedes exceder 40 horas por semana hábil.');
         }
     
-        WorkHours::updateOrCreate(
-            ['user_id' => auth()->id(), 'work_date' => $request->work_date],
-            [
-                'hours_worked' => $request->hours_worked, 
-                'user_comment' => $request->user_comment,
-                'absence_reason' => $request->absence_reason
-            ]
-        );
+        $existingRecord = WorkHours::where('user_id', auth()->id())
+            ->where('work_date', $request->work_date)
+            ->first();
+
+        if ($existingRecord && $existingRecord->approved) {
+            // If already approved, only allow updating the comment, NOT the hours or absence reason
+            $existingRecord->update([
+                'user_comment' => $request->user_comment
+            ]);
+        } else {
+            WorkHours::updateOrCreate(
+                ['user_id' => auth()->id(), 'work_date' => $request->work_date],
+                [
+                    'hours_worked' => $request->hours_worked, 
+                    'user_comment' => $request->user_comment,
+                    'absence_reason' => $request->absence_reason
+                ]
+            );
+        }
     
         $currentMonth = Carbon::parse($request->work_date)->startOfMonth();
         $totalHours = WorkHours::where('user_id', auth()->id())

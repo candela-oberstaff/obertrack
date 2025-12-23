@@ -18,8 +18,8 @@ class CalendarService
     public function generateCalendar(Carbon $month, int $userId): array
     {
         $calendar = [];
-        $startDate = $month->copy()->startOfMonth()->startOfWeek(Carbon::MONDAY);
-        $endDate = $month->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
+        $startDate = $month->copy()->startOfMonth()->startOfWeek(Carbon::SUNDAY);
+        $endDate = $month->copy()->endOfMonth()->endOfWeek(Carbon::SATURDAY);
 
         $workHours = $this->getWorkHoursForPeriod($startDate, $endDate, $userId)
             ->keyBy(function($item) {
