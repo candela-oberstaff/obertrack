@@ -28,20 +28,36 @@
         <div class="meta-item"><span class="label">Empresa:</span> {{ Auth::user()->name }}</div>
     </div>
 
-    <div style="width: 100%; display: table; margin-bottom: 20px;">
-        <div style="display: table-cell; padding-right: 10px;">
-            <div class="stat-box">
-                <span class="stat-label">Total Horas Aprobadas</span>
-                <span class="stat-value">{{ $totalApprovedHours }}</span>
-            </div>
-        </div>
-        <div style="display: table-cell; padding-left: 10px;">
-            <div class="stat-box">
-                <span class="stat-label">Total Semanas Trabajadas</span>
-                <span class="stat-value">{{ count($weeksData) }}</span>
-            </div>
-        </div>
-    </div>
+    <table class="stats-grid" style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <tr>
+            <td width="50%" style="border: none; padding: 0 5px 10px 0;">
+                <div class="stat-box">
+                    <span class="stat-label">Total Horas Aprobadas</span>
+                    <span class="stat-value">{{ $totalApprovedHours }}</span>
+                </div>
+            </td>
+            <td width="50%" style="border: none; padding: 0 0 10px 5px;">
+                <div class="stat-box">
+                    <span class="stat-label">Semanas Registradas</span>
+                    <span class="stat-value">{{ count($weeksData) }}</span>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td width="50%" style="border: none; padding: 10px 5px 0 0;">
+                <div class="stat-box">
+                    <span class="stat-label">Ausencias (Mes)</span>
+                    <span class="stat-value">{{ $absences }}</span>
+                </div>
+            </td>
+            <td width="50%" style="border: none; padding: 10px 0 0 5px;">
+                <div class="stat-box">
+                    <span class="stat-label">Tareas Incompletas</span>
+                    <span class="stat-value">{{ $incompleteTasks }}</span>
+                </div>
+            </td>
+        </tr>
+    </table>
 
     <h3>Resumen Semanal</h3>
     <table>

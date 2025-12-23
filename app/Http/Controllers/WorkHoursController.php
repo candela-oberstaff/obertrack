@@ -401,19 +401,13 @@ class WorkHoursController extends Controller
             ->whereRaw('completed IS FALSE')
             ->count();
 
-        $comments = WorkHours::where('user_id', $user->id)
+        $allComments = WorkHours::where('user_id', $user->id)
             ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
-            ->whereNotNull('approval_comment')
-            ->pluck('approval_comment')
-            ->filter()
-            ->unique();
-
-        $professionalComments = WorkHours::where('user_id', $user->id)
-            ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
-            ->whereNotNull('user_comment')
-            ->pluck('user_comment')
-            ->filter()
-            ->unique();
+            ->where(function($q) {
+                $q->whereNotNull('approval_comment')->orWhereNotNull('user_comment');
+            })
+            ->orderBy('work_date', 'asc')
+            ->get();
 
         // Monthly context
         $monthStart = $weekStart->copy()->startOfMonth();
@@ -431,8 +425,7 @@ class WorkHoursController extends Controller
             'absences' => $absences,
             'incompleteTasks' => $incompleteTasks,
             'dailyHours' => $dailyHours,
-            'comments' => $comments,
-            'professionalComments' => $professionalComments,
+            'allComments' => $allComments,
             'monthHours' => $monthHours,
         ]);
     }
@@ -458,6 +451,12 @@ class WorkHoursController extends Controller
 
         $dailyHours = [];
         $daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+        $today = Carbon::today();
+        $absences = 0;
+        $daysToCheck = min(5, $today->diffInDays($weekStart) + 1);
+        if ($today->lt($weekStart)) $daysToCheck = 0;
+        if ($weekEnd->lt($today)) $daysToCheck = 5;
+
         for ($i = 0; $i < 5; $i++) {
             $date = $weekStart->copy()->addDays($i);
             $hours = $weekHours->where('work_date', $date->format('Y-m-d'))->first();
@@ -465,6 +464,10 @@ class WorkHoursController extends Controller
                 'day' => $daysOfWeek[$i],
                 'hours' => $hours ? $hours->hours_worked : 0,
             ];
+
+            if ($i < $daysToCheck && (!$hours || $hours->hours_worked == 0)) {
+                $absences++;
+            }
         }
 
         $totalHours = $weekHours->sum('hours_worked');
@@ -476,9 +479,10 @@ class WorkHoursController extends Controller
 
         $comments = WorkHours::where('user_id', $user->id)
             ->whereBetween('work_date', [$weekStart, $weekEnd])
-            ->whereNotNull('approval_comment')
-            ->pluck('approval_comment')
-            ->filter();
+            ->where(function($q) {
+                $q->whereNotNull('approval_comment')->orWhereNotNull('user_comment');
+            })
+            ->get();
 
         // Generate PDF
         $pdf = Pdf::loadView('reportes.pdf.weekly', [
@@ -488,6 +492,7 @@ class WorkHoursController extends Controller
             'totalHours' => $totalHours,
             'weeklyAverage' => $weeklyAverage,
             'incompleteTasks' => $incompleteTasks,
+            'absences' => $absences,
             'dailyHours' => $dailyHours,
             'comments' => $comments
         ]);
@@ -515,6 +520,21 @@ class WorkHoursController extends Controller
             ->get();
             
         $totalApprovedHours = $monthHours->where('approved', true)->sum('hours_worked');
+
+        // Calculate absences for the month
+        $absences = 0;
+        $today = Carbon::today();
+        $endCheck = min($today, $endOfMonth);
+        $current = $startOfMonth->copy();
+        while ($current->lte($endCheck)) {
+            if (!$current->isWeekend()) {
+                $dayRecord = $monthHours->first(fn($h) => (Carbon::parse($h->work_date))->format('Y-m-d') === $current->format('Y-m-d'));
+                if (!$dayRecord || $dayRecord->hours_worked == 0) $absences++;
+            }
+            $current->addDay();
+        }
+
+        $incompleteTasks = $user->assignedTasks()->whereRaw('completed IS FALSE')->count();
 
         // Calculate weekly breakdown
         $weeksData = [];
@@ -546,6 +566,8 @@ class WorkHoursController extends Controller
             'professional' => $user,
             'monthDate' => $startOfMonth,
             'totalApprovedHours' => $totalApprovedHours,
+            'absences' => $absences,
+            'incompleteTasks' => $incompleteTasks,
             'weeksData' => $weeksData
         ]);
 

@@ -107,17 +107,35 @@
                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Semana del {{ $weekStart->format('Y-m-d') }} al {{ $weekEnd->format('Y-m-d') }}</span>
                 </div>
                 
-                <div class="text-gray-400 font-medium italic">
-                    @php
-                        $allComments = collect($comments)->merge($professionalComments)->unique();
-                    @endphp
+                <div class="space-y-4">
+                    @forelse($allComments as $record)
+                        @if($record->user_comment)
+                            <div class="p-4 bg-white rounded-xl shadow-sm border-l-4 border-gray-300">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Profesional</span>
+                                    <span class="text-[10px] text-gray-400 font-bold">
+                                        {{ \Carbon\Carbon::parse($record->work_date)->format('d/m/Y') }}
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-600 not-italic">"{{ $record->user_comment }}"</p>
+                            </div>
+                        @endif
 
-                    @forelse($allComments as $comment)
-                        <div class="mb-4 last:mb-0 p-4 bg-white rounded-xl shadow-sm">
-                            <p class="text-sm text-gray-600 not-italic">"{{ $comment }}"</p>
-                        </div>
+                        @if($record->approval_comment)
+                            <div class="p-4 bg-white rounded-xl shadow-sm border-l-4 border-[#22A9C8]">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-xs font-bold text-[#22A9C8] uppercase tracking-wider">Empresa</span>
+                                    <span class="text-[10px] text-gray-400 font-bold">
+                                        {{ \Carbon\Carbon::parse($record->work_date)->format('d/m/Y') }}
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-600 not-italic">"{{ $record->approval_comment }}"</p>
+                            </div>
+                        @endif
                     @empty
-                        No hay comentarios sobre este profesional por los momentos
+                        <div class="text-gray-400 font-medium italic">
+                            No hay comentarios sobre este profesional por los momentos
+                        </div>
                     @endforelse
                 </div>
             </div>
