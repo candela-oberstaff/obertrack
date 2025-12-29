@@ -141,10 +141,12 @@ class ReportService
         $startOfMonth = $month->copy()->startOfMonth();
         $endOfMonth = $month->copy()->endOfMonth();
 
-        // Obtener las horas trabajadas para el mes especificado
+        // Obtener las horas trabajadas para el mes especificado (optimized query)
         $workHours = WorkHours::where('user_id', $employee->id)
             ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
             ->whereRaw('approved IS TRUE')
+            ->select(['work_date', 'hours_worked']) // Only select needed columns
+            ->orderBy('work_date')
             ->get();
 
         // Calcular el total de horas aprobadas

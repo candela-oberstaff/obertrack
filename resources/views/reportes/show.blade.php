@@ -48,16 +48,16 @@
             </div>
 
             <!-- Main Statistics Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 
                 <!-- Average Week Hours -->
-                <div class="bg-white rounded-[2.5rem] border-2 border-[#22A9C8] p-10 relative flex flex-col items-center">
-                    <h3 class="text-2xl font-bold text-[#1a202c] text-center mb-4 leading-tight">Promedio de horas semanal</h3>
-                    <span class="text-[10rem] font-black text-[#1a202c] leading-none mb-8">{{ $registeredHours }}</span>
+                <div class="bg-white rounded-3xl border-2 border-[#22A9C8] p-6 relative flex flex-col items-center">
+                    <h3 class="text-lg font-bold text-[#1a202c] text-center mb-2 leading-tight">Promedio de horas semanal</h3>
+                    <span class="text-7xl font-black text-[#1a202c] leading-none mb-4">{{ $registeredHours }}</span>
                     
-                    <div class="w-full space-y-2 mt-auto">
+                    <div class="w-full space-y-1 mt-auto">
                         @foreach($dailyHours as $day)
-                            <div class="flex justify-between items-center text-sm font-medium text-[#1a202c]">
+                            <div class="flex justify-between items-center text-xs font-medium text-[#1a202c]">
                                 <span>{{ $day['day'] }}:</span>
                                 <span>{{ $day['hours'] > 0 ? $day['hours'] . ' horas' : $day['status'] }}</span>
                             </div>
@@ -66,30 +66,30 @@
                 </div>
 
                 <!-- Absences -->
-                <div class="bg-[#F3F4F6] rounded-[2.5rem] p-10 flex flex-col items-center">
-                    <h3 class="text-3xl font-bold text-[#1a202c] text-center mb-4 px-10">Ausencias registradas</h3>
-                    <span class="text-[10rem] font-black text-[#1a202c] leading-none mb-10">{{ $absences }}</span>
+                <div class="bg-[#F3F4F6] rounded-3xl p-6 flex flex-col items-center">
+                    <h3 class="text-xl font-bold text-[#1a202c] text-center mb-2 px-4">Ausencias registradas</h3>
+                    <span class="text-7xl font-black text-[#1a202c] leading-none mb-6">{{ $absences }}</span>
                     
                     <div class="mt-auto w-full text-center">
                         @if($absences > 0)
                             @foreach($dailyHours as $day)
                                 @if($day['status'] === 'Ausente')
-                                    <p class="text-sm font-bold text-[#1a202c]">{{ $day['day'] }} {{ $day['date'] }}</p>
+                                    <p class="text-xs font-bold text-[#1a202c]">{{ $day['day'] }} {{ $day['date'] }}</p>
                                 @endif
                             @endforeach
                         @else
-                            <p class="text-sm font-medium text-gray-400">Sin ausencias registradas</p>
+                            <p class="text-xs font-medium text-gray-400">Sin ausencias registradas</p>
                         @endif
                     </div>
                 </div>
 
                 <!-- Incomplete Tasks -->
-                <div class="bg-white rounded-[2.5rem] border-2 border-[#22A9C8] p-10 flex flex-col items-center">
-                    <h3 class="text-3xl font-bold text-[#1a202c] text-center mb-4 px-10">Registro de tareas incompletas</h3>
-                    <span class="text-[10rem] font-black text-[#1a202c] leading-none mb-10">{{ $incompleteTasks }}</span>
+                <div class="bg-white rounded-3xl border-2 border-[#22A9C8] p-6 flex flex-col items-center">
+                    <h3 class="text-xl font-bold text-[#1a202c] text-center mb-2 px-4">Registro de tareas incompletas</h3>
+                    <span class="text-7xl font-black text-[#1a202c] leading-none mb-6">{{ $incompleteTasks }}</span>
                     
                     <div class="mt-auto w-full text-center">
-                        <p class="text-sm font-medium text-gray-300">
+                        <p class="text-xs font-medium text-gray-300">
                             @if($incompleteTasks > 0)
                                 Hay tareas pendientes de revisión
                             @else
@@ -112,7 +112,7 @@
                         @if($record->user_comment)
                             <div class="p-4 bg-white rounded-xl shadow-sm border-l-4 border-gray-300">
                                 <div class="flex justify-between items-center mb-2">
-                                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Profesional</span>
+                                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ $professional->name }}</span>
                                     <span class="text-[10px] text-gray-400 font-bold">
                                         {{ \Carbon\Carbon::parse($record->work_date)->format('d/m/Y') }}
                                     </span>
@@ -124,7 +124,7 @@
                         @if($record->approval_comment)
                             <div class="p-4 bg-white rounded-xl shadow-sm border-l-4 border-[#22A9C8]">
                                 <div class="flex justify-between items-center mb-2">
-                                    <span class="text-xs font-bold text-[#22A9C8] uppercase tracking-wider">Empresa</span>
+                                    <span class="text-xs font-bold text-[#22A9C8] uppercase tracking-wider">{{ $professional->empleador->name ?? $professional->empleador->company_name ?? 'Empresa' }}</span>
                                     <span class="text-[10px] text-gray-400 font-bold">
                                         {{ \Carbon\Carbon::parse($record->work_date)->format('d/m/Y') }}
                                     </span>

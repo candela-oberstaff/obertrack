@@ -57,7 +57,7 @@
                                         {{ $company->country ?? 'No especificado' }}
                                     </td>
                                     <td class="px-4 md:px-8 py-5 text-right">
-                                        <a href="{{ route('admin.professionals', ['company_id' => $company->id]) }}" class="text-[#22A9C8] hover:text-[#1a8ba6] font-bold text-xs uppercase tracking-wider text-right">Detalles</a>
+                                        <a href="{{ route('admin.companies.show', $company->id) }}" class="text-[#22A9C8] hover:text-[#1a8ba6] font-bold text-xs uppercase tracking-wider text-right">Detalles</a>
                                     </td>
                                 </tr>
                             @endforeach

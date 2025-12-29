@@ -20,6 +20,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Livewire\Chat;
 
 /*
 |--------------------------------------------------------------------------
@@ -78,10 +79,17 @@ Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->grou
     Route::get('/professionals', [\App\Http\Controllers\AdminDashboardController::class, 'professionals'])->name('professionals');
     Route::post('/assign-professional', [\App\Http\Controllers\AdminDashboardController::class, 'assignProfessional'])->name('assign-professional');
     Route::delete('/unlink-professional/{id}', [\App\Http\Controllers\AdminDashboardController::class, 'unlinkProfessional'])->name('unlink-professional');
+    
+    // Email Templates
+    Route::post('/email-templates/upload-image', [\App\Http\Controllers\EmailTemplateController::class, 'uploadImage'])->name('email-templates.upload-image');
+    Route::resource('email-templates', \App\Http\Controllers\EmailTemplateController::class);
+        
+    // Detailed Views
+    Route::get('/companies/{id}', [\App\Http\Controllers\AdminDashboardController::class, 'showCompany'])->name('companies.show');
+    Route::get('/professionals/{id}/details', [\App\Http\Controllers\AdminDashboardController::class, 'showProfessional'])->name('professionals.show-details');
 });
 
 // Chat Route
-use App\Livewire\Chat;
 Route::middleware(['auth'])->get('/chat/{userId?}', Chat::class)->name('chat');
 
 

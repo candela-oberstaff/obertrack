@@ -246,19 +246,19 @@
                             <h4 class="text-sm font-semibold text-gray-700 mb-3">Predeterminado</h4>
                             <div class="grid grid-cols-3 gap-3">
                                 <button @click="setHours(8)" 
-                                        :disabled="existingRecord?.approved"
+                                        :disabled="existingRecord && existingRecord.approved"
                                         :class="hours === 8 ? 'bg-primary text-white ring-2 ring-primary ring-offset-2' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
                                         class="py-2.5 px-4 rounded-xl font-semibold text-sm transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed">
                                     8 horas
                                 </button>
                                 <button @click="setHours(6)" 
-                                        :disabled="existingRecord?.approved"
+                                        :disabled="existingRecord && existingRecord.approved"
                                         :class="hours === 6 ? 'bg-primary text-white ring-2 ring-primary ring-offset-2' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
                                         class="py-2.5 px-4 rounded-xl font-semibold text-sm transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed">
                                     6 horas
                                 </button>
                                 <button @click="setHours(4)" 
-                                        :disabled="existingRecord?.approved"
+                                        :disabled="existingRecord && existingRecord.approved"
                                         :class="hours === 4 ? 'bg-primary text-white ring-2 ring-primary ring-offset-2' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
                                         class="py-2.5 px-4 rounded-xl font-semibold text-sm transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed">
                                     4 horas
@@ -277,12 +277,12 @@
                                      <span class="text-5xl font-bold text-gray-900 tabular-nums tracking-tight" x-text="formatTime(hours)"></span>
                                      <div class="flex flex-col gap-1">
                                          <button @click="incrementHours()" 
-                                                :disabled="existingRecord?.approved"
+                                                :disabled="existingRecord && existingRecord.approved"
                                                 class="p-1 bg-white hover:bg-gray-100 rounded shadow-sm border border-gray-200 text-primary disabled:opacity-50">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                                          </button>
                                          <button @click="decrementHours()" 
-                                                :disabled="existingRecord?.approved"
+                                                :disabled="existingRecord && existingRecord.approved"
                                                 class="p-1 bg-white hover:bg-gray-100 rounded shadow-sm border border-gray-200 text-primary disabled:opacity-50">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                                          </button>
@@ -303,7 +303,7 @@
                             <div class="relative">
                                  <button type="button" 
                                         @click="isDropdownOpen = !isDropdownOpen"
-                                        :disabled="existingRecord?.approved"
+                                        :disabled="existingRecord && existingRecord.approved"
                                         class="relative w-full bg-white border border-gray-300 rounded-xl pl-4 pr-10 py-3 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm shadow-sm disabled:bg-gray-50 disabled:text-gray-500">
                                     <span class="block truncate" :class="!absenceReason ? 'text-gray-400' : 'text-gray-900'" x-text="absenceReason || 'Seleccionar motivo...'"></span>
                                     <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
@@ -436,6 +436,10 @@
                  ],
 
                  openModal(date, record) {
+                     console.log('Opening modal for date:', date);
+                     console.log('Existing record:', record);
+                     console.log('Record approved?:', record?.approved);
+                     
                      this.selectedDate = date;
                      this.existingRecord = record;
                      
@@ -520,7 +524,14 @@
                               user_comment: this.userComment
                           })
                      })
-                     .then(response => response.json())
+                     .then(response => {
+                         if (!response.ok) {
+                             return response.json().then(err => {
+                                 throw new Error(err.message || 'Error al guardar');
+                             });
+                         }
+                         return response.json();
+                     })
                      .then(data => {
                          this.isSaving = false;
                          if (data.success) {
@@ -533,7 +544,7 @@
                      .catch(error => {
                          this.isSaving = false;
                          console.error('Error:', error);
-                         alert('Error de conexión.');
+                         alert(error.message || 'Error de conexión.');
                      });
                  }
              }));

@@ -102,9 +102,9 @@
                                         </form>
                                     </td>
                                     <td class="px-4 md:px-8 py-5 text-right">
-                                        <a href="{{ route('reportes.show', $p['user']->id) }}" class="inline-flex items-center gap-2 px-3 md:px-4 py-2 border-2 border-[#22A9C8] text-[#22A9C8] rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider hover:bg-[#22A9C8] hover:text-white transition-all">
-                                            <span class="hidden md:inline">Ver Reporte</span>
-                                            <span class="md:hidden">Reporte</span>
+                                        <a href="{{ route('admin.professionals.show-details', $p['user']->id) }}" class="inline-flex items-center gap-2 px-3 md:px-4 py-2 border-2 border-[#22A9C8] text-[#22A9C8] rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider hover:bg-[#22A9C8] hover:text-white transition-all">
+                                            <span class="hidden md:inline">Ver Historial y Reporte</span>
+                                            <span class="md:hidden">Historial</span>
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
                                             </svg>

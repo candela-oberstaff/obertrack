@@ -99,8 +99,28 @@
                     Comunicación Masiva
                 </div>
                 <div class="p-6">
-                    <form action="{{ route('admin.mass-email') }}" method="POST" class="space-y-4 max-w-2xl">
+                    <!-- Quill Styles -->
+                    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+                    <form action="{{ route('admin.mass-email') }}" method="POST" class="space-y-4 max-w-2xl" id="massEmailForm">
                         @csrf
+                        
+                        <!-- Template Loader -->
+                        <div class="bg-blue-50 p-4 rounded-md mb-4 border border-blue-100">
+                             <label class="block text-sm font-bold text-blue-800 mb-2">Cargar Plantilla (Opcional)</label>
+                             <select id="templateSelector" class="block w-full rounded-md border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <option value="">-- Seleccionar una plantilla --</option>
+                                @foreach(\App\Models\EmailTemplate::all() as $template)
+                                    <option value="{{ $template->id }}" 
+                                            {{ request('template_id') == $template->id ? 'selected' : '' }}
+                                            data-subject="{{ $template->subject }}" 
+                                            data-body="{{ $template->body }}">
+                                        {{ $template->title }}
+                                    </option>
+                                @endforeach
+                             </select>
+                        </div>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Segmento</label>
                             <select name="segment" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
@@ -108,20 +128,124 @@
                                 <option value="yellow_alerts">Alertas Amarillas (Inactivos 1 día)</option>
                                 <option value="all_professionals">Todos los Profesionales</option>
                                 <option value="all_companies">Todas las Empresas</option>
+                                <option value="individual_professional">Profesional Individual</option>
+                                <option value="individual_company">Empresa Individual</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Individual Professional Dropdown -->
+                        <div id="individual_professional_div" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700">Seleccionar Profesional</label>
+                            <select name="individual_id" id="individual_professional_select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" disabled>
+                                <option value="">-- Buscar Profesional --</option>
+                                @foreach($allProfessionals as $p)
+                                    <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->email }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Individual Company Dropdown -->
+                        <div id="individual_company_div" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700">Seleccionar Empresa</label>
+                            <select name="individual_id" id="individual_company_select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" disabled>
+                                <option value="">-- Buscar Empresa --</option>
+                                @foreach($allCompanies as $c)
+                                    <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->company_name ?? 'Sin nombre' }})</option>
+                                @endforeach
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Asunto</label>
-                            <input type="text" name="subject" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <input type="text" name="subject" id="subject" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Mensaje</label>
-                            <textarea name="message" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Mensaje</label>
+                            <!-- Quill Editor -->
+                            <div id="editor-container" style="height: 300px; background: white;"></div>
+                            <input type="hidden" name="message" id="message">
                         </div>
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+                        <button type="submit" id="submitBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
                             Enviar Emails
                         </button>
                     </form>
+
+                    <!-- Quill Scripts & Logic -->
+                    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+                    <script>
+                        var quill = new Quill('#editor-container', {
+                            theme: 'snow',
+                            modules: {
+                                toolbar: [
+                                    ['bold', 'italic', 'underline', 'strike'],
+                                    ['blockquote', 'code-block'],
+                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                                    [{ 'color': [] }, { 'background': [] }],
+                                    [{ 'align': [] }],
+                                    ['link', 'image'],
+                                    ['clean']
+                                ]
+                            }
+                        });
+
+                        // Template Loader Logic
+                        document.getElementById('templateSelector').addEventListener('change', function() {
+                            var selectedOption = this.options[this.selectedIndex];
+                            if (selectedOption.value) {
+                                var subject = selectedOption.getAttribute('data-subject');
+                                var body = selectedOption.getAttribute('data-body');
+
+                                document.getElementById('subject').value = subject;
+                                quill.root.innerHTML = body;
+                            }
+                        });
+
+
+                        // Segment Selector Logic
+                        const segmentSelect = document.querySelector('select[name="segment"]');
+                        const professionalDiv = document.getElementById('individual_professional_div');
+                        const companyDiv = document.getElementById('individual_company_div');
+                        const professionalSelect = document.getElementById('individual_professional_select');
+                        const companySelect = document.getElementById('individual_company_select');
+
+                        segmentSelect.addEventListener('change', function() {
+                            const value = this.value;
+                            
+                            // Reset
+                            professionalDiv.classList.add('hidden');
+                            companyDiv.classList.add('hidden');
+                            professionalSelect.disabled = true;
+                            companySelect.disabled = true;
+                            professionalSelect.name = 'temp_ignore'; // Prevent sending
+                            companySelect.name = 'temp_ignore'; 
+
+                            if (value === 'individual_professional') {
+                                professionalDiv.classList.remove('hidden');
+                                professionalSelect.disabled = false;
+                                professionalSelect.name = 'individual_id';
+                            } else if (value === 'individual_company') {
+                                companyDiv.classList.remove('hidden');
+                                companySelect.disabled = false;
+                                companySelect.name = 'individual_id';
+                            }
+                        });
+
+
+                        // Trigger change on load if value exists
+                        if (document.getElementById('templateSelector').value) {
+                             document.getElementById('templateSelector').dispatchEvent(new Event('change'));
+                             // Scroll to form to show user what happened
+                             document.getElementById('massEmailForm').scrollIntoView({ behavior: 'smooth' });
+                        }
+
+                        // Form Submission
+                        document.getElementById('submitBtn').addEventListener('click', function(e) {
+                            e.preventDefault();
+                            var html = quill.root.innerHTML;
+                            document.getElementById('message').value = html;
+                            document.getElementById('massEmailForm').submit();
+                        });
+                    </script>
                 </div>
             </div>
 

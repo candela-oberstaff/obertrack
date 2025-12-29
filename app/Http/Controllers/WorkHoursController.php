@@ -243,19 +243,62 @@ class WorkHoursController extends Controller
         $monthDate = Carbon::parse($month);
 
         try {
+            \Log::info('Monthly report download initiated', [
+                'employee_id' => $employeeId,
+                'month' => $month,
+                'user_id' => auth()->id()
+            ]);
+
             $result = $this->reportService->generateMonthlyReportOrchestration($employee, $monthDate);
             
-            $this->zapierService->notifyReportDownload($monthDate, $result['csvContent'], $employee, $result['summary']);
+            // Dispatch Zapier notification asynchronously to prevent blocking the download
+            dispatch(function() use ($monthDate, $result, $employee) {
+                try {
+                    app(\App\Services\ZapierService::class)->notifyReportDownload(
+                        $monthDate, 
+                        $result['csvContent'], 
+                        $employee, 
+                        $result['summary']
+                    );
+                } catch (\Exception $e) {
+                    \Log::error('Zapier notification failed', [
+                        'employee_id' => $employee->id,
+                        'month' => $monthDate->format('Y-m'),
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            })->afterResponse();
 
             $headers = [
                 'Content-Type' => 'text/csv',
                 'Content-Disposition' => "attachment; filename=\"{$result['fileName']}\"",
             ];
 
+            \Log::info('Monthly report generated successfully', [
+                'employee_id' => $employeeId,
+                'month' => $month,
+                'file_name' => $result['fileName']
+            ]);
+
             return response($result['csvContent'], 200, $headers);
 
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            \Log::error('Monthly report generation failed', [
+                'employee_id' => $employeeId,
+                'month' => $month,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Check if it's an AJAX request or expects JSON
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+            
+            // For regular requests, redirect to reports index with error
+            return redirect()->route('reportes.index')->with('error', $e->getMessage());
         }
     }
 

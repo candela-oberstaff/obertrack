@@ -296,4 +296,62 @@ class BrevoEmailService
             return false;
         }
     }
+
+    /**
+     * Send weekly report to company
+     */
+    public function sendWeeklyReport(string $toEmail, string $toName, array $data): bool
+    {
+        try {
+            $sendSmtpEmail = new SendSmtpEmail([
+                'to' => [['email' => $toEmail, 'name' => $toName]],
+                'templateId' => 7, // Create this template in Brevo dashboard
+                'params' => $data,
+            ]);
+
+            $this->apiInstance->sendTransacEmail($sendSmtpEmail);
+            
+            Log::info('Weekly report email sent', [
+                'to' => $toEmail,
+                'week' => $data['week_start'] . ' - ' . $data['week_end']
+            ]);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Weekly report email failed', [
+                'to' => $toEmail,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send monthly report to company
+     */
+    public function sendMonthlyReport(string $toEmail, string $toName, array $data): bool
+    {
+        try {
+            $sendSmtpEmail = new SendSmtpEmail([
+                'to' => [['email' => $toEmail, 'name' => $toName]],
+                'templateId' => 8, // Create this template in Brevo dashboard
+                'params' => $data,
+            ]);
+
+            $this->apiInstance->sendTransacEmail($sendSmtpEmail);
+            
+            Log::info('Monthly report email sent', [
+                'to' => $toEmail,
+                'month' => $data['month']
+            ]);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Monthly report email failed', [
+                'to' => $toEmail,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
 }

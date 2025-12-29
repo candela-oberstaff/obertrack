@@ -23,3 +23,13 @@ Schedule::command('notify:pending-hours --days=0')
     ->mondays()
     ->at('09:00')
     ->timezone('America/Argentina/Buenos_Aires');
+
+// 4. Weekly reports to companies (Every Monday at 8:00 AM)
+Schedule::command('reports:send-weekly')
+    ->weeklyOn(1, '08:00')
+    ->timezone('America/Argentina/Buenos_Aires');
+
+// 5. Monthly reports to companies (1st of each month at 9:00 AM)
+Schedule::command('reports:send-monthly')
+    ->monthlyOn(1, '09:00')
+    ->timezone('America/Argentina/Buenos_Aires');
