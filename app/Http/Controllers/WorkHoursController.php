@@ -559,9 +559,13 @@ class WorkHoursController extends Controller
     public function downloadMonthlyReportPdf(User $user, Request $request)
     {
         $currentUser = Auth::user();
-        $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
-
-        if ($user->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) abort(403);
+        
+        if (!$currentUser->is_superadmin) {
+            $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
+            if ($user->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) {
+                abort(403);
+            }
+        }
 
         $date = $request->query('month') ? Carbon::parse($request->query('month')) : Carbon::now();
         $startOfMonth = $date->copy()->startOfMonth();
