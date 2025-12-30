@@ -305,7 +305,7 @@ class BrevoEmailService
         try {
             $sendSmtpEmail = new SendSmtpEmail([
                 'to' => [['email' => $toEmail, 'name' => $toName]],
-                'templateId' => 7, // Create this template in Brevo dashboard
+                'templateId' => 1, // Weekly report template
                 'params' => $data,
             ]);
 
@@ -334,7 +334,7 @@ class BrevoEmailService
         try {
             $sendSmtpEmail = new SendSmtpEmail([
                 'to' => [['email' => $toEmail, 'name' => $toName]],
-                'templateId' => 8, // Create this template in Brevo dashboard
+                'templateId' => 2, // Monthly report template
                 'params' => $data,
             ]);
 

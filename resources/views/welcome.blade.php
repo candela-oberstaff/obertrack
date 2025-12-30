@@ -88,10 +88,8 @@ pr-1 animate-typing">con visibilidad total</span>
 Centraliza el control de tiempos, tareas y rendimiento para que tomes decisiones
 basadas <strong>en datos, no en suposiciones.</strong>
 </p>
-<a href="/dashboard" class="inline-flex items-center px-10 py-4 rounded-full bg-
-brandBlue text-white font-bold text-lg hover:bg-brandBlueDark transition-all
-duration-300 hover:scale-105 shadow-xl">
-<i class="bi bi-rocket-takeoff-fill mr-3"></i> COMIENZA AHORA
+<a href="/dashboard" class="inline-flex items-center px-10 py-4 rounded-2xl bg-brandBlue text-white font-bold text-xl hover:bg-brandBlueDark transition-all duration-300 hover:scale-105 shadow-xl">
+    COMIENZA AHORA <i class="bi bi-rocket-takeoff-fill ml-3"></i>
 </a>
 </div>
 <div class="relative">
