@@ -12,6 +12,51 @@
         showNewMessageToast: false,
         newMessageFrom: null,
         
+        async compressImage(file) {
+            // Only compress images
+            if (!file.type.startsWith('image/')) {
+                return file;
+            }
+
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        // Max dimensions
+                        const maxSize = 1920;
+                        if (width > height && width > maxSize) {
+                            height = (height * maxSize) / width;
+                            width = maxSize;
+                        } else if (height > maxSize) {
+                            width = (width * maxSize) / height;
+                            height = maxSize;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        canvas.toBlob((blob) => {
+                            const compressedFile = new File([blob], file.name, {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            });
+                            resolve(compressedFile);
+                        }, 'image/jpeg', 0.85);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        },
+        
         selectContactOptimistic(userId) {
             this.visiblySelectedUser = userId;
             this.mobileView = true;
@@ -308,6 +353,16 @@
                             id="broadcast-file-upload" 
                             class="hidden" 
                             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                            x-on:change="async (e) => {
+                                const file = e.target.files[0];
+                                if (file && file.type.startsWith('image/')) {
+                                    const compressed = await compressImage(file);
+                                    const dataTransfer = new DataTransfer();
+                                    dataTransfer.items.add(compressed);
+                                    e.target.files = dataTransfer.files;
+                                    $wire.upload('attachment', compressed);
+                                }
+                            }"
                             x-on:livewire-upload-start="isUploading = true; uploadProgress = 0"
                             x-on:livewire-upload-finish="isUploading = false"
                             x-on:livewire-upload-error="isUploading = false"
@@ -553,6 +608,16 @@
                             id="file-upload" 
                             class="hidden" 
                             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                            x-on:change="async (e) => {
+                                const file = e.target.files[0];
+                                if (file && file.type.startsWith('image/')) {
+                                    const compressed = await compressImage(file);
+                                    const dataTransfer = new DataTransfer();
+                                    dataTransfer.items.add(compressed);
+                                    e.target.files = dataTransfer.files;
+                                    $wire.upload('attachment', compressed);
+                                }
+                            }"
                             x-on:livewire-upload-start="isUploading = true; uploadProgress = 0"
                             x-on:livewire-upload-finish="isUploading = false"
                             x-on:livewire-upload-error="isUploading = false"
