@@ -61,13 +61,6 @@ class Chat extends Component
 
         if ($user->is_superadmin) {
             // Superadmins see everyone
-            if (!empty($this->search)) {
-                $contactsQuery->where(function($q) {
-                    $q->where('name', 'ilike', '%' . $this->search . '%')
-                      ->orWhere('company_name', 'ilike', '%' . $this->search . '%')
-                      ->orWhere('job_title', 'ilike', '%' . $this->search . '%');
-                });
-            }
         } elseif ($user->tipo_usuario === 'empleador') {
             $contactsQuery->where('empleador_id', $user->id);
         } else {
@@ -77,6 +70,14 @@ class Chat extends Component
                           $q->where('empleador_id', $user->empleador_id)
                             ->where('id', '!=', $user->id);
                       });
+            });
+        }
+
+        if (!empty($this->search)) {
+            $contactsQuery->where(function($q) {
+                $q->where('name', 'ilike', '%' . $this->search . '%')
+                  ->orWhere('company_name', 'ilike', '%' . $this->search . '%')
+                  ->orWhere('job_title', 'ilike', '%' . $this->search . '%');
             });
         }
 
@@ -174,7 +175,7 @@ class Chat extends Component
         if ($attachmentFile) {
             // Upload to Local Storage (public disk)
             $filename = $attachmentFile->store('chat_attachments', 'public');
-            $attachmentPath = Storage::url($filename); // Generates /storage/chat_attachments/...
+            $attachmentPath = $filename; // Store relative path (key) only
         }
 
         // Save to database (multiple if broadcast)

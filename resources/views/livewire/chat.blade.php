@@ -221,7 +221,7 @@
                 </div>
 
                 <!-- Broadcast Config -->
-                <div class="flex-1 p-8 flex flex-col items-center justify-center text-center">
+                <div class="flex-1 p-8 flex flex-col items-center justify-center text-center overflow-y-auto">
                     <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 text-primary">
                         <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
@@ -229,13 +229,13 @@
                     </div>
                     <h4 class="text-xl font-bold text-gray-800 mb-4">Selecciona tu audiencia</h4>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl px-4">
                         <button 
                             wire:click="setBroadcastTarget('all')"
                             class="p-6 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 {{ $broadcastTarget === 'all' ? 'border-primary bg-primary/5 shadow-md' : 'border-gray-100 bg-white hover:border-primary/20' }}"
                         >
                             <span class="text-2xl">👥</span>
-                            <span class="font-bold">Todos</span>
+                            <span class="font-bold whitespace-nowrap">Todos</span>
                             <span class="text-xs text-gray-500">Empresas y Profesionales</span>
                         </button>
                         
@@ -244,8 +244,8 @@
                             class="p-6 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 {{ $broadcastTarget === 'professionals' ? 'border-primary bg-primary/5 shadow-md' : 'border-gray-100 bg-white hover:border-primary/20' }}"
                         >
                             <span class="text-2xl">👨‍💻</span>
-                            <span class="font-bold">Profesionales</span>
-                            <span class="text-xs text-gray-500">Solo empleados</span>
+                            <span class="font-bold whitespace-nowrap">Profesionales</span>
+                            <span class="text-xs text-gray-500">Solo profesionales</span>
                         </button>
                         
                         <button 
@@ -253,8 +253,8 @@
                             class="p-6 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 {{ $broadcastTarget === 'companies' ? 'border-primary bg-primary/5 shadow-md' : 'border-gray-100 bg-white hover:border-primary/20' }}"
                         >
                             <span class="text-2xl">🏢</span>
-                            <span class="font-bold">Empresas</span>
-                            <span class="text-xs text-gray-500">Solo empleadores</span>
+                            <span class="font-bold whitespace-nowrap">Empresas</span>
+                            <span class="text-xs text-gray-500">Solo empresas</span>
                         </button>
                     </div>
 
@@ -265,9 +265,65 @@
 
                 <!-- Mass Message Input Area -->
                 <div class="p-4 bg-white border-t border-gray-100">
-                    <form wire:submit.prevent="sendMessage" class="flex items-end gap-2">
+                    <!-- Upload Progress Bar -->
+                    <div x-show="isUploading" class="mb-3 animate-in slide-in-from-bottom-2">
+                         <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-primary">Subiendo archivo...</span>
+                            <span class="text-xs font-medium text-gray-500" x-text="uploadProgress + '%'"></span>
+                         </div>
+                         <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            <div class="bg-primary h-2 rounded-full transition-all duration-300" :style="'width: ' + uploadProgress + '%'"></div>
+                         </div>
+                    </div>
+
+                    @if($attachment)
+                        <div class="mb-4 mx-2 p-3 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-between animate-in slide-in-from-bottom-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center border border-gray-100 overflow-hidden">
+                                    @if($attachment->getMimeType() && str_starts_with($attachment->getMimeType(), 'image/'))
+                                        <img src="{{ $attachment->temporaryUrl() }}" class="w-full h-full object-cover">
+                                    @else
+                                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    @endif
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800 truncate max-w-[150px]">{{ $attachment->getClientOriginalName() }}</p>
+                                    <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">{{ number_format($attachment->getSize() / 1024, 0) }} KB</p>
+                                </div>
+                            </div>
+                            <button wire:click="removeAttachment" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                    @endif
+
+                    <form 
+                        wire:submit.prevent="sendMessage" 
+                        x-on:submit="$refs.broadcastInput.value = '';" 
+                        class="flex items-end gap-2"
+                    >
+                        <input 
+                            type="file" 
+                            wire:model="attachment" 
+                            id="broadcast-file-upload" 
+                            class="hidden" 
+                            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                            x-on:livewire-upload-start="isUploading = true; uploadProgress = 0"
+                            x-on:livewire-upload-finish="isUploading = false"
+                            x-on:livewire-upload-error="isUploading = false"
+                            x-on:livewire-upload-progress="uploadProgress = $event.detail.progress"
+                        >
+                        <label 
+                            for="broadcast-file-upload" 
+                            class="p-3 text-gray-400 hover:text-primary hover:bg-gray-100 rounded-xl cursor-pointer transition-colors mb-1"
+                            title="Adjuntar archivo"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                        </label>
+
                          <div class="flex-1 bg-primary/5 border border-primary/20 rounded-2xl transition-all shadow-inner">
                             <input 
+                                x-ref="broadcastInput"
                                 wire:model="messageText"
                                 type="text" 
                                 placeholder="Escribe el mensaje masivo..." 
@@ -276,11 +332,14 @@
                         </div>
                         <button 
                             type="submit" 
-                            class="p-3 bg-primary hover:bg-primary-hover text-white rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95"
+                            wire:loading.attr="disabled"
+                            wire:target="sendMessage, attachment"
+                            class="p-3 bg-primary hover:bg-primary-hover text-white rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95 mb-1 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg wire:loading.remove wire:target="sendMessage, attachment" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                             </svg>
+                            <span wire:loading wire:target="sendMessage, attachment" class="loading loading-spinner loading-xs text-white"></span>
                         </button>
                     </form>
                 </div>
@@ -393,7 +452,7 @@
                                                 @php
                                                     $path = $message->attachment_path;
                                                     $isUrl = \Illuminate\Support\Str::startsWith($path, ['http://', 'https://']);
-                                                    $url = $isUrl ? $path : Storage::url($path);
+                                                    $url = $isUrl ? $path : (str_starts_with($path, '/storage/') ? $path : '/storage/' . $path);
                                                     $isImg = \Illuminate\Support\Str::endsWith($path, ['.jpg', '.jpeg', '.png', '.gif', '.webp']);
                                                 @endphp
                                                 @if($isImg)
