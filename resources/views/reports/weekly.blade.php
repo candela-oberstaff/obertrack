@@ -6,15 +6,15 @@
     <title>Reporte Semanal</title>
 </head>
 <body>
-    <h1>Reporte Semanal de Horas Trabajadas</h1>
+    <h1>Reporte Semanal de Tareas</h1>
     <p>Semana del {{ $weekStart->format('d/m/Y') }} al {{ $weekEnd->format('d/m/Y') }}</p>
-    <p>Total de horas trabajadas: {{ $totalHours }}</p>
+    <p>Total de horas de tareas: {{ $totalHours }}</p>
 
     <table>
         <thead>
             <tr>
                 <th>Fecha</th>
-                <th>Horas Trabajadas</th>
+                <th>Horas de Tareas</th>
             </tr>
         </thead>
         <tbody>

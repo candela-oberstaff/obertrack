@@ -78,12 +78,15 @@ class WorkHoursController extends Controller
                 'user_comment' => $request->user_comment
             ]);
         } else {
+            $absenceHours = $request->absence_hours ?? ($request->hours_worked < 8 ? (8 - $request->hours_worked) : 0);
+            
             WorkHours::updateOrCreate(
                 ['user_id' => auth()->id(), 'work_date' => $request->work_date],
                 [
                     'hours_worked' => $request->hours_worked, 
                     'user_comment' => $request->user_comment,
-                    'absence_reason' => $request->absence_reason
+                    'absence_reason' => $request->absence_reason,
+                    'absence_hours' => $absenceHours
                 ]
             );
         }
@@ -129,8 +132,23 @@ class WorkHoursController extends Controller
                     }
                 }
             }
+            
+            // NEW: Send notification to the professional if absence is recorded (< 8 hours)
+            if ($request->hours_worked < 8) {
+                $endOfMonth = $currentMonth->copy()->endOfMonth()->locale('es')->isoFormat('D [de] MMMM');
+                $emailSubject = 'Registro de Ausencia - Recuperación de Horas';
+                $emailContent = "
+                    <h2>Hola, {$user->name}</h2>
+                    <p>Has registrado una ausencia el día <strong>{$workDate->format('d/m/Y')}</strong>.</p>
+                    <p>Tienes tiempo hasta el <strong>{$endOfMonth}</strong> para recuperar estas horas dentro del mes en curso.</p>
+                    <p>Recuerda mantener tus registros actualizados.</p>
+                ";
+                
+                $this->emailService->sendEmail($user->email, $user->name, $emailSubject, $emailContent);
+            }
+
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error sending pending hours notification: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Error sending notifications: ' . $e->getMessage());
         }
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -147,6 +165,9 @@ class WorkHoursController extends Controller
         ]);
     }
 
+        return view('work_hours.index', compact('calendar', 'currentMonth', 'totalHours'));
+    }
+*/
     public function index()
     {
         $currentMonth = now()->startOfMonth();
@@ -158,7 +179,19 @@ class WorkHoursController extends Controller
             $totalHours = session('totalHours');
         }
 
-        return view('work_hours.index', compact('calendar', 'currentMonth', 'totalHours'));
+        // Task Stats
+        $user = auth()->user();
+        $completedTasksCount = $user->assignedTasks()
+            ->where('completed', true)
+            ->whereMonth('updated_at', $currentMonth->month)
+            ->whereYear('updated_at', $currentMonth->year)
+            ->count();
+            
+        $pendingTasksCount = $user->assignedTasks()
+            ->where('completed', false)
+            ->count();
+            
+        return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'completedTasksCount', 'pendingTasksCount'));
     }
 
     public function approveWeek(ApproveWorkHoursRequest $request)

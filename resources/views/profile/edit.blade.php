@@ -42,7 +42,7 @@
                                 Perfil incompleto
                             </p>
                             <p class="text-sm text-amber-700">
-                                Debes completar tu <strong>teléfono</strong> y <strong>ubicación</strong> para que se habilite la opción de registrar horas.
+                                Debes completar tu <strong>teléfono</strong> y <strong>ubicación</strong> para que se habilite la opción de notificar tareas.
                             </p>
                         </div>
                     </div>

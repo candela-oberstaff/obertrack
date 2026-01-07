@@ -56,7 +56,17 @@ class EmpleadoController extends Controller
         $calendar = $calendarService->generateCalendar($currentMonth, $user->id);
         $totalHours = $calendarService->getTotalHoursForMonth($currentMonth, $user->id);
 
-        return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours'));
+        $completedTasksCount = $user->assignedTasks()
+            ->whereRaw('tasks.completed IS TRUE')
+            ->whereMonth('tasks.updated_at', $currentMonth->month)
+            ->whereYear('tasks.updated_at', $currentMonth->year)
+            ->count();
+            
+        $pendingTasksCount = $user->assignedTasks()
+            ->whereRaw('tasks.completed IS FALSE')
+            ->count();
+
+        return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'completedTasksCount', 'pendingTasksCount'));
     }
 
 }

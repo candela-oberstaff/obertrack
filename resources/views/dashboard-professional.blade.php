@@ -36,7 +36,7 @@
                         $hasPendingApproval = $registeredHours->where('approved', false)->count() > 0;
                     @endphp
                     <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">
-                        Horas registradas 
+                        Horas de tareas 
                         <span class="text-[8px] md:text-[10px] text-gray-400 font-medium">({{ $currentPeriodStart->format('M d') }} - {{ $currentPeriodEnd->format('M d') }})</span>
                     </p>
                     <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C] mb-2">{{ (int)$totalHours }} h</p>

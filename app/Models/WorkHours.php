@@ -9,7 +9,7 @@ class WorkHours extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'work_date', 'hours_worked', 'user_comment', 'approved', 'approval_comment', 'absence_reason'];
+    protected $fillable = ['user_id', 'work_date', 'hours_worked', 'user_comment', 'approved', 'approval_comment', 'absence_reason', 'absence_hours'];
 
     protected $casts = [
         'approved' => 'boolean',

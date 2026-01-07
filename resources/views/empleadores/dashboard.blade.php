@@ -5,7 +5,7 @@
             <!-- Header -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div class="flex items-center gap-4">
-                     <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1E293B]">Monitoreo de horas</h2>
+                     <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1E293B]">Monitoreo de tareas</h2>
                 </div>
             </div>
 
@@ -22,7 +22,7 @@
             @endif
 
             <!-- Subtitle -->
-            <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas totales registradas por los profesionales</h3>
+            <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas totales de tareas registradas por los profesionales</h3>
             
             <!-- Employee Stats Cards -->
             <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
@@ -88,7 +88,7 @@
                         <!-- Footer Text -->
                         <div class="text-center mt-auto mb-2">
                             <p class="text-gray-500 text-sm leading-tight max-w-[200px] mx-auto">
-                                {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas registradas actualmente ({{ $dateRange }})
+                                {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas de tareas registradas actualmente ({{ $dateRange }})
                             </p>
                         </div>
                     </div>
@@ -358,7 +358,7 @@
                                                             <div>
                                                                 <p class="font-medium text-gray-900" x-text="emp.name"></p>
                                                                 <p class="text-xs text-gray-500">
-                                                                    <span x-text="emp.hours"></span> horas registradas
+                                                                    <span x-text="emp.hours"></span> horas de tareas
                                                                     <span x-show="parseFloat(emp.hours) < 8" class="text-red-500 font-semibold ml-1" x-text="'• ' + (8 - parseFloat(emp.hours)) + 'h ausente'"></span>
                                                                     <span x-show="emp.approved" class="text-green-600 ml-1 font-semibold">(Aprobado)</span>
                                                                     <span x-show="!emp.approved" class="text-orange-500 ml-1 font-semibold">(Pendiente)</span>
@@ -438,7 +438,7 @@
                                     
                                     <template x-if="!selectedDay || selectedDay.employees.length === 0">
                                         <div class="text-center py-8">
-                                            <p class="text-gray-500">No hay registros de horas para este día.</p>
+                                            <p class="text-gray-500">No hay registros de tareas para este día.</p>
                                         </div>
                                     </template>
                                 </div>

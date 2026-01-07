@@ -196,7 +196,7 @@
                             steps.push({
                                 element: calendar,
                                 title: 'Calendario de Registro',
-                                intro: 'Hacé click en "Registrar horas" en cada día para agregar tus horas trabajadas.'
+                                intro: 'Hacé click en "Registrar tareas" en cada día para agregar tus tareas realizadas.'
                             });
                         }
                     } else if (route.includes('/profile')) {

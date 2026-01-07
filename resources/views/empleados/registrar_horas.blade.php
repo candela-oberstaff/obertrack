@@ -34,32 +34,21 @@
             <div class="sticky top-0 z-30 bg-white/95 backdrop-blur shadow-sm border-b border-gray-100 py-4 mb-8 -mx-4 px-8 sm:mx-0 sm:px-0 sm:rounded-b-xl transition-all duration-300">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Registro de horas</h1>
-                        <p class="text-primary font-medium text-xs">Total de horas trabajadas hasta el momento</p>
+                        <h1 class="text-2xl font-bold text-gray-900">Notificar tareas</h1>
+                        <p class="text-primary font-medium text-xs">Total de tareas notificadas hasta el momento</p>
                     </div>
-                    
                     {{-- Mini Stats --}}
                     <div class="flex items-center gap-4">
                         <div class="text-right">
-                            <p class="text-2xl font-bold text-gray-900 leading-none">{{ (int)$totalHours }}</p>
-                            <p class="text-xs text-gray-400">de 160 hs</p>
-                        </div>
-                        {{-- Circular Progress Mini --}}
-                         <div class="relative w-10 h-10">
-                            <svg class="w-full h-full transform -rotate-90">
-                                <circle cx="50%" cy="50%" r="16" stroke="#E5E7EB" stroke-width="4" fill="transparent" />
-                                <circle cx="50%" cy="50%" r="16" class="text-primary transition-all duration-1000 ease-out" stroke="currentColor" stroke-width="4" fill="transparent" 
-                                        :stroke-dasharray="2 * Math.PI * 16" 
-                                        :stroke-dashoffset="2 * Math.PI * 16 - (Math.min(({{ $totalHours }} / 160) * 100, 100) / 100) * (2 * Math.PI * 16)" 
-                                        stroke-linecap="round" />
-                            </svg>
+                             <p class="text-xl font-bold text-orange-500 leading-none">{{ $pendingTasksCount }}</p>
+                             <p class="text-xs text-gray-400">Pendientes</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Summary Card (Visual Only - keeping layout) --}}
-            <div class="bg-gray-50 rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between mx-4 sm:mx-0">
+            {{-- Summary Card (Task Centric) --}}
+            <div class="bg-gray-50 rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between mx-4 sm:mx-0 shadow-sm border border-gray-100">
                 <div class="mb-4 md:mb-0">
                    <div class="flex items-center gap-4">
                         <x-user-avatar :user="auth()->user()" size="12" />
@@ -70,21 +59,18 @@
                    </div>
                 </div>
 
-                {{-- Progress Circle Big --}}
-                <div class="relative w-32 h-32 flex items-center justify-center">
-                    <svg class="w-full h-full transform -rotate-90">
-                        <circle cx="50%" cy="50%" r="56" stroke="#E5E7EB" stroke-width="8" fill="transparent" />
-                        <circle cx="50%" cy="50%" r="56" class="text-primary transition-all duration-1000 ease-out" stroke="currentColor" stroke-width="8" fill="transparent" 
-                                :stroke-dasharray="2 * Math.PI * 56" 
-                                :stroke-dashoffset="2 * Math.PI * 56 - (Math.min(({{ $totalHours }} / 160) * 100, 100) / 100) * (2 * Math.PI * 56)" 
-                                stroke-linecap="round" />
-                    </svg>
-                    <span class="absolute text-3xl font-bold text-gray-900">{{ (int)$totalHours }}</span>
-                </div>
-
-                <div class="text-right mt-4 md:mt-0">
-                    <p class="text-gray-400 text-sm">{{ (int)$totalHours }} de 160 horas registradas</p>
-                    <p class="text-gray-400 text-sm text-right">actualmente ({{ $currentMonth->format('M 1') }} - {{ $currentMonth->copy()->endOfMonth()->format('M d') }})</p>
+                <div class="flex gap-8 items-center mt-4 md:mt-0">
+                    <div class="text-center">
+                        <span class="block text-3xl font-bold text-primary">{{ $completedTasksCount }}</span>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Realizadas</span>
+                        <span class="block text-[10px] text-gray-400 font-medium">(Este mes)</span>
+                    </div>
+                    <div class="h-12 w-px bg-gray-200"></div>
+                    <div class="text-center">
+                        <span class="block text-3xl font-bold text-orange-500">{{ $pendingTasksCount }}</span>
+                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Por Realizar</span>
+                         <span class="block text-[10px] text-gray-400 font-medium">(Total)</span>
+                    </div>
                 </div>
             </div>
 
@@ -148,20 +134,32 @@
                                     @if ($day['inMonth'] && !$isWeekend)
                                         <div class="flex-1 w-full flex flex-col items-center justify-center">
                                             @if ($hasHours)
-                                                <div class="flex flex-col items-center gap-0.5 md:gap-1 w-full text-center">
-                                                    <div class="mb-2 hidden lg:block">
+                                                <div class="flex flex-col items-center gap-1 w-full text-center">
+                                                    <div class="mb-1 hidden lg:block">
                                                          <x-user-avatar :user="auth()->user()" size="6" />
                                                     </div>
                                                     
                                                     @if($hours < 8)
                                                          @if($hours > 0)
-                                                            <span class="text-[10px] md:text-xs font-bold text-gray-900 leading-tight">{{ $hours + 0 }}h</span>
+                                                            <div class="flex flex-col items-center">
+                                                                <svg class="h-4 w-4 text-orange-500 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                                <span class="text-[9px] md:text-[10px] font-bold text-orange-600 leading-tight">Parcial</span>
+                                                            </div>
                                                          @endif
-                                                         <span class="text-[8px] md:text-[10px] font-bold text-red-500 leading-tight">
-                                                             {{ 8 - $hours }}h ausente
-                                                         </span>
+                                                         <div class="flex flex-col items-center mt-1">
+                                                            <span class="text-[8px] md:text-[9px] font-bold text-red-500 leading-tight uppercase tracking-wide">
+                                                                Ausencia
+                                                            </span>
+                                                         </div>
                                                     @else
-                                                         <span class="text-[10px] md:text-xs font-bold text-gray-900 leading-tight">{{ $hours + 0 }}h</span>
+                                                         <div class="flex flex-col items-center">
+                                                            <svg class="h-5 w-5 text-green-500 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            <span class="text-[9px] md:text-[10px] font-bold text-gray-700 leading-tight">Completado</span>
+                                                         </div>
                                                     @endif
                                                 </div>
                                             @elseif($isFuture)
@@ -215,7 +213,7 @@
                     {{-- Modal Header --}}
                     <div class="bg-gray-50 px-4 py-4 sm:px-6 flex justify-between items-center border-b border-gray-100 rounded-t-2xl">
                         <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">
-                            Registrar horas o ausencia
+                            Notificar tareas o ausencia
                         </h3>
                          <button @click="closeModal()" class="text-gray-400 hover:text-gray-500 focus:outline-none">
                             <span class="sr-only">Cerrar</span>
@@ -241,113 +239,113 @@
                             </div>
                         </div>
 
-                        {{-- Presets --}}
+                        {{-- Full Day Selection --}}
                         <div class="mb-6">
-                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Predeterminado</h4>
-                            <div class="grid grid-cols-3 gap-3">
-                                <button @click="setHours(8)" 
-                                        :disabled="existingRecord && existingRecord.approved"
-                                        :class="hours === 8 ? 'bg-primary text-white ring-2 ring-primary ring-offset-2' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
-                                        class="py-2.5 px-4 rounded-xl font-semibold text-sm transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed">
-                                    8 horas
-                                </button>
-                                <button @click="setHours(6)" 
-                                        :disabled="existingRecord && existingRecord.approved"
-                                        :class="hours === 6 ? 'bg-primary text-white ring-2 ring-primary ring-offset-2' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
-                                        class="py-2.5 px-4 rounded-xl font-semibold text-sm transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed">
-                                    6 horas
-                                </button>
-                                <button @click="setHours(4)" 
-                                        :disabled="existingRecord && existingRecord.approved"
-                                        :class="hours === 4 ? 'bg-primary text-white ring-2 ring-primary ring-offset-2' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
-                                        class="py-2.5 px-4 rounded-xl font-semibold text-sm transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed">
-                                    4 horas
-                                </button>
-                            </div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">¿Trabajaste jornada completa?</label>
+                            <select x-model="workedFullDay" @change="handleFullDayChange()"
+                                    :disabled="existingRecord && existingRecord.approved"
+                                    class="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm shadow-sm transition-all disabled:bg-gray-50 disabled:text-gray-500 appearance-none">
+                                <option value="" disabled selected>Selecciona una opción</option>
+                                <option value="yes">Sí</option>
+                                <option value="no">No</option>
+                            </select>
                         </div>
 
-                        {{-- Manual Input --}}
-                        <div class="mb-6">
-                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Manual</h4>
-                            <div class="flex items-center justify-between bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                <p class="text-xs text-gray-500 italic max-w-[150px]">
-                                    Ingresa el tiempo exacto trabajado en el día
-                                </p>
-                                 <div class="flex items-center gap-4">
-                                     <span class="text-5xl font-bold text-gray-900 tabular-nums tracking-tight" x-text="formatTime(hours)"></span>
-                                     <div class="flex flex-col gap-1">
-                                         <button @click="incrementHours()" 
-                                                :disabled="existingRecord && existingRecord.approved"
-                                                class="p-1 bg-white hover:bg-gray-100 rounded shadow-sm border border-gray-200 text-primary disabled:opacity-50">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                                         </button>
-                                         <button @click="decrementHours()" 
-                                                :disabled="existingRecord && existingRecord.approved"
-                                                class="p-1 bg-white hover:bg-gray-100 rounded shadow-sm border border-gray-200 text-primary disabled:opacity-50">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
-                                         </button>
-                                     </div>
-                                 </div>
-                            </div>
-                        </div>
-
-                         {{-- Absence Reason (Conditional) --}}
-                        <div x-show="hours < 8" 
+                        {{-- Absence Fields (Show if Full Day is No) --}}
+                        <div x-show="workedFullDay === 'no'" 
                              x-transition:enter="transition ease-out duration-200"
-                             x-transition:enter-start="opacity-0 transform scale-95"
-                             x-transition:enter-end="opacity-100 transform scale-100"
-                             class="mb-6">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Motivo de ausencia / horas faltantes</label>
-                            
-                            {{-- Dropdown Trigger --}}
-                            <div class="relative">
-                                 <button type="button" 
-                                        @click="isDropdownOpen = !isDropdownOpen"
-                                        :disabled="existingRecord && existingRecord.approved"
-                                        class="relative w-full bg-white border border-gray-300 rounded-xl pl-4 pr-10 py-3 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm shadow-sm disabled:bg-gray-50 disabled:text-gray-500">
-                                    <span class="block truncate" :class="!absenceReason ? 'text-gray-400' : 'text-gray-900'" x-text="absenceReason || 'Seleccionar motivo...'"></span>
-                                    <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                        <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="none" stroke="currentColor">
-                                            <path d="M7 7l3-3 3 3m0 6l-3 3-3-3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
-                                    </span>
-                                </button>
+                             x-transition:enter-start="opacity-0 transform -translate-y-2"
+                             x-transition:enter-end="opacity-100 transform translate-y-0"
+                             class="space-y-6 mb-6">
+                             
+                             {{-- Absence Hours Input --}}
+                             <div>
+                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Horas de ausencia</label>
+                                 <div class="flex items-center gap-4">
+                                     <button @click="decrementAbsence()" 
+                                            :disabled="existingRecord && existingRecord.approved"
+                                            class="p-2 bg-white hover:bg-gray-100 rounded-lg shadow-sm border border-gray-200 text-primary disabled:opacity-50 transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                                     </button>
+                                     <span class="text-3xl font-bold text-gray-900 w-16 text-center tabular-nums" x-text="absenceHours"></span>
+                                     <button @click="incrementAbsence()" 
+                                            :disabled="existingRecord && existingRecord.approved"
+                                            class="p-2 bg-white hover:bg-gray-100 rounded-lg shadow-sm border border-gray-200 text-primary disabled:opacity-50 transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                                     </button>
+                                 </div>
+                             </div>
 
-                                {{-- Dropdown Menu --}}
-                                <div x-show="isDropdownOpen" 
-                                     @click.away="isDropdownOpen = false"
-                                     class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-xl py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm custom-scrollbar">
-                                    
-                                     <template x-for="option in absenceOptions" :key="option">
-                                         <div @click="absenceReason = option; isDropdownOpen = false; if(option === 'Otro') $nextTick(() => $refs.otherReasonInput.focus())"
-                                              class="cursor-pointer hover:bg-blue-50 py-2.5 px-4 text-gray-900 flex items-center justify-between group transition-colors">
-                                             <span :class="option === absenceReason ? 'font-semibold text-primary' : 'font-normal group-hover:text-primary'" x-text="option"></span>
-                                             <svg x-show="option === absenceReason" class="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                             </svg>
-                                         </div>
-                                     </template>
+                             {{-- Absence Reason Dropdown --}}
+                             <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Motivo de ausencia</label>
+                                <div class="relative">
+                                     <button type="button" 
+                                            @click="isDropdownOpen = !isDropdownOpen"
+                                            :disabled="existingRecord && existingRecord.approved"
+                                            class="relative w-full bg-white border border-gray-300 rounded-xl pl-4 pr-10 py-3 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm shadow-sm disabled:bg-gray-50 disabled:text-gray-500">
+                                        <span class="block truncate" :class="!absenceReason ? 'text-gray-400' : 'text-gray-900'" x-text="absenceReason || 'Seleccionar motivo...'"></span>
+                                        <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                            <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+                                                <path d="M7 7l3-3 3 3m0 6l-3 3-3-3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </span>
+                                    </button>
+    
+                                    {{-- Dropdown Menu --}}
+                                    <div x-show="isDropdownOpen" 
+                                         @click.away="isDropdownOpen = false"
+                                         class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-xl py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm custom-scrollbar">
+                                        
+                                         <template x-for="option in absenceOptions" :key="option">
+                                             <div @click="absenceReason = option; isDropdownOpen = false; if(option === 'Otro') $nextTick(() => $refs.otherReasonInput.focus())"
+                                                  class="cursor-pointer hover:bg-blue-50 py-2.5 px-4 text-gray-900 flex items-center justify-between group transition-colors">
+                                                 <span :class="option === absenceReason ? 'font-semibold text-primary' : 'font-normal group-hover:text-primary'" x-text="option"></span>
+                                                 <svg x-show="option === absenceReason" class="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                 </svg>
+                                             </div>
+                                         </template>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                             {{-- Other Reason Input --}}
-                             <div x-show="absenceReason === 'Otro'" class="mt-3">
-                                  <textarea x-ref="otherReasonInput"
-                                            x-model="otherReasonText"
-                                            rows="2"
-                                            class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-xl" 
-                                            placeholder="Especificar motivo..."></textarea>
+                                
+                                 {{-- Other Reason Input --}}
+                                 <div x-show="absenceReason === 'Otro'" class="mt-3">
+                                      <textarea x-ref="otherReasonInput"
+                                                x-model="otherReasonText"
+                                                rows="2"
+                                                class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-xl" 
+                                                placeholder="Especificar motivo..."></textarea>
+                                 </div>
+                             </div>
+
+                             {{-- Recovery Deadline Message --}}
+                             <div class="rounded-xl bg-orange-50 p-4 border border-orange-100">
+                                <div class="flex gap-3">
+                                    <svg class="h-5 w-5 text-orange-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p class="text-sm text-orange-800">
+                                        Tienes hasta el <span class="font-bold">{{ \Carbon\Carbon::now()->endOfMonth()->isoFormat('D [de] MMMM') }}</span> para recuperar estas horas.
+                                    </p>
+                                </div>
                              </div>
                         </div>
 
-                         {{-- User Comment --}}
-                         <div class="mb-6">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Comentario / Nota personal</label>
+                        {{-- Activity Registration (Show if Full Day is selected) --}}
+                        <div x-show="workedFullDay"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100" 
+                             class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Registro de actividades</label>
                             <textarea x-model="userComment"
-                                      rows="2"
-                                      class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-xl" 
-                                      placeholder="Agrega una nota adicional sobre tu jornada..."></textarea>
-                         </div>
+                                      rows="3"
+                                      class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-xl resize-none" 
+                                      placeholder="Describe las actividades realizadas..."></textarea>
+                        </div>
+
+
 
                          <!-- Comment Info Message -->
                         <template x-if="!existingRecord?.approved">
@@ -392,7 +390,7 @@
                                 @click="saveHours()"
                                 :disabled="isSaving"
                                 class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-6 py-3 bg-primary text-base font-medium text-white hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                             <span x-show="!isSaving">Registrar</span>
+                             <span x-show="!isSaving">Notificar</span>
                              <span x-show="isSaving" class="flex items-center">
                                  <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                  Guardando...
@@ -418,7 +416,9 @@
                  isDropdownOpen: false,
                  selectedDate: null,
                  existingRecord: null,
+                 workedFullDay: '',
                  hours: 8,
+                 absenceHours: 0,
                   absenceReason: null,
                   otherReasonText: '',
                   userComment: '',
@@ -444,7 +444,17 @@
                      this.existingRecord = record;
                      
                      if (record) {
-                         this.hours = parseFloat(record.hours_worked);
+                         const worked = parseFloat(record.hours_worked);
+                         if (worked >= 8) {
+                             this.workedFullDay = 'yes';
+                             this.hours = 8;
+                             this.absenceHours = 0;
+                         } else {
+                             this.workedFullDay = 'no';
+                             this.hours = worked;
+                             this.absenceHours = 8 - worked;
+                         }
+                         
                          this.absenceReason = record.absence_reason || null;
                          // Check if absence reason is custom (not in options)
                          if (this.absenceReason && !this.absenceOptions.includes(this.absenceReason) && this.absenceReason !== 'Otro') {
@@ -452,7 +462,9 @@
                              this.absenceReason = 'Otro';
                          }
                      } else {
+                          this.workedFullDay = '';
                           this.hours = 8;
+                          this.absenceHours = 0;
                           this.absenceReason = null;
                           this.otherReasonText = '';
                           this.userComment = '';
@@ -468,22 +480,29 @@
                      this.isDropdownOpen = false;
                  },
 
-                 setHours(value) {
-                     this.hours = value;
+                 handleFullDayChange() {
+                     if (this.workedFullDay === 'yes') {
+                         this.hours = 8;
+                         this.absenceHours = 0;
+                         this.absenceReason = null;
+                     } else {
+                         this.absenceHours = 1; // Default to 1 hour absence logic
+                         this.hours = 7;
+                     }
                  },
 
-                 incrementHours() {
-                     if (this.hours < 24) this.hours += 0.5;
+                 incrementAbsence() {
+                     if (this.absenceHours < 8) {
+                         this.absenceHours += 0.5;
+                         this.hours = 8 - this.absenceHours;
+                     }
                  },
 
-                 decrementHours() {
-                     if (this.hours > 0) this.hours -= 0.5;
-                 },
-
-                 formatTime(hours) {
-                     const h = Math.floor(hours);
-                     const m = (hours - h) * 60;
-                     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                 decrementAbsence() {
+                     if (this.absenceHours > 0) {
+                         this.absenceHours -= 0.5;
+                         this.hours = 8 - this.absenceHours;
+                     }
                  },
                  
                  formatDate(dateStr) {
@@ -493,7 +512,12 @@
                  },
 
                  saveHours() {
-                     if (this.hours < 8 && !this.absenceReason) {
+                     if (!this.workedFullDay) {
+                         alert('Por favor selecciona si trabajaste jornada completa.');
+                         return;
+                     }
+
+                     if (this.workedFullDay === 'no' && !this.absenceReason) {
                          alert('Por favor selecciona un motivo de ausencia.');
                          return;
                      }
@@ -521,6 +545,7 @@
                               work_date: this.selectedDate,
                               hours_worked: this.hours,
                               absence_reason: finalReason,
+                              absence_hours: this.absenceHours, // New field explicitly sent
                               user_comment: this.userComment
                           })
                      })

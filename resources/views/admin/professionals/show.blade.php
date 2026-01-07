@@ -57,7 +57,7 @@
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <div class="text-lg font-bold text-gray-900">Puntualidad</div>
-                            <div class="text-xs text-gray-400">Consistencia en registro de horas</div>
+                            <div class="text-xs text-gray-400">Consistencia en registro de tareas</div>
                         </div>
                         <div class="p-2 bg-purple-50 text-purple-600 rounded-lg">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>

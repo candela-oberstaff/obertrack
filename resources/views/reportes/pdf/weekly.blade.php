@@ -43,7 +43,7 @@
         <tr>
             <td width="50%" style="border: none; padding: 0 5px 10px 0;">
                 <div class="stat-box">
-                    <span class="stat-label">Total Horas</span>
+                    <span class="stat-label">Total Horas de Tareas</span>
                     <span class="stat-value">{{ $totalHours }}</span>
                 </div>
             </td>
@@ -76,7 +76,7 @@
             <tr>
                 <th>Día</th>
                 <th>Fecha</th>
-                <th>Horas Registradas</th>
+                <th>Horas de Tareas</th>
                 <th>Estado</th>
             </tr>
         </thead>

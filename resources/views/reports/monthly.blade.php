@@ -12,16 +12,16 @@
     </style>
 </head>
 <body>
-    <h1>Reporte Mensual de Horas Trabajadas</h1>
+    <h1>Reporte Mensual de Tareas</h1>
     <p>Profesional: {{ $employee->name }}</p>
     <p>Período: {{ $startDate->format('d/m/Y') }} - {{ $endDate->format('d/m/Y') }}</p>
-    <p>Total de horas trabajadas: {{ $totalHours }}</p>
+    <p>Total de horas de tareas: {{ $totalHours }}</p>
 
     <table>
         <thead>
             <tr>
                 <th>Fecha</th>
-                <th>Horas Trabajadas</th>
+                <th>Horas de Tareas</th>
                 <th>Comentarios</th>
             </tr>
         </thead>
