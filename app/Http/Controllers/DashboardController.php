@@ -19,7 +19,8 @@ class DashboardController extends Controller
         private WorkHoursSummaryService $workHoursService,
         private TaskDataService $taskDataService,
         private EmployeeDataService $employeeDataService,
-        private TaskManagementService $taskManagementService
+        private TaskManagementService $taskManagementService,
+        private \App\Services\ProfessionalActivityService $activityService
     ) {}
 
     public function show($role)
@@ -97,36 +98,41 @@ class DashboardController extends Controller
         // Cachear por 60 segundos para evitar queries repetidas
         $data = cache()->remember($cacheKey, 60, function () use ($user, $request) {
             // Obtener los empleados
-            $empleados = $this->employeeDataService->getEmployeesForUser($user);
+            $employees = $this->employeeDataService->getEmployeesForUser($user);
 
             // Obtener las tareas creadas por los empleados
-            $tareas = $this->taskManagementService->getEmployeeTasks($empleados, $request->all());
+            $tasks = $this->taskManagementService->getEmployeeTasks($employees, $request->all());
 
             // Obtener las tareas creadas para los empleados (por el empleador, manager o superadmin)
-            $tareasEmpleador = $this->taskManagementService->getEmployerTasks($user, $empleados, $request->all());
+            $teamTasks = $this->taskManagementService->getEmployerTasks($user, $employees, $request->all());
+
+            // Asignar las tareas individuales a cada empleado
+            $employees->each(function ($employee) use ($tasks) {
+                $employee->individualTasks = $tasks->where('created_by', $employee->id);
+            });
 
             // Preparar datos para el gráfico
-            $chartData = $this->taskDataService->prepareChartData($tareas->concat($tareasEmpleador));
+            $chartData = $this->taskDataService->prepareChartData($tasks->concat($teamTasks));
 
             // Obtener las horas trabajadas de los empleados por semana
             $weekStart = $request->week ? Carbon::parse($request->week) : Carbon::now()->startOfWeek(Carbon::MONDAY);
             $weekEnd = $weekStart->copy()->endOfWeek(Carbon::FRIDAY);
-            $workHoursSummary = $this->workHoursService->getWorkHoursSummary($empleados, $weekStart, $weekEnd);
+            $workHoursSummary = $this->workHoursService->getWorkHoursSummary($employees, $weekStart, $weekEnd);
 
             // Obtener las semanas pendientes
-            $pendingWeeks = $this->workHoursService->getPendingWeeks($empleados);
+            $pendingWeeks = $this->workHoursService->getPendingWeeks($employees);
 
             $currentMonth = Carbon::now()->startOfMonth();
 
             // Calcular el total de horas aprobadas para el mes actual
-            $totalApprovedHours = $this->workHoursService->getTotalApprovedHoursForMonth($empleados, $currentMonth);
+            $totalApprovedHours = $this->workHoursService->getTotalApprovedHoursForMonth($employees, $currentMonth);
 
             // Obtener información detallada de los empleados
-            $empleadosInfo = $this->employeeDataService->getEmployeesInfo($empleados, $currentMonth, $this->workHoursService);
+            $empleadosInfo = $this->employeeDataService->getEmployeesInfo($employees, $currentMonth, $this->workHoursService);
 
             return compact(
-                'tareas',
-                'tareasEmpleador',
+                'tasks',
+                'teamTasks',
                 'chartData',
                 'workHoursSummary',
                 'weekStart',
@@ -134,7 +140,7 @@ class DashboardController extends Controller
                 'totalApprovedHours',
                 'pendingWeeks',
                 'empleadosInfo',
-                'empleados'
+                'employees'
             );
         });
 
@@ -239,6 +245,11 @@ class DashboardController extends Controller
             ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
             ->get();
         
+        // Group by date for faster/correct lookup in the calendar loop
+        $hoursByDate = $monthlyHours->groupBy(function($item) {
+            return $item->work_date->format('Y-m-d');
+        });
+        
         // Assign colors to employees for UI consistency
         $colors = ['bg-pink-500', 'bg-cyan-500', 'bg-green-600', 'bg-blue-500', 'bg-purple-500', 'bg-orange-500'];
         $employeeColors = [];
@@ -246,9 +257,14 @@ class DashboardController extends Controller
             $employeeColors[$emp->id] = $colors[$index % count($colors)];
         }
 
+        // Professional Activity Statuses
+        $professionalStatuses = $this->activityService->getStatusesForUsers($empleados);
+
         // Employee Summary Cards Data
-        $employeeSummaries = $empleados->map(function($employee) use ($monthlyHours, $startOfMonth, $endOfMonth, $employeeColors) {
+        $employeeSummaries = $empleados->map(function($employee) use ($monthlyHours, $employeeColors, $professionalStatuses) {
             $employeeHours = $monthlyHours->where('user_id', $employee->id);
+            $statusData = $professionalStatuses->firstWhere('user.id', $employee->id);
+            
             return [
                 'user' => $employee,
                 'total_hours' => $employeeHours->sum('hours_worked'),
@@ -256,6 +272,8 @@ class DashboardController extends Controller
                 'color' => $employeeColors[$employee->id] ?? 'bg-gray-500',
                 'role' => $employee->job_title ?? 'Sin puesto definido',
                 'initials' => strtoupper(substr($employee->name, 0, 1) . substr(strrchr($employee->name, ' ') ?: ' ' . substr($employee->name, 1), 1, 1)),
+                'activity_status' => $statusData['status'] ?? 'active',
+                'days_inactive' => $statusData['days_inactive'] ?? 0,
             ];
         });
 
@@ -274,17 +292,25 @@ class DashboardController extends Controller
                 'employees' => []
             ];
 
+            $dayRecords = $hoursByDate->get($dateStr, collect());
+
             foreach ($empleados as $employee) {
-                $record = $monthlyHours->where('user_id', $employee->id)
-                    ->where('work_date', $dateStr)
-                    ->first();
+                $record = $dayRecords->where('user_id', $employee->id)->first();
                 
                 if ($record) {
                     $dayData['has_events'] = true;
                     $dayData['employees'][] = [
+                        'record_id' => $record->id,
+                        'id' => $employee->id,
+                        'name' => $employee->name,
+                        'avatar' => $employee->avatar,
                         'initials' => $employeeSummaries->firstWhere('user.id', $employee->id)['initials'],
                         'hours' => $record->hours_worked,
-                        'approved' => $record->approved,
+                        'approved' => (bool)$record->approved,
+                        'user_comment' => $record->user_comment,
+                        'comment' => $record->approval_comment,
+                        'new_comment' => '',
+                        'absence_reason' => $record->absence_reason,
                         'color_class' => $employeeColors[$employee->id] ?? 'bg-gray-500',
                     ];
                 }
@@ -300,5 +326,60 @@ class DashboardController extends Controller
             'employeeSummaries',
             'calendar'
         ));
+    }
+
+    public function sendMassEmail(Request $request, \App\Services\BrevoEmailService $emailService)
+    {
+        $request->validate([
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+            'recipient_id' => 'nullable|exists:users,id',
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx|max:10240',
+        ]);
+
+        $user = auth()->user();
+        $companyName = $user->company_name ?? $user->name;
+
+        if ($request->recipient_id) {
+            $employees = \App\Models\User::where('id', $request->recipient_id)
+                ->where('empleador_id', $user->id)
+                ->get();
+            $targetLabel = "al profesional seleccionado";
+        } else {
+            $employees = $this->employeeDataService->getEmployeesForUser($user);
+            $targetLabel = "a tu equipo de profesionales";
+        }
+
+        if ($employees->isEmpty()) {
+            return redirect()->back()->with('error', 'No se encontró el destinatario o no tienes profesionales a cargo.');
+        }
+
+        // Process attachments
+        $processedAttachments = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $processedAttachments[] = [
+                    'path' => $file->getRealPath(),
+                    'name' => $file->getClientOriginalName()
+                ];
+            }
+        }
+
+        $successCount = 0;
+        foreach ($employees as $employee) {
+            if ($employee->email) {
+                $sent = $emailService->sendMassCommunication(
+                    $employee->email,
+                    $employee->name,
+                    $request->subject,
+                    nl2br(e($request->message)),
+                    $companyName,
+                    $processedAttachments
+                );
+                if ($sent) $successCount++;
+            }
+        }
+
+        return redirect()->back()->with('success', "Se han enviado {$successCount} correos correctamente {$targetLabel}.");
     }
 }

@@ -1,160 +1,49 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nueva Tarea Asignada</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f4f4f5;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff;
-            padding: 30px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-        }
-        .content {
-            padding: 30px;
-        }
-        .task-card {
-            background-color: #f9fafb;
-            border-left: 4px solid {{ $priorityColor }};
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 4px;
-        }
-        .task-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #1f2937;
-            margin: 0 0 10px 0;
-        }
-        .task-description {
-            color: #6b7280;
-            margin: 10px 0;
-            white-space: pre-wrap;
-        }
-        .task-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #e5e7eb;
-        }
-        .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-            color: #6b7280;
-        }
-        .meta-label {
-            font-weight: 600;
-            color: #374151;
-        }
-        .priority-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            background-color: {{ $priorityColor }};
-            color: #ffffff;
-        }
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #667eea;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-            margin-top: 20px;
-            transition: background-color 0.3s;
-        }
-        .button:hover {
-            background-color: #5568d3;
-        }
-        .footer {
-            background-color: #f9fafb;
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #6b7280;
-            border-top: 1px solid #e5e7eb;
-        }
-        .assigned-by {
-            color: #6b7280;
-            font-size: 14px;
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📋 Nueva Tarea Asignada</h1>
-        </div>
+@extends('emails.layout')
+
+@section('title', 'Nueva Tarea Asignada - Obertrack')
+
+@section('content')
+    <h1 class="title">📋 Nueva Tarea Asignada</h1>
+    
+    <p class="text">
+        Hola, <strong>{{ $assignedBy }}</strong> te ha asignado una nueva tarea en Obertrack. 
+        Aquí tienes los detalles:
+    </p>
+    
+    <div class="highlight-box">
+        <h2 style="font-size: 20px; color: #1a202c; margin-top: 0; margin-bottom: 12px;">{{ $taskTitle }}</h2>
         
-        <div class="content">
-            <p class="assigned-by">
-                <strong>{{ $assignedBy }}</strong> te ha asignado una nueva tarea.
-            </p>
-            
-            <div class="task-card">
-                <h2 class="task-title">{{ $taskTitle }}</h2>
-                
-                @if($taskDescription)
-                    <p class="task-description">{{ $taskDescription }}</p>
-                @endif
-                
-                <div class="task-meta">
-                    <div class="meta-item">
-                        <span class="meta-label">Prioridad:</span>
-                        <span class="priority-badge">{{ $priority }}</span>
-                    </div>
-                    
-                    <div class="meta-item">
-                        <span class="meta-label">Fecha inicio:</span>
-                        <span>{{ $startDate }}</span>
-                    </div>
-                    
-                    <div class="meta-item">
-                        <span class="meta-label">Fecha fin:</span>
-                        <span>{{ $endDate }}</span>
-                    </div>
-                </div>
+        @if($taskDescription)
+            <div style="color: #4a5568; margin-bottom: 20px; white-space: pre-wrap; font-style: italic;">
+                "{{ $taskDescription }}"
             </div>
-            
-            <div style="text-align: center;">
-                <a href="{{ $taskUrl }}" class="button">Ver Tarea en OberTrack</a>
-            </div>
-        </div>
+        @endif
         
-        <div class="footer">
-            <p>Este es un correo automático de OberTrack. Por favor no respondas a este mensaje.</p>
-            <p>&copy; {{ date('Y') }} OberTrack. Todos los derechos reservados.</p>
-        </div>
+        <table style="width: 100%;">
+            <tr>
+                <td style="padding-bottom: 8px; width: 40%; color: #718096; font-size: 14px; font-weight: 600;">Prioridad</td>
+                <td style="padding-bottom: 8px;">
+                    <span style="display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; background-color: {{ $priorityColor }}; color: #ffffff;">
+                        {{ $priority }}
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-bottom: 8px; color: #718096; font-size: 14px; font-weight: 600;">Fecha de inicio</td>
+                <td style="padding-bottom: 8px; color: #2d3748; font-size: 14px;">{{ $startDate }}</td>
+            </tr>
+            <tr>
+                <td style="padding-bottom: 8px; color: #718096; font-size: 14px; font-weight: 600;">Fecha límite</td>
+                <td style="padding-bottom: 8px; color: #2d3748; font-size: 14px;">{{ $endDate }}</td>
+            </tr>
+        </table>
     </div>
-</body>
-</html>
+
+    <div class="button-container">
+        <a href="{{ $taskUrl }}" class="button">Ver Tarea en Obertrack</a>
+    </div>
+
+    <p class="text" style="font-size: 14px; color: #718096; text-align: center;">
+        💡 Recuerda mantener actualizados tus registros de horas asociados a esta tarea.
+    </p>
+@endsection

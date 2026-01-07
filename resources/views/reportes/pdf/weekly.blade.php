@@ -42,19 +42,27 @@
 
     <table class="stats-grid">
         <tr>
-            <td width="33%" style="border: none; padding: 0 5px 0 0;">
+            <td width="50%" style="border: none; padding: 0 5px 10px 0;">
                 <div class="stat-box">
                     <span class="stat-label">Total Horas</span>
                     <span class="stat-value">{{ $totalHours }}</span>
                 </div>
             </td>
-            <td width="33%" style="border: none; padding: 0 5px;">
+            <td width="50%" style="border: none; padding: 0 0 10px 5px;">
                 <div class="stat-box">
                     <span class="stat-label">Promedio Diario</span>
                     <span class="stat-value">{{ $weeklyAverage }}</span>
                 </div>
             </td>
-            <td width="33%" style="border: none; padding: 0 0 0 5px;">
+        </tr>
+        <tr>
+            <td width="50%" style="border: none; padding: 10px 5px 0 0;">
+                <div class="stat-box">
+                    <span class="stat-label">Ausencias</span>
+                    <span class="stat-value">{{ $absences }}</span>
+                </div>
+            </td>
+            <td width="50%" style="border: none; padding: 10px 0 0 5px;">
                 <div class="stat-box">
                     <span class="stat-label">Tareas Incompletas</span>
                     <span class="stat-value">{{ $incompleteTasks }}</span>
@@ -92,14 +100,30 @@
     </table>
 
     <div style="margin-top: 30px;">
-        <h3>Comentarios de Aprobación</h3>
-        @if($comments->count() > 0)
-            @foreach($comments as $comment)
-                <div style="background: #f9fafb; padding: 10px; border-left: 3px solid #3b82f6; margin-bottom: 5px; font-size: 14px;">
-                    {{ $comment }}
+        <h3>Comentarios y Observaciones</h3>
+        @php $hasComments = false; @endphp
+        @foreach($comments as $record)
+            @if($record->user_comment || $record->approval_comment)
+                @php $hasComments = true; @endphp
+                <div style="background: #f9fafb; padding: 12px; border-left: 4px solid #22A9C8; margin-bottom: 10px;">
+                    <div style="font-size: 11px; font-weight: bold; color: #6b7280; text-transform: uppercase; margin-bottom: 5px;">
+                        {{ Carbon\Carbon::parse($record->work_date)->format('l d/m/Y') }}
+                    </div>
+                    @if($record->user_comment)
+                        <div style="font-size: 13px; margin-bottom: 4px;">
+                            <span style="font-weight: bold;">Profesional:</span> {{ $record->user_comment }}
+                        </div>
+                    @endif
+                    @if($record->approval_comment)
+                        <div style="font-size: 13px;">
+                            <span style="font-weight: bold;">Empresa:</span> {{ $record->approval_comment }}
+                        </div>
+                    @endif
                 </div>
-            @endforeach
-        @else
+            @endif
+        @endforeach
+
+        @if(!$hasComments)
             <p style="color: #6b7280; font-style: italic;">No hay comentarios registrados para este periodo.</p>
         @endif
     </div>

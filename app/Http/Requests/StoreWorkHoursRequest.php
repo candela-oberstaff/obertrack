@@ -24,6 +24,8 @@ class StoreWorkHoursRequest extends FormRequest
         return [
             'work_date' => 'required|date',
             'hours_worked' => 'required|numeric|min:0|max:24',
+            'absence_reason' => 'nullable|string|max:500',
+            'user_comment' => 'nullable|string|max:1000',
         ];
     }
 

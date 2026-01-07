@@ -22,7 +22,10 @@ Route::middleware(['auth'])->prefix('work-hours')->name('work-hours.')->group(fu
     Route::post('/', [WorkHoursController::class, 'store'])
         ->name('store');
     
-    // Work Hours Approval
+    // POST /work-hours/approve-days - Approve specific work hours by date
+    Route::post('/approve-days', [WorkHoursController::class, 'approveDays'])
+        ->name('approve-days');
+    
     // POST /work-hours/approve - Approve work hours (general approval endpoint)
     Route::post('/approve', [WorkHourApprovalController::class, 'approve'])
         ->name('approve');
@@ -38,6 +41,10 @@ Route::middleware(['auth'])->prefix('work-hours')->name('work-hours.')->group(fu
     // POST /work-hours/approve-month - Approve work hours for an entire month
     Route::post('/approve-month', [WorkHoursController::class, 'approveMonth'])
         ->name('approve-month');
+
+    // POST /work-hours/update-comment/{id} - Update comment for a specific work hour record
+    Route::post('/update-comment/{id}', [WorkHoursController::class, 'updateComment'])
+        ->name('update-comment');
     
     // Reports
     // GET /work-hours/download-monthly-report/{month} - Download monthly work hours report

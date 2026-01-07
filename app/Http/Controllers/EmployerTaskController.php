@@ -24,24 +24,13 @@ class EmployerTaskController extends Controller
         $teamTasks = Task::where('created_by', $userId)
             ->with(['assignees', 'comments.user', 'attachments.uploader'])
             ->get()
-            ->filter(function($task) {
-                return $task->assignees->count() > 1;
-            })->values();
+            ->values();
 
-        // 2. Employees with their individual tasks
-        // We need to fetch employees and load tasks where they are the single assignee
-        $employees = \App\Models\User::where('empleador_id', $userId)->get();
-        
-        foreach ($employees as $employee) {
-            $employee->individualTasks = Task::where('created_by', $userId)
-                ->whereHas('assignees', function($q) use ($employee) {
-                    $q->where('user_id', $employee->id);
-                })
-                ->with(['assignees', 'comments.user', 'attachments.uploader'])
-                ->get()
-                ->filter(function($task) {
-                    return $task->assignees->count() === 1;
-                })->values();
+        // 2. Employees (needed for modals and dropdowns)
+        if (Auth::user()->isSuperAdmin()) {
+            $employees = \App\Models\User::where('tipo_usuario', 'empleado')->get();
+        } else {
+             $employees = \App\Models\User::where('empleador_id', Auth::id())->get();
         }
 
         return view('empleadores.ver_tareas_empleados', compact('teamTasks', 'employees'));
@@ -138,6 +127,7 @@ class EmployerTaskController extends Controller
                 'user' => [
                     'id' => $comment->user->id,
                     'name' => $comment->user->name,
+                    'avatar' => $comment->user->avatar,
                 ],
                 'task_id' => $comment->task_id
             ]

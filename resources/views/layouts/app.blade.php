@@ -42,6 +42,18 @@
             <x-layout.footer />
         </div>
         <script>
+            // Handle Session Expiration (419 Page Expired)
+            document.addEventListener('livewire:initialized', () => {
+                Livewire.hook('request', ({ fail }) => {
+                    fail(({ status, preventDefault }) => {
+                        if (status === 419) {
+                            preventDefault();
+                            location.reload();
+                        }
+                    });
+                });
+            });
+
             document.addEventListener('DOMContentLoaded', function() {
                 // Initialize Intro.js logic
                 window.startTour = function() {
@@ -305,13 +317,6 @@
                 @endauth
             });
         </script>
-        <script src="{{ url('/livewire-script') }}" data-csrf="{{ csrf_token() }}" data-update-uri="/livewire/update" data-navigate-once="true"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                if (window.Livewire) {
-                    window.Livewire.start();
-                }
-            });
-        </script>
+        @stack('scripts')
     </body>
 </html>

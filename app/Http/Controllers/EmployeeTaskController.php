@@ -18,13 +18,9 @@ class EmployeeTaskController extends Controller
                          ->orderBy('created_at', 'desc')
                          ->get();
 
-        $teamTasks = $allTasks->filter(function ($task) {
-            return $task->assignees->count() > 1;
-        });
+        $teamTasks = $allTasks;
 
-        $individualTasks = $allTasks->filter(function ($task) {
-            return $task->assignees->count() <= 1; // Assuming 1 assignee, which is the current user
-        });
+        $individualTasks = collect([]);
 
         $pendingTasksCount = $allTasks->where('completed', false)->count();
         $completedTasksCount = $allTasks->where('completed', true)->count();

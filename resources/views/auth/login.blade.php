@@ -10,7 +10,7 @@
     <style>
         body { font-family: 'Montserrat', sans-serif; }
         .bg-gradient-brand {
-            background: linear-gradient(180deg, #FFFFFF 0%, #E0F2FE 40%, #3B82F6 100%);
+            background: linear-gradient(180deg, #FFFFFF 0%, #E0F7FA 40%, #22A9C8 100%);
         }
         .glass-card {
             background: rgba(255, 255, 255, 0.45);
@@ -30,11 +30,11 @@
         }
         .form-input-custom:focus {
             ring: 2px;
-            ring-color: #3B82F6;
+            ring-color: #22A9C8;
         }
         .btn-google {
             background: rgba(255, 255, 255, 0.7);
-            border: 1px solid #3B82F6;
+            border: 1px solid #22A9C8;
             color: #1e1b4b;
             transition: all 0.3s;
         }
@@ -109,7 +109,7 @@
 
             <!-- Submit Button -->
             <div class="pt-2 text-center">
-                <button type="submit" class="bg-[#1D71B8] hover:bg-primary-hover text-white font-bold py-2.5 px-10 rounded-full transition duration-300 shadow-lg w-auto inline-block text-sm">
+                <button type="submit" class="bg-primary hover:bg-primary-hover text-white font-bold py-2.5 px-10 rounded-full transition duration-300 shadow-lg w-auto inline-block text-sm">
                     Iniciar sesión
                 </button>
             </div>
@@ -119,11 +119,11 @@
                 <p class="text-xs text-gray-600 font-medium">
                     ¿Olvidaste tu contraseña? 
                     @if (Route::has('password.request'))
-                    <a href="{{ route('password.request') }}" class="text-primary hover:text-blue-800 underline">Recupérala</a>
+                    <a href="{{ route('password.request') }}" class="text-primary hover:text-primary-hover underline">Recupérala</a>
                     @endif
                 </p>
                  <p class="text-xs text-gray-600 font-medium mt-2">
-                    ¿No tienes una cuenta? <a href="{{ route('register') }}" class="text-primary hover:text-blue-800 underline">Regístrate aquí</a>
+                    ¿No tienes una cuenta? <a href="{{ route('register') }}" class="text-primary hover:text-primary-hover underline">Regístrate aquí</a>
                 </p>
             </div>
         </form>

@@ -42,6 +42,11 @@ class RegisteredUserController extends Controller
             'tipo_usuario' => 'required|string|in:empleador,empleado',
             'empleado_por_id' => 'required_if:tipo_usuario,empleado|nullable|exists:users,id',
             'job_title' => 'nullable|string|max:100',
+            // Company specific fields
+            'company_name' => 'required_if:tipo_usuario,empleador|nullable|string|max:255',
+            'related_contact' => 'required_if:tipo_usuario,empleador|nullable|string|max:255',
+            'phone_number' => 'required_if:tipo_usuario,empleador|nullable|string|max:20',
+            'country' => 'required_if:tipo_usuario,empleador|nullable|string|max:100',
         ]);
 
 
@@ -60,6 +65,10 @@ class RegisteredUserController extends Controller
             'tipo_usuario' => $request->tipo_usuario,
             'empleador_id' => $request->tipo_usuario === 'empleado' ? $request->empleado_por_id : null,
             'job_title' => $request->tipo_usuario === 'empleado' ? $request->job_title : null,
+            'company_name' => $request->tipo_usuario === 'empleador' ? $request->company_name : null,
+            'related_contact' => $request->tipo_usuario === 'empleador' ? $request->related_contact : null,
+            'phone_number' => $request->phone_number, // Can be common
+            'country' => $request->country,
             'avatar' => $avatar,
         ]);
 

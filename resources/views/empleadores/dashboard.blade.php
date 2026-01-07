@@ -9,6 +9,18 @@
                 </div>
             </div>
 
+            @if(session('success'))
+                <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-400 text-green-700">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <!-- Subtitle -->
             <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas totales registradas por los profesionales</h3>
             
@@ -29,7 +41,20 @@
                     <div class="bg-[#F8F9FA] rounded-[20px] p-6 relative flex flex-col items-center shadow-sm h-[320px]">
                         
                         <!-- Header -->
-                        <div class="w-full text-center mb-8 mt-6">
+                        <div class="w-full text-center mb-8 mt-6 relative">
+                            <!-- Status Indicator -->
+                            @if($summary['activity_status'] === 'red')
+                                <div class="absolute -top-4 right-0 flex items-center gap-1">
+                                    <span class="flex h-3 w-3 rounded-full bg-red-500 animate-pulse"></span>
+                                    <span class="text-[10px] font-bold text-red-600 uppercase">Inactivo 2+ días</span>
+                                </div>
+                            @elseif($summary['activity_status'] === 'yellow')
+                                <div class="absolute -top-4 right-0 flex items-center gap-1">
+                                    <span class="flex h-3 w-3 rounded-full bg-yellow-400 animate-pulse"></span>
+                                    <span class="text-[10px] font-bold text-yellow-600 uppercase">Inactivo 1 día</span>
+                                </div>
+                            @endif
+
                             <h4 class="text-xl font-bold text-gray-900">{{ $summary['user']->name }}</h4>
                             <p class="text-gray-500 text-sm font-light">{{ $summary['role'] }}</p>
                         </div>
@@ -62,8 +87,8 @@
 
                         <!-- Footer Text -->
                         <div class="text-center mt-auto mb-2">
-                            <p class="text-gray-500 text-[10px] leading-tight max-w-[180px] mx-auto">
-                                {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas registradas actualmente (Dec 1 - Dec 12)
+                            <p class="text-gray-500 text-sm leading-tight max-w-[200px] mx-auto">
+                                {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas registradas actualmente ({{ $dateRange }})
                             </p>
                         </div>
                     </div>
@@ -95,9 +120,81 @@
                 <div id="employer-calendar" x-data="{ 
                     selectedDay: null,
                     showModal: false,
+                    isApproving: false,
                     openDetails(day) {
-                        this.selectedDay = day;
+                        this.selectedDay = JSON.parse(JSON.stringify(day)); // Deep copy to isolate state
+                        this.selectedDay.employees.forEach(emp => {
+                            if (!emp.hasOwnProperty('new_comment')) emp.new_comment = '';
+                        });
                         this.showModal = true;
+                    },
+                    async approveDay(emp) {
+                        if (this.isApproving) return;
+                        this.isApproving = true;
+                        
+                        try {
+                            const response = await fetch('{{ route('work-hours.approve-days') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    employee_id: emp.id,
+                                    dates: [
+                                        (typeof this.selectedDay.date === 'string' ? this.selectedDay.date : (this.selectedDay.date.date || this.selectedDay.date)).split(' ')[0].split('T')[0]
+                                    ],
+                                    comment: emp.new_comment || ''
+                                })
+                            });
+                            
+                            const data = await response.json();
+                            if (data.success) {
+                                emp.approved = true;
+                                emp.comment = emp.new_comment;
+                                // Optional: Update total hours or reload if needed. 
+                                // For now, just mark as approved visually in the modal.
+                                window.location.reload(); 
+                            } else {
+                                alert(data.message || 'Error al aprobar las horas');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Error de conexión al intentar aprobar');
+                        } finally {
+                            this.isApproving = false;
+                        }
+                    },
+                    async updateComment(emp) {
+                        if (this.isApproving) return;
+                        this.isApproving = true;
+                        
+                        try {
+                            const response = await fetch(`/work-hours/update-comment/${emp.record_id}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    comment: emp.comment
+                                })
+                            });
+                            
+                            const data = await response.json();
+                            if (data.success) {
+                                // Visual feedback
+                            } else {
+                                alert(data.message || 'Error al actualizar el comentario');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Error de conexión');
+                        } finally {
+                            this.isApproving = false;
+                        }
                     }
                 }">
                     <!-- MOBILE VIEW: Simple calendar with modal (current behavior) -->
@@ -144,7 +241,14 @@
                         <!-- Days Grid -->
                         <div class="grid grid-cols-7 gap-3">
                             @foreach($calendar as $day)
-                                <div class="bg-gray-50 rounded-lg p-3 min-h-[120px] flex flex-col">
+                                <div 
+                                    @if($day['is_current_month'])
+                                        @click="openDetails({{ json_encode($day) }})"
+                                        class="bg-gray-50 rounded-lg p-3 min-h-[120px] flex flex-col cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-[#22A9C8]"
+                                    @else
+                                        class="bg-gray-50 rounded-lg p-3 min-h-[120px] flex flex-col"
+                                    @endif
+                                >
                                     @if($day['is_current_month'])
                                         <!-- Day Number Badge -->
                                         <div class="flex justify-center mb-3">
@@ -157,19 +261,13 @@
                                         @if(count($day['employees']) > 0)
                                             <div class="space-y-2 flex-1">
                                                 @foreach($day['employees'] as $employee)
-                                                    <div class="flex items-center gap-2">
+                                                    <div class="flex items-center gap-2" title="{{ $employee['name'] }}">
                                                         <!-- Avatar / Initials -->
-                                                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase shrink-0 overflow-hidden {{ isset($employee['avatar']) && $employee['avatar'] ? 'bg-transparent' : ($employee['color_class'] ?? 'bg-gray-400') }}">
-                                                            @if(isset($employee['avatar']) && $employee['avatar'])
-                                                                <img src="{{ $employee['avatar'] }}" class="w-full h-full object-cover">
-                                                            @else
-                                                                <span class="text-white">{{ $employee['initials'] ?? 'NA' }}</span>
-                                                            @endif
-                                                        </div>
+                                                        <x-user-avatar :name="$employee['name']" :avatar="$employee['avatar']" size="6" />
                                                         
                                                         <!-- Hours -->
                                                         <span class="text-xs text-gray-700 font-medium">
-                                                            {{ round($employee['hours']) }} horas
+                                                            {{ round($employee['hours']) }}h
                                                         </span>
                                                     </div>
                                                 @endforeach
@@ -194,13 +292,16 @@
                         </div>
                     </div>
 
-                    <!-- Custom Backdrop & Modal (Mobile Only) -->
+                    <!-- Custom Backdrop & Modal -->
                     <div
                         x-show="showModal"
                         style="display: none;"
-                        class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-0 md:hidden"
+                        class="fixed inset-0 z-50 overflow-y-auto"
+                        aria-labelledby="modal-title"
+                        role="dialog"
+                        aria-modal="true"
                     >
-                        <!-- Dimmed Background -->
+                        <!-- Backdrop -->
                         <div
                             x-show="showModal"
                             x-transition:enter="ease-out duration-300"
@@ -209,58 +310,144 @@
                             x-transition:leave="ease-in duration-200"
                             x-transition:leave-start="opacity-100"
                             x-transition:leave-end="opacity-0"
-                            class="fixed inset-0 transform transition-all"
+                            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
                             @click="showModal = false"
-                        >
-                            <div class="absolute inset-0 bg-gray-600 opacity-50"></div>
-                        </div>
+                        ></div>
 
-                        <!-- Modal Content -->
-                        <div
-                            x-show="showModal"
-                            x-transition:enter="ease-out duration-300"
-                            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                            x-transition:leave="ease-in duration-200"
-                            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                            class="relative bg-white rounded-[30px] shadow-xl transform transition-all w-full max-w-sm mx-auto p-10"
-                        >
-                            <div class="text-center" x-show="selectedDay">
-                                <h2 class="text-xl font-bold text-gray-900 mb-8 leading-tight">
-                                    Horas registradas por los profesionales
-                                </h2>
-                                
-                                <div class="space-y-6 flex flex-col items-center">
-                                    <template x-for="emp in selectedDay?.employees" :key="emp.initials">
-                                        <div class="flex items-center gap-4 w-full justify-center">
-                                            <!-- Avatar / Initials -->
-                                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold uppercase shrink-0 overflow-hidden"
-                                                 :class="emp.avatar ? 'bg-transparent' : emp.color_class">
-                                                <template x-if="emp.avatar">
-                                                    <img :src="emp.avatar" class="w-full h-full object-cover">
-                                                </template>
-                                                <template x-if="!emp.avatar">
-                                                    <span x-text="emp.initials" class="text-white"></span>
-                                                </template>
-                                            </div>
-                                            
-                                            <!-- Hours -->
-                                            <span class="text-lg text-gray-800 font-normal">
-                                                <span x-text="Math.round(emp.hours)"></span> horas
-                                            </span>
-                                        </div>
-                                    </template>
-                                    
-                                    <div x-show="!selectedDay?.employees?.length" class="text-gray-500">
-                                        No hay horas registradas para este día.
+                        <!-- Modal Panel -->
+                        <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+                            <div
+                                x-show="showModal"
+                                x-transition:enter="ease-out duration-300"
+                                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                x-transition:leave="ease-in duration-200"
+                                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full"
+                            >
+                                <!-- Modal Header -->
+                                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-100">
+                                    <div class="flex justify-between items-center">
+                                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                            Detalle del día <span x-text="selectedDay ? new Date(selectedDay.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' }) : ''"></span>
+                                        </h3>
+                                        <button @click="showModal = false" class="text-gray-400 hover:text-gray-500">
+                                            <span class="sr-only">Cerrar</span>
+                                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div class="mt-8">
+                                <!-- Modal Body -->
+                                <div class="bg-white px-4 py-4 sm:p-6 max-h-[60vh] overflow-y-auto">
+                                    <template x-if="selectedDay && selectedDay.employees.length > 0">
+                                        <div class="space-y-6">
+                                            <template x-for="emp in selectedDay.employees" :key="emp.record_id">
+                                                <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                                    <!-- Employee Header -->
+                                                    <div class="flex items-center justify-between mb-3">
+                                                        <div class="flex items-center gap-3">
+                                                            <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 flex-shrink-0">
+                                                                <img :src="emp.avatar ? (emp.avatar.startsWith('http') ? emp.avatar : '/avatars/' + emp.avatar) : `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}&color=FFFFFF&background=22A9C8`" 
+                                                                     :alt="emp.name" 
+                                                                     class="w-full h-full object-cover">
+                                                            </div>
+                                                            <div>
+                                                                <p class="font-medium text-gray-900" x-text="emp.name"></p>
+                                                                <p class="text-xs text-gray-500">
+                                                                    <span x-text="emp.hours"></span> horas registradas
+                                                                    <span x-show="parseFloat(emp.hours) < 8" class="text-red-500 font-semibold ml-1" x-text="'• ' + (8 - parseFloat(emp.hours)) + 'h ausente'"></span>
+                                                                    <span x-show="emp.approved" class="text-green-600 ml-1 font-semibold">(Aprobado)</span>
+                                                                    <span x-show="!emp.approved" class="text-orange-500 ml-1 font-semibold">(Pendiente)</span>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Absence Reason Section -->
+                                                    <template x-if="parseFloat(emp.hours) < 8 && emp.absence_reason">
+                                                        <div class="mb-3 bg-red-50 rounded-lg p-3 border border-red-100">
+                                                            <label class="block text-xs font-bold text-red-600 uppercase tracking-wider mb-1">Motivo de Ausencia</label>
+                                                            <p class="text-sm text-gray-800 font-medium" x-text="emp.absence_reason"></p>
+                                                        </div>
+                                                    </template>
+
+                                                     <!-- Comment Section (Professional) -->
+                                                     <div class="mt-4">
+                                                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nota del Profesional</label>
+                                                         <div class="bg-white rounded-lg p-3 border border-gray-100 shadow-sm italic text-sm text-gray-700">
+                                                             <template x-if="emp.user_comment && emp.user_comment.trim() !== ''">
+                                                                 <p x-text="emp.user_comment"></p>
+                                                             </template>
+                                                             <template x-if="!emp.user_comment || emp.user_comment.trim() === ''">
+                                                                 <p class="text-gray-400">Sin notas del profesional.</p>
+                                                             </template>
+                                                         </div>
+                                                     </div>
+
+                                                     <!-- Comment Section (Employer / Response) -->
+                                                     <div class="mt-4">
+                                                         <label class="block text-xs font-bold text-primary uppercase tracking-wider mb-1">Tu Observación / Feedback</label>
+                                                                                                                  <!-- If already approved, allow editing feedback -->
+                                                          <template x-if="emp.approved">
+                                                              <div class="space-y-3">
+                                                                  <textarea 
+                                                                      x-model="emp.comment"
+                                                                      @blur="updateComment(emp)"
+                                                                      placeholder="Agregar o editar feedback..."
+                                                                      class="w-full rounded-xl border-gray-100 text-sm shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all italic text-gray-700 bg-gray-50/50"
+                                                                      rows="2"
+                                                                  ></textarea>
+                                                                  <p class="text-[10px] text-gray-400 italic">El feedback se guarda automáticamente al salir del campo.</p>
+                                                              </div>
+                                                          </template>
+
+                                                         <!-- If NOT approved, show approval form -->
+                                                         <template x-if="!emp.approved || emp.approved === false || emp.approved === 0">
+                                                             <div class="space-y-3">
+                                                                 <textarea 
+                                                                     x-model="emp.new_comment"
+                                                                     placeholder="Deja un comentario opcional antes de aprobar..."
+                                                                     class="w-full rounded-xl border-gray-200 text-sm shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all"
+                                                                     rows="2"
+                                                                 ></textarea>
+                                                                 <button 
+                                                                     @click="approveDay(emp)"
+                                                                     :disabled="isApproving"
+                                                                     class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                                                                 >
+                                                                     <svg x-show="!isApproving" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                                     </svg>
+                                                                     <svg x-show="isApproving" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                     </svg>
+                                                                     <span x-text="isApproving ? 'Aprobando...' : 'Aprobar Horas'"></span>
+                                                                 </button>
+                                                             </div>
+                                                         </template>
+                                                     </div>
+                                                 </div>
+                                             </template>
+                                         </div>
+                                     </template>
+                                    
+                                    <template x-if="!selectedDay || selectedDay.employees.length === 0">
+                                        <div class="text-center py-8">
+                                            <p class="text-gray-500">No hay registros de horas para este día.</p>
+                                        </div>
+                                    </template>
+                                </div>
+                                
+                                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100">
                                     <button 
+                                        type="button" 
+                                        class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22A9C8] sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                                         @click="showModal = false"
-                                        class="text-gray-500 hover:text-gray-700 font-medium text-sm underline transition-colors"
                                     >
                                         Cerrar
                                     </button>
@@ -271,6 +458,8 @@
                 </div>
 
             </div>
+
+
         </div>
     </div>
 </x-app-layout>

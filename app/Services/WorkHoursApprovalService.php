@@ -17,7 +17,7 @@ class WorkHoursApprovalService
 
         return WorkHours::where('user_id', $employeeId)
             ->whereBetween('work_date', [$weekStart, $weekEnd])
-            ->update(['approved' => true]);
+            ->update(['approved' => \Illuminate\Support\Facades\DB::raw('true')]);
     }
 
     /**
@@ -31,9 +31,26 @@ class WorkHoursApprovalService
         return WorkHours::where('user_id', $employeeId)
             ->whereBetween('work_date', [$weekStart, $weekEnd])
             ->update([
-                'approved' => true,
+                'approved' => \Illuminate\Support\Facades\DB::raw('true'),
                 'approval_comment' => $comment,
             ]);
+    }
+
+    /**
+     * Approve specific work hours by date
+     */
+    public function approveDates($employeeId, array $dates, $comment = null)
+    {
+        $query = WorkHours::where('user_id', $employeeId)
+            ->whereIn('work_date', $dates);
+
+        $data = ['approved' => \Illuminate\Support\Facades\DB::raw('true')];
+        
+        if ($comment !== null) {
+            $data['approval_comment'] = $comment;
+        }
+
+        return $query->update($data);
     }
 
     /**
@@ -42,7 +59,7 @@ class WorkHoursApprovalService
     public function approveMonth($userId, $month)
     {
         return WorkHours::where('user_id', $userId)
-            ->whereRaw("DATE_FORMAT(work_date, '%Y-%m') = ?", [$month])
-            ->update(['approved' => true]);
+            ->whereRaw("TO_CHAR(work_date, 'YYYY-MM') = ?", [$month])
+            ->update(['approved' => \Illuminate\Support\Facades\DB::raw('true')]);
     }
 }

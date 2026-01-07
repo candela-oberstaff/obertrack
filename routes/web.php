@@ -20,6 +20,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Livewire\Chat;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,18 +57,40 @@ Route::get('/livewire-script', function () {
 Route::middleware(['auth'])->get('/dashboard', function () {
     $user = Auth::user();
     
+    // Analysts (Superadmins) see the admin dashboard
+    if ($user->is_superadmin) {
+        return redirect()->route('admin.dashboard');
+    }
+
     // Employers see the original dashboard with action cards
     if ($user->tipo_usuario === 'empleador') {
-        return view('dashboard', ['nombreUsuario' => $user->name]);
+        return redirect()->route('empleador.dashboard');
     }
     
     // Professionals (employees and managers) see their specific dashboard
     return view('dashboard-professional');
 })->name('dashboard');
 
+// Admin / Analyst Routes
+Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::post('/mass-email', [\App\Http\Controllers\AdminDashboardController::class, 'sendMassEmail'])->name('mass-email');
+    Route::get('/companies', [\App\Http\Controllers\AdminDashboardController::class, 'companies'])->name('companies');
+    Route::get('/professionals', [\App\Http\Controllers\AdminDashboardController::class, 'professionals'])->name('professionals');
+    Route::post('/assign-professional', [\App\Http\Controllers\AdminDashboardController::class, 'assignProfessional'])->name('assign-professional');
+    Route::delete('/unlink-professional/{id}', [\App\Http\Controllers\AdminDashboardController::class, 'unlinkProfessional'])->name('unlink-professional');
+    
+    // Email Templates
+    Route::post('/email-templates/upload-image', [\App\Http\Controllers\EmailTemplateController::class, 'uploadImage'])->name('email-templates.upload-image');
+    Route::resource('email-templates', \App\Http\Controllers\EmailTemplateController::class);
+        
+    // Detailed Views
+    Route::get('/companies/{id}', [\App\Http\Controllers\AdminDashboardController::class, 'showCompany'])->name('companies.show');
+    Route::get('/professionals/{id}/details', [\App\Http\Controllers\AdminDashboardController::class, 'showProfessional'])->name('professionals.show-details');
+});
+
 // Chat Route
-use App\Livewire\Chat;
-Route::middleware(['auth'])->get('/chat', Chat::class)->name('chat');
+Route::middleware(['auth'])->get('/chat/{userId?}', Chat::class)->name('chat');
 
 
 // Contacto Route

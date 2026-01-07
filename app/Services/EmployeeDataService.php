@@ -42,7 +42,7 @@ class EmployeeDataService
         // Single query for all employees - NO N+1!
         $allApprovedHours = WorkHours::whereIn('user_id', $empleados->pluck('id'))
             ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
-            ->where('approved', true)
+            ->whereRaw('approved IS TRUE')
             ->selectRaw('user_id, SUM(hours_worked) as total')
             ->groupBy('user_id')
             ->pluck('total', 'user_id');

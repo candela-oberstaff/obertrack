@@ -6,10 +6,16 @@ RUN apk add --no-cache \
     postgresql-dev \
     zip unzip git curl \
     nodejs npm \
-    nginx
+    nginx \
+    libpng-dev \
+    libwebp-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    zlib-dev
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_pgsql opcache
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
+    docker-php-ext-install pdo pdo_pgsql opcache gd
 
 # Configure PHP for production
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini && \
@@ -41,10 +47,16 @@ RUN apk add --no-cache \
     postgresql-dev \
     nginx \
     curl \
-    supervisor
+    supervisor \
+    libpng-dev \
+    libwebp-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    zlib-dev
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_pgsql opcache
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
+    docker-php-ext-install pdo pdo_pgsql opcache gd
 
 # Configure PHP
 COPY --from=base /usr/local/etc/php/conf.d/opcache.ini /usr/local/etc/php/conf.d/opcache.ini

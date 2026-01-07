@@ -45,6 +45,12 @@ class EmpleadoController extends Controller
     public function registrarHoras(Request $request, CalendarService $calendarService)
     {
         $user = auth()->user();
+
+        // Enforce profile completion
+        if (empty($user->phone_number) || empty($user->location)) {
+            return redirect()->route('profile.edit')->with('error', 'Por favor, completa tus datos personales (teléfono y ubicación) antes de registrar horas.');
+        }
+
         $currentMonth = $request->month ? Carbon::parse($request->month) : Carbon::now();
         
         $calendar = $calendarService->generateCalendar($currentMonth, $user->id);

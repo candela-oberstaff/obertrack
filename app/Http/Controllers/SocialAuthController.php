@@ -25,28 +25,14 @@ class SocialAuthController extends Controller
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if (!$user) {
-                // Determine logic for new users:
-                // For now, let's assume they are "professionals" (empleado) by default
-                // or we could redirect them to a page to finish registration.
-                // But for seamless login, let's create a basic account.
-                
-                $user = User::create([
-                    'name' => $googleUser->getName(),
-                    'email' => $googleUser->getEmail(),
-                    'google_id' => $googleUser->getId(),
-                    'avatar' => $googleUser->getAvatar(),
-                    'password' => Hash::make(Str::random(24)), // Random password
-                    'tipo_usuario' => 'empleado', // Default to professional? Or maybe they need to choose?
-                    // Ideally, we might want to redirect to a "finish setup" page.
-                    // For now, allow access as 'empleado'
-                ]);
-            } else {
-                // Update google_id and avatar if missing or changed
-                $user->update([
-                    'google_id' => $googleUser->getId(),
-                    'avatar' => $googleUser->getAvatar(),
-                ]);
+                return redirect()->route('login')->with('error', 'Tu cuenta de Google no está registrada en Obertrack. Por favor, contacta a un administrador para que cree tu cuenta primero.');
             }
+
+            // Update google_id and avatar if missing or changed
+            $user->update([
+                'google_id' => $googleUser->getId(),
+                'avatar' => $googleUser->getAvatar(),
+            ]);
 
             Auth::login($user);
 

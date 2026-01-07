@@ -42,7 +42,7 @@ class TaskManagementService
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],
             'priority' => $data['priority'],
-            'completed' => $data['completed'] ?? false,
+            'completed' => ($data['completed'] ?? false) ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false'),
         ]);
 
         if (!empty($assignees)) {
@@ -120,8 +120,10 @@ class TaskManagementService
             
             Log::info('Current task data: ' . json_encode($task->toArray()));
 
-            $task->completed = !$task->completed;
-            $result = $task->save();
+            $newStatus = !$task->completed;
+            $result = $task->update([
+                'completed' => $newStatus ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false')
+            ]);
 
             Log::info('Update result: ' . ($result ? 'true' : 'false'));
             Log::info('New task data: ' . json_encode($task->fresh()->toArray()));
@@ -149,7 +151,7 @@ class TaskManagementService
     public function getEmployeeTasks($empleados, $filters = [])
     {
         $query = Task::whereIn('created_by', $empleados->pluck('id'))
-            ->with('comments', 'createdBy');
+            ->with('comments.user', 'createdBy');
 
         return $this->applyFilters($query, $filters)->get();
     }
@@ -162,11 +164,11 @@ class TaskManagementService
         $query = Task::where(function ($query) use ($user) {
             $query->where('created_by', $user->id)
                   ->orWhere('created_by', $user->empleador_id)
-                  ->orWhereIn('created_by', User::where('is_superadmin', true)->pluck('id'));
+                  ->orWhereIn('created_by', User::whereRaw('is_superadmin IS TRUE')->pluck('id'));
         })->whereHas('assignees', function($q) use ($empleados) {
             $q->whereIn('user_id', $empleados->pluck('id'));
         })
-          ->with('comments', 'assignees'); // Loaded assignees instead of visibleTo
+          ->with('comments.user', 'assignees'); // Loaded assignees instead of visibleTo
 
         return $this->applyFilters($query, $filters)->get();
     }
@@ -177,7 +179,7 @@ class TaskManagementService
     private function applyFilters($query, $filters)
     {
         if (isset($filters['status']) && $filters['status'] !== 'all') {
-            $query->where('completed', $filters['status'] === 'completed' ? true : false);
+            $query->where('completed', $filters['status'] === 'completed' ? 1 : 0);
         }
 
         if (isset($filters['search']) && $filters['search']) {

@@ -13,7 +13,7 @@ use App\Http\Middleware\EnsureUserIsEmployer;
 use App\Http\Controllers\WorkHoursController;
 
 // Professional Reports
-Route::middleware(['auth', EnsureUserIsEmployer::class])->prefix('reportes')->name('reportes.')->group(function () {
+Route::middleware(['auth'])->prefix('reportes')->name('reportes.')->group(function () {
     
     // GET /reportes - View list of all professionals with statistics
     Route::get('/', [WorkHoursController::class, 'reportsIndex'])

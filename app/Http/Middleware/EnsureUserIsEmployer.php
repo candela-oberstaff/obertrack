@@ -15,10 +15,10 @@ class EnsureUserIsEmployer
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->user() && $request->user()->tipo_usuario !== 'empleador') {
-            abort(403, 'Unauthorized action.');
+        if ($request->user() && ($request->user()->tipo_usuario === 'empleador' || $request->user()->is_manager)) {
+            return $next($request);
         }
 
-        return $next($request);
+        abort(403, 'Unauthorized action.');
     }
 }
