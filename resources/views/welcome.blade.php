@@ -51,19 +51,9 @@ repeat; background-position: right 0.75rem center; background-size: 1.2em; }
 <header class="fixed top-0 left-0 w-full bg-white/95 backdrop-blur-sm shadow-sm z-50
 h-16 flex items-center">
 <div class="max-w-7xl mx-auto w-full flex justify-between items-center px-5">
-<a class="flex items-center gap-3" href="#">
-<x-application-logo class="h-10 w-auto object-contain" />
-<div class="flex flex-col">
-<div class="relative inline-block">
-<span class="font-bold text-xl tracking-tight text-oldLogoBlue leading-
-none">Obertrack</span>
-<span class="absolute -top-1 -right-3 text-[0.4rem] font-bold text-
-gray-900">TM</span>
-</div>
-<span class="text-[0.55rem] font-bold tracking-widest text-gray-500 uppercase
-leading-none mt-0.5">Remote Work Tracking</span>
-</div>
-</a>
+                <a class="flex items-center" href="#">
+                    <x-application-logo class="h-16 w-auto" />
+                </a>
 <div class="hidden lg:flex gap-4 items-center">
 <a href="{{ url('/register') }}" class="px-4 py-2 border-2 border-brandBlue text-
 brandBlack rounded-full hover:bg-blue-50 transition font-medium text-

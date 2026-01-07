@@ -180,7 +180,7 @@ class BrevoEmailService
             'priorityColor' => $priorityColor,
             'startDate' => $startDate,
             'endDate' => $endDate,
-            'assignedBy' => $taskData['assigned_by'] ?? 'Oberstaff',
+            'assignedBy' => $taskData['assigned_by'] ?? 'Obertrack',
             'taskUrl' => route('empleados.tasks.index')
         ])->render();
     }

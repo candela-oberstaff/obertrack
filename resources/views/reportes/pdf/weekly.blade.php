@@ -28,8 +28,7 @@
 </head>
 <body>
     <div class="header">
-        <img src="{{ public_path('images/logo.png') }}" class="logo" alt="Obertrack Logo">
-        <div class="brand">Obertrack</div>
+        <img src="{{ public_path('images/logo.png') }}" class="logo" style="width: 250px;" alt="Obertrack Logo">
         <div class="report-title">Reporte Semanal de Actividad</div>
     </div>
 

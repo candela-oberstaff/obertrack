@@ -51,11 +51,7 @@
         
         <!-- Logo -->
         <div class="flex flex-col items-center mb-6">
-            <x-application-logo class="block h-12 w-auto fill-current text-gray-800 mb-2" />
-            <div class="text-center">
-                <span class="font-bold text-2xl tracking-tight text-gray-900 leading-none">Obertrack</span>
-                <span class="text-[0.6rem] font-bold tracking-widest text-gray-500 uppercase leading-none block mt-1">REMOTE WORK TRACKING</span>
-            </div>
+            <x-application-logo class="block h-20 w-auto" />
         </div>
 
         <h2 class="text-xl font-bold text-center text-[#1e1b4b] mb-6">

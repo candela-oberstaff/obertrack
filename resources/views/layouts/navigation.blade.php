@@ -4,15 +4,8 @@
         <div class="flex justify-between h-20 items-center">
             <!-- Logo -->
             <div class="shrink-0 flex items-center">
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
-                    <x-application-logo class="block h-10 w-auto fill-current text-gray-800" />
-                    <div class="flex flex-col">
-                        <div class="relative inline-block">
-                            <span class="font-bold text-2xl tracking-tight text-gray-900 leading-none">Obertrack</span>
-                            <span class="absolute -top-1 -right-3 text-[0.5rem] font-bold text-gray-900">TM</span>
-                        </div>
-                        <span class="text-[0.6rem] font-bold tracking-widest text-gray-500 uppercase leading-none mt-0.5">Remote Work Tracking</span>
-                    </div>
+                <a href="{{ route('dashboard') }}" class="flex items-center">
+                    <x-application-logo class="block h-16 w-auto" />
                 </a>
             </div>
 
