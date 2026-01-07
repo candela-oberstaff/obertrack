@@ -173,11 +173,9 @@ class Chat extends Component
         $attachmentPath = null;
         
         if ($attachmentFile) {
-            // Upload to Cloudinary
-            $uploadedFile = Cloudinary::upload($attachmentFile->getRealPath(), [
-                'folder' => 'chat_attachments'
-            ]);
-            $attachmentPath = $uploadedFile->getSecurePath(); // Store the URL
+            // Upload to Local Storage (public disk)
+            $filename = $attachmentFile->store('chat_attachments', 'public');
+            $attachmentPath = $filename; // Store relative path (key) only
         }
 
         // Save to database (multiple if broadcast)
