@@ -87,10 +87,13 @@
 
                         <!-- Footer Text -->
                         <div class="text-center mt-auto mb-2">
+                            <p class="text-gray-700 text-sm font-medium mb-1">
+    {{ $summary['days_worked'] }} días trabajados
+</p>
                             <p class="text-gray-500 text-sm leading-tight max-w-[200px] mx-auto">
                                 {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas registradas actualmente ({{ $dateRange }})
                             </p>
-                        </div>
+                        </div> 
                     </div>
                 @endforeach
             </div>

@@ -224,7 +224,7 @@ class DashboardController extends Controller
 
 
 
-
+ 
 
 
 
@@ -274,6 +274,14 @@ class DashboardController extends Controller
                 'initials' => strtoupper(substr($employee->name, 0, 1) . substr(strrchr($employee->name, ' ') ?: ' ' . substr($employee->name, 1), 1, 1)),
                 'activity_status' => $statusData['status'] ?? 'active',
                 'days_inactive' => $statusData['days_inactive'] ?? 0,
+
+               /* 'days_worked' => $employeeHours->pluck('work_date')->unique()->count(),*/
+
+               'days_worked' => $employeeHours
+    ->pluck('work_date')
+    ->filter(fn($date) => \Carbon\Carbon::parse($date)->isWeekday())
+    ->unique()
+    ->count(), 
             ];
         });
 
@@ -327,6 +335,17 @@ class DashboardController extends Controller
             'calendar'
         ));
     }
+
+
+
+
+
+
+
+
+
+
+
 
     public function sendMassEmail(Request $request, \App\Services\BrevoEmailService $emailService)
     {
