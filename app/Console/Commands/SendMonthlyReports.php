@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\User;
 use App\Services\BrevoEmailService;
+use App\Services\ReportService;
 use Carbon\Carbon;
 
 class SendMonthlyReports extends Command
@@ -12,7 +13,7 @@ class SendMonthlyReports extends Command
     protected $signature = 'reports:send-monthly';
     protected $description = 'Send monthly reports to all companies';
 
-    public function handle(BrevoEmailService $emailService)
+    public function handle(BrevoEmailService $emailService, ReportService $reportService)
     {
         $this->info('Starting monthly report generation...');
         
@@ -65,6 +66,9 @@ class SendMonthlyReports extends Command
                     ];
                 }
                 
+                // Generar PDF detallado
+                $pdfContent = $reportService->generateClientReportPDF($company, $monthStart, $monthEnd, 'Mensual');
+
                 $emailService->sendMonthlyReport(
                     $company->email,
                     $company->name,
@@ -74,6 +78,10 @@ class SendMonthlyReports extends Command
                         'month_end' => $monthEnd->format('d/m/Y'),
                         'professionals' => $reportData,
                         'company_name' => $company->company_name ?? $company->name,
+                    ],
+                    [
+                        'content' => $pdfContent,
+                        'name' => 'Reporte_Mensual_Actividades.pdf'
                     ]
                 );
                 

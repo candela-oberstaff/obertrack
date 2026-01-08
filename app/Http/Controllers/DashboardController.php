@@ -195,7 +195,8 @@ class DashboardController extends Controller
                 'day' => $currentDay->day,
                 'is_current_month' => $currentDay->month === $currentMonth->month,
                 'has_events' => false,
-                'employees' => []
+                'employees' => [],
+                'pending_recoveries_count' => 0
             ];
 
             $dayRecords = $hoursByDate->get($dateStr, collect());
@@ -218,9 +219,18 @@ class DashboardController extends Controller
                         'new_comment' => '',
                         'absence_reason' => $record->absence_reason,
                         'color_class' => $employeeColors[$employee->id] ?? 'bg-gray-500',
+                        'recovered_hours' => $record->recovered_hours ?? 0,
+                        'recovery_comment' => $record->recovery_comment,
+                        'recovery_approved' => (bool)$record->recovery_approved,
                     ];
                 }
             }
+            
+            // Count pending recoveries for this day
+            $dayData['pending_recoveries_count'] = collect($dayData['employees'])
+                ->filter(fn($emp) => $emp['recovered_hours'] > 0 && !$emp['recovery_approved'])
+                ->count();
+            
             $calendar[] = $dayData;
             $currentDay->addDay();
         }

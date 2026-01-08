@@ -26,6 +26,8 @@ class StoreWorkHoursRequest extends FormRequest
             'hours_worked' => 'required|numeric|min:0|max:24',
             'absence_reason' => 'nullable|string|max:500',
             'user_comment' => 'nullable|string|max:1000',
+            'recovered_hours' => 'nullable|numeric|min:0|max:24',
+            'recovery_comment' => 'nullable|string|max:1000',
         ];
     }
 

@@ -1,4 +1,5 @@
-<x-app-layout>
+﻿<x-app-layout>
+   
     <div class="py-8 bg-white min-h-screen font-sans">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
@@ -46,12 +47,12 @@
                             @if($summary['activity_status'] === 'red')
                                 <div class="absolute -top-4 right-0 flex items-center gap-1">
                                     <span class="flex h-3 w-3 rounded-full bg-red-500 animate-pulse"></span>
-                                    <span class="text-[10px] font-bold text-red-600 uppercase">Inactivo 2+ días</span>
+                                    <span class="text-[10px] font-bold text-red-600 uppercase">Inactivo 2+ dÃ­as</span>
                                 </div>
                             @elseif($summary['activity_status'] === 'yellow')
                                 <div class="absolute -top-4 right-0 flex items-center gap-1">
                                     <span class="flex h-3 w-3 rounded-full bg-yellow-400 animate-pulse"></span>
-                                    <span class="text-[10px] font-bold text-yellow-600 uppercase">Inactivo 1 día</span>
+                                    <span class="text-[10px] font-bold text-yellow-600 uppercase">Inactivo 1 dÃ­a</span>
                                 </div>
                             @endif
 
@@ -120,6 +121,8 @@
                 <div id="employer-calendar" x-data="{ 
                     selectedDay: null,
                     showModal: false,
+                    showRecoveryModal: false,
+                    selectedRecoveries: [],
                     isApproving: false,
                     openDetails(day) {
                         this.selectedDay = JSON.parse(JSON.stringify(day)); // Deep copy to isolate state
@@ -161,7 +164,7 @@
                             }
                         } catch (error) {
                             console.error('Error:', error);
-                            alert('Error de conexión al intentar aprobar');
+                            alert('Error de conexiÃ³n al intentar aprobar');
                         } finally {
                             this.isApproving = false;
                         }
@@ -191,7 +194,37 @@
                             }
                         } catch (error) {
                             console.error('Error:', error);
-                            alert('Error de conexión');
+                            alert('Error de conexiÃ³n');
+                        } finally {
+                            this.isApproving = false;
+                        }
+                    },
+                    openRecoveryModal(day) {
+                        this.selectedRecoveries = day.employees.filter(emp => emp.recovered_hours > 0 && !emp.recovery_approved);
+                        this.showRecoveryModal = true;
+                    },
+                    async approveRecovery(recovery) {
+                        if (this.isApproving) return;
+                        this.isApproving = true;
+                        
+                        try {
+                            const response = await fetch(`{{ route('work-hours.approve-recovery', '') }}/${recovery.record_id}`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            
+                            const data = await response.json();
+                            if (data.success) {
+                                window.location.reload();
+                            } else {
+                                alert(data.message || 'Error al aprobar la recuperaciÃ³n');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Error de conexiÃ³n');
                         } finally {
                             this.isApproving = false;
                         }
@@ -212,7 +245,7 @@
                                 <div class="flex flex-col items-center justify-start min-h-[60px]">
                                     @if($day['is_current_month'])
                                         <button 
-                                            @click="openDetails({{ json_encode($day) }})"
+                                            @click="{{ json_encode($day) }}.pending_recoveries_count > 0 ? openRecoveryModal({{ json_encode($day) }}) : openDetails({{ json_encode($day) }})"
                                             class="relative w-12 h-12 rounded-full flex items-center justify-center text-base transition-colors
                                             {{ count($day['employees']) > 0 ? 'bg-gray-200 hover:bg-gray-300 text-gray-800' : 'bg-transparent text-gray-800 hover:bg-gray-100' }}"
                                         >
@@ -221,6 +254,13 @@
                                             <!-- Red Dot Indicator -->
                                             @if(count($day['employees']) > 0)
                                                 <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                                            @endif
+
+                                            <!-- Red Badge for Pending Recoveries -->
+                                            @if($day['pending_recoveries_count'] > 0)
+                                                <span class="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-red-600 rounded-full border-2 border-white z-20">
+                                                    {{ $day['pending_recoveries_count'] }}
+                                                </span>
                                             @endif
                                         </button>
                                     @endif
@@ -233,7 +273,7 @@
                     <div class="hidden md:block w-full border border-[#22A9C8] rounded-xl p-6 bg-white">
                         <!-- Headers -->
                         <div class="grid grid-cols-7 gap-3 mb-6">
-                            @foreach(['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as $dayName)
+                            @foreach(['Domingo', 'Lunes', 'Martes', 'MiÃ©rcoles', 'Jueves', 'Viernes', 'SÃ¡bado'] as $dayName)
                                 <div class="text-center font-bold text-gray-900 text-sm">{{ $dayName }}</div>
                             @endforeach
                         </div>
@@ -243,10 +283,10 @@
                             @foreach($calendar as $day)
                                 <div 
                                     @if($day['is_current_month'])
-                                        @click="openDetails({{ json_encode($day) }})"
-                                        class="bg-gray-50 rounded-lg p-3 min-h-[120px] flex flex-col cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-[#22A9C8]"
+                                        @click="{{ json_encode($day) }}.pending_recoveries_count > 0 ? openRecoveryModal({{ json_encode($day) }}) : openDetails({{ json_encode($day) }})"
+                                        class="relative bg-gray-50 rounded-lg p-3 min-h-[120px] flex flex-col cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-[#22A9C8]"
                                     @else
-                                        class="bg-gray-50 rounded-lg p-3 min-h-[120px] flex flex-col"
+                                        class="relative bg-gray-50 rounded-lg p-3 min-h-[120px] flex flex-col"
                                     @endif
                                 >
                                     @if($day['is_current_month'])
@@ -275,6 +315,13 @@
                                         @else
                                             <div class="flex-1 flex items-center justify-center">
                                                 <span class="text-xs text-gray-400">-</span>
+                                            </div>
+                                        @endif
+
+                                        <!-- Red Badge for Pending Recoveries -->
+                                        @if($day['pending_recoveries_count'] > 0)
+                                            <div class="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-red-600 rounded-full border-2 border-white z-20">
+                                                {{ $day['pending_recoveries_count'] }}
                                             </div>
                                         @endif
                                     @else
@@ -330,7 +377,7 @@
                                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-100">
                                     <div class="flex justify-between items-center">
                                         <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                            Detalle del día <span x-text="selectedDay ? new Date(selectedDay.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' }) : ''"></span>
+                                            Detalle del dÃ­a <span x-text="selectedDay ? new Date(selectedDay.date.slice(0, 10) + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' }) : ''"></span>
                                         </h3>
                                         <button @click="showModal = false" class="text-gray-400 hover:text-gray-500">
                                             <span class="sr-only">Cerrar</span>
@@ -359,7 +406,8 @@
                                                                 <p class="font-medium text-gray-900" x-text="emp.name"></p>
                                                                 <p class="text-xs text-gray-500">
                                                                     <span x-text="emp.hours"></span> horas de tareas
-                                                                    <span x-show="parseFloat(emp.hours) < 8" class="text-red-500 font-semibold ml-1" x-text="'• ' + (8 - parseFloat(emp.hours)) + 'h ausente'"></span>
+                                                                    <span x-show="parseFloat(emp.hours) < 8" class="text-red-500 font-semibold ml-1" x-text="'â€¢ ' + (8 - parseFloat(emp.hours)) + 'h ausente'"></span>
+                                                                    <span x-show="parseFloat(emp.recovered_hours) > 0" class="text-blue-600 font-bold ml-1" x-text="'â€¢ ' + emp.recovered_hours + 'h recuperadas'"></span>
                                                                     <span x-show="emp.approved" class="text-green-600 ml-1 font-semibold">(Aprobado)</span>
                                                                     <span x-show="!emp.approved" class="text-orange-500 ml-1 font-semibold">(Pendiente)</span>
                                                                 </p>
@@ -390,7 +438,7 @@
 
                                                      <!-- Comment Section (Employer / Response) -->
                                                      <div class="mt-4">
-                                                         <label class="block text-xs font-bold text-primary uppercase tracking-wider mb-1">Tu Observación / Feedback</label>
+                                                         <label class="block text-xs font-bold text-primary uppercase tracking-wider mb-1">Tu ObservaciÃ³n / Feedback</label>
                                                                                                                   <!-- If already approved, allow editing feedback -->
                                                           <template x-if="emp.approved">
                                                               <div class="space-y-3">
@@ -401,7 +449,7 @@
                                                                       class="w-full rounded-xl border-gray-100 text-sm shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all italic text-gray-700 bg-gray-50/50"
                                                                       rows="2"
                                                                   ></textarea>
-                                                                  <p class="text-[10px] text-gray-400 italic">El feedback se guarda automáticamente al salir del campo.</p>
+                                                                  <p class="text-[10px] text-gray-400 italic">El feedback se guarda automÃ¡ticamente al salir del campo.</p>
                                                               </div>
                                                           </template>
 
@@ -431,6 +479,39 @@
                                                              </div>
                                                          </template>
                                                      </div>
+                                                      <!-- Recovery Approval Section -->
+                                                      <template x-if="parseFloat(emp.recovered_hours) > 0">
+                                                          <div class="mt-4 pt-4 border-t border-gray-100">
+                                                              <h4 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Solicitud de Recuperación</h4>
+                                                              <div class="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                                                                  <div class="flex justify-between items-start gap-3">
+                                                                       <div class="flex-1">
+                                                                           <p class="text-sm text-gray-900 font-bold mb-1">
+                                                                              <span x-text="emp.recovered_hours"></span> horas
+                                                                              <span x-show="emp.recovery_approved" class="text-green-600 text-xs ml-2 bg-green-100 px-2 py-0.5 rounded-full">Aprobado</span>
+                                                                              <span x-show="!emp.recovery_approved" class="text-orange-600 text-xs ml-2 bg-orange-100 px-2 py-0.5 rounded-full">Pendiente</span>
+                                                                           </p>
+                                                                           
+                                                                           <template x-if="emp.recovery_comment">
+                                                                               <p class="text-xs text-gray-700 italic" x-text="emp.recovery_comment"></p>
+                                                                           </template>
+                                                                           <template x-if="!emp.recovery_comment">
+                                                                               <p class="text-xs text-gray-400 italic">Sin nota.</p>
+                                                                           </template>
+                                                                       </div>
+                                                                       
+                                                                       <div x-show="!emp.recovery_approved">
+                                                                            <button 
+                                                                                @click="approveRecovery(emp)"
+                                                                                class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-2 px-3 rounded-xl shadow-sm transition-colors whitespace-nowrap"
+                                                                            >
+                                                                                Aprobar
+                                                                            </button>
+                                                                       </div>
+                                                                  </div>
+                                                              </div>
+                                                          </div>
+                                                      </template>
                                                  </div>
                                              </template>
                                          </div>
@@ -438,7 +519,7 @@
                                     
                                     <template x-if="!selectedDay || selectedDay.employees.length === 0">
                                         <div class="text-center py-8">
-                                            <p class="text-gray-500">No hay registros de tareas para este día.</p>
+                                            <p class="text-gray-500">No hay registros de tareas para este dÃ­a.</p>
                                         </div>
                                     </template>
                                 </div>
@@ -455,6 +536,134 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Recovery Modal -->
+                    <div
+                        x-show="showRecoveryModal"
+                        style="display: none;"
+                        class="fixed inset-0 z-50 overflow-y-auto"
+                        aria-labelledby="recovery-modal-title"
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        <!-- Backdrop -->
+                        <div
+                            x-show="showRecoveryModal"
+                            x-transition:enter="ease-out duration-300"
+                            x-transition:enter-start="opacity-0"
+                            x-transition:enter-end="opacity-100"
+                            x-transition:leave="ease-in duration-200"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                            @click="showRecoveryModal = false"
+                        ></div>
+
+                        <!-- Modal Panel -->
+                        <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+                            <div
+                                x-show="showRecoveryModal"
+                                x-transition:enter="ease-out duration-300"
+                                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                x-transition:leave="ease-in duration-200"
+                                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-2xl w-full"
+                            >
+                                <!-- Modal Header -->
+                                <div class="bg-red-50 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-red-100">
+                                    <div class="flex justify-between items-center">
+                                        <h3 class="text-lg leading-6 font-bold text-red-900 flex items-center gap-2" id="recovery-modal-title">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                            </svg>
+                                            Solicitudes de RecuperaciÃ³n de Horas
+                                        </h3>
+                                        <button @click="showRecoveryModal = false" class="text-gray-400 hover:text-gray-500">
+                                            <span class="sr-only">Cerrar</span>
+                                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Modal Body -->
+                                <div class="bg-white px-4 py-4 sm:p-6 max-h-[60vh] overflow-y-auto">
+                                    <template x-if="selectedRecoveries.length > 0">
+                                        <div class="space-y-4">
+                                            <template x-for="recovery in selectedRecoveries" :key="recovery.record_id">
+                                                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                                    <!-- Employee Header -->
+                                                    <div class="flex items-center justify-between mb-3">
+                                                        <div class="flex items-center gap-3">
+                                                            <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 flex-shrink-0">
+                                                                <img :src="recovery.avatar ? (recovery.avatar.startsWith('http') ? recovery.avatar : '/avatars/' + recovery.avatar) : `https://ui-avatars.com/api/?name=${encodeURIComponent(recovery.name)}&color=FFFFFF&background=22A9C8`" 
+                                                                     :alt="recovery.name" 
+                                                                     class="w-full h-full object-cover">
+                                                            </div>
+                                                            <div>
+                                                                <p class="font-bold text-gray-900" x-text="recovery.name"></p>
+                                                                <p class="text-xs text-gray-500">
+                                                                    <span class="font-bold text-red-600" x-text="recovery.recovered_hours + 'h'"></span> a recuperar
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Recovery Details -->
+                                                    <div class="mt-3 bg-white rounded-lg p-3 border border-gray-100">
+                                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Actividades Realizadas</label>
+                                                        <template x-if="recovery.recovery_comment && recovery.recovery_comment.trim() !== ''">
+                                                            <p class="text-sm text-gray-700 whitespace-pre-line" x-text="recovery.recovery_comment"></p>
+                                                        </template>
+                                                        <template x-if="!recovery.recovery_comment || recovery.recovery_comment.trim() === ''">
+                                                            <p class="text-sm text-gray-400 italic">Sin detalles</p>
+                                                        </template>
+                                                    </div>
+
+                                                    <!-- Approve Button -->
+                                                    <div class="mt-4">
+                                                        <button 
+                                                            @click="approveRecovery(recovery)"
+                                                            :disabled="isApproving"
+                                                            class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                                                        >
+                                                            <svg x-show="!isApproving" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            <svg x-show="isApproving" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                            <span x-text="isApproving ? 'Aprobando...' : 'Aprobar RecuperaciÃ³n'"></span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                   
+                                    <template x-if="selectedRecoveries.length === 0">
+                                        <div class="text-center py-8">
+                                            <p class="text-gray-500">No hay solicitudes de recuperaciÃ³n para este dÃ­a.</p>
+                                        </div>
+                                    </template>
+                                </div>
+                                
+                                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100">
+                                    <button 
+                                        type="button" 
+                                        class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                        @click="showRecoveryModal = false"
+                                    >
+                                        Cerrar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -463,3 +672,5 @@
         </div>
     </div>
 </x-app-layout>
+
+

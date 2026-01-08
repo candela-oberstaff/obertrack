@@ -86,7 +86,10 @@ class WorkHoursController extends Controller
                     'hours_worked' => $request->hours_worked, 
                     'user_comment' => $request->user_comment,
                     'absence_reason' => $request->absence_reason,
-                    'absence_hours' => $absenceHours
+                    'absence_hours' => $absenceHours,
+                    'recovered_hours' => $request->recovered_hours ?? 0,
+                    'recovery_comment' => $request->recovery_comment,
+                    'recovery_approved' => DB::raw('FALSE') // Always false when created/updated by professional
                 ]
             );
         }
@@ -95,7 +98,7 @@ class WorkHoursController extends Controller
         $totalHours = WorkHours::where('user_id', auth()->id())
             ->whereYear('work_date', $currentMonth->year)
             ->whereMonth('work_date', $currentMonth->month)
-            ->sum('hours_worked');
+            ->sum(DB::raw('hours_worked + CASE WHEN recovery_approved = true THEN recovered_hours ELSE 0 END'));
     
         // Send notification to employer with cooldown
         try {
@@ -145,6 +148,20 @@ class WorkHoursController extends Controller
                 ";
                 
                 $this->emailService->sendEmail($user->email, $user->name, $emailSubject, $emailContent);
+            }
+
+            // NEW: Send notification for recovery request
+            if ($request->recovered_hours > 0 && $employer) {
+                $this->emailService->sendRecoveryRequestNotification(
+                    $employer->email,
+                    $employer->name,
+                    [
+                        'employee_name' => $user->name,
+                        'date' => $workDate->format('d/m/Y'),
+                        'hours' => $request->recovered_hours,
+                        'activities' => $request->recovery_comment
+                    ]
+                );
             }
 
         } catch (\Exception $e) {
@@ -259,6 +276,22 @@ class WorkHoursController extends Controller
         $workHour->update(['approval_comment' => $request->comment]);
 
         return response()->json(['success' => true, 'message' => 'Comentario actualizado.']);
+    }
+
+    public function approveRecovery(Request $request, $id)
+    {
+        $workHour = WorkHours::findOrFail($id);
+        $user = auth()->user();
+
+        // Check if user is the employer of the professional
+        $professional = User::findOrFail($workHour->user_id);
+        if (!$user->is_superadmin && sprintf('%s', $professional->empleador_id) !== sprintf('%s', $user->id)) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $workHour->update(['recovery_approved' => DB::raw('TRUE')]);
+
+        return response()->json(['success' => true, 'message' => 'Recuperación aprobada correctamente.']);
     }
 
 
@@ -398,8 +431,13 @@ class WorkHoursController extends Controller
                 $monthStart = Carbon::now()->startOfMonth();
                 $monthHours = WorkHours::where('user_id', $professional->id)
                     ->whereBetween('work_date', [$monthStart->format('Y-m-d'), Carbon::now()->format('Y-m-d')])
-                    ->whereRaw('approved IS TRUE')
-                    ->sum('hours_worked');
+                    ->where('approved', true) // Only approved standard hours
+                    ->sum(DB::raw('hours_worked + CASE WHEN recovery_approved = true THEN recovered_hours ELSE 0 END'));
+
+                $pendingRecoveries = WorkHours::where('user_id', $professional->id)
+                    ->where('recovered_hours', '>', 0)
+                    ->where('recovery_approved', false)
+                    ->get();
 
                 return [
                     'id' => $professional->id,
@@ -410,6 +448,8 @@ class WorkHoursController extends Controller
                     'incomplete_tasks' => $incompleteTasks,
                     'comment_count' => $commentsCount,
                     'has_pending_weeks' => $pendingHours > 0,
+                    'pending_recoveries' => $pendingRecoveries,
+                    'has_pending_recoveries' => $pendingRecoveries->count() > 0,
                     'month_hours' => $monthHours,
                     'index' => $index + 1,
                     'professional' => $professional
@@ -493,8 +533,8 @@ class WorkHoursController extends Controller
         $monthEnd = $weekStart->copy()->endOfMonth();
         $monthHours = WorkHours::where('user_id', $user->id)
             ->whereBetween('work_date', [$monthStart->format('Y-m-d'), min($today, $monthEnd)->format('Y-m-d')])
-            ->whereRaw('approved IS TRUE')
-            ->sum('hours_worked');
+            ->where('approved', true)
+            ->sum(DB::raw('hours_worked + CASE WHEN recovery_approved = true THEN recovered_hours ELSE 0 END'));
 
         return view('reportes.show', [
             'professional' => $user,
@@ -606,7 +646,7 @@ class WorkHoursController extends Controller
             ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
             ->get();
             
-        $totalApprovedHours = $monthHours->where('approved', true)->sum('hours_worked');
+        $totalApprovedHours = $monthHours->where('approved', true)->sum('hours_worked') + $monthHours->where('recovery_approved', true)->sum('recovered_hours');
 
         // Calculate absences for the month
         $absences = 0;

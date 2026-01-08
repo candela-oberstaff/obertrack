@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\User;
 use App\Services\BrevoEmailService;
+use App\Services\ReportService;
 use Carbon\Carbon;
 
 class SendWeeklyReports extends Command
@@ -12,7 +13,7 @@ class SendWeeklyReports extends Command
     protected $signature = 'reports:send-weekly';
     protected $description = 'Send weekly reports to all companies';
 
-    public function handle(BrevoEmailService $emailService)
+    public function handle(BrevoEmailService $emailService, ReportService $reportService)
     {
         $this->info('Starting weekly report generation...');
         
@@ -65,7 +66,10 @@ class SendWeeklyReports extends Command
                     ];
                 }
                 
-                // Send consolidated email
+                // Generar PDF detallado (Desglose de actividades, etc.)
+                $pdfContent = $reportService->generateClientReportPDF($company, $weekStart, $weekEnd, 'Semanal');
+
+                // Send consolidated email with attachment
                 $emailService->sendWeeklyReport(
                     $company->email,
                     $company->name,
@@ -74,6 +78,10 @@ class SendWeeklyReports extends Command
                         'week_end' => $weekEnd->format('d/m/Y'),
                         'professionals' => $reportData,
                         'company_name' => $company->company_name ?? $company->name,
+                    ],
+                    [
+                        'content' => $pdfContent,
+                        'name' => 'Reporte_Semanal_Actividades.pdf'
                     ]
                 );
                 

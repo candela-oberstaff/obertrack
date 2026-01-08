@@ -3,57 +3,52 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Models\WorkHours;
+use Carbon\Carbon;
 use App\Services\ProfessionalActivityService;
 use App\Services\BrevoEmailService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 
 class RemindProfessionalsRegistration extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'remind:professional-registration';
+    protected $description = 'Reminder for professionals to register hours (Mon/Wed/Fri)';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Daily reminder for professionals who haven\'t registered their hours';
-
-    /**
-     * Execute the console command.
-     */
     public function handle(ProfessionalActivityService $activityService, BrevoEmailService $emailService)
     {
-        $this->info('Finding professionals in need of reminders...');
-        
-        $professionalsStatus = $activityService->getProfessionalsStatus();
-        // Yellow means they missed 1 day. Red means they missed 2. 
-        // We should remind everyone who isn't 'active'.
-        $toRemind = $professionalsStatus->whereIn('status', ['yellow', 'red']);
+        $this->info('Starting scheduled reminder check...');
 
-        if ($toRemind->isEmpty()) {
-            $this->info('Everyone is up to date!');
-            return;
-        }
+        $professionals = User::where('tipo_usuario', 'empleado')->get();
+        // Use the existing service to determine if they are lagging behind
+        $statuses = $activityService->getStatusesForUsers($professionals);
 
-        $this->info('Sending reminders to ' . $toRemind->count() . ' professionals.');
-
-        foreach ($toRemind as $item) {
-            $user = $item['user'];
-            try {
-                // I need another method in BrevoEmailService for this
-                $emailService->sendRegistrationReminder($user->email, $user->name);
-                $this->info("✓ Sent to {$user->name}");
-            } catch (\Exception $e) {
-                $this->error("✗ Failed for {$user->name}: {$e->getMessage()}");
+        $count = 0;
+        foreach ($statuses as $data) {
+            $user = $data['user'];
+            $status = $data['status']; // 'active', 'yellow', 'red'
+            
+            // Check absences in the current week up to today
+            $absences = WorkHours::where('user_id', $user->id)
+                ->where('absence_hours', '>', 0)
+                ->whereBetween('work_date', [Carbon::now()->startOfWeek(), Carbon::now()])
+                ->pluck('work_date')
+                ->toArray();
+            
+            // Logic: Send reminder if they are inactive (missing hours) OR if they have registered absences to confirm
+            if ($status !== 'active' || !empty($absences)) {
+                try {
+                    $emailService->sendRegistrationReminder($user->email, $user->name, $absences);
+                    $this->info("✓ Sent to {$user->name} (Status: {$status}, Absences: " . count($absences) . ")");
+                    $count++;
+                } catch (\Exception $e) {
+                    $this->error("✗ Failed for {$user->name}: {$e->getMessage()}");
+                }
+            } else {
+                 $this->info("- Skipped {$user->name} (Active, No Absences)");
             }
         }
 
+        $this->info("Done. Sent $count reminders.");
         return Command::SUCCESS;
     }
 }

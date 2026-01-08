@@ -63,6 +63,7 @@
                     </svg>
                     <span class="ms-2">WhatsApp</span>
                 </a>
+                {{-- Cache buster: Force recompile --}}
 
                 <livewire:chat-notification />
 
@@ -83,7 +84,13 @@
                         ->whereRaw('approved IS FALSE')
                         ->exists();
                     
-                    if ($totalPendingHours && $empleados->count() > 0) {
+                    // Check for pending recoveries
+                    $totalPendingRecoveries = \App\Models\WorkHours::whereIn('user_id', $empleados->pluck('id'))
+                        ->where('recovered_hours', '>', 0)
+                        ->whereRaw('recovery_approved IS FALSE')
+                        ->exists();
+                    
+                    if (($totalPendingHours || $totalPendingRecoveries) && $empleados->count() > 0) {
                         // Get detailed breakdown by employee
                         $workHoursSummary = [];
                         foreach ($empleados as $empleado) {
@@ -99,16 +106,31 @@
                             }
                         }
                         
-                        if (!empty($workHoursSummary)) {
+                        // Get recovery requests
+                        $recoveryRequests = \App\Models\WorkHours::whereIn('user_id', $empleados->pluck('id'))
+                            ->where('recovered_hours', '>', 0)
+                            ->whereRaw('recovery_approved IS FALSE')
+                            ->with('user')
+                            ->get();
+                        
+                        if (!empty($workHoursSummary) || $recoveryRequests->count() > 0) {
                             $pendingWeeks[] = [
                                 'start' => \Illuminate\Support\Carbon::now()->subWeek(),
                                 'end' => \Illuminate\Support\Carbon::now(),
-                                'summary' => $workHoursSummary
+                                'summary' => $workHoursSummary,
+                                'recovery_requests' => $recoveryRequests
                             ];
                         }
                     }
                     
-                    $pendingCount = count($pendingWeeks);
+                    // Count both pending hours and recovery requests
+                    $pendingCount = 0;
+                    foreach ($pendingWeeks as $week) {
+                        $pendingCount += count($week['summary']);
+                        if (isset($week['recovery_requests'])) {
+                            $pendingCount += $week['recovery_requests']->count();
+                        }
+                    }
                 @endphp
                 <x-notifications.employer-bell :pendingCount="$pendingCount" :pendingWeeks="$pendingWeeks" />
             @endif

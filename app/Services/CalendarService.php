@@ -61,9 +61,9 @@ class CalendarService
      */
     public function getTotalHoursForMonth(Carbon $month, int $userId): float
     {
-        return WorkHours::where('user_id', $userId)
+        return (float) WorkHours::where('user_id', $userId)
             ->whereYear('work_date', $month->year)
             ->whereMonth('work_date', $month->month)
-            ->sum('hours_worked');
+            ->sum(\Illuminate\Support\Facades\DB::raw('hours_worked + CASE WHEN recovery_approved = true THEN recovered_hours ELSE 0 END'));
     }
 }

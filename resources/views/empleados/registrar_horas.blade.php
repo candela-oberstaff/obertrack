@@ -72,6 +72,16 @@
                          <span class="block text-[10px] text-gray-400 font-medium">(Total)</span>
                     </div>
                 </div>
+
+                <div class="mt-6 md:mt-0">
+                    <button @click="openRecoveryModal()" 
+                            class="inline-flex items-center gap-2 bg-[#22A9C8] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:bg-[#1d91ac] transition active:scale-95">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Recuperar horas
+                    </button>
+                </div>
             </div>
 
             {{-- Calendar Section --}}
@@ -380,6 +390,160 @@
             </div>
         </div>
 
+        {{-- Recovery Modal --}}
+        <div x-show="isRecoveryModalOpen" 
+             style="display: none;"
+             class="fixed inset-0 z-50 overflow-y-auto" 
+             aria-labelledby="modal-title" 
+             role="dialog" 
+             aria-modal="true">
+             
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                
+                <div x-show="isRecoveryModalOpen" 
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+                     @click="closeRecoveryModal()"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <div x-show="isRecoveryModalOpen"
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    
+                    {{-- Modal Header --}}
+                    <div class="bg-gray-50 px-4 py-4 sm:px-6 flex justify-between items-center border-b border-gray-100 rounded-t-2xl">
+                        <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">
+                            Recuperar horas
+                        </h3>
+                         <button @click="closeRecoveryModal()" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                            <span class="sr-only">Cerrar</span>
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        
+                        {{-- Section Title --}}
+                        <div class="mb-6">
+                            <h4 class="text-[#22A9C8] font-bold text-lg mb-1">Registro de recuperación</h4>
+                            <p class="text-xs text-gray-500 italic">Registra las horas recuperadas y las actividades realizadas. Recuerda que esto debe estar autorizado por el cliente.</p>
+                        </div>
+
+                        {{-- Date Selection --}}
+                        <div class="mb-6">
+                            <label class="block text-gray-800 font-medium mb-2">Fecha de recuperación</label>
+                            <input type="date" x-model="recoveryDate" 
+                                   class="w-full bg-gray-50 border-gray-200 rounded-xl focus:ring-[#22A9C8] focus:border-[#22A9C8] text-sm text-gray-700">
+                        </div>
+
+                        {{-- Recovery Hours --}}
+                        <div class="bg-gray-50 rounded-xl p-6 mb-6 flex items-center justify-between">
+                            <div class="text-gray-500 italic text-sm w-1/2">
+                                Horas a recuperar
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-4xl font-bold text-black" x-text="recoveryHours.toFixed(1)"></span>
+                                <div class="flex flex-col gap-1">
+                                    <button @click="if(recoveryHours < 8) recoveryHours += 0.5" class="w-8 h-8 rounded bg-[#d0eef5] text-[#22A9C8] flex items-center justify-center hover:bg-[#b0e0eb] active:scale-95 transition focus:outline-none">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                    </button>
+                                    <button @click="if(recoveryHours > 0.5) recoveryHours -= 0.5" class="w-8 h-8 rounded bg-[#d0eef5] text-[#22A9C8] flex items-center justify-center hover:bg-[#b0e0eb] active:scale-95 transition focus:outline-none">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Activities --}}
+                        <label class="block text-gray-800 font-medium mb-3">Actividades realizadas</label>
+                        
+                        {{-- Toggle --}}
+                        <div class="flex gap-2 mb-4">
+                            <button @click="recoveryDescriptionMode = 'list'" 
+                                    class="px-6 py-1.5 rounded-full text-sm font-medium transition-colors border focus:outline-none"
+                                    :class="recoveryDescriptionMode === 'list' ? 'bg-[#22A9C8] text-white border-[#22A9C8]' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50'">
+                                Lista
+                            </button>
+                            <button @click="recoveryDescriptionMode = 'text'" 
+                                    class="px-6 py-1.5 rounded-full text-sm font-medium transition-colors border focus:outline-none"
+                                    :class="recoveryDescriptionMode === 'text' ? 'bg-[#22A9C8] text-white border-[#22A9C8]' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50'">
+                                Texto
+                            </button>
+                        </div>
+
+                        {{-- List Mode --}}
+                        <div x-show="recoveryDescriptionMode === 'list'">
+                            <div class="bg-gray-50 rounded-lg p-2 flex items-center mb-4 border border-gray-100 focus-within:ring-1 focus-within:ring-[#22A9C8]">
+                                <input type="text" x-model="newRecoveryActivity" @keydown.enter.prevent="addRecoveryActivity()" 
+                                       placeholder="Escribe aquí la actividad" 
+                                       class="bg-transparent border-none focus:ring-0 w-full text-gray-600 text-sm placeholder-gray-400 italic">
+                                <button @click="addRecoveryActivity()" class="p-1 text-[#22A9C8] hover:bg-gray-100 rounded-full">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
+                                </button>
+                            </div>
+                            
+                            <ul class="space-y-3 pl-1 max-h-32 overflow-y-auto">
+                                <template x-for="(activity, index) in recoveryActivities" :key="index">
+                                    <li class="flex items-start gap-3">
+                                        <span class="w-3 h-3 rounded-full bg-[#22A9C8] mt-1.5 flex-shrink-0"></span>
+                                        <span class="flex-1 text-sm text-gray-700" x-text="activity"></span>
+                                        <button @click="removeRecoveryActivity(index)" class="text-gray-400 hover:text-red-500 transition-colors">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        </button>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+
+                        {{-- Text Mode --}}
+                        <div x-show="recoveryDescriptionMode === 'text'">
+                            <textarea x-model="recoveryUserComment" rows="3" 
+                                      class="w-full bg-gray-50 border-gray-200 rounded-xl focus:ring-[#22A9C8] focus:border-[#22A9C8] text-sm text-gray-700"
+                                      placeholder="Escribe aquí el resumen..."></textarea>
+                        </div>
+
+                        {{-- Authorization message removed, professional now sends request --}}
+                        <div class="mt-6">
+                            <p class="text-xs text-gray-500 italic">Al enviar esta solicitud, la empresa recibirá una notificación para su revisión y aprobación.</p>
+                        </div>
+
+                    </div>
+                    
+                    {{-- Footer Actions --}}
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100 rounded-b-2xl">
+                        <button type="button" 
+                                @click="saveRecoveryHours()"
+                                :disabled="isSaving"
+                                class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-6 py-3 bg-[#22A9C8] text-base font-medium text-white hover:bg-[#1d91ac] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22A9C8] sm:ml-3 sm:w-auto sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                             <span x-show="!isSaving">Enviar solicitud</span>
+                             <span x-show="isSaving" class="flex items-center">
+                                 <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                 Guardando...
+                             </span>
+                        </button>
+                        <button type="button" 
+                                @click="closeRecoveryModal()" 
+                                class="mt-3 w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-6 py-3 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22A9C8] sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-all">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     @push('scripts')
@@ -402,6 +566,16 @@
                  newActivity: '',
                  activities: [],
                  isSaving: false,
+
+                 // Recovery fields
+                 isRecoveryModalOpen: false,
+                 recoveryDate: new Date().toISOString().split('T')[0],
+                 recoveryHours: 1,
+                 recoveryActivities: [],
+                 newRecoveryActivity: '',
+                 recoveryAuthorized: false,
+                 recoveryDescriptionMode: 'list',
+                 recoveryUserComment: '',
                  
                  absenceOptions: [
                      'Cita médica',
@@ -527,6 +701,12 @@
 
                      this.isSaving = true;
 
+                     // Safety check: ensure hours correspond to absence
+                     if (this.workedFullDay === 'no') {
+                         this.hours = 8 - this.absenceHours;
+                         if (this.hours < 0) this.hours = 0;
+                     }
+
                      let finalReason = this.absenceReason;
                      if (this.absenceReason === 'Otro') {
                          finalReason = this.otherReasonText;
@@ -579,6 +759,75 @@
                          this.isSaving = false;
                          console.error('Error:', error);
                          alert(error.message || 'Error de conexión.');
+                     });
+                 },
+
+                 addRecoveryActivity() {
+                     if (this.newRecoveryActivity.trim() !== '') {
+                         this.recoveryActivities.push(this.newRecoveryActivity.trim());
+                         this.newRecoveryActivity = '';
+                     }
+                 },
+
+                 removeRecoveryActivity(index) {
+                     this.recoveryActivities.splice(index, 1);
+                 },
+
+                 openRecoveryModal() {
+                     this.isRecoveryModalOpen = true;
+                     this.recoveryDate = new Date().toISOString().split('T')[0];
+                     this.recoveryHours = 1;
+                     this.recoveryActivities = [];
+                     this.recoveryAuthorized = false;
+                     this.recoveryUserComment = '';
+                 },
+
+                 closeRecoveryModal() {
+                     this.isRecoveryModalOpen = false;
+                 },
+
+                 saveRecoveryHours() {
+                     if (this.recoveryHours <= 0) {
+                         alert('Las horas a recuperar deben ser mayores a 0.');
+                         return;
+                     }
+
+                     this.isSaving = true;
+
+                     let finalComment = '';
+                     if (this.recoveryDescriptionMode === 'list') {
+                         finalComment = this.recoveryActivities.join('\n');
+                     } else {
+                         finalComment = this.recoveryUserComment;
+                     }
+
+                     fetch('{{ route('work-hours.store') }}', {
+                         method: 'POST',
+                         headers: {
+                             'Content-Type': 'application/json',
+                             'Accept': 'application/json',
+                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                         },
+                         body: JSON.stringify({
+                              work_date: this.recoveryDate,
+                              hours_worked: 0,
+                              recovered_hours: this.recoveryHours,
+                              recovery_comment: finalComment,
+                              user_comment: '[RECUPERACIÓN] ' + finalComment
+                          })
+                     })
+                     .then(response => response.json())
+                     .then(data => {
+                         this.isSaving = false;
+                         if (data.success) {
+                             window.location.reload(); 
+                         } else {
+                             alert(data.message || 'Error al guardar.');
+                         }
+                     })
+                     .catch(error => {
+                         this.isSaving = false;
+                         alert('Error de conexión.');
                      });
                  }
              }));

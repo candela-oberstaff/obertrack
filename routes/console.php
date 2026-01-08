@@ -10,7 +10,8 @@ Artisan::command('inspire', function () {
 
 // 1. Daily reminder for professionals (Yellow/Red status)
 Schedule::command('remind:professional-registration')
-    ->dailyAt('10:00')
+    ->days([1, 3, 5])
+    ->at('10:00')
     ->timezone('America/Argentina/Buenos_Aires');
 
 // 2. Activity check for Analyst (Red alerts)

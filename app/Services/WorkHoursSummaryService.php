@@ -73,14 +73,30 @@ class WorkHoursSummaryService
             
             $pendingHoursExists = WorkHours::whereIn('user_id', $empleados->pluck('id'))
                 ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
-                ->whereRaw('approved IS FALSE')
+                ->where(function($query) {
+                    $query->whereRaw('approved IS FALSE')
+                          ->orWhere(function($q) {
+                              $q->where('recovered_hours', '>', 0)
+                                ->whereRaw('recovery_approved IS FALSE');
+                          });
+                })
                 ->exists();
             
             if ($pendingHoursExists) {
+                $summary = $this->getWorkHoursSummary($empleados, $weekStart, $weekEnd);
+                
+                // Add recovery pending data
+                $recoveryPending = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+                    ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
+                    ->where('recovered_hours', '>', 0)
+                    ->whereRaw('recovery_approved IS FALSE')
+                    ->get();
+                
                 $pendingWeeks[] = [
                     'start' => $weekStart,
                     'end' => $weekEnd,
-                    'summary' => $this->getWorkHoursSummary($empleados, $weekStart, $weekEnd)
+                    'summary' => $summary,
+                    'recovery_requests' => $recoveryPending
                 ];
             }
         }

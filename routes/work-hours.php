@@ -45,6 +45,10 @@ Route::middleware(['auth'])->prefix('work-hours')->name('work-hours.')->group(fu
     // POST /work-hours/update-comment/{id} - Update comment for a specific work hour record
     Route::post('/update-comment/{id}', [WorkHoursController::class, 'updateComment'])
         ->name('update-comment');
+
+    // POST /work-hours/approve-recovery/{id} - Approve recovery hours request
+    Route::post('/approve-recovery/{id}', [WorkHoursController::class, 'approveRecovery'])
+        ->name('approve-recovery');
     
     // Reports
     // GET /work-hours/download-monthly-report/{month} - Download monthly work hours report
