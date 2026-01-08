@@ -47,7 +47,7 @@
                         Registrar tareas
                     </a>
                     <a href="{{ route('empleados.tasks.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleados.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
-                        Tareas
+                        Tareas asignadas
                     </a>
                 @endif
 
@@ -199,7 +199,7 @@
                 {{ __('Notificar tareas') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('empleados.tasks.index')" :active="request()->routeIs('empleados.tasks.index')">
-                {{ __('Mis Tareas') }}
+                {{ __('Tareas asignadas') }}
             </x-responsive-nav-link>
         @endif        @if(auth()->user()->tipo_usuario === 'empleador')
                 <x-responsive-nav-link :href="route('empleador.dashboard')" :active="request()->routeIs('empleador.dashboard')">
@@ -223,7 +223,7 @@
                 @endif
 
                 <x-responsive-nav-link :href="route('empleadores.tareas-asignadas')" :active="request()->routeIs('empleadores.tareas-asignadas')">
-                    Tareas
+                    Tareas asignadas
                 </x-responsive-nav-link>
                 
 

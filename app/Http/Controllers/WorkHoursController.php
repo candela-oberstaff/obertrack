@@ -165,9 +165,6 @@ class WorkHoursController extends Controller
         ]);
     }
 
-        return view('work_hours.index', compact('calendar', 'currentMonth', 'totalHours'));
-    }
-*/
     public function index()
     {
         $currentMonth = now()->startOfMonth();
