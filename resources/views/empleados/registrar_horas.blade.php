@@ -235,6 +235,21 @@
 
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                         
+                        {{-- Restriction Warning --}}
+                        <div x-show="selectedDate < today" 
+                             x-transition:enter="ease-out duration-300"
+                             x-transition:enter-start="opacity-0 -translate-y-2"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             class="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
+                            <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            </div>
+                            <div>
+                                <p class="text-xs text-amber-900 font-bold">Edición restringida</p>
+                                <p class="text-[10px] text-amber-700 mt-0.5">Solo puedes registrar o editar actividades el mismo día. Para cambios en días pasados, contacta a soporte.</p>
+                            </div>
+                        </div>
+
                         {{-- Section Title --}}
                         <div class="mb-6">
                             <h4 class="text-[#22A9C8] font-bold text-lg mb-1">Registro de jornada</h4>
@@ -372,7 +387,7 @@
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100 rounded-b-2xl">
                         <button type="button" 
                                 @click="saveHours()"
-                                :disabled="isSaving"
+                                :disabled="isSaving || selectedDate < today"
                                 class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-6 py-3 bg-[#22A9C8] text-base font-medium text-white hover:bg-[#1d91ac] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22A9C8] sm:ml-3 sm:w-auto sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                              <span x-show="!isSaving">Notificar</span>
                              <span x-show="isSaving" class="flex items-center">
@@ -449,21 +464,51 @@
                                    class="w-full bg-gray-50 border-gray-200 rounded-xl focus:ring-[#22A9C8] focus:border-[#22A9C8] text-sm text-gray-700">
                         </div>
 
-                        {{-- Recovery Hours --}}
-                        <div class="bg-gray-50 rounded-xl p-6 mb-6 flex items-center justify-between">
-                            <div class="text-gray-500 italic text-sm w-1/2">
-                                Horas a recuperar
-                            </div>
-                            <div class="flex items-center gap-4">
-                                <span class="text-4xl font-bold text-black" x-text="recoveryHours.toFixed(1)"></span>
-                                <div class="flex flex-col gap-1">
-                                    <button @click="if(recoveryHours < 8) recoveryHours += 0.5" class="w-8 h-8 rounded bg-[#d0eef5] text-[#22A9C8] flex items-center justify-center hover:bg-[#b0e0eb] active:scale-95 transition focus:outline-none">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                    </button>
-                                    <button @click="if(recoveryHours > 0.5) recoveryHours -= 0.5" class="w-8 h-8 rounded bg-[#d0eef5] text-[#22A9C8] flex items-center justify-center hover:bg-[#b0e0eb] active:scale-95 transition focus:outline-none">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
-                                    </button>
+                        {{-- Recovery Hours Redesign --}}
+                        <div class="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-100 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-700">Horas a recuperar</p>
+                                    <div class="flex items-center gap-1.5 mt-1">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-[#22A9C8]"></div>
+                                        <p class="text-[11px] text-gray-500 font-medium">
+                                            Disponibles: <span class="text-[#22A9C8] font-bold" x-text="missingHours.toFixed(1)"></span>h
+                                        </p>
+                                    </div>
                                 </div>
+                                <div class="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm">
+                                    <div class="flex items-baseline gap-1">
+                                        <span class="text-3xl font-black text-gray-900" x-text="recoveryHours.toFixed(1)"></span>
+                                        <span class="text-xs font-bold text-gray-400 uppercase">hrs</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-3">
+                                <button @click="if(recoveryHours > 0.5) recoveryHours -= 0.5" 
+                                        :class="recoveryHours <= 0.5 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-100 active:scale-95 text-gray-600 border-gray-200'"
+                                        class="flex-1 h-12 rounded-xl bg-white border flex items-center justify-center transition-all focus:outline-none shadow-sm group">
+                                    <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"></path></svg>
+                                </button>
+                                <button @click="if(recoveryHours < missingHours && recoveryHours < 8) recoveryHours += 0.5" 
+                                        :class="recoveryHours >= missingHours || recoveryHours >= 8 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[#22A9C8] hover:text-white active:scale-95 text-[#22A9C8] border-[#22A9C8]/20 bg-[#22A9C8]/5'"
+                                        class="flex-1 h-12 rounded-xl border flex items-center justify-center transition-all focus:outline-none shadow-sm group">
+                                    <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div x-show="missingHours <= 0" 
+                             x-transition:enter="ease-out duration-300"
+                             x-transition:enter-start="opacity-0 -translate-y-2"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             class="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
+                            <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <div>
+                                <p class="text-xs text-amber-900 font-bold">Sin horas pendientes</p>
+                                <p class="text-[10px] text-amber-700 mt-0.5">No tienes horas registradas como ausencia por recuperar en este periodo.</p>
                             </div>
                         </div>
 
@@ -526,7 +571,7 @@
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100 rounded-b-2xl">
                         <button type="button" 
                                 @click="saveRecoveryHours()"
-                                :disabled="isSaving"
+                                :disabled="isSaving || missingHours <= 0 || recoveryHours <= 0"
                                 class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-6 py-3 bg-[#22A9C8] text-base font-medium text-white hover:bg-[#1d91ac] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22A9C8] sm:ml-3 sm:w-auto sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                              <span x-show="!isSaving">Enviar solicitud</span>
                              <span x-show="isSaving" class="flex items-center">
@@ -576,6 +621,8 @@
                  recoveryAuthorized: false,
                  recoveryDescriptionMode: 'list',
                  recoveryUserComment: '',
+                 missingHours: {{ $missingHours }},
+                 today: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD format
                  
                  absenceOptions: [
                      'Cita médica',
@@ -592,6 +639,8 @@
                      this.selectedDate = date;
                      this.existingRecord = record;
                      
+                     // Check if it's today or future
+                     const isPast = date < this.today;
                      if (record) {
                          const worked = parseFloat(record.hours_worked);
                          if (worked >= 8) {
@@ -724,6 +773,11 @@
                          }
                      }
 
+                      if (this.selectedDate < this.today) {
+                          alert('Solo puedes registrar o editar tus actividades del día el mismo día.');
+                          return;
+                      }
+
                      fetch('{{ route('work-hours.store') }}', {
                          method: 'POST',
                          headers: {
@@ -776,7 +830,7 @@
                  openRecoveryModal() {
                      this.isRecoveryModalOpen = true;
                      this.recoveryDate = new Date().toISOString().split('T')[0];
-                     this.recoveryHours = 1;
+                     this.recoveryHours = this.missingHours > 0 ? (this.missingHours >= 1 ? 1 : this.missingHours) : 0;
                      this.recoveryActivities = [];
                      this.recoveryAuthorized = false;
                      this.recoveryUserComment = '';

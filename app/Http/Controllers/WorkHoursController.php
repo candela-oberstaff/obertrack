@@ -38,6 +38,19 @@ class WorkHoursController extends Controller
         }
 
         $workDate = Carbon::parse($request->work_date);
+        $today = Carbon::today();
+
+        // Restriction: Professionals can only register/edit hours on the same day.
+        // Exception: If they are only sending a recovery request (hours_worked is 0 or not provided)
+        if ($workDate->lt($today) && ($request->hours_worked > 0 || !$request->has('recovered_hours'))) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Solo puedes registrar o editar tus actividades del día el mismo día. Para cambios en días anteriores, contacta a soporte o a tu empleador.'
+                ]);
+            }
+            return back()->with('error', 'Solo puedes registrar o editar tus actividades del día el mismo día.');
+        }
         
         if ($workDate->isWeekend()) {
             if ($request->ajax() || $request->wantsJson()) {
@@ -138,16 +151,13 @@ class WorkHoursController extends Controller
             
             // NEW: Send notification to the professional if absence is recorded (< 8 hours)
             if ($request->hours_worked < 8) {
-                $endOfMonth = $currentMonth->copy()->endOfMonth()->locale('es')->isoFormat('D [de] MMMM');
-                $emailSubject = 'Registro de Ausencia - Recuperación de Horas';
-                $emailContent = "
-                    <h2>Hola, {$user->name}</h2>
-                    <p>Has registrado una ausencia el día <strong>{$workDate->format('d/m/Y')}</strong>.</p>
-                    <p>Tienes tiempo hasta el <strong>{$endOfMonth}</strong> para recuperar estas horas dentro del mes en curso.</p>
-                    <p>Recuerda mantener tus registros actualizados.</p>
-                ";
-                
-                $this->emailService->sendEmail($user->email, $user->name, $emailSubject, $emailContent);
+                $endOfMonthFormatted = $currentMonth->copy()->endOfMonth()->locale('es')->isoFormat('D [de] MMMM');
+                $this->emailService->sendAbsenceNotification(
+                    $user->email,
+                    $user->name,
+                    $workDate->format('d/m/Y'),
+                    $endOfMonthFormatted
+                );
             }
 
             // NEW: Send notification for recovery request
@@ -188,6 +198,7 @@ class WorkHoursController extends Controller
         $calendar = $this->calendarService->generateCalendar($currentMonth, auth()->id());
 
         $totalHours = $this->calendarService->getTotalHoursForMonth($currentMonth, auth()->id());
+        $missingHours = $this->calendarService->getMissingHours($currentMonth, auth()->id());
 
         if (session('totalHours')) {
             $totalHours = session('totalHours');
@@ -205,7 +216,7 @@ class WorkHoursController extends Controller
             ->where('completed', false)
             ->count();
             
-        return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'completedTasksCount', 'pendingTasksCount'));
+        return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'missingHours', 'completedTasksCount', 'pendingTasksCount'));
     }
 
     public function approveWeek(ApproveWorkHoursRequest $request)

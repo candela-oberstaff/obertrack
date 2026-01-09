@@ -4,10 +4,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
             <!-- Header -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <div class="flex items-center gap-4">
-                     <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1E293B]">Monitoreo de tareas</h2>
-                </div>
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900">Monitoreo de tareas</h2>
             </div>
 
             @if(session('success'))
@@ -22,78 +20,98 @@
                 </div>
             @endif
 
-            <!-- Subtitle -->
-            <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas totales de tareas registradas por los profesionales</h3>
-            
-            <!-- Employee Stats Cards -->
-            <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-                @foreach($employeeSummaries as $summary)
-                    @php
-                        $percentage = $summary['target_hours'] > 0 ? min(100, ($summary['total_hours'] / $summary['target_hours']) * 100) : 0;
-                        // Semi-circle calculations
-                        // We want a bottom arc. Let's use a simple SVG dasharray trick or path.
-                        // Path for background: Semi-circle
-                        $radius = 35;
-                        $circumference = pi() * $radius; // Semi-circle length
-                        $dashArray = ($percentage / 100) * $circumference;
-                        $dateRange = $currentMonth->copy()->startOfMonth()->format('M 1') . ' - ' . $currentMonth->copy()->endOfMonth()->format('M d'); // Update localization if needed
-                    @endphp
+            <div x-data="{ search: '' }">
+                <!-- Subtitle and Search -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <h3 class="text-lg font-bold text-gray-900">Horas totales de tareas registradas por los profesionales</h3>
                     
-                    <div class="bg-[#F8F9FA] rounded-[20px] p-6 relative flex flex-col items-center shadow-sm h-[320px]">
-                        
-                        <!-- Header -->
-                        <div class="w-full text-center mb-8 mt-6 relative">
-                            <!-- Status Indicator -->
-                            @if($summary['activity_status'] === 'red')
-                                <div class="absolute -top-4 right-0 flex items-center gap-1">
-                                    <span class="flex h-3 w-3 rounded-full bg-red-500 animate-pulse"></span>
-                                    <span class="text-[10px] font-bold text-red-600 uppercase">Inactivo 2+ dÃ­as</span>
-                                </div>
-                            @elseif($summary['activity_status'] === 'yellow')
-                                <div class="absolute -top-4 right-0 flex items-center gap-1">
-                                    <span class="flex h-3 w-3 rounded-full bg-yellow-400 animate-pulse"></span>
-                                    <span class="text-[10px] font-bold text-yellow-600 uppercase">Inactivo 1 dÃ­a</span>
-                                </div>
-                            @endif
-
-                            <h4 class="text-xl font-bold text-gray-900">{{ $summary['user']->name }}</h4>
-                            <p class="text-gray-500 text-sm font-light">{{ $summary['role'] }}</p>
-                        </div>
-
-                        <!-- Semi Circular Chart (U Shape) -->
-                        <div class="relative w-48 h-28 mb-4 flex justify-center overflow-hidden">
-                             <!-- Half circle SVG -->
-                             <svg viewBox="0 0 100 60" class="w-full h-full">
-                                 <!-- Background Arc -->
-                                 <path d="M 10,10 A 40,40 0 0 0 90,10" 
-                                       fill="none" 
-                                       stroke="#E2E8F0" 
-                                       stroke-width="8" 
-                                       stroke-linecap="round" />
-                                 <!-- Progress Arc -->
-                                  <path d="M 10,10 A 40,40 0 0 0 90,10" 
-                                       fill="none" 
-                                       stroke="#22A9C8" 
-                                       stroke-width="8" 
-                                       stroke-linecap="round"
-                                       stroke-dasharray="{{ 126 }}" 
-                                       stroke-dashoffset="{{ 126 - (126 * $percentage / 100) }}"
-                                       class="transition-all duration-1000 ease-out" />
-                             </svg>
-                             <!-- Number -->
-                             <div class="absolute top-8 text-center">
-                                 <span class="text-4xl font-bold text-gray-900 block leading-none mb-1">{{ round($summary['total_hours']) }}</span>
-                             </div>
-                        </div>
-
-                        <!-- Footer Text -->
-                        <div class="text-center mt-auto mb-2">
-                            <p class="text-gray-500 text-sm leading-tight max-w-[200px] mx-auto">
-                                {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas de tareas registradas actualmente ({{ $dateRange }})
-                            </p>
+                    <div class="relative w-full md:w-72">
+                        <input 
+                            type="text" 
+                            x-model="search" 
+                            placeholder="Buscar profesional..." 
+                            class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm focus:ring-[#22A9C8] focus:border-[#22A9C8] transition-all"
+                        >
+                        <div class="absolute left-3.5 top-2.5 text-gray-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
                         </div>
                     </div>
-                @endforeach
+                </div>
+
+                <!-- Employee Stats Section -->
+                <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+                    @foreach($employeeSummaries as $summary)
+                        @php
+                            $percentage = $summary['target_hours'] > 0 ? min(100, ($summary['total_hours'] / $summary['target_hours']) * 100) : 0;
+                            $radius = 35;
+                            $circumference = pi() * $radius;
+                            $dashArray = ($percentage / 100) * $circumference;
+                            $dateRange = $currentMonth->copy()->startOfMonth()->format('M 1') . ' - ' . $currentMonth->copy()->endOfMonth()->format('M d');
+                        @endphp
+                        
+                        <div 
+                            x-show="!search || '{{ strtolower($summary['user']->name) }}'.includes(search.toLowerCase())"
+                            x-transition:enter="transition ease-out duration-300"
+                            x-transition:enter-start="opacity-0 transform scale-95"
+                            x-transition:enter-end="opacity-100 transform scale-100"
+                            class="bg-[#F8F9FA] rounded-[20px] p-6 relative flex flex-col items-center shadow-sm h-[320px] border border-transparent hover:border-[#22A9C8]/30 transition-all hover:shadow-md"
+                        >
+                            <!-- Header -->
+                            <div class="w-full text-center mb-8 mt-6 relative">
+                                <!-- Status Indicator -->
+                                @if($summary['activity_status'] === 'red')
+                                    <div class="absolute -top-4 right-0 flex items-center gap-1">
+                                        <span class="flex h-3 w-3 rounded-full bg-red-500 animate-pulse"></span>
+                                        <span class="text-[10px] font-bold text-red-600 uppercase">Inactivo 2+ días</span>
+                                    </div>
+                                @elseif($summary['activity_status'] === 'yellow')
+                                    <div class="absolute -top-4 right-0 flex items-center gap-1">
+                                        <span class="flex h-3 w-3 rounded-full bg-yellow-400 animate-pulse"></span>
+                                        <span class="text-[10px] font-bold text-yellow-600 uppercase">Inactivo 1 día</span>
+                                    </div>
+                                @endif
+
+                                <h4 class="text-xl font-bold text-gray-900">{{ $summary['user']->name }}</h4>
+                                <p class="text-gray-500 text-sm font-light">{{ $summary['role'] }}</p>
+                            </div>
+
+                            <!-- Semi Circular Chart (U Shape) -->
+                            <div class="relative w-48 h-28 mb-4 flex justify-center overflow-hidden">
+                                 <!-- Half circle SVG -->
+                                 <svg viewBox="0 0 100 60" class="w-full h-full">
+                                     <!-- Background Arc -->
+                                     <path d="M 10,10 A 40,40 0 0 0 90,10" 
+                                           fill="none" 
+                                           stroke="#E2E8F0" 
+                                           stroke-width="8" 
+                                           stroke-linecap="round" />
+                                     <!-- Progress Arc -->
+                                      <path d="M 10,10 A 40,40 0 0 0 90,10" 
+                                           fill="none" 
+                                           stroke="#22A9C8" 
+                                           stroke-width="8" 
+                                           stroke-linecap="round"
+                                           stroke-dasharray="{{ 126 }}" 
+                                           stroke-dashoffset="{{ 126 - (126 * $percentage / 100) }}"
+                                           class="transition-all duration-1000 ease-out" />
+                                 </svg>
+                                 <!-- Number -->
+                                 <div class="absolute top-8 text-center">
+                                     <span class="text-4xl font-bold text-gray-900 block leading-none mb-1">{{ round($summary['total_hours']) }}</span>
+                                 </div>
+                            </div>
+
+                            <!-- Footer Text -->
+                            <div class="text-center mt-auto mb-2">
+                                <p class="text-gray-500 text-xs leading-tight max-w-[200px] mx-auto">
+                                    {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas registradas ({{ $dateRange }})
+                                </p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
 
             <!-- Daily View Section -->
@@ -164,7 +182,7 @@
                             }
                         } catch (error) {
                             console.error('Error:', error);
-                            alert('Error de conexiÃ³n al intentar aprobar');
+                            alert('Error de conexión al intentar aprobar');
                         } finally {
                             this.isApproving = false;
                         }
@@ -194,7 +212,7 @@
                             }
                         } catch (error) {
                             console.error('Error:', error);
-                            alert('Error de conexiÃ³n');
+                            alert('Error de conexión');
                         } finally {
                             this.isApproving = false;
                         }
@@ -220,11 +238,11 @@
                             if (data.success) {
                                 window.location.reload();
                             } else {
-                                alert(data.message || 'Error al aprobar la recuperaciÃ³n');
+                                alert(data.message || 'Error al aprobar la recuperación');
                             }
                         } catch (error) {
                             console.error('Error:', error);
-                            alert('Error de conexiÃ³n');
+                            alert('Error de conexión');
                         } finally {
                             this.isApproving = false;
                         }
@@ -273,7 +291,7 @@
                     <div class="hidden md:block w-full border border-[#22A9C8] rounded-xl p-6 bg-white">
                         <!-- Headers -->
                         <div class="grid grid-cols-7 gap-3 mb-6">
-                            @foreach(['Domingo', 'Lunes', 'Martes', 'MiÃ©rcoles', 'Jueves', 'Viernes', 'SÃ¡bado'] as $dayName)
+                            @foreach(['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as $dayName)
                                 <div class="text-center font-bold text-gray-900 text-sm">{{ $dayName }}</div>
                             @endforeach
                         </div>
@@ -377,7 +395,7 @@
                                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-100">
                                     <div class="flex justify-between items-center">
                                         <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                            Detalle del dÃ­a <span x-text="selectedDay ? new Date(selectedDay.date.slice(0, 10) + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' }) : ''"></span>
+                                            Detalle del día <span x-text="selectedDay ? new Date(selectedDay.date.slice(0, 10) + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' }) : ''"></span>
                                         </h3>
                                         <button @click="showModal = false" class="text-gray-400 hover:text-gray-500">
                                             <span class="sr-only">Cerrar</span>
@@ -389,137 +407,136 @@
                                 </div>
 
                                 <!-- Modal Body -->
-                                <div class="bg-white px-4 py-4 sm:p-6 max-h-[60vh] overflow-y-auto">
+                                <div class="bg-white px-4 py-4 sm:p-6 max-h-[70vh] overflow-y-auto no-scrollbar">
                                     <template x-if="selectedDay && selectedDay.employees.length > 0">
-                                        <div class="space-y-6">
+                                        <div class="space-y-8">
                                             <template x-for="emp in selectedDay.employees" :key="emp.record_id">
-                                                <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                                                    <!-- Employee Header -->
-                                                    <div class="flex items-center justify-between mb-3">
-                                                        <div class="flex items-center gap-3">
-                                                            <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 flex-shrink-0">
+                                                <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                                                    <!-- Employee Header with Profile Badge Style -->
+                                                    <div class="flex items-start justify-between mb-6">
+                                                        <div class="flex items-center gap-4">
+                                                            <div class="w-14 h-14 rounded-2xl overflow-hidden border-2 border-[#22A9C8]/10 shadow-sm bg-gray-100 flex-shrink-0">
                                                                 <img :src="emp.avatar ? (emp.avatar.startsWith('http') ? emp.avatar : '/avatars/' + emp.avatar) : `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}&color=FFFFFF&background=22A9C8`" 
                                                                      :alt="emp.name" 
                                                                      class="w-full h-full object-cover">
                                                             </div>
                                                             <div>
-                                                                <p class="font-medium text-gray-900" x-text="emp.name"></p>
-                                                                <p class="text-xs text-gray-500">
-                                                                    <span x-text="emp.hours"></span> horas de tareas
-                                                                    <span x-show="parseFloat(emp.hours) < 8" class="text-red-500 font-semibold ml-1" x-text="'â€¢ ' + (8 - parseFloat(emp.hours)) + 'h ausente'"></span>
-                                                                    <span x-show="parseFloat(emp.recovered_hours) > 0" class="text-blue-600 font-bold ml-1" x-text="'â€¢ ' + emp.recovered_hours + 'h recuperadas'"></span>
-                                                                    <span x-show="emp.approved" class="text-green-600 ml-1 font-semibold">(Aprobado)</span>
-                                                                    <span x-show="!emp.approved" class="text-orange-500 ml-1 font-semibold">(Pendiente)</span>
-                                                                </p>
+                                                                <p class="font-black text-lg text-gray-900 leading-tight" x-text="emp.name"></p>
+                                                                <div class="flex flex-wrap items-center gap-2 mt-1">
+                                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#22A9C8] text-white" x-text="emp.hours + ' hs'"></span>
+                                                                    
+                                                                    <template x-if="parseFloat(emp.hours) < 8">
+                                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-600" x-text="(8 - parseFloat(emp.hours)) + 'h ausente'"></span>
+                                                                    </template>
+
+                                                                    <template x-if="parseFloat(emp.recovered_hours) > 0">
+                                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-600" x-text="emp.recovered_hours + 'h recup.'"></span>
+                                                                    </template>
+
+                                                                    <span :class="emp.approved ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'" 
+                                                                          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider" 
+                                                                          x-text="emp.approved ? 'Aprobado' : 'Pendiente'"></span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    <!-- Absence Reason Section -->
+                                                    <!-- Absence Reason (Impactful Style) -->
                                                     <template x-if="parseFloat(emp.hours) < 8 && emp.absence_reason">
-                                                        <div class="mb-3 bg-red-50 rounded-lg p-3 border border-red-100">
-                                                            <label class="block text-xs font-bold text-red-600 uppercase tracking-wider mb-1">Motivo de Ausencia</label>
-                                                            <p class="text-sm text-gray-800 font-medium" x-text="emp.absence_reason"></p>
+                                                        <div class="mb-6 bg-red-50/50 rounded-xl p-4 border border-red-100">
+                                                            <div class="flex items-center gap-2 mb-2 text-red-600">
+                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                                <span class="text-[10px] font-black uppercase tracking-widest">Motivo de Ausencia</span>
+                                                            </div>
+                                                            <p class="text-sm text-gray-800 font-bold ml-6" x-text="emp.absence_reason"></p>
                                                         </div>
                                                     </template>
 
-                                                     <!-- Comment Section (Professional) -->
-                                                     <div class="mt-4">
-                                                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nota del Profesional</label>
-                                                         <div class="bg-white rounded-lg p-3 border border-gray-100 shadow-sm italic text-sm text-gray-700">
-                                                             <template x-if="emp.user_comment && emp.user_comment.trim() !== ''">
-                                                                 <p x-text="emp.user_comment"></p>
-                                                             </template>
-                                                             <template x-if="!emp.user_comment || emp.user_comment.trim() === ''">
-                                                                 <p class="text-gray-400">Sin notas del profesional.</p>
-                                                             </template>
-                                                         </div>
-                                                     </div>
+                                                    <!-- Activities Section (Parsed from user_comment) -->
+                                                    <div class="mb-6">
+                                                        <div class="flex items-center gap-2 mb-3 text-gray-400">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                                            <span class="text-[10px] font-black uppercase tracking-widest leading-none">Actividades Realizadas</span>
+                                                        </div>
+                                                        
+                                                        <div class="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+                                                            <template x-if="emp.user_comment && emp.user_comment.trim() !== ''">
+                                                                <ul class="space-y-3">
+                                                                    <template x-for="activity in emp.user_comment.split('\n').filter(a => a.trim() !== '')">
+                                                                        <li class="flex items-start gap-3">
+                                                                            <span class="w-1.5 h-1.5 rounded-full bg-[#22A9C8] mt-1.5 flex-shrink-0"></span>
+                                                                            <span class="text-sm text-gray-700 font-medium" x-text="activity"></span>
+                                                                        </li>
+                                                                    </template>
+                                                                </ul>
+                                                            </template>
+                                                            <template x-if="!emp.user_comment || emp.user_comment.trim() === ''">
+                                                                <p class="text-sm text-gray-400 italic">No se registraron detalles de actividades.</p>
+                                                            </template>
+                                                        </div>
+                                                    </div>
 
-                                                     <!-- Comment Section (Employer / Response) -->
-                                                     <div class="mt-4">
-                                                         <label class="block text-xs font-bold text-primary uppercase tracking-wider mb-1">Tu ObservaciÃ³n / Feedback</label>
-                                                                                                                  <!-- If already approved, allow editing feedback -->
-                                                          <template x-if="emp.approved">
-                                                              <div class="space-y-3">
-                                                                  <textarea 
-                                                                      x-model="emp.comment"
-                                                                      @blur="updateComment(emp)"
-                                                                      placeholder="Agregar o editar feedback..."
-                                                                      class="w-full rounded-xl border-gray-100 text-sm shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all italic text-gray-700 bg-gray-50/50"
-                                                                      rows="2"
-                                                                  ></textarea>
-                                                                  <p class="text-[10px] text-gray-400 italic">El feedback se guarda automÃ¡ticamente al salir del campo.</p>
-                                                              </div>
-                                                          </template>
+                                                    <!-- Feedback Field -->
+                                                    <div>
+                                                        <div class="flex items-center gap-2 mb-3 text-[#22A9C8]">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                                            <span class="text-[10px] font-black uppercase tracking-widest leading-none">Observaciones</span>
+                                                        </div>
 
-                                                         <!-- If NOT approved, show approval form -->
-                                                         <template x-if="!emp.approved || emp.approved === false || emp.approved === 0">
-                                                             <div class="space-y-3">
-                                                                 <textarea 
-                                                                     x-model="emp.new_comment"
-                                                                     placeholder="Deja un comentario opcional antes de aprobar..."
-                                                                     class="w-full rounded-xl border-gray-200 text-sm shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-20 transition-all"
-                                                                     rows="2"
-                                                                 ></textarea>
-                                                                 <button 
-                                                                     @click="approveDay(emp)"
-                                                                     :disabled="isApproving"
-                                                                     class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 text-sm disabled:opacity-50"
-                                                                 >
-                                                                     <svg x-show="!isApproving" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                                                     </svg>
-                                                                     <svg x-show="isApproving" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                     </svg>
-                                                                     <span x-text="isApproving ? 'Aprobando...' : 'Aprobar Horas'"></span>
-                                                                 </button>
-                                                             </div>
-                                                         </template>
-                                                     </div>
-                                                      <!-- Recovery Approval Section -->
-                                                      <template x-if="parseFloat(emp.recovered_hours) > 0">
-                                                          <div class="mt-4 pt-4 border-t border-gray-100">
-                                                              <h4 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Solicitud de Recuperación</h4>
-                                                              <div class="bg-blue-50 rounded-lg p-3 border border-blue-100">
-                                                                  <div class="flex justify-between items-start gap-3">
-                                                                       <div class="flex-1">
-                                                                           <p class="text-sm text-gray-900 font-bold mb-1">
-                                                                              <span x-text="emp.recovered_hours"></span> horas
-                                                                              <span x-show="emp.recovery_approved" class="text-green-600 text-xs ml-2 bg-green-100 px-2 py-0.5 rounded-full">Aprobado</span>
-                                                                              <span x-show="!emp.recovery_approved" class="text-orange-600 text-xs ml-2 bg-orange-100 px-2 py-0.5 rounded-full">Pendiente</span>
-                                                                           </p>
-                                                                           
-                                                                           <template x-if="emp.recovery_comment">
-                                                                               <p class="text-xs text-gray-700 italic" x-text="emp.recovery_comment"></p>
-                                                                           </template>
-                                                                           <template x-if="!emp.recovery_comment">
-                                                                               <p class="text-xs text-gray-400 italic">Sin nota.</p>
-                                                                           </template>
-                                                                       </div>
-                                                                       
-                                                                       <div x-show="!emp.recovery_approved">
-                                                                            <button 
-                                                                                @click="approveRecovery(emp)"
-                                                                                class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-2 px-3 rounded-xl shadow-sm transition-colors whitespace-nowrap"
-                                                                            >
-                                                                                Aprobar
-                                                                            </button>
-                                                                       </div>
-                                                                  </div>
-                                                              </div>
-                                                          </div>
-                                                      </template>
-                                                 </div>
-                                             </template>
-                                         </div>
-                                     </template>
+                                                        <textarea 
+                                                            x-model="emp.approved ? emp.comment : emp.new_comment"
+                                                            @blur="if(emp.approved) updateComment(emp)"
+                                                            placeholder="Dejar feedback..."
+                                                            class="w-full rounded-xl border-gray-100 text-sm shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all bg-gray-50/30 min-h-[80px]"
+                                                        ></textarea>
+                                                        
+                                                        <template x-if="!emp.approved">
+                                                            <button 
+                                                                @click="approveDay(emp)"
+                                                                :disabled="isApproving"
+                                                                class="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 px-6 rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                            >
+                                                                <svg x-show="!isApproving" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                                <svg x-show="isApproving" class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                                <span x-text="isApproving ? 'Aprobando...' : 'Aprobar Horas'"></span>
+                                                            </button>
+                                                        </template>
+
+                                                        <template x-if="emp.approved">
+                                                            <p class="mt-2 text-[10px] text-gray-400 italic text-center">Horas aprobadas. Puedes editar tu feedback arriba.</p>
+                                                        </template>
+                                                    </div>
+
+                                                    <!-- Recovery Request Link (Inside Employee Card) -->
+                                                    <template x-if="parseFloat(emp.recovered_hours) > 0 && !emp.recovery_approved">
+                                                        <div class="mt-6 pt-6 border-t border-dashed border-gray-100">
+                                                            <div class="flex items-center justify-between bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                                                                <div class="flex items-center gap-3 text-blue-800">
+                                                                    <div class="p-2 bg-blue-100 rounded-lg">
+                                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p class="text-xs font-black uppercase tracking-wider">Solicitud de Recuperación</p>
+                                                                        <p class="text-sm font-bold" x-text="emp.recovered_hours + ' hs'"></p>
+                                                                    </div>
+                                                                </div>
+                                                                <button @click="approveRecovery(emp)" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-black py-2.5 px-6 rounded-lg shadow-sm transition-all active:scale-95">
+                                                                    Aprobar Recup.
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
                                     
                                     <template x-if="!selectedDay || selectedDay.employees.length === 0">
-                                        <div class="text-center py-8">
-                                            <p class="text-gray-500">No hay registros de tareas para este dÃ­a.</p>
+                                        <div class="py-12 flex flex-col items-center">
+                                            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            </div>
+                                            <p class="text-gray-400 font-bold uppercase tracking-widest text-xs text-center">No hay registros para este día</p>
                                         </div>
                                     </template>
                                 </div>
@@ -578,7 +595,7 @@
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                                             </svg>
-                                            Solicitudes de RecuperaciÃ³n de Horas
+                                            Solicitudes de Recuperación de Horas
                                         </h3>
                                         <button @click="showRecoveryModal = false" class="text-gray-400 hover:text-gray-500">
                                             <span class="sr-only">Cerrar</span>
@@ -590,64 +607,74 @@
                                 </div>
 
                                 <!-- Modal Body -->
-                                <div class="bg-white px-4 py-4 sm:p-6 max-h-[60vh] overflow-y-auto">
+                                <div class="bg-white px-4 py-4 sm:p-6 max-h-[70vh] overflow-y-auto no-scrollbar">
                                     <template x-if="selectedRecoveries.length > 0">
-                                        <div class="space-y-4">
+                                        <div class="space-y-8">
                                             <template x-for="recovery in selectedRecoveries" :key="recovery.record_id">
-                                                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                                <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all">
                                                     <!-- Employee Header -->
-                                                    <div class="flex items-center justify-between mb-3">
-                                                        <div class="flex items-center gap-3">
-                                                            <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 flex-shrink-0">
-                                                                <img :src="recovery.avatar ? (recovery.avatar.startsWith('http') ? recovery.avatar : '/avatars/' + recovery.avatar) : `https://ui-avatars.com/api/?name=${encodeURIComponent(recovery.name)}&color=FFFFFF&background=22A9C8`" 
+                                                    <div class="flex items-start justify-between mb-6">
+                                                        <div class="flex items-center gap-4">
+                                                            <div class="w-14 h-14 rounded-2xl overflow-hidden border-2 border-red-50 shadow-sm bg-gray-100 flex-shrink-0">
+                                                                <img :src="recovery.avatar ? (recovery.avatar.startsWith('http') ? recovery.avatar : '/avatars/' + recovery.avatar) : `https://ui-avatars.com/api/?name=${encodeURIComponent(recovery.name)}&color=FFFFFF&background=F87171`" 
                                                                      :alt="recovery.name" 
                                                                      class="w-full h-full object-cover">
                                                             </div>
                                                             <div>
-                                                                <p class="font-bold text-gray-900" x-text="recovery.name"></p>
-                                                                <p class="text-xs text-gray-500">
-                                                                    <span class="font-bold text-red-600" x-text="recovery.recovered_hours + 'h'"></span> a recuperar
-                                                                </p>
+                                                                <p class="font-black text-lg text-gray-900 leading-tight" x-text="recovery.name"></p>
+                                                                <div class="flex items-center gap-2 mt-1">
+                                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-600" x-text="recovery.recovered_hours + ' hs a recuperar'"></span>
+                                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-100 text-orange-600">Pendiente</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    <!-- Recovery Details -->
-                                                    <div class="mt-3 bg-white rounded-lg p-3 border border-gray-100">
-                                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Actividades Realizadas</label>
-                                                        <template x-if="recovery.recovery_comment && recovery.recovery_comment.trim() !== ''">
-                                                            <p class="text-sm text-gray-700 whitespace-pre-line" x-text="recovery.recovery_comment"></p>
-                                                        </template>
-                                                        <template x-if="!recovery.recovery_comment || recovery.recovery_comment.trim() === ''">
-                                                            <p class="text-sm text-gray-400 italic">Sin detalles</p>
-                                                        </template>
+                                                    <!-- Recovery Activities (Parsed from recovery_comment) -->
+                                                    <div class="mb-6">
+                                                        <div class="flex items-center gap-2 mb-3 text-gray-400">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                                            <span class="text-[10px] font-black uppercase tracking-widest leading-none">Actividades Realizadas</span>
+                                                        </div>
+                                                        
+                                                        <div class="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+                                                            <template x-if="recovery.recovery_comment && recovery.recovery_comment.trim() !== ''">
+                                                                <ul class="space-y-3">
+                                                                    <template x-for="activity in recovery.recovery_comment.split('\n').filter(a => a.trim() !== '')">
+                                                                        <li class="flex items-start gap-3">
+                                                                            <span class="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 flex-shrink-0"></span>
+                                                                            <span class="text-sm text-gray-700 font-medium" x-text="activity"></span>
+                                                                        </li>
+                                                                    </template>
+                                                                </ul>
+                                                            </template>
+                                                            <template x-if="!recovery.recovery_comment || recovery.recovery_comment.trim() === ''">
+                                                                <p class="text-sm text-gray-400 italic">No se registraron detalles.</p>
+                                                            </template>
+                                                        </div>
                                                     </div>
 
-                                                    <!-- Approve Button -->
-                                                    <div class="mt-4">
-                                                        <button 
-                                                            @click="approveRecovery(recovery)"
-                                                            :disabled="isApproving"
-                                                            class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 text-sm disabled:opacity-50"
-                                                        >
-                                                            <svg x-show="!isApproving" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                            <svg x-show="isApproving" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                            </svg>
-                                                            <span x-text="isApproving ? 'Aprobando...' : 'Aprobar RecuperaciÃ³n'"></span>
-                                                        </button>
-                                                    </div>
+                                                    <!-- Action -->
+                                                    <button 
+                                                        @click="approveRecovery(recovery)"
+                                                        :disabled="isApproving"
+                                                        class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 px-6 rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                    >
+                                                        <svg x-show="!isApproving" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                        <svg x-show="isApproving" class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                        <span x-text="isApproving ? 'Aprobando...' : 'Aprobar Recuperación'"></span>
+                                                    </button>
                                                 </div>
                                             </template>
                                         </div>
                                     </template>
                                    
                                     <template x-if="selectedRecoveries.length === 0">
-                                        <div class="text-center py-8">
-                                            <p class="text-gray-500">No hay solicitudes de recuperaciÃ³n para este dÃ­a.</p>
+                                        <div class="py-12 flex flex-col items-center">
+                                            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                            </div>
+                                            <p class="text-gray-400 font-bold uppercase tracking-widest text-xs text-center">No hay solicitudes para este día</p>
                                         </div>
                                     </template>
                                 </div>

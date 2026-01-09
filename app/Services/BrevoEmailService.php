@@ -121,22 +121,36 @@ class BrevoEmailService
     public function sendRecoveryRequestNotification($recipientEmail, $recipientName, $recoveryData)
     {
         try {
-            $htmlContent = "
-                <h2>Hola, {$recipientName}</h2>
-                <p>El profesional <strong>{$recoveryData['employee_name']}</strong> ha enviado una solicitud de <strong>recuperación de horas</strong>.</p>
-                <p><strong>Detalles:</strong></p>
-                <ul>
-                    <li>Fecha de recuperación: {$recoveryData['date']}</li>
-                    <li>Horas solicitadas: {$recoveryData['hours']}</li>
-                    <li>Actividades: {$recoveryData['activities']}</li>
-                </ul>
-                <p>Puedes revisar y aprobar esta solicitud desde tu dashboard.</p>
-                <p><a href=\"" . route('reportes.index') . "\">Ir al Dashboard de Reportes</a></p>
-            ";
+            $htmlContent = view('emails.recovery-report', [
+                'recipientName' => $recipientName,
+                'recoveryData' => $recoveryData
+            ])->render();
 
-            return $this->sendEmail($recipientEmail, $recipientName, '🔄 Solicitud de Recuperación de Horas', $htmlContent);
+            return $this->sendEmail($recipientEmail, $recipientName, '🔄 Reporte de Horas Recuperadas', $htmlContent);
         } catch (\Exception $e) {
             Log::error('Brevo: Failed to send recovery request notification', [
+                'recipient' => $recipientEmail,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send email notification for absence registration
+     */
+    public function sendAbsenceNotification($recipientEmail, $recipientName, $date, $endOfMonth)
+    {
+        try {
+            $htmlContent = view('emails.absence-registered', [
+                'recipientName' => $recipientName,
+                'date' => $date,
+                'endOfMonth' => $endOfMonth
+            ])->render();
+
+            return $this->sendEmail($recipientEmail, $recipientName, '📅 Registro de Ausencia - Obertrack', $htmlContent);
+        } catch (\Exception $e) {
+            Log::error('Brevo: Failed to send absence notification', [
                 'recipient' => $recipientEmail,
                 'error' => $e->getMessage()
             ]);
