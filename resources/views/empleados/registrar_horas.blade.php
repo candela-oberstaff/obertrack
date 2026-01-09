@@ -235,21 +235,6 @@
 
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                         
-                        {{-- Restriction Warning --}}
-                        <div x-show="selectedDate < today" 
-                             x-transition:enter="ease-out duration-300"
-                             x-transition:enter-start="opacity-0 -translate-y-2"
-                             x-transition:enter-end="opacity-100 translate-y-0"
-                             class="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
-                            <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                            </div>
-                            <div>
-                                <p class="text-xs text-amber-900 font-bold">Edición restringida</p>
-                                <p class="text-[10px] text-amber-700 mt-0.5">Solo puedes registrar o editar actividades el mismo día. Para cambios en días pasados, contacta a soporte.</p>
-                            </div>
-                        </div>
-
                         {{-- Section Title --}}
                         <div class="mb-6">
                             <h4 class="text-[#22A9C8] font-bold text-lg mb-1">Registro de jornada</h4>
@@ -387,7 +372,7 @@
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100 rounded-b-2xl">
                         <button type="button" 
                                 @click="saveHours()"
-                                :disabled="isSaving || selectedDate < today"
+                                :disabled="isSaving"
                                 class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-6 py-3 bg-[#22A9C8] text-base font-medium text-white hover:bg-[#1d91ac] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22A9C8] sm:ml-3 sm:w-auto sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                              <span x-show="!isSaving">Notificar</span>
                              <span x-show="isSaving" class="flex items-center">
@@ -622,7 +607,6 @@
                  recoveryDescriptionMode: 'list',
                  recoveryUserComment: '',
                  missingHours: {{ $missingHours }},
-                 today: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD format
                  
                  absenceOptions: [
                      'Cita médica',
@@ -639,8 +623,6 @@
                      this.selectedDate = date;
                      this.existingRecord = record;
                      
-                     // Check if it's today or future
-                     const isPast = date < this.today;
                      if (record) {
                          const worked = parseFloat(record.hours_worked);
                          if (worked >= 8) {
@@ -772,11 +754,6 @@
                              finalComment = this.userComment;
                          }
                      }
-
-                      if (this.selectedDate < this.today) {
-                          alert('Solo puedes registrar o editar tus actividades del día el mismo día.');
-                          return;
-                      }
 
                      fetch('{{ route('work-hours.store') }}', {
                          method: 'POST',

@@ -38,19 +38,6 @@ class WorkHoursController extends Controller
         }
 
         $workDate = Carbon::parse($request->work_date);
-        $today = Carbon::today();
-
-        // Restriction: Professionals can only register/edit hours on the same day.
-        // Exception: If they are only sending a recovery request (hours_worked is 0 or not provided)
-        if ($workDate->lt($today) && ($request->hours_worked > 0 || !$request->has('recovered_hours'))) {
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => false, 
-                    'message' => 'Solo puedes registrar o editar tus actividades del día el mismo día. Para cambios en días anteriores, contacta a soporte o a tu empleador.'
-                ]);
-            }
-            return back()->with('error', 'Solo puedes registrar o editar tus actividades del día el mismo día.');
-        }
         
         if ($workDate->isWeekend()) {
             if ($request->ajax() || $request->wantsJson()) {
