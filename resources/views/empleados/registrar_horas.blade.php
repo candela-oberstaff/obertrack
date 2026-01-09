@@ -58,7 +58,7 @@
                 </div>
             </div>
 
-            {{-- Summary Card (Visual Only - keeping layout) --}}
+            {{-- Summary Card (Visual Only) --}}
             <div class="bg-gray-50 rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between mx-4 sm:mx-0">
                 <div class="mb-4 md:mb-0">
                    <div class="flex items-center gap-4">
@@ -125,8 +125,6 @@
                                     $hasHours = isset($day['workHours']);
                                     $hours = $hasHours ? $day['workHours']->hours_worked : 0;
                                     $isAbsence = $hasHours && $hours == 0;
-                                    $statusColor = $hasHours ? ($day['workHours']->approved ? 'text-green-500' : 'text-orange-400') : 'text-gray-300';
-                                    $statusText = $hasHours ? ($day['workHours']->approved ? '(Aprobado)' : '(Pendiente)') : '';
                                 @endphp
                                 
                                 <div class="relative min-h-[100px] md:min-h-[140px] flex flex-col items-center justify-start py-3 md:py-4 px-1 md:px-2 rounded-xl border border-transparent transition-all duration-200 group
@@ -214,7 +212,7 @@
                     
                     {{-- Modal Header --}}
                     <div class="bg-gray-50 px-4 py-4 sm:px-6 flex justify-between items-center border-b border-gray-100 rounded-t-2xl">
-                        <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">
+                        <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title" x-text="isReadOnly ? 'Detalles de la jornada' : 'Registrar horas o ausencia'">
                             Registrar horas o ausencia
                         </h3>
                          <button @click="closeModal()" class="text-gray-400 hover:text-gray-500 focus:outline-none">
@@ -235,14 +233,14 @@
                                     <p class="text-xs text-gray-500" x-text="formatDate(selectedDate)"></p>
                                 </div>
                                 <div class="ml-auto">
-                                     <span class="text-xs font-semibold px-2 py-1 rounded bg-white text-gray-600 border border-gray-200 shadow-sm" x-show="existingRecord?.approved">(Aprobado)</span>
+                                     <span class="text-xs font-semibold px-2 py-1 rounded bg-white text-green-500 border border-green-100 shadow-sm" x-show="existingRecord?.approved">(Aprobado)</span>
                                      <span class="text-xs font-semibold px-2 py-1 rounded bg-white text-orange-500 border border-orange-100 shadow-sm" x-show="existingRecord && !existingRecord.approved">(Pendiente)</span>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Presets --}}
-                        <div class="mb-6">
+                        {{-- Presets (Editable Only) --}}
+                        <div class="mb-6" x-show="!isReadOnly">
                             <h4 class="text-sm font-semibold text-gray-700 mb-3">Predeterminado</h4>
                             <div class="grid grid-cols-3 gap-3">
                                 <button @click="setHours(8)" 
@@ -266,16 +264,19 @@
                             </div>
                         </div>
 
-                        {{-- Manual Input --}}
+                        {{-- Manual Input / Read-only Display --}}
                         <div class="mb-6">
-                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Manual</h4>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3" x-text="isReadOnly ? 'Horas trabajadas' : 'Manual'">Manual</h4>
                             <div class="flex items-center justify-between bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                <p class="text-xs text-gray-500 italic max-w-[150px]">
+                                <p class="text-xs text-gray-500 italic max-w-[150px]" x-show="!isReadOnly">
                                     Ingresa el tiempo exacto trabajado en el día
+                                </p>
+                                <p class="text-xs text-gray-500 italic max-w-[150px]" x-show="isReadOnly">
+                                    Tiempo registrado para esta jornada
                                 </p>
                                  <div class="flex items-center gap-4">
                                      <span class="text-5xl font-bold text-gray-900 tabular-nums tracking-tight" x-text="formatTime(hours)"></span>
-                                     <div class="flex flex-col gap-1">
+                                     <div class="flex flex-col gap-1" x-show="!isReadOnly">
                                          <button @click="incrementHours()" 
                                                 :disabled="existingRecord && existingRecord.approved"
                                                 class="p-1 bg-white hover:bg-gray-100 rounded shadow-sm border border-gray-200 text-primary disabled:opacity-50">
@@ -291,7 +292,7 @@
                             </div>
                         </div>
 
-                         {{-- Absence Reason (Conditional) --}}
+                         {{-- Absence Reason --}}
                         <div x-show="hours < 8" 
                              x-transition:enter="transition ease-out duration-200"
                              x-transition:enter-start="opacity-0 transform scale-95"
@@ -303,10 +304,10 @@
                             <div class="relative">
                                  <button type="button" 
                                         @click="isDropdownOpen = !isDropdownOpen"
-                                        :disabled="existingRecord && existingRecord.approved"
+                                        :disabled="isReadOnly || (existingRecord && existingRecord.approved)"
                                         class="relative w-full bg-white border border-gray-300 rounded-xl pl-4 pr-10 py-3 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm shadow-sm disabled:bg-gray-50 disabled:text-gray-500">
-                                    <span class="block truncate" :class="!absenceReason ? 'text-gray-400' : 'text-gray-900'" x-text="absenceReason || 'Seleccionar motivo...'"></span>
-                                    <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                    <span class="block truncate" :class="!absenceReason ? 'text-gray-400' : 'text-gray-900'" x-text="absenceReason || 'Sin motivo especificado'"></span>
+                                    <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none" x-show="!isReadOnly">
                                         <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="none" stroke="currentColor">
                                             <path d="M7 7l3-3 3 3m0 6l-3 3-3-3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
@@ -330,65 +331,91 @@
                                 </div>
                             </div>
                             
-                             {{-- Other Reason Input --}}
                              <div x-show="absenceReason === 'Otro'" class="mt-3">
                                   <textarea x-ref="otherReasonInput"
                                             x-model="otherReasonText"
+                                            :disabled="isReadOnly"
                                             rows="2"
-                                            class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-xl" 
+                                            class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-xl disabled:bg-gray-50" 
                                             placeholder="Especificar motivo..."></textarea>
                              </div>
                         </div>
 
-                         {{-- User Comment --}}
+                         {{-- Activities Section --}}
                          <div class="mb-6">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Comentario / Nota personal</label>
-                            <textarea x-model="userComment"
+                            <label class="block text-sm font-semibold text-gray-700 mb-2" x-text="isReadOnly ? 'Actividades realizadas' : 'Comentario / Nota personal'"></label>
+                            
+                            {{-- Read-only activities list --}}
+                            <div x-show="isReadOnly" class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                                <template x-if="activities.length > 0">
+                                    <ul class="space-y-2">
+                                        <template x-for="activity in activities" :key="activity">
+                                            <li class="flex items-start gap-2 text-sm text-gray-700">
+                                                <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0"></span>
+                                                <span x-text="activity"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
+                                <template x-if="activities.length === 0 && userComment">
+                                    <p class="text-sm text-gray-700" x-text="userComment"></p>
+                                </template>
+                                <template x-if="activities.length === 0 && !userComment">
+                                    <p class="text-sm text-gray-400 italic">No se registraron comentarios para este día.</p>
+                                </template>
+                            </div>
+
+                            {{-- Editable textarea --}}
+                            <textarea x-show="!isReadOnly"
+                                      x-model="userComment"
                                       rows="2"
                                       class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-xl" 
                                       placeholder="Agrega una nota adicional sobre tu jornada..."></textarea>
                          </div>
 
-                         <!-- Comment Info Message -->
-                        <template x-if="!existingRecord?.approved">
-                            <div class="rounded-md bg-blue-50 p-4 mb-4">
-                                <div class="flex">
-                                    <div class="flex-shrink-0">
-                                        <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <div class="ml-3 flex-1 md:flex md:justify-between">
-                                        <p class="text-sm text-blue-700">
-                                            Si registras menos de 8 horas, se marcará automáticamente un tiempo de ausencia por la diferencia.
-                                        </p>
+                         <!-- Info Messages -->
+                        <div x-show="!isReadOnly">
+                            <template x-if="!existingRecord?.approved">
+                                <div class="rounded-md bg-blue-50 p-4 mb-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3 flex-1 md:flex md:justify-between">
+                                            <p class="text-sm text-blue-700">
+                                                Si registras menos de 8 horas, se marcará automáticamente un tiempo de ausencia por la diferencia.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </template>
+                            </template>
 
-                        <template x-if="existingRecord?.approved">
-                            <div class="rounded-md bg-green-50 p-4 mb-4 border border-green-100">
-                                <div class="flex">
-                                    <div class="flex-shrink-0">
-                                        <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium text-green-800">
-                                            Estas horas ya han sido aprobadas y no pueden modificarse. Solo puedes actualizar tu comentario.
-                                        </p>
+                            <template x-if="existingRecord?.approved">
+                                <div class="rounded-md bg-green-50 p-4 mb-4 border border-green-100">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-green-800">
+                                                Estas horas ya han sido aprobadas y no pueden modificarse. Solo puedes actualizar tu comentario.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </template>
+                            </template>
+                        </div>
 
                     </div>
                     
                     {{-- Footer Actions --}}
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100 rounded-b-2xl">
-                        <button type="button" 
+                        <button x-show="!isReadOnly"
+                                type="button" 
                                 @click="saveHours()"
                                 :disabled="isSaving"
                                 class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-6 py-3 bg-primary text-base font-medium text-white hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
@@ -401,7 +428,7 @@
                         <button type="button" 
                                 @click="closeModal()" 
                                 class="mt-3 w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-6 py-3 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-all">
-                            Cancelar
+                            <span x-text="isReadOnly ? 'Cerrar' : 'Cancelar'">Cancelar</span>
                         </button>
                     </div>
                 </div>
@@ -419,10 +446,12 @@
                  selectedDate: null,
                  existingRecord: null,
                  hours: 8,
-                  absenceReason: null,
-                  otherReasonText: '',
-                  userComment: '',
-                  isSaving: false,
+                 absenceReason: null,
+                 otherReasonText: '',
+                 userComment: '',
+                 isSaving: false,
+                 isReadOnly: false,
+                 activities: [],
                  
                  absenceOptions: [
                      'Cita médica',
@@ -435,18 +464,22 @@
                      'Otro'
                  ],
 
+                 isToday(dateStr) {
+                     const today = new Date();
+                     const d = new Date(dateStr + 'T00:00:00');
+                     return today.getFullYear() === d.getFullYear() &&
+                            today.getMonth() === d.getMonth() &&
+                            today.getDate() === d.getDate();
+                 },
+
                  openModal(date, record) {
-                     console.log('Opening modal for date:', date);
-                     console.log('Existing record:', record);
-                     console.log('Record approved?:', record?.approved);
-                     
                      this.selectedDate = date;
                      this.existingRecord = record;
+                     this.isReadOnly = !this.isToday(date);
                      
                      if (record) {
                          this.hours = parseFloat(record.hours_worked);
                          this.absenceReason = record.absence_reason || null;
-                         // Check if absence reason is custom (not in options)
                          if (this.absenceReason && !this.absenceOptions.includes(this.absenceReason) && this.absenceReason !== 'Otro') {
                              this.otherReasonText = this.absenceReason;
                              this.absenceReason = 'Otro';
@@ -459,6 +492,7 @@
                       }
                       
                       this.userComment = record ? (record.user_comment || '') : '';
+                      this.activities = this.userComment ? this.userComment.split('\n').filter(a => a.trim() !== '') : [];
                       
                       this.isModalOpen = true;
                   },
@@ -469,14 +503,17 @@
                  },
 
                  setHours(value) {
+                     if (this.isReadOnly) return;
                      this.hours = value;
                  },
 
                  incrementHours() {
+                     if (this.isReadOnly) return;
                      if (this.hours < 24) this.hours += 0.5;
                  },
 
                  decrementHours() {
+                     if (this.isReadOnly) return;
                      if (this.hours > 0) this.hours -= 0.5;
                  },
 
@@ -493,6 +530,7 @@
                  },
 
                  saveHours() {
+                     if (this.isReadOnly) return;
                      if (this.hours < 8 && !this.absenceReason) {
                          alert('Por favor selecciona un motivo de ausencia.');
                          return;
@@ -505,7 +543,6 @@
                          finalReason = this.otherReasonText;
                      }
                      
-                     // If hours are 8+, absence reason should be cleared (optional logic)
                      if (this.hours >= 8) {
                         finalReason = null;
                      }
@@ -535,7 +572,6 @@
                      .then(data => {
                          this.isSaving = false;
                          if (data.success) {
-                             // Reload to prevent desync (simplest approach for now, or update UI reactively)
                              window.location.reload(); 
                          } else {
                              alert(data.message || 'Error al guardar.');

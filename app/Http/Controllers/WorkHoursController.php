@@ -38,6 +38,14 @@ class WorkHoursController extends Controller
         }
 
         $workDate = Carbon::parse($request->work_date);
+
+        // Restricción: Solo permitir registrar/editar horas del día actual
+        if (!$workDate->isToday() && !auth()->user()->is_superadmin) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Solo puedes registrar o editar tareas del día actual.']);
+            }
+            return back()->with('error', 'Solo puedes registrar o editar tareas del día actual.');
+        }
         
         if ($workDate->isWeekend()) {
             if ($request->ajax() || $request->wantsJson()) {
@@ -738,7 +746,7 @@ public function approveAllMonth(Request $request)
 
         $response = [
             'success' => true,
-            'message' => "Se aprobaron {$totalApproved} registros de horas para {$monthDate->translatedFormat('F Y')}. Total horas: {$totalHours}",
+            'message' => "Horas aprobadas exitosamente",
             'details' => [
                 'total_approved' => $totalApproved,
                 'total_hours' => $totalHours,

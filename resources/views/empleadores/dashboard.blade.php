@@ -214,7 +214,7 @@
                             const data = await response.json();
                             
                             if (data.success) {
-                                alert('✅ ' + data.message);
+                                alert(data.message);
                                 this.showApproveAllModal = false;
                                 setTimeout(() => {
                                     window.location.reload();
