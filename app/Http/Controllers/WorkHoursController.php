@@ -682,14 +682,22 @@ public function approveAllMonth(Request $request)
     try {
         foreach ($employees as $employee) {
             // Aprobar todas las horas del mes para este empleado
-            $approvedRecords = WorkHours::where('user_id', $employee->id)
-                ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
-                ->where('approved', false)
-                ->update([
-                    'approved' => true,
-                    'approved_at' => now(),
-                    'approved_by' => $user->id
-                ]);
+            $approvedRecords = DB::update(
+                "UPDATE work_hours 
+                 SET approved = true, 
+                     approved_at = ?, 
+                     updated_at = ? 
+                 WHERE user_id = ? 
+                   AND work_date BETWEEN ? AND ? 
+                   AND approved = false",
+                [
+                    now(),
+                    now(),
+                    $employee->id,
+                    $startOfMonth,
+                    $endOfMonth
+                ]
+            );
 
             if ($approvedRecords > 0) {
                 $employeeHours = WorkHours::where('user_id', $employee->id)
@@ -708,8 +716,9 @@ public function approveAllMonth(Request $request)
 
         DB::commit();
 
+        // TODO: Implementar notificación por email cuando se aprueben horas
         // Enviar notificación por email a cada empleado (opcional)
-        foreach ($employees as $employee) {
+        /* foreach ($employees as $employee) {
             try {
                 $this->emailService->sendHoursApprovedNotification(
                     $employee->email,
@@ -725,7 +734,7 @@ public function approveAllMonth(Request $request)
             } catch (\Exception $e) {
                 \Log::error('Error sending approval notification to ' . $employee->email . ': ' . $e->getMessage());
             }
-        }
+        } */
 
         $response = [
             'success' => true,
