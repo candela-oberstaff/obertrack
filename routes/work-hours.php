@@ -6,6 +6,7 @@
  * ============================================================================
  * 
  * Routes for work hours management including:
+ * 
  * - Registering work hours
  * - Approving work hours (weekly/monthly)
  * - Downloading work hours reports
