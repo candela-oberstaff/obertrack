@@ -390,6 +390,124 @@
             </div>
         </div>
 
+        {{-- Detail Modal (Read-Only) --}}
+        <div x-show="isDetailModalOpen" 
+             style="display: none;"
+             class="fixed inset-0 z-50 overflow-y-auto" 
+             aria-labelledby="modal-title" 
+             role="dialog" 
+             aria-modal="true">
+             
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                
+                <div x-show="isDetailModalOpen" 
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+                     @click="isDetailModalOpen = false"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <div x-show="isDetailModalOpen"
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     class="relative inline-block align-bottom bg-white rounded-2xl text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full overflow-hidden">
+                    
+                    {{-- Modal Header --}}
+                    <div class="bg-gray-50 px-4 py-4 sm:px-6 flex justify-between items-center border-b border-gray-100">
+                        <h3 class="text-lg leading-6 font-bold text-gray-900">
+                            Detalles de la jornada
+                        </h3>
+                         <button @click="isDetailModalOpen = false" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 text-center sm:text-left">
+                        
+                        <div class="mb-6 flex flex-col items-center sm:items-start">
+                            <span class="text-xs font-bold text-[#22A9C8] uppercase tracking-widest mb-1" x-text="formatDate(selectedDate)"></span>
+                            <div class="flex items-center gap-2 mt-2">
+                                <div class="w-2.5 h-2.5 rounded-full" :class="existingRecord?.approved ? 'bg-green-500' : 'bg-orange-500'"></div>
+                                <span class="text-sm font-bold text-gray-700" x-text="existingRecord?.approved ? 'Aprobado' : 'Pendiente de aprobación'"></span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-2xl p-6 mb-6 flex items-center justify-between border border-gray-100 shadow-sm" x-show="existingRecord">
+                            <div class="text-left">
+                                <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Horas registradas</p>
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-4xl font-black text-gray-900" x-text="(parseFloat(existingRecord?.hours_worked || 0) + (parseFloat(existingRecord?.recovered_hours || 0)))"></span>
+                                    <span class="text-sm font-bold text-gray-400 uppercase">hs</span>
+                                </div>
+                            </div>
+                            <div class="w-px h-10 bg-gray-200"></div>
+                            <div class="text-right">
+                                <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Jornada</p>
+                                <span class="text-sm font-bold px-3 py-1 rounded-full" 
+                                      :class="(existingRecord?.hours_worked >= 8 || existingRecord?.recovered_hours > 0) ? 'bg-[#22A9C8]/10 text-[#22A9C8]' : 'bg-orange-100 text-orange-600'"
+                                      x-text="(existingRecord?.hours_worked >= 8) ? 'Completa' : (existingRecord?.recovered_hours > 0 ? 'Recuperación' : 'Reducida')">
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-2xl p-6 mb-6 text-center border border-gray-100 flex flex-col items-center py-10" x-show="!existingRecord">
+                             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                 <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                             </div>
+                             <p class="text-gray-500 font-medium">No se registraron horas para este día.</p>
+                        </div>
+
+                        <div x-show="existingRecord?.absence_reason" class="mb-6">
+                            <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2 px-1">Motivo de la ausencia</p>
+                            <div class="bg-orange-50 border border-orange-100 rounded-xl p-4">
+                                <p class="text-sm text-orange-800 font-medium" x-text="existingRecord?.absence_reason"></p>
+                            </div>
+                        </div>
+
+                        <div class="mb-2" x-show="existingRecord">
+                            <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3 px-1">Actividades detalladas</p>
+                            <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm max-h-48 overflow-y-auto custom-scrollbar">
+                                <template x-if="activities.length > 0">
+                                    <ul class="space-y-4">
+                                        <template x-for="(activity, index) in activities" :key="index">
+                                            <li class="flex items-start gap-3 group">
+                                                <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#22A9C8] group-hover:scale-125 transition-transform flex-shrink-0"></div>
+                                                <span class="text-sm text-gray-600 leading-relaxed" x-text="activity"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
+                                <template x-if="activities.length === 0">
+                                    <p class="text-sm text-gray-400 italic text-center py-4">No se registraron detalles adicionales.</p>
+                                </template>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    {{-- Footer Actions --}}
+                    <div class="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-center">
+                        <button type="button" 
+                                @click="isDetailModalOpen = false" 
+                                class="w-full sm:w-auto inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-10 py-2.5 bg-white text-sm font-bold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22A9C8] transition-all">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Recovery Modal --}}
         <div x-show="isRecoveryModalOpen" 
              style="display: none;"
@@ -580,33 +698,35 @@
     <script>
         document.addEventListener('alpine:init', () => {
              Alpine.data('hoursRegistration', () => ({
-                 isModalOpen: false,
-                 isDropdownOpen: false,
-                 selectedDate: null,
-                 existingRecord: null,
-                 workedFullDay: '', 
-                 hours: 8,
-                 absenceHours: 0,
-                 absenceReason: null,
-                 otherReasonText: '',
-                 userComment: '',
-                 
-                 // New fields
-                 descriptionMode: 'list',
-                 newActivity: '',
-                 activities: [],
-                 isSaving: false,
+                  isModalOpen: false,
+                  isDetailModalOpen: false,
+                  isDropdownOpen: false,
+                  selectedDate: null,
+                  existingRecord: null,
+                  workedFullDay: '', 
+                  hours: 8,
+                  absenceHours: 0,
+                  absenceReason: null,
+                  otherReasonText: '',
+                  userComment: '',
+                  
+                  // New fields
+                  descriptionMode: 'list',
+                  newActivity: '',
+                  activities: [],
+                  isSaving: false,
+                  todayDate: @json(now()->format('Y-m-d')),
 
-                 // Recovery fields
-                 isRecoveryModalOpen: false,
-                 recoveryDate: new Date().toISOString().split('T')[0],
-                 recoveryHours: 1,
-                 recoveryActivities: [],
-                 newRecoveryActivity: '',
-                 recoveryAuthorized: false,
-                 recoveryDescriptionMode: 'list',
-                 recoveryUserComment: '',
-                 missingHours: {{ $missingHours }},
+                  // Recovery fields
+                  isRecoveryModalOpen: false,
+                  recoveryDate: new Date().toISOString().split('T')[0],
+                  recoveryHours: 1,
+                  recoveryActivities: [],
+                  newRecoveryActivity: '',
+                  recoveryAuthorized: false,
+                  recoveryDescriptionMode: 'list',
+                  recoveryUserComment: '',
+                  missingHours: {{ $missingHours }},
                  
                  absenceOptions: [
                      'Cita médica',
@@ -623,6 +743,21 @@
                      this.selectedDate = date;
                      this.existingRecord = record;
                      
+                     const isPast = date < this.todayDate;
+                     const isApproved = record && record.approved;
+
+                     // Initialize comments/activities first (used by both modals)
+                     this.userComment = record ? (record.user_comment || '') : '';
+                     this.activities = [];
+                     if (this.userComment) {
+                         this.activities = this.userComment.split('\n').filter(line => line.trim() !== '');
+                     }
+
+                     if (isPast || isApproved) {
+                         this.isDetailModalOpen = true;
+                         return;
+                     }
+
                      if (record) {
                          const worked = parseFloat(record.hours_worked);
                          if (worked >= 8) {
@@ -647,18 +782,10 @@
                           this.absenceReason = null;
                           this.otherReasonText = '';
                           this.userComment = '';
+                          this.activities = [];
                       }
                       
-                      // Initialize comments/activities
-                      this.userComment = record ? (record.user_comment || '') : '';
-                      this.activities = [];
-                      if (this.userComment) {
-                          const lines = this.userComment.split('\n').filter(line => line.trim() !== '');
-                          // Simple heuristic: if multiline, treat as list. 
-                          this.activities = lines;
-                      }
                       this.descriptionMode = 'list';
-                      
                       this.isModalOpen = true;
                   },
 
