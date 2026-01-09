@@ -630,4 +630,132 @@ class WorkHoursController extends Controller
 
         return $pdf->download("Reporte_Mensual_{$user->name}_{$startOfMonth->format('F_Y')}.pdf");
     }
+
+
+
+/**
+ * Aprobar todas las horas del mes actual para todos los empleados del empleador
+ */
+public function approveAllMonth(Request $request)
+{
+    $request->validate([
+        'month' => 'required|date_format:Y-m',
+    ]);
+
+    $user = Auth::user();
+    $month = $request->input('month');
+    
+    // Validar que el usuario es empleador
+    if ($user->tipo_usuario !== 'empleador' && !$user->is_superadmin) {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+        return back()->with('error', 'No autorizado');
+    }
+
+    // Obtener todos los empleados del empleador
+    $employerId = $user->is_superadmin ? null : $user->id;
+    $employeesQuery = User::where('tipo_usuario', 'empleado');
+    
+    if ($employerId) {
+        $employeesQuery->where('empleador_id', $employerId);
+    }
+    
+    $employees = $employeesQuery->get();
+    
+    if ($employees->isEmpty()) {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => false, 'message' => 'No hay empleados registrados']);
+        }
+        return back()->with('error', 'No hay empleados registrados');
+    }
+
+    $monthDate = Carbon::parse($month);
+    $startOfMonth = $monthDate->copy()->startOfMonth();
+    $endOfMonth = $monthDate->copy()->endOfMonth();
+
+    $totalApproved = 0;
+    $totalHours = 0;
+    $approvedEmployees = [];
+
+    DB::beginTransaction();
+    try {
+        foreach ($employees as $employee) {
+            // Aprobar todas las horas del mes para este empleado
+            $approvedRecords = WorkHours::where('user_id', $employee->id)
+                ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
+                ->where('approved', false)
+                ->update([
+                    'approved' => true,
+                    'approved_at' => now(),
+                    'approved_by' => $user->id
+                ]);
+
+            if ($approvedRecords > 0) {
+                $employeeHours = WorkHours::where('user_id', $employee->id)
+                    ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
+                    ->sum('hours_worked');
+                    
+                $totalApproved += $approvedRecords;
+                $totalHours += $employeeHours;
+                $approvedEmployees[] = [
+                    'name' => $employee->name,
+                    'records' => $approvedRecords,
+                    'hours' => $employeeHours
+                ];
+            }
+        }
+
+        DB::commit();
+
+        // Enviar notificación por email a cada empleado (opcional)
+        foreach ($employees as $employee) {
+            try {
+                $this->emailService->sendHoursApprovedNotification(
+                    $employee->email,
+                    $employee->name,
+                    [
+                        'month' => $monthDate->translatedFormat('F Y'),
+                        'employer_name' => $user->name,
+                        'total_hours' => WorkHours::where('user_id', $employee->id)
+                            ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
+                            ->sum('hours_worked')
+                    ]
+                );
+            } catch (\Exception $e) {
+                \Log::error('Error sending approval notification to ' . $employee->email . ': ' . $e->getMessage());
+            }
+        }
+
+        $response = [
+            'success' => true,
+            'message' => "Se aprobaron {$totalApproved} registros de horas para {$monthDate->translatedFormat('F Y')}. Total horas: {$totalHours}",
+            'details' => [
+                'total_approved' => $totalApproved,
+                'total_hours' => $totalHours,
+                'month' => $monthDate->format('Y-m'),
+                'employees_count' => count($approvedEmployees)
+            ]
+        ];
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json($response);
+        }
+
+        return back()->with('success', $response['message']);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error approving all month hours: ' . $e->getMessage());
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al aprobar las horas: ' . $e->getMessage()
+            ], 500);
+        }
+
+        return back()->with('error', 'Error al aprobar las horas: ' . $e->getMessage());
+    }
+}
 }

@@ -51,4 +51,10 @@ Route::middleware(['auth'])->prefix('work-hours')->name('work-hours.')->group(fu
     // Parameters: month (format: Y-m), employee_id (optional query parameter)
     Route::get('/download-monthly-report/{month}', [WorkHoursController::class, 'downloadMonthlyReport'])
         ->name('download-monthly-report');
+
+
+
+    // APROBAR TODAS LAS HORAS
+Route::post('/approve-all-month', [WorkHoursController::class, 'approveAllMonth'])
+    ->name('approve-all-month');
 });
