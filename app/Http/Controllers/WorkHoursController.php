@@ -738,7 +738,7 @@ public function approveAllMonth(Request $request)
 
         $response = [
             'success' => true,
-            'message' => "Se aprobaron {$totalApproved} registros de horas para {$monthDate->translatedFormat('F Y')}. Total horas: {$totalHours}",
+            'message' => "Se aprobaron {$totalApproved} registros de horas para {$monthDate->translatedFormat('F Y')}.",
             'details' => [
                 'total_approved' => $totalApproved,
                 'total_hours' => $totalHours,
@@ -767,4 +767,120 @@ public function approveAllMonth(Request $request)
         return back()->with('error', 'Error al aprobar las horas: ' . $e->getMessage());
     }
 }
+
+
+
+/**
+ * Aprobar todas las horas de una semana específica para todos los empleados del empleador
+ */
+public function approveAllWeek(Request $request)
+{
+    $request->validate([
+        'week_date' => 'required|date',
+    ]);
+
+    $user = Auth::user();
+    $weekDate = Carbon::parse($request->week_date);
+    
+    // Validar que el usuario es empleador o superadmin
+    if ($user->tipo_usuario !== 'empleador' && !$user->is_superadmin) {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+        return back()->with('error', 'No autorizado');
+    }
+
+    // Obtener todos los empleados del empleador
+    $employeesQuery = User::where('tipo_usuario', 'empleado');
+    if (!$user->is_superadmin) {
+        $employeesQuery->where('empleador_id', $user->id);
+    }
+    $employees = $employeesQuery->get();
+
+    if ($employees->isEmpty()) {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => false, 'message' => 'No hay empleados registrados']);
+        }
+        return back()->with('error', 'No hay empleados registrados');
+    }
+
+    $startOfWeek = $weekDate->copy()->startOfWeek(Carbon::MONDAY);
+    $endOfWeek = $weekDate->copy()->endOfWeek(Carbon::FRIDAY); // Solo días hábiles
+
+    $totalApproved = 0;
+    $totalHours = 0;
+    $approvedEmployees = [];
+
+    DB::beginTransaction();
+    try {
+        foreach ($employees as $employee) {
+            $approvedRecords = DB::update(
+                "UPDATE work_hours 
+                 SET approved = true, 
+                     approved_at = ?, 
+                     updated_at = ? 
+                 WHERE user_id = ? 
+                   AND work_date BETWEEN ? AND ? 
+                   AND approved = false",
+                [
+                    now(),
+                    now(),
+                    $employee->id,
+                    $startOfWeek,
+                    $endOfWeek
+                ]
+            );
+
+            if ($approvedRecords > 0) {
+                $employeeHours = WorkHours::where('user_id', $employee->id)
+                    ->whereBetween('work_date', [$startOfWeek, $endOfWeek])
+                    ->sum('hours_worked');
+
+                $totalApproved += $approvedRecords;
+                $totalHours += $employeeHours;
+                $approvedEmployees[] = [
+                    'name' => $employee->name,
+                    'records' => $approvedRecords,
+                    'hours' => $employeeHours
+                ];
+            }
+        }
+
+        DB::commit();
+
+        $response = [
+            'success' => true,
+            'message' => "Se aprobaron {$totalApproved} registros de horas para la semana {$startOfWeek->format('d/m/Y')} - {$endOfWeek->format('d/m/Y')}.",
+            'details' => [
+                'total_approved' => $totalApproved,
+                'total_hours' => $totalHours,
+                'week_start' => $startOfWeek->format('Y-m-d'),
+                'week_end' => $endOfWeek->format('Y-m-d'),
+                'employees_count' => count($approvedEmployees)
+            ]
+        ];
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json($response);
+        }
+
+        return back()->with('success', $response['message']);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error approving all week hours: ' . $e->getMessage());
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al aprobar las horas: ' . $e->getMessage()
+            ], 500);
+        }
+
+        return back()->with('error', 'Error al aprobar las horas: ' . $e->getMessage());
+    }
 }
+ 
+
+
+} 

@@ -58,4 +58,9 @@ Route::middleware(['auth'])->prefix('work-hours')->name('work-hours.')->group(fu
     // APROBAR TODAS LAS HORAS
 Route::post('/approve-all-month', [WorkHoursController::class, 'approveAllMonth'])
     ->name('approve-all-month');
+
+    //aprobar toda la semana
+Route::post('/approve-all-week', [WorkHoursController::class, 'approveAllWeek'])
+    ->name('approve-all-week');
+
 });

@@ -112,6 +112,12 @@
 
                 <!-- Calendar Grid (Interactive) -->
                 <div id="employer-calendar" x-data="{ 
+     allMonthSuccessMessage: '',    
+isApprovingWeek: false,     
+weekSuccessMessage: '',
+weekDate: '',  
+
+                showApproveWeekModal: false,
                     selectedDay: null,
                     showModal: false,
                     showApproveAllModal: false,
@@ -162,6 +168,47 @@
                             this.isApproving = false;
                         }
                     },
+
+
+                    async approveWeek() {
+    if (!this.weekDate) return;
+
+    this.isApprovingWeek = true;
+    this.weekSuccessMessage = '';
+
+    try {
+        const response = await fetch('{{ route('work-hours.approve-all-week') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                week_date: this.weekDate
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            this.weekSuccessMessage = '✅ Las horas de la semana fueron aprobadas correctamente';
+            // Opcional: cerrar modal automáticamente después de 2 segundos
+            setTimeout(() => {
+                this.showApproveWeekModal = false;
+                window.location.reload(); // refresca para reflejar cambios
+            }, 2000);
+        } else {
+            alert(data.message || 'Error al aprobar la semana');
+        }
+
+    } catch (error) {
+        console.error(error);
+        alert('Error de conexión al intentar aprobar');
+    } finally {
+        this.isApprovingWeek = false;
+    }
+},
                     
                     async updateComment(emp) {
                         if (this.isApproving) return;
@@ -195,53 +242,67 @@
                     },
                     
                     async approveAllMonth() {
-                        if (this.isApprovingAll) return;
-                        this.isApprovingAll = true;
-                        
-                        try {
-                            const response = await fetch('{{ route('work-hours.approve-all-month') }}', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    month: '{{ $currentMonth->format('Y-m') }}'
-                                })
-                            });
-                            
-                            const data = await response.json();
-                            
-                            if (data.success) {
-                                alert('✅ ' + data.message);
-                                this.showApproveAllModal = false;
-                                setTimeout(() => {
-                                    window.location.reload();
-                                }, 2000);
-                            } else {
-                                alert('❌ ' + (data.message || 'Error al aprobar las horas'));
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            alert('❌ Error de conexión al intentar aprobar');
-                        } finally {
-                            this.isApprovingAll = false;
-                        }
-                    }
+    if (this.isApprovingAll) return;
+    this.isApprovingAll = true;
+    this.allMonthSuccessMessage = '';
+
+    try {
+        const response = await fetch('{{ route('work-hours.approve-all-month') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                month: '{{ $currentMonth->format('Y-m') }}'
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            this.allMonthSuccessMessage = '✅ ' + data.message;
+            // Cerrar modal después de 2 segundos y refrescar
+            setTimeout(() => {
+                this.showApproveAllModal = false;
+                window.location.reload();
+            }, 4000);
+        } else {
+            this.allMonthSuccessMessage = '❌ ' + (data.message || 'Error al aprobar las horas');
+        }
+
+    } catch (error) {
+        console.error(error);
+        this.allMonthSuccessMessage = '❌ Error de conexión al intentar aprobar';
+    } finally {
+        this.isApprovingAll = false;
+    }
+}
+
                 }">
                     
-                    <!-- Botón para aprobar todo el mes - DENTRO DEL SCOPE DE ALPINE -->
-                    <div class="flex justify-end mb-4">
+                    <!-- Botón para aprobar todo el mes  -->
+                    <div class="flex justify-end mb-4 gap-4">
                         <button 
                             @click="showApproveAllModal = true"
-                            class="bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 px-5 rounded-lg transition-all shadow-md flex items-center gap-2 text-sm hover:shadow-lg"
+                            class="bg-[#22A9C8] hover:bg-[#0D5C7D]  text-white font-bold py-2.5 px-5 rounded-lg transition-all shadow-md flex items-center gap-2 text-sm hover:shadow-lg"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                           
                             Aprobar todo el mes
                         </button>
+
+                      <!--Boton para aprobar horas de una semana-->
+
+         <button 
+    type="button" 
+    class="bg-[#22A9C8] hover:bg-[#0D5C7D] text-white font-bold py-2.5 px-5 rounded-lg transition-all shadow-md flex items-center gap-2 text-sm"
+    @click="showApproveWeekModal = true"
+>
+    Aprobar semana
+</button>
+
+
                     </div>
                     
                     <!-- MOBILE VIEW -->
@@ -327,6 +388,55 @@
                             @endforeach
                         </div>
                     </div>
+
+<!-- Modal para aprobar semana -->
+<div
+    x-show="showApproveWeekModal"
+    x-transition
+    style="display: none;"
+    class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
+    aria-labelledby="approveWeekModalLabel"
+    role="dialog"
+    aria-modal="true"
+>
+    <!-- Backdrop -->
+    <div
+        x-show="showApproveWeekModal"
+        x-transition.opacity
+        class="fixed inset-0 bg-gray-500 bg-opacity-75"
+        @click="showApproveWeekModal = false"
+    ></div>
+
+    <!-- Panel -->
+    <div
+        x-show="showApproveWeekModal"
+        x-transition
+        class="relative bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full z-10"
+    >
+        <form @submit.prevent="approveWeek()" class="p-6">
+            <h5 class="text-lg font-bold mb-4">Aprobar horas de la semana</h5>
+
+            <label for="week_date" class="form-label">Selecciona cualquier día de la semana</label>
+            <input type="date" id="week_date" x-model="weekDate" class="form-control w-full mb-3" required>
+            <p class="text-sm text-gray-500 mb-4">El sistema tomará automáticamente el lunes y viernes de esa semana.</p>
+
+            <!-- Mensaje de confirmación -->
+            <div x-show="weekSuccessMessage" x-transition class="mb-4 p-3 bg-green-50 text-green-700 rounded-lg">
+                <p x-text="weekSuccessMessage"></p>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button type="button" @click="showApproveWeekModal = false" class="px-4 py-2 bg-gray-200 rounded-lg">Cancelar</button>
+                <button type="submit" :disabled="isApprovingWeek"
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center gap-2 disabled:opacity-50">
+                    <span x-text="isApprovingWeek ? 'Aprobando...' : 'Aprobar semana'"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 
                     <!-- Modal para aprobar todo el mes -->
                     <div
@@ -430,6 +540,15 @@
                                     </div>
                                 </div>
                                 
+                                <!-- Mensaje de confirmación -->
+<div 
+    x-show="allMonthSuccessMessage"
+    x-transition
+    class="mb-4 p-3 bg-green-50 text-green-700 rounded-lg"
+>
+    <p x-text="allMonthSuccessMessage"></p>
+</div>
+
                                 <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
                                     <div class="flex justify-end gap-3">
                                         <button 
