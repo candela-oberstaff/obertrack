@@ -319,6 +319,10 @@ class WorkHoursController extends Controller
 
         $employeeId = $request->query('employee_id');
         $employee = User::findOrFail($employeeId);
+        // Clean month parameter if it contains query string artifacts
+        if ($month && str_contains($month, '?')) {
+            $month = explode('?', $month)[0];
+        }
         $monthDate = Carbon::parse($month);
 
         try {
@@ -398,8 +402,13 @@ class WorkHoursController extends Controller
             $professionalsQuery = User::where('empleador_id', $employerId);
         }
 
-        $weekStart = $request->query('week') 
-            ? Carbon::parse($request->query('week'))->startOfWeek(Carbon::MONDAY)
+        $weekInput = $request->query('week');
+        if ($weekInput && str_contains($weekInput, '?')) {
+            $weekInput = explode('?', $weekInput)[0];
+        }
+
+        $weekStart = $weekInput 
+            ? Carbon::parse($weekInput)->startOfWeek(Carbon::MONDAY)
             : Carbon::now()->startOfWeek(Carbon::MONDAY);
         
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
@@ -493,8 +502,13 @@ class WorkHoursController extends Controller
             }
         }
 
-        $weekStart = $request->query('week') 
-            ? Carbon::parse($request->query('week'))->startOfWeek(Carbon::MONDAY)
+        $weekInput = $request->query('week');
+        if ($weekInput && str_contains($weekInput, '?')) {
+            $weekInput = explode('?', $weekInput)[0];
+        }
+
+        $weekStart = $weekInput 
+            ? Carbon::parse($weekInput)->startOfWeek(Carbon::MONDAY)
             : Carbon::now()->startOfWeek(Carbon::MONDAY);
         
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
@@ -578,8 +592,13 @@ class WorkHoursController extends Controller
             }
         }
 
-        $weekStart = $request->query('week') 
-            ? Carbon::parse($request->query('week'))->startOfWeek(Carbon::MONDAY)
+        $weekInput = $request->query('week');
+        if ($weekInput && str_contains($weekInput, '?')) {
+            $weekInput = explode('?', $weekInput)[0];
+        }
+
+        $weekStart = $weekInput 
+            ? Carbon::parse($weekInput)->startOfWeek(Carbon::MONDAY)
             : Carbon::now()->startOfWeek(Carbon::MONDAY);
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
 
@@ -665,7 +684,12 @@ class WorkHoursController extends Controller
             }
         }
 
-        $date = $request->query('month') ? Carbon::parse($request->query('month')) : Carbon::now();
+        $monthInput = $request->query('month');
+        if ($monthInput && str_contains($monthInput, '?')) {
+            $monthInput = explode('?', $monthInput)[0];
+        }
+
+        $date = $monthInput ? Carbon::parse($monthInput) : Carbon::now();
         $startOfMonth = $date->copy()->startOfMonth();
         $endOfMonth = $date->copy()->endOfMonth();
 
