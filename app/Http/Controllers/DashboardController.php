@@ -191,6 +191,7 @@ class DashboardController extends Controller
             return [
                 'user' => $employee,
                 'total_hours' => $employeeHours->sum('hours_worked'),
+                'days_registered' => $employeeHours->where('hours_worked', '>', 0)->count(),
                 'target_hours' => 160,
                 'completed_tasks' => $empTasks->filter(fn($t) => (bool)$t->completed)->count(),
                 'total_tasks' => $empTasks->count(),
