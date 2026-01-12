@@ -28,7 +28,20 @@ class AdminDashboardController extends Controller
         $allProfessionals = User::where('tipo_usuario', 'empleado')->orderBy('name')->get();
         $allCompanies = User::where('tipo_usuario', 'empleador')->orderBy('name')->get();
 
-        return view('admin.dashboard', compact('professionals', 'stats', 'allProfessionals', 'allCompanies'));
+        // Mass Email Statistics (Personalized for the current admin)
+        $emailLogs = \App\Models\MassEmailLog::where('user_id', auth()->id())->get();
+        $emailStats = [
+            'total_sessions' => $emailLogs->count(),
+            'total_recipients' => $emailLogs->sum('recipient_count'),
+            'by_segment' => [
+                'professionals' => $emailLogs->filter(fn($l) => in_array($l->segment, ['all_professionals', 'red_alerts', 'yellow_alerts', 'individual_professional']))->sum('recipient_count'),
+                'companies' => $emailLogs->filter(fn($l) => in_array($l->segment, ['all_companies', 'individual_company']))->sum('recipient_count'),
+                'individuals' => $emailLogs->filter(fn($l) => in_array($l->segment, ['individual_professional', 'individual_company']))->count(),
+            ],
+            'recent_logs' => $emailLogs->sortByDesc('created_at')->take(5)
+        ];
+
+        return view('admin.dashboard', compact('professionals', 'stats', 'allProfessionals', 'allCompanies', 'emailStats'));
     }
 
     public function sendMassEmail(Request $request, \App\Services\BrevoEmailService $emailService)
@@ -78,6 +91,17 @@ class AdminDashboardController extends Controller
                 $emailService->sendEmail($user->email, $user->name, $request->subject, $htmlContent);
                 $count++;
             }
+        }
+
+        // Log the mass email
+        if ($count > 0) {
+            \App\Models\MassEmailLog::create([
+                'user_id' => auth()->id(),
+                'segment' => $request->segment,
+                'subject' => $request->subject,
+                'recipient_count' => $count,
+                'target_user_id' => in_array($request->segment, ['individual_professional', 'individual_company']) ? $request->individual_id : null,
+            ]);
         }
 
         return back()->with('status', "Comunicación enviada a {$count} destinatarios con éxito.");

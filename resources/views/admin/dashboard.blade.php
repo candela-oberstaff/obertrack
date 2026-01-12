@@ -93,161 +93,223 @@
                 </div>
             </div>
 
-            <!-- Mass Communication Form -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 font-bold border-b border-gray-100">
-                    Comunicación Masiva
-                </div>
-                <div class="p-6">
-                    <!-- Quill Styles -->
-                    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-
-                    <form action="{{ route('admin.mass-email') }}" method="POST" class="space-y-4 max-w-2xl" id="massEmailForm">
-                        @csrf
-                        
-                        <!-- Template Loader -->
-                        <div class="bg-blue-50 p-4 rounded-md mb-4 border border-blue-100">
-                             <label class="block text-sm font-bold text-blue-800 mb-2">Cargar Plantilla (Opcional)</label>
-                             <select id="templateSelector" class="block w-full rounded-md border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                                <option value="">-- Seleccionar una plantilla --</option>
-                                @foreach(\App\Models\EmailTemplate::all() as $template)
-                                    <option value="{{ $template->id }}" 
-                                            {{ request('template_id') == $template->id ? 'selected' : '' }}
-                                            data-subject="{{ $template->subject }}" 
-                                            data-body="{{ $template->body }}">
-                                        {{ $template->title }}
-                                    </option>
-                                @endforeach
-                             </select>
+            <!-- Mass Communication & Stats -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Mass Communication Form (Left) -->
+                <div class="lg:col-span-2 bg-white overflow-hidden shadow-sm sm:rounded-3xl border border-gray-100">
+                    <div class="p-8 text-gray-900 font-extrabold text-xl border-b border-gray-50 flex items-center gap-3">
+                        <div class="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                         </div>
+                        Comunicación Masiva
+                    </div>
+                    <div class="p-8">
+                        <!-- Quill Styles -->
+                        <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Segmento</label>
-                            <select name="segment" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                                <option value="red_alerts">Alertas Rojas (Inactivos 2+ días)</option>
-                                <option value="yellow_alerts">Alertas Amarillas (Inactivos 1 día)</option>
-                                <option value="all_professionals">Todos los Profesionales</option>
-                                <option value="all_companies">Todas las Empresas</option>
-                                <option value="individual_professional">Profesional Individual</option>
-                                <option value="individual_company">Empresa Individual</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Individual Professional Dropdown -->
-                        <div id="individual_professional_div" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700">Seleccionar Profesional</label>
-                            <select name="individual_id" id="individual_professional_select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" disabled>
-                                <option value="">-- Buscar Profesional --</option>
-                                @foreach($allProfessionals as $p)
-                                    <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->email }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Individual Company Dropdown -->
-                        <div id="individual_company_div" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700">Seleccionar Empresa</label>
-                            <select name="individual_id" id="individual_company_select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" disabled>
-                                <option value="">-- Buscar Empresa --</option>
-                                @foreach($allCompanies as $c)
-                                    <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->company_name ?? 'Sin nombre' }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Asunto</label>
-                            <input type="text" name="subject" id="subject" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Mensaje</label>
-                            <!-- Quill Editor -->
-                            <div id="editor-container" style="height: 300px; background: white;"></div>
-                            <input type="hidden" name="message" id="message">
-                        </div>
-                        <button type="submit" id="submitBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
-                            Enviar Emails
-                        </button>
-                    </form>
-
-                    <!-- Quill Scripts & Logic -->
-                    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-                    <script>
-                        var quill = new Quill('#editor-container', {
-                            theme: 'snow',
-                            modules: {
-                                toolbar: [
-                                    ['bold', 'italic', 'underline', 'strike'],
-                                    ['blockquote', 'code-block'],
-                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                                    [{ 'color': [] }, { 'background': [] }],
-                                    [{ 'align': [] }],
-                                    ['link', 'image'],
-                                    ['clean']
-                                ]
-                            }
-                        });
-
-                        // Template Loader Logic
-                        document.getElementById('templateSelector').addEventListener('change', function() {
-                            var selectedOption = this.options[this.selectedIndex];
-                            if (selectedOption.value) {
-                                var subject = selectedOption.getAttribute('data-subject');
-                                var body = selectedOption.getAttribute('data-body');
-
-                                document.getElementById('subject').value = subject;
-                                quill.root.innerHTML = body;
-                            }
-                        });
-
-
-                        // Segment Selector Logic
-                        const segmentSelect = document.querySelector('select[name="segment"]');
-                        const professionalDiv = document.getElementById('individual_professional_div');
-                        const companyDiv = document.getElementById('individual_company_div');
-                        const professionalSelect = document.getElementById('individual_professional_select');
-                        const companySelect = document.getElementById('individual_company_select');
-
-                        segmentSelect.addEventListener('change', function() {
-                            const value = this.value;
+                        <form action="{{ route('admin.mass-email') }}" method="POST" class="space-y-6" id="massEmailForm">
+                            @csrf
                             
-                            // Reset
-                            professionalDiv.classList.add('hidden');
-                            companyDiv.classList.add('hidden');
-                            professionalSelect.disabled = true;
-                            companySelect.disabled = true;
-                            professionalSelect.name = 'temp_ignore'; // Prevent sending
-                            companySelect.name = 'temp_ignore'; 
+                            <!-- Template Loader -->
+                            <div class="bg-blue-50/50 p-6 rounded-2xl mb-6 border border-blue-100/50">
+                                <label class="block text-xs font-black text-blue-900 uppercase tracking-widest mb-3">Cargar Plantilla (Opcional)</label>
+                                <select id="templateSelector" class="block w-full rounded-xl border-blue-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-white">
+                                    <option value="">-- Seleccionar una plantilla --</option>
+                                    @foreach(\App\Models\EmailTemplate::all() as $template)
+                                        <option value="{{ $template->id }}" 
+                                                {{ request('template_id') == $template->id ? 'selected' : '' }}
+                                                data-subject="{{ $template->subject }}" 
+                                                data-body="{{ $template->body }}">
+                                            {{ $template->title }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                            if (value === 'individual_professional') {
-                                professionalDiv.classList.remove('hidden');
-                                professionalSelect.disabled = false;
-                                professionalSelect.name = 'individual_id';
-                            } else if (value === 'individual_company') {
-                                companyDiv.classList.remove('hidden');
-                                companySelect.disabled = false;
-                                companySelect.name = 'individual_id';
-                            }
-                        });
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Segmento de Destino</label>
+                                    <select name="segment" class="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                        <option value="red_alerts">Alertas Rojas (Inactivos 2+ días)</option>
+                                        <option value="yellow_alerts">Alertas Amarillas (Inactivos 1 día)</option>
+                                        <option value="all_professionals">Todos los Profesionales</option>
+                                        <option value="all_companies">Todas las Empresas</option>
+                                        <option value="individual_professional">Profesional Individual</option>
+                                        <option value="individual_company">Empresa Individual</option>
+                                    </select>
+                                </div>
+                                
+                                <div id="individual_professional_div" class="hidden">
+                                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Seleccionar Profesional</label>
+                                    <select name="individual_id" id="individual_professional_select" class="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" disabled>
+                                        <option value="">-- Buscar Profesional --</option>
+                                        @foreach($allProfessionals as $p)
+                                            <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->email }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
 
+                                <div id="individual_company_div" class="hidden">
+                                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Seleccionar Empresa</label>
+                                    <select name="individual_id" id="individual_company_select" class="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" disabled>
+                                        <option value="">-- Buscar Empresa --</option>
+                                        @foreach($allCompanies as $c)
+                                            <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->company_name ?? 'Sin nombre' }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
 
-                        // Trigger change on load if value exists
-                        if (document.getElementById('templateSelector').value) {
-                             document.getElementById('templateSelector').dispatchEvent(new Event('change'));
-                             // Scroll to form to show user what happened
-                             document.getElementById('massEmailForm').scrollIntoView({ behavior: 'smooth' });
-                        }
+                            <div>
+                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Asunto del Correo</label>
+                                <input type="text" name="subject" id="subject" class="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Ej: Importante: Actualiza tus horas">
+                            </div>
 
-                        // Form Submission
-                        document.getElementById('submitBtn').addEventListener('click', function(e) {
-                            e.preventDefault();
-                            var html = quill.root.innerHTML;
-                            document.getElementById('message').value = html;
-                            document.getElementById('massEmailForm').submit();
-                        });
-                    </script>
+                            <div>
+                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Cuerpo del Mensaje</label>
+                                <!-- Quill Editor -->
+                                <div class="rounded-xl overflow-hidden border border-gray-200">
+                                    <div id="editor-container" style="height: 350px; background: white; border: none;"></div>
+                                </div>
+                                <input type="hidden" name="message" id="message">
+                            </div>
+
+                            <div class="flex justify-end pt-4">
+                                <button type="submit" id="submitBtn" class="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-blue-700 transition shadow-lg shadow-blue-200 active:scale-95">
+                                    <span>Enviar Comunicación</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Stats Sidebar (Right) -->
+                <div class="space-y-6">
+                    <!-- Impact Cards -->
+                    <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100">
+                        <h3 class="text-gray-900 font-extrabold text-lg mb-6 flex items-center gap-2">
+                             <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                             </div>
+                             Mi Impacto
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div class="p-5 bg-gray-50 rounded-2xl flex items-center justify-between border border-gray-100">
+                                <div>
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Enviados</p>
+                                    <p class="text-2xl font-black text-gray-900">{{ number_format($emailStats['total_recipients']) }}</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-500">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                                    <p class="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1">Profesionales</p>
+                                    <p class="text-xl font-black text-blue-900">{{ number_format($emailStats['by_segment']['professionals']) }}</p>
+                                </div>
+                                <div class="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                                    <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Empresas</p>
+                                    <p class="text-xl font-black text-indigo-900">{{ number_format($emailStats['by_segment']['companies']) }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 pt-6 border-t border-gray-50">
+                            <p class="text-xs font-bold text-gray-400 italic">Estadísticas basadas en {{ $emailStats['total_sessions'] }} sesiones de envío.</p>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100">
+                        <h3 class="text-gray-900 font-extrabold text-lg mb-6 flex items-center gap-2">
+                             <div class="w-8 h-8 bg-green-50 text-green-600 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                             </div>
+                             Mi Historial Reciente
+                        </h3>
+
+                        <div class="space-y-6">
+                            @forelse($emailStats['recent_logs'] as $log)
+                                <div class="relative pl-6 pb-2 border-l-2 border-gray-100 last:border-0 last:pb-0">
+                                    <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-green-500 shadow-sm"></div>
+                                    <p class="text-xs font-black text-gray-900 leading-tight mb-0.5">{{ $log->subject }}</p>
+                                    <div class="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                        <span>{{ $log->recipient_count }} destinatarios</span>
+                                        <span>•</span>
+                                        <span>{{ $log->created_at->diffForHumans() }}</span>
+                                    </div>
+                                    <span class="inline-block mt-2 px-2 py-0.5 bg-gray-100 rounded text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                                        {{ str_replace('_', ' ', $log->segment) }}
+                                    </span>
+                                </div>
+                            @empty
+                                <div class="text-center py-6">
+                                    <p class="text-sm font-bold text-gray-300 italic">No hay envíos registrados aún.</p>
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- Scripts Section (Refactored) -->
+            <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+            <script>
+                var quill = new Quill('#editor-container', {
+                    theme: 'snow',
+                    modules: {
+                        toolbar: [
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            [{ 'header': [1, 2, false] }],
+                            [{ 'color': [] }],
+                            ['link', 'clean']
+                        ]
+                    }
+                });
+
+                // Template Loader
+                document.getElementById('templateSelector').addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    if (selectedOption.value) {
+                        document.getElementById('subject').value = selectedOption.getAttribute('data-subject');
+                        quill.root.innerHTML = selectedOption.getAttribute('data-body');
+                    }
+                });
+
+                // Segment Logic
+                const segmentSelect = document.querySelector('select[name="segment"]');
+                const professionalDiv = document.getElementById('individual_professional_div');
+                const companyDiv = document.getElementById('individual_company_div');
+                const professionalSelect = document.getElementById('individual_professional_select');
+                const companySelect = document.getElementById('individual_company_select');
+
+                segmentSelect.addEventListener('change', function() {
+                    const value = this.value;
+                    professionalDiv.classList.toggle('hidden', value !== 'individual_professional');
+                    companyDiv.classList.toggle('hidden', value !== 'individual_company');
+                    
+                    professionalSelect.disabled = value !== 'individual_professional';
+                    companySelect.disabled = value !== 'individual_company';
+                    
+                    professionalSelect.name = value === 'individual_professional' ? 'individual_id' : 'temp_p';
+                    companySelect.name = value === 'individual_company' ? 'individual_id' : 'temp_c';
+                });
+
+                // Form Submission
+                document.getElementById('massEmailForm').addEventListener('submit', function(e) {
+                    document.getElementById('message').value = quill.root.innerHTML;
+                });
+
+                // Auto-load template if needed
+                if (document.getElementById('templateSelector').value) {
+                    document.getElementById('templateSelector').dispatchEvent(new Event('change'));
+                }
+            </script>
 
         </div>
     </div>
