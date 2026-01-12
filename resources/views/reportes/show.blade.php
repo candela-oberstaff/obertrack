@@ -35,15 +35,26 @@
                     </a>
                 </div>
 
-                <div class="flex gap-4">
-                    <a href="{{ route('reportes.download.weekly', ['user' => $professional->id, 'week' => $weekStart->format('Y-m-d')]) }}" 
-                       class="px-6 py-2 border-2 border-[#22A9C8] text-[#0D1E4C] text-sm font-bold rounded-full hover:bg-gray-50 transition-all">
-                        Descargar reporte semanal
-                    </a>
-                    <a href="{{ route('reportes.download.monthly', ['user' => $professional->id, 'month' => $weekStart->format('Y-m-d')]) }}" 
-                       class="px-6 py-2 bg-[#22A9C8] text-white text-sm font-bold rounded-full hover:opacity-90 transition-all shadow-sm">
-                        Descargar reporte mensual
-                    </a>
+                <div class="flex flex-col items-end gap-3" x-data="{ sendEmail: false }">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <div class="relative">
+                            <input type="checkbox" x-model="sendEmail" class="sr-only">
+                            <div class="w-10 h-5 bg-gray-200 rounded-full shadow-inner transition-colors" :class="sendEmail ? 'bg-[#22A9C8]' : 'bg-gray-200'"></div>
+                            <div class="absolute left-1 top-1 w-3 h-3 bg-white rounded-full shadow transition-transform" :class="sendEmail ? 'translate-x-5' : 'translate-x-0'"></div>
+                        </div>
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider group-hover:text-[#22A9C8] transition-colors">Enviar también por email</span>
+                    </label>
+
+                    <div class="flex gap-4">
+                        <a :href="'{{ route('reportes.download.weekly', ['user' => $professional->id, 'week' => $weekStart->format('Y-m-d')]) }}' + (sendEmail ? '&send_email=1' : '')" 
+                           class="px-6 py-2 border-2 border-[#22A9C8] text-[#0D1E4C] text-sm font-bold rounded-full hover:bg-gray-50 transition-all">
+                            Descargar reporte semanal
+                        </a>
+                        <a :href="'{{ route('reportes.download.monthly', ['user' => $professional->id, 'month' => $weekStart->format('Y-m-d')]) }}' + (sendEmail ? '?send_email=1' : '')" 
+                           class="px-6 py-2 bg-[#22A9C8] text-white text-sm font-bold rounded-full hover:opacity-90 transition-all shadow-sm">
+                            Descargar reporte mensual
+                        </a>
+                    </div>
                 </div>
             </div>
 

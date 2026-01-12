@@ -22,9 +22,23 @@
                 </div>
             @endif
 
+            @if (session('success'))
+                <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 3000)" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <strong class="font-bold">¡Éxito!</strong>
+                    <span class="block sm:inline">{{ session('success') }}</span>
+                </div>
+            @endif
+
+            @if (session('info'))
+                <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 3000)" class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <strong class="font-bold">Información</strong>
+                    <span class="block sm:inline">{{ session('info') }}</span>
+                </div>
+            @endif
+
             @if (session('error'))
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <strong class="font-bold">Aviso:</strong>
+                <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 5000)" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <strong class="font-bold">Error</strong>
                     <span class="block sm:inline">{{ session('error') }}</span>
                 </div>
             @endif
@@ -421,7 +435,7 @@
 
             <!-- Professionals Section -->
             @if(Auth::user()->tipo_usuario === 'empleador')
-                <div id="profile-professionals-list" x-data="{ openDeleteModal: false, openPromoteModal: false, selectedUser: null, actionUrl: '' }">
+                <div id="profile-professionals-list" x-data="{ openDeleteModal: false, openPromoteModal: false, selectedUser: null, actionUrl: '', actionTitle: '', actionButtonText: '', actionVerb: '' }">
                     <h3 class="text-[#22A9C8] font-medium text-lg mb-6">Profesionales registrados</h3>
 
                     <div class="bg-[#F3F4F6] rounded-xl p-6">
@@ -452,13 +466,13 @@
                                     <div class="w-full md:col-span-3 flex justify-start md:justify-end items-center gap-3 mt-2 md:mt-0">
                                         @if(!$empleado->is_manager)
                                             <button 
-                                                @click="selectedUser = '{{ $empleado->name }}'; actionUrl = '{{ route('profile.promover-manager', $empleado) }}'; openPromoteModal = true"
+                                                @click="selectedUser = '{{ $empleado->name }}'; actionUrl = '{{ route('profile.promover-manager', $empleado) }}'; actionTitle = '¿Estás seguro de que quieres promover a este profesional?'; actionVerb = 'Promover'; openPromoteModal = true"
                                                 class="text-[#22A9C8] hover:underline text-sm font-medium">
                                                 Promover a manager
                                             </button>
                                         @else
                                             <button 
-                                                @click="selectedUser = '{{ $empleado->name }}'; actionUrl = '{{ route('profile.degradar-manager', $empleado) }}'; openPromoteModal = true"
+                                                @click="selectedUser = '{{ $empleado->name }}'; actionUrl = '{{ route('profile.degradar-manager', $empleado) }}'; actionTitle = '¿Estás seguro de que deseas degradar a este manager?'; actionVerb = 'Degradar'; openPromoteModal = true"
                                                 class="text-orange-600 hover:underline text-sm font-medium">
                                                 Degradar
                                             </button>
@@ -527,8 +541,7 @@
                                     </button>
                                 </div>
                                 <div class="text-center mt-4">
-                                    <h3 class="text-xl font-bold text-gray-900 mb-8">
-                                        ¿Estas seguro de que quieres<br>promover a este profesional?
+                                    <h3 class="text-xl font-bold text-gray-900 mb-8" x-text="actionTitle">
                                     </h3>
                                     <div class="flex justify-center gap-4">
                                         <button @click="openPromoteModal = false" class="w-32 rounded-full border border-[#22A9C8] py-2 text-[#22A9C8] font-medium hover:bg-blue-50 transition">
@@ -537,8 +550,7 @@
                                         <form :action="actionUrl" method="POST" class="inline">
                                             @csrf
                                             @method('PUT')
-                                            <button type="submit" class="w-32 rounded-full bg-[#22A9C8] py-2 text-white font-medium hover:bg-primary-hover transition">
-                                                Promover
+                                            <button type="submit" class="w-32 rounded-full bg-[#22A9C8] py-2 text-white font-medium hover:bg-primary-hover transition" x-text="actionVerb">
                                             </button>
                                         </form>
                                     </div>

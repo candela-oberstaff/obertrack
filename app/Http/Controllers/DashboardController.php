@@ -166,15 +166,34 @@ class DashboardController extends Controller
         // Professional Activity Statuses
         $professionalStatuses = $this->activityService->getStatusesForUsers($empleados);
 
+        // Fetch all tasks for the month for these employees (either created by them or assigned to them)
+        $monthlyTasks = \App\Models\Task::where(function($query) use ($empleados) {
+            $query->whereIn('created_by', $empleados->pluck('id'))
+                  ->orWhereHas('assignees', function($q) use ($empleados) {
+                      $q->whereIn('user_id', $empleados->pluck('id'));
+                  });
+        })
+        ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+        ->with('assignees')
+        ->get();
+
         // Employee Summary Cards Data
-        $employeeSummaries = $empleados->map(function($employee) use ($monthlyHours, $employeeColors, $professionalStatuses) {
+        $employeeSummaries = $empleados->map(function($employee) use ($monthlyHours, $monthlyTasks, $employeeColors, $professionalStatuses) {
             $employeeHours = $monthlyHours->where('user_id', $employee->id);
+            
+            // Filter tasks for this specific employee
+            $empTasks = $monthlyTasks->filter(function($task) use ($employee) {
+                return $task->created_by == $employee->id || $task->assignees->contains('id', $employee->id);
+            });
+
             $statusData = $professionalStatuses->firstWhere('user.id', $employee->id);
             
             return [
                 'user' => $employee,
                 'total_hours' => $employeeHours->sum('hours_worked'),
                 'target_hours' => 160,
+                'completed_tasks' => $empTasks->filter(fn($t) => (bool)$t->completed)->count(),
+                'total_tasks' => $empTasks->count(),
                 'color' => $employeeColors[$employee->id] ?? 'bg-gray-500',
                 'role' => $employee->job_title ?? 'Sin puesto definido',
                 'initials' => strtoupper(substr($employee->name, 0, 1) . substr(strrchr($employee->name, ' ') ?: ' ' . substr($employee->name, 1), 1, 1)),
@@ -230,6 +249,10 @@ class DashboardController extends Controller
             $dayData['pending_recoveries_count'] = collect($dayData['employees'])
                 ->filter(fn($emp) => $emp['recovered_hours'] > 0 && !$emp['recovery_approved'])
                 ->count();
+            
+            // NEW: Add has_pending flag to accurately show the red dot only if there's work to do
+            $dayData['has_pending'] = collect($dayData['employees'])
+                ->contains(fn($emp) => !$emp['approved'] || ($emp['recovered_hours'] > 0 && !$emp['recovery_approved']));
             
             $calendar[] = $dayData;
             $currentDay->addDay();
@@ -297,5 +320,52 @@ class DashboardController extends Controller
         }
 
         return redirect()->back()->with('success', "Se han enviado {$successCount} correos correctamente {$targetLabel}.");
+    }
+
+    public function dailyDetail($date)
+    {
+        $user = auth()->user();
+        
+        // Security: Only employers, managers or superadmins
+        if (!$user->is_superadmin && $user->tipo_usuario !== 'empleador' && !$user->is_manager) {
+            return redirect()->route('dashboard')->with('error', 'No tienes permiso para ver esta información.');
+        }
+
+        $targetDate = \Illuminate\Support\Carbon::parse($date);
+        $empleados = $this->employeeDataService->getEmployeesForUser($user);
+        
+        if ($empleados->isEmpty()) {
+            return redirect()->back()->with('error', 'No tienes profesionales a cargo para ver en esta fecha.');
+        }
+
+        $dayRecords = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+            ->whereDate('work_date', $targetDate)
+            ->with('user')
+            ->get();
+            
+        // Fetch all tasks for this day (either created by them or assigned to them)
+        // Strictly filtered to the employer's team and overlapping with the target date
+        $dayTasks = \App\Models\Task::where(function($query) use ($empleados) {
+            $query->whereIn('created_by', $empleados->pluck('id'))
+                  ->orWhereHas('assignees', function($q) use ($empleados) {
+                      $q->whereIn('user_id', $empleados->pluck('id'));
+                  });
+        })
+        ->where(function($query) use ($targetDate) {
+            $query->where(function($q) use ($targetDate) {
+                $q->whereDate('start_date', '<=', $targetDate)
+                  ->whereDate('end_date', '>=', $targetDate);
+            })
+            ->orWhereDate('updated_at', $targetDate);
+        })
+        ->with(['assignees', 'createdBy'])
+        ->get();
+
+        return view('empleadores.detalle_diario', compact(
+            'targetDate',
+            'dayRecords',
+            'empleados',
+            'dayTasks'
+        ));
     }
 }

@@ -126,7 +126,10 @@
                     // Count both pending hours and recovery requests
                     $pendingCount = 0;
                     foreach ($pendingWeeks as $week) {
-                        $pendingCount += count($week['summary']);
+                        // Only count employees who actually have pending hours in this week
+                        $pendingCount += collect($week['summary'])->filter(fn($emp) => $emp['pending_hours'] > 0)->count();
+                        
+                        // Add recovery requests if present
                         if (isset($week['recovery_requests'])) {
                             $pendingCount += $week['recovery_requests']->count();
                         }

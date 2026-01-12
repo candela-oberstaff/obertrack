@@ -263,6 +263,35 @@
                             </div>
                         </div>
 
+                        {{-- Assigned Tasks Section --}}
+                        <div class="mb-6" x-show="pendingTasks.length > 0">
+                            <h5 class="text-gray-800 font-medium mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-[#22A9C8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                </svg>
+                                Tareas asignadas
+                            </h5>
+                            <div class="space-y-2 bg-gray-50 rounded-xl p-3 border border-gray-100 max-h-40 overflow-y-auto custom-scrollbar">
+                                <template x-for="task in pendingTasks" :key="task.id">
+                                    <div class="flex items-center justify-between p-2 hover:bg-white rounded-lg transition-colors group">
+                                        <div class="flex items-center gap-3">
+                                            <div @click="toggleTask(task.id)" 
+                                                 class="w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-colors"
+                                                 :class="task.completed ? 'bg-[#22A9C8] border-[#22A9C8]' : 'bg-white border-gray-300 group-hover:border-[#22A9C8]'">
+                                                <svg x-show="task.completed" class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
+                                                    <path d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                            </div>
+                                            <div class="flex flex-col">
+                                                <span class="text-sm font-medium text-gray-700" :class="task.completed ? 'line-through text-gray-400' : ''" x-text="task.title"></span>
+                                                <span class="text-[10px] text-gray-400" x-text="'Asignada por: ' + (task.created_by ? task.created_by.name : 'Empresa')"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
                         {{-- Full Day Logic (Activities) --}}
                         <div x-show="workedFullDay" x-transition>
                             <label class="block text-gray-800 font-medium mb-3">Registra las actividades que realizaste en el día</label>
@@ -477,20 +506,36 @@
 
                         <div class="mb-2" x-show="existingRecord">
                             <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3 px-1">Actividades detalladas</p>
-                            <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm max-h-48 overflow-y-auto custom-scrollbar">
-                                <template x-if="activities.length > 0">
-                                    <ul class="space-y-4">
-                                        <template x-for="(activity, index) in activities" :key="index">
-                                            <li class="flex items-start gap-3 group">
-                                                <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#22A9C8] group-hover:scale-125 transition-transform flex-shrink-0"></div>
-                                                <span class="text-sm text-gray-600 leading-relaxed" x-text="activity"></span>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                </template>
-                                <template x-if="activities.length === 0">
-                                    <p class="text-sm text-gray-400 italic text-center py-4">No se registraron detalles adicionales.</p>
-                                </template>
+                            <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm max-h-40 overflow-y-auto custom-scrollbar mb-4" x-show="activities.length > 0">
+                                <ul class="space-y-4">
+                                    <template x-for="(activity, index) in activities" :key="index">
+                                        <li class="flex items-start gap-3 group">
+                                            <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#22A9C8] group-hover:scale-125 transition-transform flex-shrink-0"></div>
+                                            <span class="text-sm text-gray-600 leading-relaxed" x-text="activity"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                            
+                            <div x-show="userComment && userComment.trim() !== ''" class="mt-4">
+                                <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2 px-1">Resumen adicional</p>
+                                <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                                    <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line" x-text="userComment"></p>
+                                </div>
+                            </div>
+
+                            <div x-show="activities.length === 0 && (!userComment || userComment.trim() === '')" class="py-4 text-center">
+                                <p class="text-sm text-gray-400 italic">No se registraron detalles adicionales.</p>
+                            </div>
+
+                            <div x-show="existingRecord?.approval_comment" class="mt-6 pt-6 border-t border-gray-100">
+                                <div class="flex items-center gap-2 mb-3 text-[#22A9C8]">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                    <span class="text-[10px] font-black uppercase tracking-widest leading-none">Feedback del Cliente</span>
+                                </div>
+                                <div class="bg-[#22A9C8]/5 border border-[#22A9C8]/10 rounded-xl p-4">
+                                    <p class="text-sm text-gray-700 font-medium italic" x-text="'&quot;' + existingRecord?.approval_comment + '&quot;'"></p>
+                                </div>
                             </div>
                         </div>
 
@@ -727,6 +772,44 @@
                   recoveryDescriptionMode: 'list',
                   recoveryUserComment: '',
                   missingHours: {{ $missingHours }},
+                  pendingTasks: @json($pendingTasks),
+                  
+                  toggleTask(taskId) {
+                      const task = this.pendingTasks.find(t => t.id === taskId);
+                      if (!task) return;
+
+                      fetch(`/empleados/tareas/${taskId}/toggle-completion`, {
+                          method: 'POST',
+                          headers: {
+                              'Content-Type': 'application/json',
+                              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                          }
+                      })
+                      .then(response => response.json())
+                      .then(data => {
+                          if (data.success) {
+                              task.completed = data.completed;
+                              
+                              // If completed, add as an activity
+                              if (data.completed) {
+                                  if (!this.activities.includes(task.title)) {
+                                      this.activities.push(task.title);
+                                  }
+                              } else {
+                                  // If uncompleted, maybe remove from activities? 
+                                  // Usually better to leave it if they already added it, but let's be clean.
+                                  const index = this.activities.indexOf(task.title);
+                                  if (index > -1) {
+                                      this.activities.splice(index, 1);
+                                  }
+                              }
+                          }
+                      })
+                      .catch(error => {
+                          console.error('Error toggling task:', error);
+                          alert('Error al actualizar el estado de la tarea');
+                      });
+                  },
                  
                  absenceOptions: [
                      'Cita médica',
@@ -747,10 +830,24 @@
                      const isApproved = record && record.approved;
 
                      // Initialize comments/activities first (used by both modals)
-                     this.userComment = record ? (record.user_comment || '') : '';
-                     this.activities = [];
-                     if (this.userComment) {
-                         this.activities = this.userComment.split('\n').filter(line => line.trim() !== '');
+                     const fullComment = record ? (record.user_comment || '') : '';
+                     
+                     if (fullComment.includes('Resumen adicional:')) {
+                         const parts = fullComment.split('Resumen adicional:');
+                         const listPart = parts[0].trim();
+                         const textPart = parts[1].trim();
+                         
+                         this.activities = listPart.split('\n').filter(line => line.trim() !== '');
+                         this.userComment = textPart;
+                     } else {
+                         this.userComment = fullComment;
+                         this.activities = [];
+                         // Fallback: if there's no separator, we try to guess if it's a list or a block of text
+                         // For now, if it has multiple lines, we'll treat it as a list to maintain old behavior
+                         if (fullComment.includes('\n')) {
+                             this.activities = fullComment.split('\n').filter(line => line.trim() !== '');
+                             this.userComment = '';
+                         }
                      }
 
                      if (isPast || isApproved) {
@@ -875,10 +972,13 @@
                      
                      let finalComment = '';
                      if (this.workedFullDay) { 
-                         if (this.descriptionMode === 'list') {
-                             finalComment = this.activities.join('\n');
+                         const listContent = this.activities.join('\n');
+                         const textContent = this.userComment.trim();
+                         
+                         if (listContent && textContent) {
+                             finalComment = listContent + '\n\nResumen adicional:\n' + textContent;
                          } else {
-                             finalComment = this.userComment;
+                             finalComment = listContent || textContent;
                          }
                      }
 
@@ -953,10 +1053,13 @@
                      this.isSaving = true;
 
                      let finalComment = '';
-                     if (this.recoveryDescriptionMode === 'list') {
-                         finalComment = this.recoveryActivities.join('\n');
+                     const listContent = this.recoveryActivities.join('\n');
+                     const textContent = this.recoveryUserComment.trim();
+                     
+                     if (listContent && textContent) {
+                         finalComment = listContent + '\n\nResumen adicional:\n' + textContent;
                      } else {
-                         finalComment = this.recoveryUserComment;
+                         finalComment = listContent || textContent;
                      }
 
                      fetch('{{ route('work-hours.store') }}', {

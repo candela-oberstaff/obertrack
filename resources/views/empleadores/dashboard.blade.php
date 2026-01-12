@@ -23,13 +23,13 @@
             @endif
 
             <!-- Subtitle -->
-            <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas totales de tareas registradas por los profesionales</h3>
+            <h3 class="text-[#22A9C8] font-medium text-base mb-6">Tareas realizadas por los profesionales</h3>
             
             <!-- Employee Stats Cards -->
             <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
                 @foreach($employeeSummaries as $summary)
                     @php
-                        $percentage = $summary['target_hours'] > 0 ? min(100, ($summary['total_hours'] / $summary['target_hours']) * 100) : 0;
+                        $percentage = $summary['total_tasks'] > 0 ? min(100, ($summary['completed_tasks'] / $summary['total_tasks']) * 100) : 0;
                         $radius = 35;
                         $circumference = pi() * $radius;
                         $dashArray = ($percentage / 100) * $circumference;
@@ -79,14 +79,14 @@
                              </svg>
                              <!-- Number -->
                              <div class="absolute top-8 text-center">
-                                 <span class="text-4xl font-bold text-gray-900 block leading-none mb-1">{{ round($summary['total_hours']) }}</span>
+                                 <span class="text-4xl font-bold text-gray-900 block leading-none mb-1">{{ round($summary['completed_tasks']) }}</span>
                              </div>
                         </div>
 
                         <!-- Footer Text -->
                         <div class="text-center mt-auto mb-2">
                             <p class="text-gray-500 text-sm leading-tight max-w-[200px] mx-auto">
-                                {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas de tareas registradas actualmente ({{ $dateRange }})
+                                {{ round($summary['completed_tasks']) }} de {{ $summary['total_tasks'] }} tareas realizadas actualmente ({{ $dateRange }})
                             </p>
                         </div>
                     </div>
@@ -185,7 +185,8 @@
                             
                             const data = await response.json();
                             if (data.success) {
-                                // Visual feedback
+                                emp.just_saved = true;
+                                setTimeout(() => emp.just_saved = false, 3000);
                             } else {
                                 alert(data.message || 'Error al actualizar el comentario');
                             }
@@ -225,6 +226,26 @@
                         } finally {
                             this.isApproving = false;
                         }
+                    },
+                    parseComment(comment) {
+                        if (!comment) return { activities: [], summary: '' };
+                        if (comment.includes('Resumen adicional:')) {
+                            const parts = comment.split('Resumen adicional:');
+                            return {
+                                activities: parts[0].trim().split('\n').filter(a => a.trim() !== ''),
+                                summary: parts[1].trim()
+                            };
+                        }
+                        if (comment.includes('\n')) {
+                            return {
+                                activities: comment.split('\n').filter(a => a.trim() !== ''),
+                                summary: ''
+                            };
+                        }
+                        return {
+                            activities: [],
+                            summary: comment
+                        };
                     }
                 }">
                     <!-- MOBILE VIEW: Simple calendar with modal (current behavior) -->
@@ -248,8 +269,8 @@
                                         >
                                             <span class="z-10">{{ str_pad($day['day'], 2, '0', STR_PAD_LEFT) }}</span>
                                             
-                                            <!-- Red Dot Indicator -->
-                                            @if(count($day['employees']) > 0)
+                                            <!-- Red Dot Indicator: Only if there are unapproved hours or recoveries -->
+                                            @if($day['has_pending'])
                                                 <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
                                             @endif
 
@@ -287,11 +308,20 @@
                                     @endif
                                 >
                                     @if($day['is_current_month'])
-                                        <!-- Day Number Badge -->
-                                        <div class="flex justify-center mb-3">
+                                        <!-- Day Number Badge & Actionable Indicator -->
+                                        <div class="flex justify-center items-center gap-2 mb-3">
                                             <span class="bg-[#22A9C8] text-white rounded-full px-3 py-1 text-xs font-bold">
                                                 {{ str_pad($day['day'], 2, '0', STR_PAD_LEFT) }}
                                             </span>
+                                            
+                                            <!-- Indicator Dot: Red for pending, Green for all approved, None for no records -->
+                                            @if(count($day['employees']) > 0)
+                                                @if($day['has_pending'])
+                                                    <span class="w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm" title="Pendiente de aprobación"></span>
+                                                @else
+                                                    <span class="w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm" title="Todo aprobado"></span>
+                                                @endif
+                                            @endif
                                         </div>
 
                                         <!-- Professionals Hours -->
@@ -438,16 +468,26 @@
                                                             <span class="text-[10px] font-black uppercase tracking-widest leading-none">Actividades Realizadas</span>
                                                         </div>
                                                         
-                                                        <div class="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+                                                        <div class="bg-gray-50/50 rounded-xl p-4 border border-gray-100 max-h-60 overflow-y-auto">
                                                             <template x-if="emp.user_comment && emp.user_comment.trim() !== ''">
-                                                                <ul class="space-y-3">
-                                                                    <template x-for="activity in emp.user_comment.split('\n').filter(a => a.trim() !== '')">
-                                                                        <li class="flex items-start gap-3">
-                                                                            <span class="w-1.5 h-1.5 rounded-full bg-[#22A9C8] mt-1.5 flex-shrink-0"></span>
-                                                                            <span class="text-sm text-gray-700 font-medium" x-text="activity"></span>
-                                                                        </li>
+                                                                <div x-data="{ parsed: parseComment(emp.user_comment) }">
+                                                                    <template x-if="parsed.activities.length > 0">
+                                                                        <ul class="space-y-3 mb-4">
+                                                                            <template x-for="activity in parsed.activities">
+                                                                                <li class="flex items-start gap-3">
+                                                                                    <span class="w-1.5 h-1.5 rounded-full bg-[#22A9C8] mt-1.5 flex-shrink-0"></span>
+                                                                                    <span class="text-sm text-gray-700 font-medium" x-text="activity"></span>
+                                                                                </li>
+                                                                            </template>
+                                                                        </ul>
                                                                     </template>
-                                                                </ul>
+                                                                    <template x-if="parsed.summary">
+                                                                        <div :class="parsed.activities.length > 0 ? 'mt-4 pt-4 border-t border-gray-100' : ''">
+                                                                            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Resumen adicional</p>
+                                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line" x-text="parsed.summary"></p>
+                                                                        </div>
+                                                                    </template>
+                                                                </div>
                                                             </template>
                                                             <template x-if="!emp.user_comment || emp.user_comment.trim() === ''">
                                                                 <p class="text-sm text-gray-400 italic">No se registraron detalles de actividades.</p>
@@ -462,12 +502,36 @@
                                                             <span class="text-[10px] font-black uppercase tracking-widest leading-none">Observaciones</span>
                                                         </div>
 
-                                                        <textarea 
-                                                            x-model="emp.approved ? emp.comment : emp.new_comment"
-                                                            @blur="if(emp.approved) updateComment(emp)"
-                                                            placeholder="Dejar feedback..."
-                                                            class="w-full rounded-xl border-gray-100 text-sm shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all bg-gray-50/30 min-h-[80px]"
-                                                        ></textarea>
+                                                        <template x-if="emp.approved">
+                                                            <textarea 
+                                                                x-model="emp.comment"
+                                                                placeholder="Dejar feedback..."
+                                                                class="w-full rounded-xl border-gray-100 text-sm shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all bg-gray-50/30 min-h-[80px]"
+                                                            ></textarea>
+                                                        </template>
+                                                        
+                                                        <template x-if="!emp.approved">
+                                                            <textarea 
+                                                                x-model="emp.new_comment"
+                                                                placeholder="Dejar feedback..."
+                                                                class="w-full rounded-xl border-gray-100 text-sm shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all bg-gray-50/30 min-h-[80px]"
+                                                            ></textarea>
+                                                        </template>
+                                                        
+                                                        <div class="flex justify-end mt-2">
+                                                            <template x-if="emp.approved">
+                                                                <button 
+                                                                    @click="updateComment(emp)"
+                                                                    :disabled="isApproving"
+                                                                    class="inline-flex items-center gap-2 px-4 py-2 bg-[#22A9C8] text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-opacity-90 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                                                                >
+                                                                    <svg x-show="!isApproving && !emp.just_saved" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                                    <svg x-show="emp.just_saved" class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                                    <svg x-show="isApproving" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                                    <span x-text="isApproving ? 'Guardando...' : (emp.just_saved ? '¡Guardado!' : 'Guardar Observación')"></span>
+                                                                </button>
+                                                            </template>
+                                                        </div>
                                                         
                                                         <template x-if="!emp.approved">
                                                             <button 
@@ -520,14 +584,24 @@
                                     </template>
                                 </div>
                                 
-                                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100">
+                                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100 gap-3">
                                     <button 
                                         type="button" 
-                                        class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22A9C8] sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                        class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22A9C8] sm:mt-0 sm:w-auto sm:text-sm"
                                         @click="showModal = false"
                                     >
                                         Cerrar
                                     </button>
+                                    
+                                    <template x-if="selectedDay && selectedDay.employees.length > 0">
+                                        <a 
+                                            :href="'/empleador/detalle-diario/' + (typeof selectedDay.date === 'string' ? selectedDay.date : (selectedDay.date.date || selectedDay.date)).split(' ')[0]"
+                                            class="w-full inline-flex justify-center items-center gap-2 rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#22A9C8] text-base font-bold text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22A9C8] sm:w-auto sm:text-sm transition-all"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            <span>Ver más detalles</span>
+                                        </a>
+                                    </template>
                                 </div>
                             </div>
                         </div>
@@ -616,16 +690,26 @@
                                                             <span class="text-[10px] font-black uppercase tracking-widest leading-none">Actividades Realizadas</span>
                                                         </div>
                                                         
-                                                        <div class="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+                                                        <div class="bg-gray-50/50 rounded-xl p-4 border border-gray-100 max-h-60 overflow-y-auto">
                                                             <template x-if="recovery.recovery_comment && recovery.recovery_comment.trim() !== ''">
-                                                                <ul class="space-y-3">
-                                                                    <template x-for="activity in recovery.recovery_comment.split('\n').filter(a => a.trim() !== '')">
-                                                                        <li class="flex items-start gap-3">
-                                                                            <span class="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 flex-shrink-0"></span>
-                                                                            <span class="text-sm text-gray-700 font-medium" x-text="activity"></span>
-                                                                        </li>
+                                                                <div x-data="{ parsed: parseComment(recovery.recovery_comment) }">
+                                                                    <template x-if="parsed.activities.length > 0">
+                                                                        <ul class="space-y-3 mb-4">
+                                                                            <template x-for="activity in parsed.activities">
+                                                                                <li class="flex items-start gap-3">
+                                                                                    <span class="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 flex-shrink-0"></span>
+                                                                                    <span class="text-sm text-gray-700 font-medium" x-text="activity"></span>
+                                                                                </li>
+                                                                            </template>
+                                                                        </ul>
                                                                     </template>
-                                                                </ul>
+                                                                    <template x-if="parsed.summary">
+                                                                        <div :class="parsed.activities.length > 0 ? 'mt-4 pt-4 border-t border-gray-100' : ''">
+                                                                            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Resumen adicional</p>
+                                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line" x-text="parsed.summary"></p>
+                                                                        </div>
+                                                                    </template>
+                                                                </div>
                                                             </template>
                                                             <template x-if="!recovery.recovery_comment || recovery.recovery_comment.trim() === ''">
                                                                 <p class="text-sm text-gray-400 italic">No se registraron detalles.</p>

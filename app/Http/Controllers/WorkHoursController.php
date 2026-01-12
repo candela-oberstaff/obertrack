@@ -194,13 +194,13 @@ class WorkHoursController extends Controller
         // Task Stats
         $user = auth()->user();
         $completedTasksCount = $user->assignedTasks()
-            ->where('completed', true)
+            ->whereRaw('completed IS TRUE')
             ->whereMonth('updated_at', $currentMonth->month)
             ->whereYear('updated_at', $currentMonth->year)
             ->count();
             
         $pendingTasksCount = $user->assignedTasks()
-            ->where('completed', false)
+            ->whereRaw('completed IS FALSE')
             ->count();
             
         return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'missingHours', 'completedTasksCount', 'pendingTasksCount'));
@@ -229,6 +229,18 @@ class WorkHoursController extends Controller
             'dates' => 'required|array',
             'comment' => 'nullable|string'
         ]);
+
+        $employee = User::findOrFail($request->employee_id);
+        $user = Auth::user();
+
+        // Security check: superadmin, employer of the employee, or manager of the same employer
+        $isAuthorized = $user->is_superadmin || 
+                        ($user->tipo_usuario === 'empleador' && $employee->empleador_id === $user->id) ||
+                        ($user->is_manager && $employee->empleador_id === $user->empleador_id);
+
+        if (!$isAuthorized) {
+            return response()->json(['success' => false, 'message' => 'No tienes permiso para aprobar estas horas.'], 403);
+        }
 
         $this->approvalService->approveDates(
             $request->employee_id,
@@ -265,9 +277,15 @@ class WorkHoursController extends Controller
 
         $workHour = WorkHours::findOrFail($id);
         
-        // Ensure the user has permission (employer of the employee)
+        // Ensure the user has permission (employer of the employee, or manager, or superadmin)
         $employee = User::find($workHour->user_id);
-        if (Auth::user()->tipo_usuario !== 'empleador' || $employee->empleador_id !== Auth::id()) {
+        $user = Auth::user();
+
+        $isAuthorized = $user->is_superadmin || 
+                        ($user->tipo_usuario === 'empleador' && $employee->empleador_id === $user->id) ||
+                        ($user->is_manager && $employee->empleador_id === $user->empleador_id);
+
+        if (!$isAuthorized) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -429,12 +447,12 @@ class WorkHoursController extends Controller
                 $monthStart = Carbon::now()->startOfMonth();
                 $monthHours = WorkHours::where('user_id', $professional->id)
                     ->whereBetween('work_date', [$monthStart->format('Y-m-d'), Carbon::now()->format('Y-m-d')])
-                    ->where('approved', true) // Only approved standard hours
+                    ->whereRaw('approved IS TRUE') // Only approved standard hours
                     ->sum(DB::raw('hours_worked + CASE WHEN recovery_approved = true THEN recovered_hours ELSE 0 END'));
 
                 $pendingRecoveries = WorkHours::where('user_id', $professional->id)
                     ->where('recovered_hours', '>', 0)
-                    ->where('recovery_approved', false)
+                    ->whereRaw('recovery_approved IS FALSE')
                     ->get();
 
                 return [
@@ -531,7 +549,7 @@ class WorkHoursController extends Controller
         $monthEnd = $weekStart->copy()->endOfMonth();
         $monthHours = WorkHours::where('user_id', $user->id)
             ->whereBetween('work_date', [$monthStart->format('Y-m-d'), min($today, $monthEnd)->format('Y-m-d')])
-            ->where('approved', true)
+            ->whereRaw('approved IS TRUE')
             ->sum(DB::raw('hours_worked + CASE WHEN recovery_approved = true THEN recovered_hours ELSE 0 END'));
 
         return view('reportes.show', [
@@ -606,19 +624,31 @@ class WorkHoursController extends Controller
             ->get();
 
         // Generate PDF
-        $pdf = Pdf::loadView('reportes.pdf.weekly', [
-            'professional' => $user,
-            'weekStart' => $weekStart,
-            'weekEnd' => $weekEnd,
-            'totalHours' => $totalHours,
-            'weeklyAverage' => $weeklyAverage,
-            'incompleteTasks' => $incompleteTasks,
-            'absences' => $absences,
-            'dailyHours' => $dailyHours,
-            'comments' => $comments
-        ]);
+    $pdf = Pdf::loadView('reportes.pdf.weekly', [
+        'professional' => $user,
+        'weekStart' => $weekStart,
+        'weekEnd' => $weekEnd,
+        'totalHours' => $totalHours,
+        'weeklyAverage' => $weeklyAverage,
+        'incompleteTasks' => $incompleteTasks,
+        'absences' => $absences,
+        'dailyHours' => $dailyHours,
+        'comments' => $comments
+    ]);
 
-        return $pdf->download("Reporte_Semanal_{$user->name}_{$weekStart->format('d-m-Y')}.pdf");
+    $fileName = "Reporte_Semanal_{$user->name}_{$weekStart->format('d-m-Y')}.pdf";
+
+    if ($request->has('send_email')) {
+        $this->emailService->sendEmail(
+            Auth::user()->email,
+            Auth::user()->name,
+            "📋 Reporte Semanal: {$user->name}",
+            "<p>Hola,</p><p>Adjunto encontrarás el reporte semanal solicitado para <strong>{$user->name}</strong> correspondiente a la semana del {$weekStart->format('d/m/Y')} al {$weekEnd->format('d/m/Y')}.</p><p>Saludos,<br>Equipo Obertrack</p>",
+            ['content' => $pdf->output(), 'name' => $fileName]
+        );
+    }
+
+    return $pdf->download($fileName);
     }
 
     /**
@@ -688,14 +718,26 @@ class WorkHoursController extends Controller
         }
 
         $pdf = Pdf::loadView('reportes.pdf.monthly', [
-            'professional' => $user,
-            'monthDate' => $startOfMonth,
-            'totalApprovedHours' => $totalApprovedHours,
-            'absences' => $absences,
-            'incompleteTasks' => $incompleteTasks,
-            'weeksData' => $weeksData
-        ]);
+        'professional' => $user,
+        'monthDate' => $startOfMonth,
+        'totalApprovedHours' => $totalApprovedHours,
+        'absences' => $absences,
+        'incompleteTasks' => $incompleteTasks,
+        'weeksData' => $weeksData
+    ]);
 
-        return $pdf->download("Reporte_Mensual_{$user->name}_{$startOfMonth->format('F_Y')}.pdf");
+    $fileName = "Reporte_Mensual_{$user->name}_{$startOfMonth->format('F_Y')}.pdf";
+
+    if ($request->has('send_email')) {
+        $this->emailService->sendEmail(
+            Auth::user()->email,
+            Auth::user()->name,
+            "📊 Reporte Mensual: {$user->name}",
+            "<p>Hola,</p><p>Adjunto encontrarás el reporte mensual solicitado para <strong>{$user->name}</strong> correspondiente al mes de {$startOfMonth->translatedFormat('F Y')}.</p><p>Saludos,<br>Equipo Obertrack</p>",
+            ['content' => $pdf->output(), 'name' => $fileName]
+        );
+    }
+
+    return $pdf->download($fileName);
     }
 }

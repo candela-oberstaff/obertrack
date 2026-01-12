@@ -130,18 +130,16 @@ class User extends Authenticatable
 
     public function promoverAManager(): void
     {
-        if ($this->tipo_usuario === 'empleado') {
-            $this->is_manager = true;
-            $this->save();
-        }
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $this->id)
+            ->update(['is_manager' => \Illuminate\Support\Facades\DB::raw('true')]);
     }
 
     public function degradarDeManager(): void
     {
-        if ($this->tipo_usuario === 'empleado' && $this->is_manager) {
-            $this->is_manager = false;
-            $this->save();
-        }
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $this->id)
+            ->update(['is_manager' => \Illuminate\Support\Facades\DB::raw('false')]);
     }
 
     public function compañerosDeTrabajo()

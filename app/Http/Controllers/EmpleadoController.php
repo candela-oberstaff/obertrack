@@ -23,7 +23,7 @@ class EmpleadoController extends Controller
         
         $tareasManageres = Task::whereHas('createdBy', function($query) use ($empleador) {
             $query->where('empleador_id', $empleador->id)
-                  ->where('is_manager', true)
+                  ->whereRaw('is_manager IS TRUE')
                   ->where('tipo_usuario', 'empleado');
         })
         ->whereHas('assignees', function($q) use ($user) { // whereNotNull('visible_para') implies assigned to someone? or specifically this user? Context implies tasks assigned to this user from managers.
@@ -67,7 +67,12 @@ class EmpleadoController extends Controller
             ->whereRaw('tasks.completed IS FALSE')
             ->count();
 
-        return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'missingHours', 'completedTasksCount', 'pendingTasksCount'));
+        $pendingTasks = $user->assignedTasks()
+            ->whereRaw('tasks.completed IS FALSE')
+            ->with('createdBy')
+            ->get();
+
+        return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'missingHours', 'completedTasksCount', 'pendingTasksCount', 'pendingTasks'));
     }
 
 }
