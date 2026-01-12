@@ -26,64 +26,64 @@
             <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas registradas por los profesionales</h3>
             
             <!-- Employee Stats Cards -->
-            <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
                 @foreach($employeeSummaries as $summary)
                     @php
                         $percentage = $summary['target_hours'] > 0 ? min(100, ($summary['total_hours'] / $summary['target_hours']) * 100) : 0;
                         $dateRange = $currentMonth->copy()->startOfMonth()->format('M 1') . ' - ' . $currentMonth->copy()->endOfMonth()->format('M d');
                     @endphp
                     
-                    <div class="bg-[#F8F9FA] rounded-[3rem] p-8 relative flex flex-col items-center shadow-sm h-[380px] transition-all hover:shadow-md">
+                    <div class="bg-[#F8F9FA] rounded-[2rem] p-6 relative flex flex-col items-center shadow-sm h-[320px] transition-all hover:shadow-md">
                         
                         <!-- Header -->
-                        <div class="w-full text-center mb-10 mt-4 relative">
+                        <div class="w-full text-center mb-6 mt-2 relative">
                             <!-- Status Indicator -->
                             @if($summary['activity_status'] === 'red')
-                                <div class="absolute -top-6 right-0 flex items-center gap-1.5 bg-red-50 px-2 py-1 rounded-full border border-red-100">
-                                    <span class="flex h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-                                    <span class="text-[9px] font-black text-red-600 uppercase tracking-wider">Inactivo 2+ días</span>
+                                <div class="absolute -top-4 right-0 flex items-center gap-1 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
+                                    <span class="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                                    <span class="text-[8px] font-black text-red-600 uppercase tracking-wider">Inactivo 2+ d</span>
                                 </div>
                             @elseif($summary['activity_status'] === 'yellow')
-                                <div class="absolute -top-6 right-0 flex items-center gap-1.5 bg-yellow-50 px-2 py-1 rounded-full border border-yellow-100">
-                                    <span class="flex h-2 w-2 rounded-full bg-yellow-400 animate-pulse"></span>
-                                    <span class="text-[9px] font-black text-yellow-600 uppercase tracking-wider">Inactivo 1 día</span>
+                                <div class="absolute -top-4 right-0 flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100">
+                                    <span class="flex h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                                    <span class="text-[8px] font-black text-yellow-600 uppercase tracking-wider">Inactivo 1 d</span>
                                 </div>
                             @endif
 
-                            <h4 class="text-2xl font-black text-[#1a202c] leading-tight mb-1">{{ $summary['user']->name }}</h4>
-                            <p class="text-gray-400 text-lg font-medium">{{ $summary['role'] }}</p>
+                            <h4 class="text-lg font-black text-[#1a202c] leading-tight mb-0.5 truncate px-2">{{ $summary['user']->name }}</h4>
+                            <p class="text-gray-400 text-xs font-medium uppercase tracking-widest">{{ $summary['role'] }}</p>
                         </div>
 
                         <!-- Semi Circular Chart (U Shape) -->
-                        <div class="relative w-56 h-32 mb-6 flex justify-center overflow-hidden">
+                        <div class="relative w-44 h-24 mb-4 flex justify-center overflow-hidden">
                              <!-- Half circle SVG -->
                              <svg viewBox="0 0 100 60" class="w-full h-full">
                                  <!-- Background Arc -->
                                  <path d="M 10,10 A 40,40 0 0 0 90,10" 
                                        fill="none" 
                                        stroke="#E2E8F0" 
-                                       stroke-width="10" 
+                                       stroke-width="12" 
                                        stroke-linecap="round" />
                                  <!-- Progress Arc -->
                                   <path d="M 10,10 A 40,40 0 0 0 90,10" 
                                        fill="none" 
                                        stroke="#22A9C8" 
-                                       stroke-width="10" 
+                                       stroke-width="12" 
                                        stroke-linecap="round"
                                        stroke-dasharray="{{ 126 }}" 
                                        stroke-dashoffset="{{ 126 - (126 * $percentage / 100) }}"
                                        class="transition-all duration-1000 ease-out" />
                              </svg>
                              <!-- Number -->
-                             <div class="absolute top-8 text-center">
-                                 <span class="text-6xl font-black text-[#1a202c] block leading-none">{{ $summary['days_registered'] }}</span>
+                             <div class="absolute top-6 text-center">
+                                 <span class="text-4xl font-black text-[#1a202c] block leading-none">{{ $summary['days_registered'] }}</span>
                              </div>
                         </div>
 
                         <!-- Footer Text -->
-                        <div class="text-center mt-auto mb-4">
-                            <p class="text-[#1a202c] text-sm font-bold leading-relaxed max-w-[280px] mx-auto opacity-70">
-                                {{ $summary['days_registered'] }} días registrados actualmente ({{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas mensuales)
+                        <div class="text-center mt-auto mb-2">
+                            <p class="text-[#1a202c] text-[10px] font-bold leading-tight max-w-[180px] mx-auto opacity-60">
+                                {{ $summary['days_registered'] }} días registrados ({{ round($summary['total_hours']) }}/{{ $summary['target_hours'] }}h)
                             </p>
                         </div>
                     </div>

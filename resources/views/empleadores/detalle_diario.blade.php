@@ -23,11 +23,6 @@
                         </p>
                     </div>
                 </div>
-                
-                <div class="bg-gray-50 rounded-2xl px-6 py-4 border border-gray-100 shadow-sm text-right">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Total Registros</p>
-                    <p class="text-2xl font-black text-gray-900">{{ $dayRecords->count() }} de {{ $empleados->count() }}</p>
-                </div>
             </div>
 
             <!-- Professionals Grid -->
