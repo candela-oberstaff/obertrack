@@ -34,3 +34,8 @@ Schedule::command('reports:send-weekly')
 Schedule::command('reports:send-monthly')
     ->monthlyOn(1, '09:00')
     ->timezone('America/Argentina/Buenos_Aires');
+
+// 6. Daily recovery reminders for professionals with pending hours (Every day at 9:00 AM)
+Schedule::command('app:send-recovery-reminders')
+    ->dailyAt('09:00')
+    ->timezone('America/Argentina/Buenos_Aires');

@@ -279,6 +279,28 @@ class BrevoEmailService
     }
 
     /**
+     * Send email reminder for pending recovery hours
+     */
+    public function sendRecoveryReminder(string $toEmail, string $toName, float $pendingHours, string $deadline): bool
+    {
+        try {
+            $htmlContent = view('emails.recovery-reminder', [
+                'recipientName' => $toName,
+                'pendingHours' => $pendingHours,
+                'deadline' => $deadline
+            ])->render();
+
+            return $this->sendEmail($toEmail, $toName, '⏰ Recordatorio: Horas pendientes de recuperación', $htmlContent);
+        } catch (\Exception $e) {
+            Log::error('Brevo: Failed to send recovery reminder', [
+                'recipient' => $toEmail,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
      * Generic method to send an email via Brevo
      */
     public function sendEmail(string $toEmail, string $toName, string $subject, string $htmlContent, ?array $attachment = null): bool

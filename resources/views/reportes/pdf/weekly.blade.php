@@ -104,18 +104,50 @@
         @foreach($comments as $record)
             @if($record->user_comment || $record->approval_comment)
                 @php $hasComments = true; @endphp
-                <div style="background: #f9fafb; padding: 12px; border-left: 4px solid #22A9C8; margin-bottom: 10px;">
-                    <div style="font-size: 11px; font-weight: bold; color: #6b7280; text-transform: uppercase; margin-bottom: 5px;">
-                        {{ Carbon\Carbon::parse($record->work_date)->format('l d/m/Y') }}
+                <div style="background: #f9fafb; padding: 12px; border-left: 4px solid #22A9C8; margin-bottom: 15px;">
+                    <div style="font-size: 11px; font-weight: bold; color: #6b7280; text-transform: uppercase; margin-bottom: 8px;">
+                        {{ Carbon\Carbon::parse($record->work_date)->translatedFormat('l d/m/Y') }}
                     </div>
+                    
                     @if($record->user_comment)
+                        @php
+                            $pComment = $record->user_comment;
+                            $pActivities = [];
+                            $pSummary = '';
+                            if (str_contains($pComment, 'Resumen adicional:')) {
+                                $parts = explode('Resumen adicional:', $pComment);
+                                $pActivities = array_filter(explode("\n", trim($parts[0])), fn($a) => !empty(trim($a)));
+                                $pSummary = trim($parts[1]);
+                            } elseif (str_contains($pComment, "\n")) {
+                                $pActivities = array_filter(explode("\n", trim($pComment)), fn($a) => !empty(trim($a)));
+                            } else {
+                                $pSummary = $pComment;
+                            }
+                        @endphp
+                        
                         <div style="font-size: 13px; margin-bottom: 4px;">
-                            <span style="font-weight: bold;">Profesional:</span> {{ $record->user_comment }}
+                            <span style="font-weight: bold; color: #1f2937;">Tareas realizadas:</span>
+                            @if(count($pActivities) > 0)
+                                <ul style="margin: 5px 0 5px 15px; padding: 0; list-style-type: disc;">
+                                    @foreach($pActivities as $activity)
+                                        <li style="margin-bottom: 2px;">{{ $activity }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                            @if($pSummary)
+                                <div style="margin-top: {{ count($pActivities) > 0 ? '5px' : '0' }}; font-style: italic; color: #4b5563;">
+                                    {{ $pSummary }}
+                                </div>
+                            @endif
                         </div>
                     @endif
+
                     @if($record->approval_comment)
-                        <div style="font-size: 13px;">
-                            <span style="font-weight: bold;">Empresa:</span> {{ $record->approval_comment }}
+                        <div style="font-size: 13px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                            <span style="font-weight: bold; color: #1f2937;">Feedback Empresa:</span>
+                            <div style="margin-top: 3px; font-style: italic; color: #4b5563;">
+                                "{{ $record->approval_comment }}"
+                            </div>
                         </div>
                     @endif
                 </div>

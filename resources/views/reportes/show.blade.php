@@ -39,10 +39,10 @@
                     <label class="flex items-center gap-2 cursor-pointer group">
                         <div class="relative">
                             <input type="checkbox" x-model="sendEmail" class="sr-only">
-                            <div class="w-10 h-5 bg-gray-200 rounded-full shadow-inner transition-colors" :class="sendEmail ? 'bg-[#22A9C8]' : 'bg-gray-200'"></div>
+                            <div class="w-10 h-5 rounded-full shadow-inner transition-colors" :class="sendEmail ? 'bg-[#22A9C8]' : 'bg-gray-200'"></div>
                             <div class="absolute left-1 top-1 w-3 h-3 bg-white rounded-full shadow transition-transform" :class="sendEmail ? 'translate-x-5' : 'translate-x-0'"></div>
                         </div>
-                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider group-hover:text-[#22A9C8] transition-colors">Enviar también por email</span>
+                        <span class="text-xs font-bold uppercase tracking-wider transition-colors" :class="sendEmail ? 'text-[#22A9C8]' : 'text-gray-500'">Enviar por email</span>
                     </label>
 
                     <div class="flex gap-4">

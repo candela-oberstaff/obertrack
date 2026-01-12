@@ -742,13 +742,14 @@ class WorkHoursController extends Controller
         }
 
         $pdf = Pdf::loadView('reportes.pdf.monthly', [
-        'professional' => $user,
-        'monthDate' => $startOfMonth,
-        'totalApprovedHours' => $totalApprovedHours,
-        'absences' => $absences,
-        'incompleteTasks' => $incompleteTasks,
-        'weeksData' => $weeksData
-    ]);
+            'professional' => $user,
+            'monthDate' => $startOfMonth,
+            'totalApprovedHours' => $totalApprovedHours,
+            'absences' => $absences,
+            'incompleteTasks' => $incompleteTasks,
+            'weeksData' => $weeksData,
+            'comments' => $monthHours
+        ]);
 
     $fileName = "Reporte_Mensual_{$user->name}_{$startOfMonth->format('F_Y')}.pdf";
 
