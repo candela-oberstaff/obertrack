@@ -45,13 +45,27 @@ class WahaService
     public function startSession($sessionName)
     {
         try {
-            // First try to delete if exists to ensure fresh start
-            $deleteResult = $this->deleteSession($sessionName);
-            Log::info("WAHA Clean Session {$sessionName}: " . json_encode($deleteResult));
+            // 1. Attempt to delete existing session
+            $this->deleteSession($sessionName);
 
-            // Small delay to ensure WAHA processes the deletion (race condition prevention)
-            sleep(2);
+            // 2. Poll to ensure it's actually gone (Max 10 seconds)
+            $maxRetries = 10;
+            $deleted = false;
+            
+            for ($i = 0; $i < $maxRetries; $i++) {
+                $statusData = $this->getSessionStatus($sessionName);
+                if (($statusData['status'] ?? 'STOPPED') === 'STOPPED') {
+                    $deleted = true;
+                    break;
+                }
+                sleep(1);
+            }
 
+            if (!$deleted) {
+                 return ['error' => 'No se pudo limpiar la sesión anterior. Por favor intenta manualmente más tarde.'];
+            }
+
+            // 3. Create new session
             $response = Http::withoutVerifying()
                 ->withHeaders($this->getHeaders())
                 ->post("{$this->baseUrl}/api/sessions", [
@@ -63,10 +77,8 @@ class WahaService
                 ]);
 
             if ($response->failed() && $response->status() === 422) {
-                // If it still fails with 422, maybe it wasn't deleted fast enough?
-                // Try one more time? Or just return the error.
-                Log::warning("WAHA Session Create 422: " . $response->body());
-                return ['error' => 'La sesión no se pudo reiniciar correctamente (422). Intenta de nuevo en unos segundos.'];
+                Log::warning("WAHA Session Create 422 (after wait): " . $response->body());
+                return ['error' => 'La sesión sigue bloqueada (422). WAHA necesita más tiempo para liberarla.'];
             }
 
             return $response->json();
