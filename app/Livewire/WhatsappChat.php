@@ -34,6 +34,12 @@ class WhatsappChat extends Component
 
     public function mount(WahaService $wahaService)
     {
+        // Block access for employers - WhatsApp is only for employees
+        $user = Auth::user();
+        if ($user->tipo_usuario === 'empleador' || $user->is_superadmin) {
+            abort(403, 'WhatsApp solo está disponible para profesionales.');
+        }
+        
         $this->checkSessionStatus();
     }
 
@@ -108,27 +114,19 @@ class WhatsappChat extends Component
     {
         $user = Auth::user();
         
-        // Reuse logic from Chat.php but simpler for now
-        $query = User::query()->where('id', '!=', $user->id);
-
-        if ($user->tipo_usuario === 'empleador') {
-            $query->where('empleador_id', $user->id);
-        } else {
-            $query->where('empleador_id', $user->empleador_id);
-        }
-
-        // Only users with phone numbers
-        $contacts = $query->whereNotNull('phone_number')
-            ->where('phone_number', '!=', '')
-            ->get();
+        // Employees only see their employer
+        if ($user->tipo_usuario === 'empleado') {
+            $employer = User::find($user->empleador_id);
             
-        // Filter those that have a valid formatted number (simple check)
-        $this->contacts = $contacts->filter(function($contact) {
-            // Clean number
-            $phone = preg_replace('/[^0-9]/', '', $contact->phone_number);
-            // Minimum length for a global number?
-            return strlen($phone) > 8;
-        });
+            if ($employer && $employer->phone_number) {
+                $this->contacts = collect([$employer]);
+            } else {
+                $this->contacts = collect([]);
+            }
+        } else {
+            // Employers and superadmins shouldn't access this, but just in case
+            $this->contacts = collect([]);
+        }
     }
 
     public function selectContact($contactId)
