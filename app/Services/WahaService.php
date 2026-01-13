@@ -171,6 +171,12 @@ class WahaService
                 if (str_contains($contentType, 'json')) {
                     $data = $response->json();
                     
+                    // WAHA format: {"mimetype":"image/png","data":"base64..."}
+                    if (isset($data['data'])) {
+                        $mimeType = $data['mimetype'] ?? 'image/png';
+                        return 'data:' . $mimeType . ';base64,' . $data['data'];
+                    }
+                    
                     // Try different possible JSON structures
                     if (isset($data['qr'])) {
                         // If already base64 data URL
