@@ -120,19 +120,7 @@ class WahaService
         }
     }
 
-    /**
-     * Get session status
-     */
-    public function getSessionStatus($sessionName)
-    {
-        try {
-            $response = Http::withoutVerifying()
-                ->withHeaders($this->getHeaders())
-                ->get("{$this->baseUrl}/api/sessions/{$sessionName}");
 
-            if ($response->successful()) {
-                return $response->json();
-            }
     /**
      * Get session status
      */
