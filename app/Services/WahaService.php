@@ -76,9 +76,22 @@ class WahaService
                     ]
                 ]);
 
-            if ($response->failed() && $response->status() === 422) {
-                Log::warning("WAHA Session Create 422 (after wait): " . $response->body());
-                return ['error' => 'La sesión sigue bloqueada (422). WAHA necesita más tiempo para liberarla.'];
+            if ($response->failed()) {
+                // If 422 (Unprocessable Entity) -> Session likely exists.
+                // We should check if it's actually running/scannable now.
+                if ($response->status() === 422) {
+                    $statusCheck = $this->getSessionStatus($sessionName);
+                    // If it is NOT stopped, we treat it as success (it exists and is running/starting)
+                    if (($statusCheck['status'] ?? 'STOPPED') !== 'STOPPED') {
+                        Log::info("WAHA Session Create 422 handled: Session exists and is {$statusCheck['status']}");
+                        return $statusCheck;
+                    }
+
+                    Log::warning("WAHA Session Create 422 (after wait): " . $response->body());
+                    return ['error' => 'La sesión sigue bloqueada (422) y detenida. Intenta nuevamente.'];
+                }
+                // Other errors
+                return ['error' => "Error WAHA ({$response->status()}): " . $response->body()];
             }
 
             return $response->json();
@@ -117,8 +130,29 @@ class WahaService
             if ($response->successful()) {
                 return $response->json();
             }
-            // If 404, session doesn't exist
-            return ['status' => 'STOPPED'];
+    /**
+     * Get session status
+     */
+    public function getSessionStatus($sessionName)
+    {
+        try {
+            $response = Http::withoutVerifying()
+                ->withHeaders($this->getHeaders())
+                ->get("{$this->baseUrl}/api/sessions/{$sessionName}");
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+            
+            // Explicitly verify if 404 (Session not found) -> STOPPED
+            if ($response->status() === 404) {
+                return ['status' => 'STOPPED'];
+            }
+            
+            // If other error (e.g. 500, 422 on GET?), we assume STOPPED but log it
+            \Log::warning("WAHA getSessionStatus error {$response->status()}: {$response->body()}");
+            return ['status' => 'STOPPED', 'errorCode' => $response->status()];
+
         } catch (\Exception $e) {
             return ['status' => 'STOPPED', 'error' => $e->getMessage()];
         }
@@ -143,6 +177,7 @@ class WahaService
                 }
                 return $response->json()['qrcode'] ?? null;
             }
+            // Add explicit 422 check if needed, but usually 404
             return null;
         } catch (\Exception $e) {
             Log::error("WAHA getQrCode error: " . $e->getMessage());
