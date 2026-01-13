@@ -40,7 +40,7 @@
                 <div class="flex flex-col items-center animate-in fade-in zoom-in">
                     @if($qrCodeBase64)
                         <div class="bg-white p-2 rounded-xl border border-gray-200 shadow-sm mb-4">
-                            <img src="{{ $qrCodeBase64 }}" class="w-64 h-64 object-contain" alt="Scan QR Code">
+                            <img src="{{ $qrCodeBase64 }}" class="w-48 h-48 object-contain" alt="Scan QR Code">
                         </div>
                         <p class="text-xs text-center text-gray-400 max-w-xs">Abre WhatsApp en tu teléfono, ve a Dispositivos Vinculados y escanea este código.</p>
                     @else
