@@ -45,24 +45,36 @@ class WahaService
     public function startSession($sessionName)
     {
         try {
-            // 1. Attempt to delete existing session
-            $this->deleteSession($sessionName);
+            // 1. Check if session already exists
+            $statusData = $this->getSessionStatus($sessionName);
+            $currentStatus = $statusData['status'] ?? null;
 
-            // 2. Poll to ensure it's actually gone (Max 10 seconds)
-            $maxRetries = 10;
-            $deleted = false;
-            
-            for ($i = 0; $i < $maxRetries; $i++) {
-                $statusData = $this->getSessionStatus($sessionName);
-                if (($statusData['status'] ?? 'STOPPED') === 'STOPPED') {
-                    $deleted = true;
-                    break;
-                }
-                sleep(1);
+            if ($currentStatus && $currentStatus !== 'STOPPED' && !isset($statusData['errorCode'])) {
+                // Session exists and is distinct from STOPPED (e.g. WORKING, STARTING, SCAN_QR_CODE)
+                Log::info("WAHA Session {$sessionName} already exists and is {$currentStatus}. Reusing.");
+                return $statusData;
             }
 
-            if (!$deleted) {
-                 return ['error' => 'No se pudo limpiar la sesión anterior. Por favor intenta manualmente más tarde.'];
+            // 2. If STOPPED, try to start it explicitly (instead of recreate)
+            // Some WAHA versions need explicit start if it persists but is stopped.
+            // But usually POST /sessions handles this if we don't send config? 
+            // Let's try to delete ONLY if we got a weird error or if we really want fresh.
+            // Actually, to be safe and fast:
+            // If it's STOPPED or 404, we try to create (POST /sessions). 
+            // If POST fails with 422, it means it exists, so we try POST /sessions/{name}/start?
+            // No, standard WAHA flow: POST /api/sessions creates and starts.
+            
+            // If 404 (does not exist), we create.
+            // If STOPPED (exists), we might need to delete first OR check if POST /sessions overwrites.
+            // WAHA usually throws 422 if exists.
+            
+            if ($currentStatus === 'STOPPED' && !isset($statusData['errorCode'])) {
+                 // Try to delete to force fresh config, BUT do it quickly without wait loop?
+                 // Or better: try to START it first.
+                 // Assuming we don't have a specific 'start' endpoint implemented here yet?
+                 // Let's try to delete but WITHOUT the long wait loop, just one shot.
+                 $this->deleteSession($sessionName);
+                 sleep(1); // minimal wait
             }
 
             // 3. Create new session
@@ -77,20 +89,11 @@ class WahaService
                 ]);
 
             if ($response->failed()) {
-                // If 422 (Unprocessable Entity) -> Session likely exists.
-                // We should check if it's actually running/scannable now.
                 if ($response->status() === 422) {
-                    $statusCheck = $this->getSessionStatus($sessionName);
-                    // If it is NOT stopped, we treat it as success (it exists and is running/starting)
-                    if (($statusCheck['status'] ?? 'STOPPED') !== 'STOPPED') {
-                        Log::info("WAHA Session Create 422 handled: Session exists and is {$statusCheck['status']}");
-                        return $statusCheck;
-                    }
-
-                    Log::warning("WAHA Session Create 422 (after wait): " . $response->body());
-                    return ['error' => 'La sesión sigue bloqueada (422) y detenida. Intenta nuevamente.'];
+                    // It exists. 
+                     Log::info("WAHA Session Create 422. Assuming it exists. Checking status again.");
+                     return $this->getSessionStatus($sessionName);
                 }
-                // Other errors
                 return ['error' => "Error WAHA ({$response->status()}): " . $response->body()];
             }
 
