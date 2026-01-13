@@ -83,7 +83,7 @@
                         <!-- Footer Text -->
                         <div class="text-center mt-auto mb-2">
                             <p class="text-[#1a202c] text-[10px] font-bold leading-tight max-w-[180px] mx-auto opacity-60">
-                                {{ $summary['days_registered'] }} días registrados {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }}h
+                                {{ $summary['days_registered'] }} días registrados {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas mensuales
                             </p>
                         </div>
                     </div>
