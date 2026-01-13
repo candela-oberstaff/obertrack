@@ -62,7 +62,12 @@ class WhatsappChat extends Component
         if ($this->sessionStatus === 'SCAN_QR_CODE') {
             $this->qrCodeBase64 = $this->wahaService->getQrCode($this->getSessionName());
         } elseif ($this->sessionStatus === 'WORKING') {
+            // Clear QR code to trigger UI update
+            $this->qrCodeBase64 = null;
             $this->loadContacts();
+        } else {
+            // Clear QR for any other status
+            $this->qrCodeBase64 = null;
         }
     }
 
