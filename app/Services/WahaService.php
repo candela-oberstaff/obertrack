@@ -155,20 +155,46 @@ class WahaService
     public function getQrCode($sessionName)
     {
         try {
-            // WAHA returns the image binary directly or json depending on endpoint
-            // Usually /api/{session}/auth/qr returns image
             $response = Http::withoutVerifying()
                 ->withHeaders($this->getHeaders())
                 ->get("{$this->baseUrl}/api/{$sessionName}/auth/qr");
 
             if ($response->successful()) {
                 $contentType = $response->header('Content-Type');
+                
+                // Case 1: Direct image response
                 if (str_contains($contentType, 'image')) {
                     return 'data:' . $contentType . ';base64,' . base64_encode($response->body());
                 }
-                return $response->json()['qrcode'] ?? null;
+                
+                // Case 2: JSON response with base64 QR
+                if (str_contains($contentType, 'json')) {
+                    $data = $response->json();
+                    
+                    // Try different possible JSON structures
+                    if (isset($data['qr'])) {
+                        // If already base64 data URL
+                        if (str_starts_with($data['qr'], 'data:image')) {
+                            return $data['qr'];
+                        }
+                        // If just base64 string
+                        return 'data:image/png;base64,' . $data['qr'];
+                    }
+                    
+                    if (isset($data['qrcode'])) {
+                        if (str_starts_with($data['qrcode'], 'data:image')) {
+                            return $data['qrcode'];
+                        }
+                        return 'data:image/png;base64,' . $data['qrcode'];
+                    }
+                    
+                    // Log unexpected JSON structure
+                    Log::warning("WAHA QR JSON unexpected format: " . json_encode($data));
+                }
             }
-            // Add explicit 422 check if needed, but usually 404
+            
+            // Log failure
+            Log::warning("WAHA getQrCode failed - Status: {$response->status()}, Body: " . substr($response->body(), 0, 200));
             return null;
         } catch (\Exception $e) {
             Log::error("WAHA getQrCode error: " . $e->getMessage());
