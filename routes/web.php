@@ -91,6 +91,7 @@ Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->grou
 
 // Chat Route
 Route::middleware(['auth'])->get('/chat/{userId?}', Chat::class)->name('chat');
+Route::middleware(['auth'])->get('/whatsapp', \App\Livewire\WhatsappChat::class)->name('whatsapp.chat');
 
 
 // Contacto Route
