@@ -39,7 +39,9 @@ class WhatsappChat extends Component
 
     public function getSessionName()
     {
-        return 'session_' . Auth::id();
+        // Use WAHA's default session instead of creating per-user sessions
+        // This works for single-user WhatsApp connections
+        return 'default';
     }
 
     public function checkSessionStatus()
