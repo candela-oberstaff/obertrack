@@ -22,6 +22,7 @@ class WhatsappChat extends Component
     public $messages = [];
     public $messageText = '';
     public $attachment;
+    public $startTime = 0;
     
     // Polling control
     public $pollInterval = 3; 
@@ -44,7 +45,17 @@ class WhatsappChat extends Component
     public function checkSessionStatus()
     {
         $statusData = $this->wahaService->getSessionStatus($this->getSessionName());
-        $this->sessionStatus = $statusData['status'] ?? 'STOPPED';
+        $newStatus = $statusData['status'] ?? 'STOPPED';
+
+        // Anti-flicker: If we are STARTING, ignore STOPPED for a few seconds
+        // to allow WAHA specific time to register the session.
+        if ($this->sessionStatus === 'STARTING' && $newStatus === 'STOPPED') {
+            if (time() - $this->startTime < 15) {
+                return;
+            }
+        }
+
+        $this->sessionStatus = $newStatus;
 
         if ($this->sessionStatus === 'SCAN_QR_CODE') {
             $this->qrCodeBase64 = $this->wahaService->getQrCode($this->getSessionName());
@@ -55,16 +66,25 @@ class WhatsappChat extends Component
 
     public function startSession()
     {
+        $this->startTime = time();
+        $this->sessionStatus = 'STARTING';
+        
         // Service now handles deleting old session first
         $response = $this->wahaService->startSession($this->getSessionName());
         
         if (isset($response['error'])) {
             // Even with cleanup, if it fails, show error.
             $this->addError('session', 'Error al iniciar sesión: ' . $response['error']);
+             // Reset status on error so user can try again
+            $this->sessionStatus = 'STOPPED';
             return;
         }
 
-        $this->sessionStatus = 'STARTING';
+        // If response has status, utilize it (e.g. reused session)
+        if (isset($response['status'])) {
+            $this->sessionStatus = $response['status'];
+        }
+        
         // Poll will pick up the next state
     }
 
