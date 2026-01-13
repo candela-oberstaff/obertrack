@@ -36,12 +36,22 @@
                     <span class="loading loading-spinner loading-lg text-[#25D366] mb-4"></span>
                     <p class="text-sm font-medium text-gray-400">Iniciando sesión...</p>
                  </div>
-            @elseif($sessionStatus === 'SCAN_QR_CODE' && $qrCodeBase64)
+            @elseif($sessionStatus === 'SCAN_QR_CODE')
                 <div class="flex flex-col items-center animate-in fade-in zoom-in">
-                    <div class="bg-white p-2 rounded-xl border border-gray-200 shadow-sm mb-4">
-                        <img src="{{ $qrCodeBase64 }}" class="w-64 h-64 object-contain" alt="Scan QR Code">
-                    </div>
-                    <p class="text-xs text-center text-gray-400 max-w-xs">Abre WhatsApp en tu teléfono, ve a Dispositivos Vinculados y escanea este código.</p>
+                    @if($qrCodeBase64)
+                        <div class="bg-white p-2 rounded-xl border border-gray-200 shadow-sm mb-4">
+                            <img src="{{ $qrCodeBase64 }}" class="w-64 h-64 object-contain" alt="Scan QR Code">
+                        </div>
+                        <p class="text-xs text-center text-gray-400 max-w-xs">Abre WhatsApp en tu teléfono, ve a Dispositivos Vinculados y escanea este código.</p>
+                    @else
+                        <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
+                            <p class="text-sm text-yellow-800">⚠️ Esperando código QR...</p>
+                            <p class="text-xs text-yellow-600 mt-1">Estado: {{ $sessionStatus }}</p>
+                        </div>
+                        <button wire:click="checkSessionStatus" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
+                            Recargar QR
+                        </button>
+                    @endif
                 </div>
             @endif
         </div>
