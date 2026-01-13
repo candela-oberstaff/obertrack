@@ -42,6 +42,14 @@ Route::middleware(['auth'])->prefix('work-hours')->name('work-hours.')->group(fu
     Route::post('/approve-month', [WorkHoursController::class, 'approveMonth'])
         ->name('approve-month');
 
+    // POST /work-hours/approve-all-week - Approve all work hours for a specific week (Bulk)
+    Route::post('/approve-all-week', [WorkHoursController::class, 'approveAllWeek'])
+        ->name('approve-all-week');
+
+    // POST /work-hours/approve-all-month - Approve all work hours for an entire month (Bulk)
+    Route::post('/approve-all-month', [WorkHoursController::class, 'approveAllMonth'])
+        ->name('approve-all-month');
+
     // POST /work-hours/update-comment/{id} - Update comment for a specific work hour record
     Route::post('/update-comment/{id}', [WorkHoursController::class, 'updateComment'])
         ->name('update-comment');
