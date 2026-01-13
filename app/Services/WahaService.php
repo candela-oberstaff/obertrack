@@ -46,7 +46,11 @@ class WahaService
     {
         try {
             // First try to delete if exists to ensure fresh start
-            $this->deleteSession($sessionName);
+            $deleteResult = $this->deleteSession($sessionName);
+            Log::info("WAHA Clean Session {$sessionName}: " . json_encode($deleteResult));
+
+            // Small delay to ensure WAHA processes the deletion (race condition prevention)
+            sleep(2);
 
             $response = Http::withoutVerifying()
                 ->withHeaders($this->getHeaders())
@@ -57,6 +61,13 @@ class WahaService
                         'webhooks' => [],
                     ]
                 ]);
+
+            if ($response->failed() && $response->status() === 422) {
+                // If it still fails with 422, maybe it wasn't deleted fast enough?
+                // Try one more time? Or just return the error.
+                Log::warning("WAHA Session Create 422: " . $response->body());
+                return ['error' => 'La sesión no se pudo reiniciar correctamente (422). Intenta de nuevo en unos segundos.'];
+            }
 
             return $response->json();
         } catch (\Exception $e) {
