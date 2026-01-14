@@ -54,6 +54,61 @@ class WorkHoursController extends Controller
             ->where('work_date', '!=', $request->work_date) // Exclude current day if updating
             ->sum('hours_worked');
     
+        // Handle recovery hours separately (if provided)
+        if ($request->has('recovered_hours') && $request->recovered_hours > 0) {
+            // Validate recovery date is today
+            if ($request->work_date !== now()->format('Y-m-d')) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Las horas solo se pueden recuperar el día de hoy.']);
+                }
+                return back()->with('error', 'Las horas solo se pueden recuperar el día de hoy.');
+            }
+
+            // Create separate recovery record
+            WorkHours::create([
+                'user_id' => auth()->id(),
+                'work_date' => $request->work_date,
+                'hours_worked' => 0, // Recovery doesn't count as daily hours
+                'recovered_hours' => $request->recovered_hours,
+                'recovery_comment' => $request->recovery_comment,
+                'recovery_approved' => true, // Auto-approved, just notify employer
+                'approved' => true, // Mark as approved since it's not pending work
+                'user_comment' => 'Recuperación de horas'
+            ]);
+
+            // Send recovery notification to employer
+            try {
+                $user = auth()->user();
+                $employer = $user->empleador_id ? User::find($user->empleador_id) : null;
+                
+                if ($employer) {
+                    $this->emailService->sendRecoveryRequestNotification(
+                        $employer->email,
+                        $employer->name,
+                        [
+                            'employee_name' => $user->name,
+                            'date' => Carbon::parse($request->work_date)->format('d/m/Y'),
+                            'hours' => $request->recovered_hours,
+                            'activities' => $request->recovery_comment
+                        ]
+                    );
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Error sending recovery notification: ' . $e->getMessage());
+            }
+
+            // Return early - recovery is handled separately
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Horas de recuperación registradas correctamente.',
+                    'is_recovery' => true
+                ]);
+            }
+            return back()->with('success', 'Horas de recuperación registradas correctamente.');
+        }
+
+        // Regular work hours registration (not recovery)
         if ($request->hours_worked > 8) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'No puedes registrar más de 8 horas por día.']);
@@ -70,6 +125,7 @@ class WorkHoursController extends Controller
     
         $existingRecord = WorkHours::where('user_id', auth()->id())
             ->where('work_date', $request->work_date)
+            ->where('recovered_hours', 0) // Only get non-recovery records
             ->first();
 
         if ($existingRecord && $existingRecord->approved) {
@@ -81,15 +137,16 @@ class WorkHoursController extends Controller
             $absenceHours = $request->absence_hours ?? ($request->hours_worked < 8 ? (8 - $request->hours_worked) : 0);
             
             WorkHours::updateOrCreate(
-                ['user_id' => auth()->id(), 'work_date' => $request->work_date],
+                [
+                    'user_id' => auth()->id(), 
+                    'work_date' => $request->work_date,
+                    'recovered_hours' => 0 // Ensure we're not updating recovery records
+                ],
                 [
                     'hours_worked' => $request->hours_worked, 
                     'user_comment' => $request->user_comment,
                     'absence_reason' => $request->absence_reason,
-                    'absence_hours' => $absenceHours,
-                    'recovered_hours' => $request->recovered_hours ?? 0,
-                    'recovery_comment' => $request->recovery_comment,
-                    'recovery_approved' => DB::raw('FALSE') // Always false when created/updated by professional
+                    'absence_hours' => $absenceHours
                 ]
             );
         }
@@ -136,7 +193,8 @@ class WorkHoursController extends Controller
                 }
             }
             
-            // NEW: Send notification to the professional if absence is recorded (< 8 hours)
+            
+            // Send notification to the professional if absence is recorded (< 8 hours)
             if ($request->hours_worked < 8) {
                 $endOfMonthFormatted = $currentMonth->copy()->endOfMonth()->locale('es')->isoFormat('D [de] MMMM');
                 $this->emailService->sendAbsenceNotification(
@@ -147,19 +205,6 @@ class WorkHoursController extends Controller
                 );
             }
 
-            // NEW: Send notification for recovery request
-            if ($request->recovered_hours > 0 && $employer) {
-                $this->emailService->sendRecoveryRequestNotification(
-                    $employer->email,
-                    $employer->name,
-                    [
-                        'employee_name' => $user->name,
-                        'date' => $workDate->format('d/m/Y'),
-                        'hours' => $request->recovered_hours,
-                        'activities' => $request->recovery_comment
-                    ]
-                );
-            }
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Error sending notifications: ' . $e->getMessage());

@@ -608,8 +608,10 @@
                         {{-- Date Selection --}}
                         <div class="mb-6">
                             <label class="block text-gray-800 font-medium mb-2">Fecha de recuperación</label>
-                            <input type="date" x-model="recoveryDate" 
-                                   class="w-full bg-gray-50 border-gray-200 rounded-xl focus:ring-[#22A9C8] focus:border-[#22A9C8] text-sm text-gray-700">
+                            <div class="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 font-medium">
+                                {{ \Carbon\Carbon::now()->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1 italic">Las horas solo se pueden recuperar el día de hoy</p>
                         </div>
 
                         {{-- Recovery Hours Redesign --}}
