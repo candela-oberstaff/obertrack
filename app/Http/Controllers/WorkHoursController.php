@@ -789,11 +789,17 @@ class WorkHoursController extends Controller
         $weeksData = [];
         $currentDate = $startOfMonth->copy()->startOfWeek(Carbon::MONDAY);
         
+        // Fetch extended hours to cover full weeks (for the weekly summary logic)
+        $extendedEnd = $endOfMonth->copy()->endOfWeek(Carbon::SUNDAY);
+        $extendedMonthHours = WorkHours::where('user_id', $user->id)
+            ->whereBetween('work_date', [$currentDate, $extendedEnd])
+            ->get();
+        
         while ($currentDate->lte($endOfMonth)) {
             $weekEnd = $currentDate->copy()->endOfWeek(Carbon::SUNDAY);
             
-            // Filter hours for this week
-            $weekH = $monthHours->filter(function($h) use ($currentDate, $weekEnd) {
+            // Filter hours for this week from the extended collection
+            $weekH = $extendedMonthHours->filter(function($h) use ($currentDate, $weekEnd) {
                 return Carbon::parse($h->work_date)->between($currentDate, $weekEnd);
             });
             

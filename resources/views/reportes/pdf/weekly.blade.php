@@ -41,27 +41,19 @@
 
     <table class="stats-grid">
         <tr>
-            <td width="50%" style="border: none; padding: 0 5px 10px 0;">
+            <td width="33%" style="border: none; padding: 0 5px 0 0;">
                 <div class="stat-box">
                     <span class="stat-label">Total Horas de Tareas</span>
                     <span class="stat-value">{{ $totalHours }}</span>
                 </div>
             </td>
-            <td width="50%" style="border: none; padding: 0 0 10px 5px;">
-                <div class="stat-box">
-                    <span class="stat-label">Promedio Diario</span>
-                    <span class="stat-value">{{ $weeklyAverage }}</span>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td width="50%" style="border: none; padding: 10px 5px 0 0;">
+            <td width="33%" style="border: none; padding: 0 5px;">
                 <div class="stat-box">
                     <span class="stat-label">Ausencias</span>
                     <span class="stat-value">{{ $absences }}</span>
                 </div>
             </td>
-            <td width="50%" style="border: none; padding: 10px 0 0 5px;">
+            <td width="33%" style="border: none; padding: 0 0 0 5px;">
                 <div class="stat-box">
                     <span class="stat-label">Tareas Incompletas</span>
                     <span class="stat-value">{{ $overdueTasks->count() }}</span>
