@@ -52,7 +52,7 @@
             <td width="50%" style="border: none; padding: 10px 0 0 5px;">
                 <div class="stat-box">
                     <span class="stat-label">Tareas Incompletas</span>
-                    <span class="stat-value">{{ $incompleteTasks }}</span>
+                    <span class="stat-value">{{ $overdueTasks->count() }}</span>
                 </div>
             </td>
         </tr>
