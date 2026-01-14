@@ -4,8 +4,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" x-data="{ 
                     selectedDay: null,
                     showModal: false,
-                    showRecoveryModal: false,
-                    selectedRecoveries: [],
+                    selectedDay: null,
+                    showModal: false,
+                    // removed showRecoveryModal
+                    // removed selectedRecoveries
                     isApproving: false,
                     
                     // Approval Logic State
@@ -208,83 +210,9 @@
                             this.isApproving = false;
                         }
                     },
-                    openRecoveryModal(day) {
-                        this.selectedRecoveries = day.employees.filter(emp => emp.recovered_hours > 0 && !emp.recovery_approved);
-                        this.showRecoveryModal = true;
-                    },
-                    async approveRecovery(recovery) {
-                        if (this.isApproving) return;
-                        this.isApproving = true;
-                        window.showLoader();
-                        
-                        const url = recovery.is_new_recovery 
-                            ? `/recovery-hours/${recovery.recovery_id}/status`
-                            : `{{ route('work-hours.approve-recovery', '') }}/${recovery.record_id}`;
-                        
-                        try {
-                            const response = await fetch(url, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({ approved: true })
-                            });
-                            
-                            const data = await response.json();
-                            if (data.success) {
-                                window.location.reload();
-                            } else {
-                                alert(data.message || 'Error al aprobar la recuperación');
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            alert('Error de conexión');
-                        } finally {
-                            this.isApproving = false;
-                        }
-                    },
-                    async rejectRecovery(recovery) {
-                        if (this.isApproving) return;
-                        if (!confirm('¿Estás seguro de rechazar esta solicitud de recuperación?')) return;
-                        this.isApproving = true;
-                        window.showLoader();
-                        
-                        const url = recovery.is_new_recovery 
-                            ? `/recovery-hours/${recovery.recovery_id}/status`
-                            : null;
-                            
-                        if (!url) {
-                            alert('La opción de rechazo solo está disponible para nuevas solicitudes.');
-                            this.isApproving = false;
-                            return;
-                        }
-                        
-                        try {
-                            const response = await fetch(url, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({ approved: false })
-                            });
-                            
-                            const data = await response.json();
-                            if (data.success) {
-                                window.location.reload();
-                            } else {
-                                alert(data.message || 'Error al rechazar la recuperación');
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            alert('Error de conexión');
-                        } finally {
-                            this.isApproving = false;
-                        }
-                    },
+                    // removed openRecoveryModal
+                    // removed approveRecovery
+                    // removed rejectRecovery
                     parseComment(comment) {
                         if (!comment) return { activities: [], summary: '' };
                         if (comment.includes('Resumen adicional:')) {
@@ -586,7 +514,7 @@
                                 <div class="flex flex-col items-center justify-start min-h-[60px]">
                                     @if($day['is_current_month'])
                                         <button 
-                                            @click="{{ json_encode($day) }}.pending_recoveries_count > 0 ? openRecoveryModal({{ json_encode($day) }}) : openDetails({{ json_encode($day) }})"
+                                            @click="openDetails({{ json_encode($day) }})"
                                             class="relative w-12 h-12 rounded-full flex items-center justify-center text-base transition-colors
                                             {{ count($day['employees']) > 0 ? 'bg-gray-200 hover:bg-gray-300 text-gray-800' : 'bg-transparent text-gray-800 hover:bg-gray-100' }}"
                                         >
@@ -598,11 +526,7 @@
                                             @endif
 
                                             <!-- Red Badge for Pending Recoveries -->
-                                            @if($day['pending_recoveries_count'] > 0)
-                                                <span class="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-red-600 rounded-full border-2 border-white z-20">
-                                                    {{ $day['pending_recoveries_count'] }}
-                                                </span>
-                                            @endif
+                                            <!-- Red Badge for Pending Recoveries Removed -->
                                         </button>
                                     @endif
                                 </div>
@@ -624,7 +548,7 @@
                             @foreach($calendar as $day)
                                 <div 
                                     @if($day['is_current_month'])
-                                        @click="{{ json_encode($day) }}.pending_recoveries_count > 0 ? openRecoveryModal({{ json_encode($day) }}) : openDetails({{ json_encode($day) }})"
+                                        @click="openDetails({{ json_encode($day) }})"
                                         class="relative bg-gray-50 rounded-lg p-3 min-h-[120px] flex flex-col cursor-pointer hover:bg-gray-100 transition-colors border border-transparent hover:border-[#22A9C8]"
                                     @else
                                         class="relative bg-gray-50 rounded-lg p-3 min-h-[120px] flex flex-col"
@@ -669,11 +593,7 @@
                                         @endif
 
                                         <!-- Red Badge for Pending Recoveries -->
-                                        @if($day['pending_recoveries_count'] > 0)
-                                            <div class="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-red-600 rounded-full border-2 border-white z-20">
-                                                {{ $day['pending_recoveries_count'] }}
-                                            </div>
-                                        @endif
+                                        <!-- Red Badge for Pending Recoveries Removed -->
                                     @else
                                         <!-- Empty cell for days outside current month -->
                                         <div class="opacity-30">
@@ -874,25 +794,7 @@
                                                     </div>
 
                                                     <!-- Recovery Request Link (Inside Employee Card) -->
-                                                    <template x-if="parseFloat(emp.recovered_hours) > 0 && !emp.recovery_approved">
-                                                        <div class="mt-6 pt-6 border-t border-dashed border-gray-100">
-                                                            <div class="flex items-center justify-between bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                                                                <div class="flex items-center gap-3 text-blue-800">
-                                                                    <div class="p-2 bg-blue-100 rounded-lg">
-                                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                                                    </div>
-                                                                    <div>
-                                                                        <p class="text-xs font-black uppercase tracking-wider">Solicitud de Recuperación</p>
-                                                                        <p class="text-sm font-bold" x-text="emp.recovered_hours + ' hs'"></p>
-                                                                    </div>
-                                                                </div>
-                                                                <button @click="approveRecovery(emp)" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-black py-2.5 px-6 rounded-lg shadow-sm transition-all active:scale-95">
-                                                                    Aprobar Recup.
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </template>
-                                                </div>
+                                                 </div>
                                             </template>
                                         </div>
                                     </template>
@@ -931,161 +833,7 @@
                     </div>
 
                     <!-- Recovery Modal -->
-                    <div
-                        x-show="showRecoveryModal"
-                        style="display: none;"
-                        class="fixed inset-0 z-50 overflow-y-auto"
-                        aria-labelledby="recovery-modal-title"
-                        role="dialog"
-                        aria-modal="true"
-                    >
-                        <!-- Backdrop -->
-                        <div
-                            x-show="showRecoveryModal"
-                            x-transition:enter="ease-out duration-300"
-                            x-transition:enter-start="opacity-0"
-                            x-transition:enter-end="opacity-100"
-                            x-transition:leave="ease-in duration-200"
-                            x-transition:leave-start="opacity-100"
-                            x-transition:leave-end="opacity-0"
-                            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-                            @click="showRecoveryModal = false"
-                        ></div>
-
-                        <!-- Modal Panel -->
-                        <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
-                            <div
-                                x-show="showRecoveryModal"
-                                x-transition:enter="ease-out duration-300"
-                                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                                x-transition:leave="ease-in duration-200"
-                                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                                class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-2xl w-full"
-                            >
-                                <!-- Modal Header -->
-                                <div class="bg-red-50 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-red-100">
-                                    <div class="flex justify-between items-center">
-                                        <h3 class="text-lg leading-6 font-bold text-red-900 flex items-center gap-2" id="recovery-modal-title">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                            </svg>
-                                            Solicitudes de Recuperación de Horas
-                                        </h3>
-                                        <button @click="showRecoveryModal = false" class="text-gray-400 hover:text-gray-500">
-                                            <span class="sr-only">Cerrar</span>
-                                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Modal Body -->
-                                <div class="bg-white px-4 py-4 sm:p-6 max-h-[70vh] overflow-y-auto no-scrollbar">
-                                    <template x-if="selectedRecoveries.length > 0">
-                                        <div class="space-y-8">
-                                            <template x-for="recovery in selectedRecoveries" :key="recovery.record_id">
-                                                <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                                                    <!-- Employee Header -->
-                                                    <div class="flex items-start justify-between mb-6">
-                                                        <div class="flex items-center gap-4">
-                                                            <div class="w-14 h-14 rounded-2xl overflow-hidden border-2 border-red-50 shadow-sm bg-gray-100 flex-shrink-0">
-                                                                <img :src="recovery.avatar ? (recovery.avatar.startsWith('http') ? recovery.avatar : '/avatars/' + recovery.avatar) : `https://ui-avatars.com/api/?name=${encodeURIComponent(recovery.name)}&color=FFFFFF&background=F87171`" 
-                                                                     :alt="recovery.name" 
-                                                                     class="w-full h-full object-cover">
-                                                            </div>
-                                                            <div>
-                                                                <p class="font-black text-lg text-gray-900 leading-tight" x-text="recovery.name"></p>
-                                                                <div class="flex items-center gap-2 mt-1">
-                                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-600" x-text="recovery.recovered_hours + ' hs a recuperar'"></span>
-                                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-100 text-orange-600">Pendiente</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <!-- Recovery Activities (Parsed from recovery_comment) -->
-                                                    <div class="mb-6">
-                                                        <div class="flex items-center gap-2 mb-3 text-gray-400">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                                            <span class="text-[10px] font-black uppercase tracking-widest leading-none">Actividades Realizadas</span>
-                                                        </div>
-                                                        
-                                                        <div class="bg-gray-50/50 rounded-xl p-4 border border-gray-100 max-h-60 overflow-y-auto">
-                                                            <template x-if="recovery.recovery_comment && recovery.recovery_comment.trim() !== ''">
-                                                                <div x-data="{ parsed: parseComment(recovery.recovery_comment) }">
-                                                                    <template x-if="parsed.activities.length > 0">
-                                                                        <ul class="space-y-3 mb-4">
-                                                                            <template x-for="activity in parsed.activities">
-                                                                                <li class="flex items-start gap-3">
-                                                                                    <span class="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 flex-shrink-0"></span>
-                                                                                    <span class="text-sm text-gray-700 font-medium" x-text="activity"></span>
-                                                                                </li>
-                                                                            </template>
-                                                                        </ul>
-                                                                    </template>
-                                                                    <template x-if="parsed.summary">
-                                                                        <div :class="parsed.activities.length > 0 ? 'mt-4 pt-4 border-t border-gray-100' : ''">
-                                                                            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Resumen adicional</p>
-                                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line" x-text="parsed.summary"></p>
-                                                                        </div>
-                                                                    </template>
-                                                                </div>
-                                                            </template>
-                                                            <template x-if="!recovery.recovery_comment || recovery.recovery_comment.trim() === ''">
-                                                                <p class="text-sm text-gray-400 italic">No se registraron detalles.</p>
-                                                            </template>
-                                                        </div>
-                                                    </div>
-
-                                                    <!-- Action -->
-                                                    <div class="flex gap-4">
-                                                        <button 
-                                                            @click="rejectRecovery(recovery)"
-                                                            :disabled="isApproving"
-                                                            class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 font-black py-3 px-6 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 border border-red-100 flex items-center justify-center gap-2"
-                                                        >
-                                                            <span>Rechazar</span>
-                                                        </button>
-                                                        <button 
-                                                            @click="approveRecovery(recovery)"
-                                                            :disabled="isApproving"
-                                                            class="flex-[2] bg-green-500 hover:bg-green-600 text-white font-black py-3 px-6 rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                        >
-                                                            <svg x-show="!isApproving" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                                            <svg x-show="isApproving" class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                            <span x-text="isApproving ? 'Procesando...' : 'Aprobar'"></span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </template>
-                                   
-                                    <template x-if="selectedRecoveries.length === 0">
-                                        <div class="py-12 flex flex-col items-center">
-                                            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                                                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                            </div>
-                                            <p class="text-gray-400 font-bold uppercase tracking-widest text-xs text-center">No hay solicitudes para este día</p>
-                                        </div>
-                                    </template>
-                                </div>
-                                
-                                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100">
-                                    <button 
-                                        type="button" 
-                                        class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                                        @click="showRecoveryModal = false"
-                                    >
-                                        Cerrar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Recovery Modal Removed -->
                     </div>
 
                     <!-- Modal: Approve Week -->
