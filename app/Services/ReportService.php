@@ -5,6 +5,7 @@ namespace App\Services;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\WorkHours;
+use App\Models\RecoveryHour;
 
 class ReportService
 {
@@ -189,11 +190,20 @@ class ReportService
                 ->whereBetween('work_date', [$startDate, $endDate])
                 ->orderBy('work_date')
                 ->get();
+
+            $recoveryRecords = RecoveryHour::where('user_id', $prof->id)
+                ->whereBetween('recovery_date', [$startDate, $endDate])
+                ->orderBy('recovery_date')
+                ->get();
             
             $totalHours = $records->sum('hours_worked');
             $approvedHours = $records->where('approved', true)->sum('hours_worked');
             $pendingHours = $records->where('approved', false)->sum('hours_worked');
             $absencesCount = $records->where('absence_hours', '>', 0)->count();
+            
+            // Add recovered hours to stats (Collection filtering is safe)
+            $totalRecovered = $recoveryRecords->where('approved', true)->sum('hours_recovered');
+            $pendingRecovered = $recoveryRecords->where('approved', false)->sum('hours_recovered');
             
             $professionalsData[] = [
                 'user' => $prof,
@@ -203,7 +213,10 @@ class ReportService
                 'approved_hours' => $approvedHours,
                 'pending_hours' => $pendingHours,
                 'absences_count' => $absencesCount,
-                'records' => $records
+                'total_recovered' => $totalRecovered,
+                'pending_recovered' => $pendingRecovered,
+                'records' => $records,
+                'recovery_records' => $recoveryRecords
             ];
         }
 

@@ -152,6 +152,52 @@
                                                 <p class="text-gray-300 font-black uppercase tracking-widest text-[10px]">Sin registro de jornada</p>
                                             </div>
                                         @endif
+
+                                        {{-- Recovery Hours Section --}}
+                                        @php
+                                            $employeeRecoveries = $dayRecoveries->where('user_id', $employee->id);
+                                        @endphp
+                                        
+                                        @if($employeeRecoveries->count() > 0)
+                                            <div class="mt-8 pt-8 border-t border-gray-100">
+                                                <div class="flex items-center gap-2 mb-6 text-blue-600">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                    <span class="text-xs font-black uppercase tracking-widest">Recuperación de Horas</span>
+                                                </div>
+
+                                                @foreach($employeeRecoveries as $recovery)
+                                                    <div class="bg-blue-50/30 border border-blue-100 rounded-2xl p-6 mb-4 last:mb-0 shadow-sm">
+                                                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                                                            <div class="flex items-center gap-3">
+                                                                <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-black">{{ $recovery->hours_recovered }} hs</span>
+                                                                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider {{ $recovery->approved ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600' }}">
+                                                                    {{ $recovery->approved ? 'Aprobado' : 'Pendiente' }}
+                                                                </span>
+                                                            </div>
+                                                            @if(!$recovery->approved)
+                                                                <div class="flex gap-2">
+                                                                    <form action="{{ route('recovery.update-status', $recovery->id) }}" method="POST" class="inline">
+                                                                        @csrf
+                                                                        <input type="hidden" name="approved" value="0">
+                                                                        <button type="submit" onclick="return confirm('¿Rechazar esta solicitud?')" class="bg-white border border-red-100 text-red-600 px-4 py-2 rounded-lg text-xs font-black uppercase hover:bg-red-50 transition-all">Rechazar</button>
+                                                                    </form>
+                                                                    <form action="{{ route('recovery.update-status', $recovery->id) }}" method="POST" class="inline">
+                                                                        @csrf
+                                                                        <input type="hidden" name="approved" value="1">
+                                                                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-black uppercase hover:bg-blue-700 transition-all">Aprobar</button>
+                                                                    </form>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+
+                                                        <div class="bg-white/50 rounded-xl p-4 border border-blue-50">
+                                                            <p class="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-2">Actividades de recuperación</p>
+                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line">{{ $recovery->activities }}</p>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                     </div>
 
                                     <!-- Column 2: Tasks Log -->

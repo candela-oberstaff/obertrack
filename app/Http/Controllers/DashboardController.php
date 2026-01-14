@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\RecoveryHour;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\WorkHours;
@@ -177,6 +178,14 @@ class DashboardController extends Controller
         ->with('assignees')
         ->get();
 
+        // Fetch recovery hours from the new table
+        $monthlyRecoveries = RecoveryHour::whereIn('user_id', $empleados->pluck('id'))
+            ->whereBetween('recovery_date', [$startOfMonth, $endOfMonth])
+            ->get()
+            ->groupBy(function($item) {
+                return $item->recovery_date->format('Y-m-d');
+            });
+
         // Employee Summary Cards Data
         $employeeSummaries = $empleados->map(function($employee) use ($monthlyHours, $monthlyTasks, $employeeColors, $professionalStatuses) {
             $employeeHours = $monthlyHours->where('user_id', $employee->id);
@@ -187,6 +196,7 @@ class DashboardController extends Controller
             });
 
             $statusData = $professionalStatuses->firstWhere('user.id', $employee->id);
+            $debtSummary = \App\Http\Controllers\RecoveryHoursController::getDebtSummary($employee->id);
             
             return [
                 'user' => $employee,
@@ -200,8 +210,16 @@ class DashboardController extends Controller
                 'initials' => strtoupper(substr($employee->name, 0, 1) . substr(strrchr($employee->name, ' ') ?: ' ' . substr($employee->name, 1), 1, 1)),
                 'activity_status' => $statusData['status'] ?? 'active',
                 'days_inactive' => $statusData['days_inactive'] ?? 0,
+                'debt_summary' => $debtSummary,
             ];
         });
+
+        // Sorted Recovery History for the section below calendar
+        $recoveryHistory = RecoveryHour::whereIn('user_id', $empleados->pluck('id'))
+            ->whereBetween('recovery_date', [$startOfMonth, $endOfMonth])
+            ->with('user')
+            ->orderBy('recovery_date', 'desc')
+            ->get();
 
         // Calendar Data Generation
         $calendar = [];
@@ -220,28 +238,34 @@ class DashboardController extends Controller
             ];
 
             $dayRecords = $hoursByDate->get($dateStr, collect());
+            $dayRecoveries = $monthlyRecoveries->get($dateStr, collect());
 
             foreach ($empleados as $employee) {
                 $record = $dayRecords->where('user_id', $employee->id)->first();
+                $recovery = $dayRecoveries->where('user_id', $employee->id)->first();
                 
-                if ($record) {
+                if ($record || $recovery) {
                     $dayData['has_events'] = true;
                     $dayData['employees'][] = [
-                        'record_id' => $record->id,
+                        'record_id' => $record ? $record->id : null,
+                        'recovery_id' => $recovery ? $recovery->id : null,
                         'id' => $employee->id,
                         'name' => $employee->name,
                         'avatar' => $employee->avatar,
                         'initials' => $employeeSummaries->firstWhere('user.id', $employee->id)['initials'],
-                        'hours' => $record->hours_worked,
-                        'approved' => (bool)$record->approved,
-                        'user_comment' => $record->user_comment,
-                        'comment' => $record->approval_comment,
+                        'hours' => $record ? $record->hours_worked : 0,
+                        'approved' => $record ? (bool)$record->approved : true, // If no record, nothing to approve here
+                        'user_comment' => $record ? $record->user_comment : null,
+                        'comment' => $record ? $record->approval_comment : null,
                         'new_comment' => '',
-                        'absence_reason' => $record->absence_reason,
+                        'absence_reason' => $record ? $record->absence_reason : null,
                         'color_class' => $employeeColors[$employee->id] ?? 'bg-gray-500',
-                        'recovered_hours' => $record->recovered_hours ?? 0,
-                        'recovery_comment' => $record->recovery_comment,
-                        'recovery_approved' => (bool)$record->recovery_approved,
+                        
+                        // Recovery data (prioritize new table, fallback to old if necessary for transition, though we want separation)
+                        'recovered_hours' => $recovery ? $recovery->hours_recovered : ($record ? ($record->recovered_hours ?? 0) : 0),
+                        'recovery_comment' => $recovery ? $recovery->activities : ($record ? $record->recovery_comment : null),
+                        'recovery_approved' => $recovery ? (bool)$recovery->approved : ($record ? (bool)$record->recovery_approved : false),
+                        'is_new_recovery' => (bool)$recovery,
                     ];
                 }
             }
@@ -264,7 +288,8 @@ class DashboardController extends Controller
             'empleados',
             'currentMonth',
             'employeeSummaries',
-            'calendar'
+            'calendar',
+            'recoveryHistory'
         ));
     }
 
@@ -362,9 +387,15 @@ class DashboardController extends Controller
         ->with(['assignees', 'createdBy'])
         ->get();
 
+        $dayRecoveries = RecoveryHour::whereIn('user_id', $empleados->pluck('id'))
+            ->whereDate('recovery_date', $targetDate)
+            ->with('user')
+            ->get();
+
         return view('empleadores.detalle_diario', compact(
             'targetDate',
             'dayRecords',
+            'dayRecoveries',
             'empleados',
             'dayTasks'
         ));

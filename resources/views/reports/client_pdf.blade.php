@@ -60,9 +60,11 @@
                 Total Registrado: {{ number_format($prof['total_hours'], 1) }}h | 
                 <span class="text-green">Aprobadas: {{ number_format($prof['approved_hours'], 1) }}h</span> | 
                 <span class="text-orange">Pendientes: {{ number_format($prof['pending_hours'], 1) }}h</span> | 
+                <span class="text-green">Recuperadas: {{ number_format($prof['total_recovered'], 1) }}h</span> |
                 <span class="text-red">Ausencias: {{ $prof['absences_count'] }}</span>
             </div>
 
+            <div style="font-weight: bold; margin-bottom: 5px; color: #374151;">Jornadas Laborales</div>
             <table>
                 <thead>
                     <tr>
@@ -90,15 +92,6 @@
                                 @else
                                     {{ $record->user_comment ?: 'Sin comentarios' }}
                                 @endif
-                                
-                                @if($record->recovered_hours > 0)
-                                    <div style="margin-top:4px; padding-top:4px; border-top:1px dashed #e5e7eb;">
-                                        <span class="text-green font-bold">Recuperación:</span> {{ $record->recovered_hours }}h
-                                        @if($record->recovery_comment)
-                                            <br><span style="font-style:italic; color:#4b5563;">"{{ $record->recovery_comment }}"</span>
-                                        @endif
-                                    </div>
-                                @endif
                             </td>
                             <td>
                                 @if($record->approved)
@@ -110,23 +103,44 @@
                                 @else
                                     <span class="text-orange font-bold">Pendiente</span>
                                 @endif
-                                
-                                @if($record->recovered_hours > 0)
-                                    <br>
-                                    @if($record->recovery_approved)
-                                        <span class="text-green" style="font-size:9px">Recup. Aprobada</span>
-                                    @else
-                                        <span class="text-orange" style="font-size:9px">Recup. Pendiente</span>
-                                    @endif
-                                @endif
                             </td>
                         </tr>
                     @endforeach
                     @if(count($prof['records']) === 0)
-                        <tr><td colspan="4" style="text-align:center; padding:20px; color:#9ca3af;">Sin actividad registrada en este período.</td></tr>
+                        <tr><td colspan="4" style="text-align:center; padding:20px; color:#9ca3af;">Sin jornada registrada.</td></tr>
                     @endif
                 </tbody>
             </table>
+
+            @if(count($prof['recovery_records']) > 0)
+                <div style="font-weight: bold; margin: 15px 0 5px; color: #2563eb;">Recuperaciones de Horas</div>
+                <table>
+                    <thead style="background-color: #eff6ff;">
+                        <tr>
+                            <th width="15%">Fecha</th>
+                            <th width="10%">Horas</th>
+                            <th width="55%">Actividades de Recuperación</th>
+                            <th width="20%">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($prof['recovery_records'] as $recovery)
+                            <tr>
+                                <td>{{ \Carbon\Carbon::parse($recovery->recovery_date)->format('d/m/Y') }}</td>
+                                <td class="text-green font-bold">{{ $recovery->hours_recovered }}h</td>
+                                <td>{{ $recovery->activities }}</td>
+                                <td>
+                                    @if($recovery->approved)
+                                        <span class="text-green font-bold">Aprobado</span>
+                                    @else
+                                        <span class="text-orange font-bold">Pendiente</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
         </div>
     @endforeach
     

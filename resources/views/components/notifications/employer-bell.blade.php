@@ -80,12 +80,16 @@
                                         Recuperaciones Pendientes
                                     </p>
                                     @foreach($week['recovery_requests'] as $recovery)
+                                        @php
+                                            $hours = isset($recovery->hours_recovered) ? $recovery->hours_recovered : $recovery->recovered_hours;
+                                            $date = isset($recovery->recovery_date) ? $recovery->recovery_date : $recovery->work_date;
+                                        @endphp
                                         <div class="flex items-center justify-between text-xs">
                                             <span class="text-gray-700 font-medium">
                                                 {{ $recovery->user->name }}
                                             </span>
                                             <span class="font-bold text-red-600">
-                                                {{ $recovery->recovered_hours }}h • {{ $recovery->work_date->format('d/m') }}
+                                                {{ $hours }}h • {{ \Carbon\Carbon::parse($date)->format('d/m') }}
                                             </span>
                                         </div>
                                     @endforeach

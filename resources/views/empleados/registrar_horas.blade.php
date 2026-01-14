@@ -59,17 +59,49 @@
                    </div>
                 </div>
 
-                <div class="flex gap-8 items-center mt-4 md:mt-0">
-                    <div class="text-center">
+                <div class="flex flex-wrap gap-6 items-center mt-4 md:mt-0 px-4 md:px-0">
+                    <div class="text-center group cursor-help relative">
                         <span class="block text-3xl font-bold text-primary">{{ $completedTasksCount }}</span>
-                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Realizadas</span>
-                        <span class="block text-[10px] text-gray-400 font-medium">(Este mes)</span>
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Tareas Hechas</span>
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                            Tareas completadas este mes
+                        </div>
                     </div>
-                    <div class="h-12 w-px bg-gray-200"></div>
-                    <div class="text-center">
-                        <span class="block text-3xl font-bold text-orange-500">{{ $pendingTasksCount }}</span>
-                        <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Por Realizar</span>
-                         <span class="block text-[10px] text-gray-400 font-medium">(Total)</span>
+                    
+                    <div class="h-12 w-px bg-gray-200 hidden sm:block"></div>
+                    
+                    <div class="text-center group cursor-help relative">
+                        <span class="block text-3xl font-bold text-red-500">{{ number_format($debtSummary['total_debt'], 1) }}h</span>
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Horas Adeudadas</span>
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                            Total de horas por ausencias sin recuperar
+                        </div>
+                    </div>
+
+                    <div class="h-12 w-px bg-gray-200 hidden sm:block"></div>
+
+                    <div class="text-center group cursor-help relative">
+                        <span class="block text-3xl font-bold text-green-500">{{ number_format($debtSummary['total_recovered'], 1) }}h</span>
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Recuperadas</span>
+                        @if($debtSummary['pending_approval'] > 0)
+                            <span class="block text-[9px] text-orange-500 font-bold">(+{{ number_format($debtSummary['pending_approval'], 1) }}h pnd)</span>
+                        @endif
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                            Horas recuperadas y aprobadas este mes
+                        </div>
+                    </div>
+
+                    <div class="h-12 w-px bg-gray-200 hidden sm:block"></div>
+
+                    <div class="text-center group cursor-help relative">
+                        @php $remaining = $debtSummary['remaining_debt']; @endphp
+                        <span class="block text-3xl font-black {{ $remaining > 0 ? 'text-red-600' : 'text-green-600' }}">
+                            {{ $remaining > 0 ? '-' . number_format($remaining, 1) . 'h' : '✓' }}
+                        </span>
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Saldo Pendiente</span>
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                            Balance actual de horas pendientes
+                        </div>
                     </div>
                 </div>
 
@@ -662,8 +694,36 @@
                             </div>
                         </div>
 
+                        {{-- Recovery History Section --}}
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <label class="block text-gray-800 font-medium">Historial reciente</label>
+                                <span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Últimos registros</span>
+                            </div>
+                            <div class="space-y-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                                <template x-for="recovery in recoveryHistory" :key="recovery.id">
+                                    <div class="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col gap-1 transition-all hover:border-gray-200">
+                                        <div class="flex justify-between items-start">
+                                            <span class="text-xs font-bold text-gray-700" x-text="new Date(recovery.recovery_date).toLocaleDateString('es-ES', {day: 'numeric', month: 'short'})"></span>
+                                            <span :class="recovery.approved ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'" 
+                                                  class="text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase"
+                                                  x-text="recovery.approved ? 'Aprobado' : 'Pendiente'"></span>
+                                        </div>
+                                        <div class="flex items-baseline gap-1">
+                                            <span class="text-lg font-black text-gray-900" x-text="parseFloat(recovery.hours_recovered).toFixed(1)"></span>
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase">hrs</span>
+                                        </div>
+                                        <p class="text-[11px] text-gray-600 italic line-clamp-1" x-text="recovery.activities"></p>
+                                    </div>
+                                </template>
+                                <div x-show="recoveryHistory.length === 0" class="text-center py-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                    <p class="text-[11px] text-gray-400">No hay registros previos</p>
+                                </div>
+                            </div>
+                        </div>
+
                         {{-- Activities --}}
-                        <label class="block text-gray-800 font-medium mb-3">Actividades realizadas</label>
+                        <label class="block text-gray-800 font-medium mb-3">Actividades realizadas hoy</label>
                         
                         {{-- Toggle --}}
                         <div class="flex gap-2 mb-4">
@@ -773,8 +833,19 @@
                   recoveryAuthorized: false,
                   recoveryDescriptionMode: 'list',
                   recoveryUserComment: '',
-                  missingHours: {{ $missingHours }},
+                  missingHours: @json($debtSummary['remaining_debt']),
                   pendingTasks: @json($pendingTasks),
+                  recoveryHistory: [],
+                  
+                  fetchRecoveries() {
+                      fetch('{{ route('recovery.index') }}')
+                          .then(response => response.json())
+                          .then(data => {
+                              if (data.success) {
+                                  this.recoveryHistory = data.recoveries;
+                              }
+                          });
+                  },
                   
                   toggleTask(taskId) {
                       const task = this.pendingTasks.find(t => t.id === taskId);
@@ -792,14 +863,11 @@
                           if (data.success) {
                               task.completed = data.completed;
                               
-                              // If completed, add as an activity
                               if (data.completed) {
                                   if (!this.activities.includes(task.title)) {
                                       this.activities.push(task.title);
                                   }
                               } else {
-                                  // If uncompleted, maybe remove from activities? 
-                                  // Usually better to leave it if they already added it, but let's be clean.
                                   const index = this.activities.indexOf(task.title);
                                   if (index > -1) {
                                       this.activities.splice(index, 1);
@@ -831,7 +899,6 @@
                      const isPast = date < this.todayDate;
                      const isApproved = record && record.approved;
 
-                     // Initialize comments/activities first (used by both modals)
                      const fullComment = record ? (record.user_comment || '') : '';
                      
                      if (fullComment.includes('Resumen adicional:')) {
@@ -844,8 +911,6 @@
                      } else {
                          this.userComment = fullComment;
                          this.activities = [];
-                         // Fallback: if there's no separator, we try to guess if it's a list or a block of text
-                         // For now, if it has multiple lines, we'll treat it as a list to maintain old behavior
                          if (fullComment.includes('\n')) {
                              this.activities = fullComment.split('\n').filter(line => line.trim() !== '');
                              this.userComment = '';
@@ -958,7 +1023,6 @@
 
                      this.isSaving = true;
 
-                     // Safety check: ensure hours correspond to absence
                      if (this.workedFullDay === 'no') {
                          this.hours = 8 - this.absenceHours;
                          if (this.hours < 0) this.hours = 0;
@@ -1040,6 +1104,7 @@
                      this.recoveryActivities = [];
                      this.recoveryAuthorized = false;
                      this.recoveryUserComment = '';
+                     this.fetchRecoveries();
                  },
 
                  closeRecoveryModal() {
@@ -1064,7 +1129,7 @@
                          finalComment = listContent || textContent;
                      }
 
-                     fetch('{{ route('work-hours.store') }}', {
+                     fetch('{{ route('recovery.store') }}', {
                          method: 'POST',
                          headers: {
                              'Content-Type': 'application/json',
@@ -1072,11 +1137,8 @@
                              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                          },
                          body: JSON.stringify({
-                              work_date: this.recoveryDate,
-                              hours_worked: 0,
-                              recovered_hours: this.recoveryHours,
-                              recovery_comment: finalComment,
-                              user_comment: '[RECUPERACIÓN] ' + finalComment
+                              hours: this.recoveryHours,
+                              activities: finalComment
                           })
                      })
                      .then(response => response.json())

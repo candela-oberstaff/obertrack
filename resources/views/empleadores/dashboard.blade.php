@@ -1,97 +1,7 @@
 ﻿<x-app-layout>
    
     <div class="py-8 bg-white min-h-screen font-sans">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
-            <!-- Header -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <div class="flex items-center gap-4">
-                     <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1E293B]">Monitoreo de horas</h2>
-                </div>
-            </div>
-
-            @if(session('success'))
-                <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-400 text-green-700">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700">
-                    {{ session('error') }}
-                </div>
-            @endif
-
-            <!-- Subtitle -->
-            <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas registradas por los profesionales</h3>
-            
-            <!-- Employee Stats Cards -->
-            <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-                @foreach($employeeSummaries as $summary)
-                    @php
-                        $percentage = $summary['target_hours'] > 0 ? min(100, ($summary['total_hours'] / $summary['target_hours']) * 100) : 0;
-                        $dateRange = $currentMonth->copy()->startOfMonth()->format('M 1') . ' - ' . $currentMonth->copy()->endOfMonth()->format('M d');
-                    @endphp
-                    
-                    <div class="bg-[#F8F9FA] rounded-[2rem] p-6 relative flex flex-col items-center shadow-sm h-[320px] transition-all hover:shadow-md">
-                        
-                        <!-- Header -->
-                        <div class="w-full text-center mb-6 mt-2 relative">
-                            <!-- Status Indicator -->
-                            @if($summary['activity_status'] === 'red')
-                                <div class="absolute -top-4 right-0 flex items-center gap-1 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
-                                    <span class="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                                    <span class="text-[8px] font-black text-red-600 uppercase tracking-wider">Inactivo 2+ d</span>
-                                </div>
-                            @elseif($summary['activity_status'] === 'yellow')
-                                <div class="absolute -top-4 right-0 flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100">
-                                    <span class="flex h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
-                                    <span class="text-[8px] font-black text-yellow-600 uppercase tracking-wider">Inactivo 1 d</span>
-                                </div>
-                            @endif
-
-                            <h4 class="text-lg font-black text-[#1a202c] leading-tight mb-0.5 truncate px-2">{{ $summary['user']->name }}</h4>
-                            <p class="text-gray-400 text-xs font-medium uppercase tracking-widest">{{ $summary['role'] }}</p>
-                        </div>
-
-                        <!-- Semi Circular Chart (U Shape) -->
-                        <div class="relative w-44 h-24 mb-4 flex justify-center overflow-hidden">
-                             <!-- Half circle SVG -->
-                             <svg viewBox="0 0 100 60" class="w-full h-full">
-                                 <!-- Background Arc -->
-                                 <path d="M 10,10 A 40,40 0 0 0 90,10" 
-                                       fill="none" 
-                                       stroke="#E2E8F0" 
-                                       stroke-width="12" 
-                                       stroke-linecap="round" />
-                                 <!-- Progress Arc -->
-                                  <path d="M 10,10 A 40,40 0 0 0 90,10" 
-                                       fill="none" 
-                                       stroke="#22A9C8" 
-                                       stroke-width="12" 
-                                       stroke-linecap="round"
-                                       stroke-dasharray="{{ 126 }}" 
-                                       stroke-dashoffset="{{ 126 - (126 * $percentage / 100) }}"
-                                       class="transition-all duration-1000 ease-out" />
-                             </svg>
-                             <!-- Number -->
-                             <div class="absolute top-6 text-center">
-                                 <span class="text-4xl font-black text-[#1a202c] block leading-none">{{ $summary['days_registered'] }}</span>
-                             </div>
-                        </div>
-
-                        <!-- Footer Text -->
-                        <div class="text-center mt-auto mb-2">
-                            <p class="text-[#1a202c] text-[10px] font-bold leading-tight max-w-[180px] mx-auto opacity-60">
-                                {{ $summary['days_registered'] }} días registrados ({{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas mensuales)
-                            </p>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-
-            <!-- Daily View Section -->
-            <div class="mb-8" x-data="{ 
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" x-data="{ 
                     selectedDay: null,
                     showModal: false,
                     showRecoveryModal: false,
@@ -202,8 +112,6 @@
                             if (data.success) {
                                 emp.approved = true;
                                 emp.comment = emp.new_comment;
-                                // Optional: Update total hours or reload if needed. 
-                                // For now, just mark as approved visually in the modal.
                                 window.location.reload(); 
                             } else {
                                 alert(data.message || 'Error al aprobar las horas');
@@ -254,13 +162,19 @@
                         if (this.isApproving) return;
                         this.isApproving = true;
                         
+                        const url = recovery.is_new_recovery 
+                            ? `/recovery-hours/${recovery.recovery_id}/status`
+                            : `{{ route('work-hours.approve-recovery', '') }}/${recovery.record_id}`;
+                        
                         try {
-                            const response = await fetch(`{{ route('work-hours.approve-recovery', '') }}/${recovery.record_id}`, {
+                            const response = await fetch(url, {
                                 method: 'POST',
                                 headers: {
+                                    'Content-Type': 'application/json',
                                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                                     'Accept': 'application/json'
-                                }
+                                },
+                                body: JSON.stringify({ approved: true })
                             });
                             
                             const data = await response.json();
@@ -268,6 +182,45 @@
                                 window.location.reload();
                             } else {
                                 alert(data.message || 'Error al aprobar la recuperación');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Error de conexión');
+                        } finally {
+                            this.isApproving = false;
+                        }
+                    },
+                    async rejectRecovery(recovery) {
+                        if (this.isApproving) return;
+                        if (!confirm('¿Estás seguro de rechazar esta solicitud de recuperación?')) return;
+                        this.isApproving = true;
+                        
+                        const url = recovery.is_new_recovery 
+                            ? `/recovery-hours/${recovery.recovery_id}/status`
+                            : null;
+                            
+                        if (!url) {
+                            alert('La opción de rechazo solo está disponible para nuevas solicitudes.');
+                            this.isApproving = false;
+                            return;
+                        }
+                        
+                        try {
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ approved: false })
+                            });
+                            
+                            const data = await response.json();
+                            if (data.success) {
+                                window.location.reload();
+                            } else {
+                                alert(data.message || 'Error al rechazar la recuperación');
                             }
                         } catch (error) {
                             console.error('Error:', error);
@@ -285,18 +238,240 @@
                                 summary: parts[1].trim()
                             };
                         }
-                        if (comment.includes('\n')) {
-                            return {
-                                activities: comment.split('\n').filter(a => a.trim() !== ''),
-                                summary: ''
-                            };
-                        }
                         return {
-                            activities: [],
-                            summary: comment
+                            activities: comment.split('\n').filter(a => a.trim() !== ''),
+                            summary: ''
                         };
                     }
                 }">
+            
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div class="flex items-center gap-4">
+                     <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1E293B]">Monitoreo de horas</h2>
+                </div>
+            </div>
+
+            @if(session('success'))
+                <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-400 text-green-700">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            <!-- Subtitle -->
+            <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas registradas por los profesionales</h3>
+            
+            <!-- Employee Stats Cards -->
+            <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+                @foreach($employeeSummaries as $summary)
+                    @php
+                        $percentage = $summary['target_hours'] > 0 ? min(100, ($summary['total_hours'] / $summary['target_hours']) * 100) : 0;
+                        $dateRange = $currentMonth->copy()->startOfMonth()->format('M 1') . ' - ' . $currentMonth->copy()->endOfMonth()->format('M d');
+                    @endphp
+                    
+                    <div class="bg-[#F8F9FA] rounded-[2rem] p-6 relative flex flex-col items-center shadow-sm h-[320px] transition-all hover:shadow-md">
+                        
+                        <!-- Header -->
+                        <div class="w-full text-center mb-6 mt-2 relative">
+                            <!-- Status Indicator -->
+                            @if($summary['activity_status'] === 'red')
+                                <div class="absolute -top-4 right-0 flex items-center gap-1 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
+                                    <span class="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                                    <span class="text-[8px] font-black text-red-600 uppercase tracking-wider">Inactivo 2+ d</span>
+                                </div>
+                            @elseif($summary['activity_status'] === 'yellow')
+                                <div class="absolute -top-4 right-0 flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100">
+                                    <span class="flex h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                                    <span class="text-[8px] font-black text-yellow-600 uppercase tracking-wider">Inactivo 1 d</span>
+                                </div>
+                            @endif
+
+                            <h4 class="text-lg font-black text-[#1a202c] leading-tight mb-0.5 truncate px-2">{{ $summary['user']->name }}</h4>
+                            <p class="text-gray-400 text-xs font-medium uppercase tracking-widest">{{ $summary['role'] }}</p>
+                        </div>
+
+                        <!-- Semi Circular Chart (U Shape) -->
+                        <div class="relative w-44 h-24 mb-4 flex justify-center overflow-hidden">
+                             <!-- Half circle SVG -->
+                             <svg viewBox="0 0 100 60" class="w-full h-full">
+                                 <!-- Background Arc -->
+                                 <path d="M 10,10 A 40,40 0 0 0 90,10" 
+                                       fill="none" 
+                                       stroke="#E2E8F0" 
+                                       stroke-width="12" 
+                                       stroke-linecap="round" />
+                                 <!-- Progress Arc -->
+                                  <path d="M 10,10 A 40,40 0 0 0 90,10" 
+                                       fill="none" 
+                                       stroke="#22A9C8" 
+                                       stroke-width="12" 
+                                       stroke-linecap="round"
+                                       stroke-dasharray="{{ 126 }}" 
+                                       stroke-dashoffset="{{ 126 - (126 * $percentage / 100) }}"
+                                       class="transition-all duration-1000 ease-out" />
+                             </svg>
+                             <!-- Number -->
+                             <div class="absolute top-6 text-center">
+                                 <span class="text-4xl font-black text-[#1a202c] block leading-none">{{ $summary['days_registered'] }}</span>
+                             </div>
+                        </div>
+
+                        <!-- Footer Text -->
+                        <div class="text-center mt-auto mb-2">
+                            <p class="text-[#1a202c] text-[10px] font-bold leading-tight max-w-[180px] mx-auto opacity-60">
+                                {{ $summary['days_registered'] }} días registrados ({{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas mensuales)
+                            </p>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- Recovery Overview Section (Informativo Detallado) -->
+            <div class="mb-12">
+                <h3 class="text-[#22A9C8] font-medium text-base mb-6">Detalle de Recuperación y Deudas</h3>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Left: Debt Summary (2/3) -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden h-full">
+                            <div class="bg-gray-50/50 px-8 py-6 border-b border-gray-100 flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-black text-gray-800">Estado por Profesional</h3>
+                                    <p class="text-xs text-gray-400 font-medium uppercase tracking-wider mt-1">Acumulado histórico</p>
+                                </div>
+                            </div>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead>
+                                        <tr class="bg-gray-50/20">
+                                            <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400">Profesional</th>
+                                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Deuda Total</th>
+                                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Recuperado</th>
+                                            <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-right">Saldo Actual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-50">
+                                        @foreach($employeeSummaries as $sum)
+                                            <tr class="hover:bg-gray-50/30 transition-colors">
+                                                <td class="px-8 py-5">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="w-10 h-10 rounded-xl overflow-hidden shadow-sm bg-gray-100 flex-shrink-0">
+                                                            <img src="{{ $sum['user']->avatar ? (str_starts_with($sum['user']->avatar, 'http') ? $sum['user']->avatar : '/avatars/' . $sum['user']->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($sum['user']->name) . '&color=FFFFFF&background=22A9C8' }}" class="w-full h-full object-cover">
+                                                        </div>
+                                                        <div>
+                                                            <p class="text-sm font-bold text-gray-700">{{ $sum['user']->name }}</p>
+                                                            <p class="text-[10px] text-gray-400 font-medium uppercase truncate max-w-[120px]">{{ $sum['role'] }}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-5 text-center">
+                                                    <span class="text-sm font-bold text-red-600">{{ number_format($sum['debt_summary']['total_debt'], 1) }}h</span>
+                                                </td>
+                                                <td class="px-6 py-5 text-center">
+                                                    <div class="flex flex-col items-center">
+                                                        <span class="text-sm font-bold text-green-600">{{ number_format($sum['debt_summary']['total_recovered'], 1) }}h</span>
+                                                        @if($sum['debt_summary']['pending_approval'] > 0)
+                                                            <span class="text-[9px] text-orange-500 font-bold uppercase tracking-tighter">(+{{ number_format($sum['debt_summary']['pending_approval'], 1) }}h pnd)</span>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                                <td class="px-8 py-5 text-right">
+                                                    @php $remaining = $sum['debt_summary']['remaining_debt']; @endphp
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-black {{ $remaining > 0 ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-green-50 text-green-700 border border-green-100' }}">
+                                                        {{ $remaining > 0 ? '-' . number_format($remaining, 1) . 'h' : 'Al día' }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Quick Actions / Recent Requests (1/3) -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden h-full flex flex-col">
+                            <div class="bg-gray-50/50 px-8 py-6 border-b border-gray-100">
+                                <h3 class="text-lg font-black text-gray-800">Solicitudes Recientes</h3>
+                            </div>
+                            
+                            <div class="flex-1 overflow-y-auto no-scrollbar max-h-[450px]">
+                                @forelse($recoveryHistory as $recovery)
+                                    <div class="px-6 py-5 border-b border-gray-50 last:border-0 hover:bg-gray-50/30 transition-colors">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-gray-50 border border-gray-100">
+                                                    <img src="{{ $recovery->user->avatar ? (str_starts_with($recovery->user->avatar, 'http') ? $recovery->user->avatar : '/avatars/' . $recovery->user->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($recovery->user->name) . '&color=FFFFFF&background=22A9C8' }}" class="w-full h-full object-cover">
+                                                </div>
+                                                <div>
+                                                    <p class="text-xs font-bold text-gray-700 line-clamp-1">{{ $recovery->user->name }}</p>
+                                                    <p class="text-[9px] text-gray-400 font-black tracking-widest uppercase">{{ $recovery->recovery_date->format('d/m/Y') }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-xs font-black text-[#22A9C8]">{{ number_format($recovery->hours_recovered, 1) }}h</span>
+                                            </div>
+                                        </div>
+                                        
+                                        @if($recovery->activities)
+                                            <div class="mt-3 bg-gray-50/50 rounded-lg p-2.5 border border-gray-50">
+                                                <p class="text-[10px] text-gray-500 italic line-clamp-2">"{{ $recovery->activities }}"</p>
+                                            </div>
+                                        @endif
+
+                                        <div class="mt-3 flex items-center justify-between">
+                                            @if($recovery->approved)
+                                                <span class="text-[9px] font-black uppercase text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 flex items-center gap-1">
+                                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                    Aprobado
+                                                </span>
+                                            @else
+                                                <div class="flex items-center gap-2">
+                                                     <button 
+                                                        @click="if(confirm('¿Aprobar recuperación?')) {
+                                                            isApproving = true;
+                                                            fetch('{{ route('recovery.update-status', $recovery->id) }}', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                                                body: JSON.stringify({ approved: true })
+                                                            }).then(r => r.json()).then(() => window.location.reload()).finally(() => isApproving = false);
+                                                        }"
+                                                        class="px-2.5 py-1 bg-green-500 text-white text-[9px] font-black rounded-lg hover:bg-green-600 transition-all shadow-sm uppercase">Aprobar</button>
+                                                     <button 
+                                                        @click="if(confirm('¿Rechazar recuperación?')) {
+                                                            isApproving = true;
+                                                            fetch('{{ route('recovery.update-status', $recovery->id) }}', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                                                body: JSON.stringify({ approved: false })
+                                                            }).then(r => r.json()).then(() => window.location.reload()).finally(() => isApproving = false);
+                                                        }"
+                                                        class="px-2.5 py-1 bg-white text-red-500 text-[9px] font-black rounded-lg border border-red-100 hover:bg-red-50 transition-all uppercase">Rechazar</button>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="px-8 py-12 text-center">
+                                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Sin solicitudes<br>pendientes</p>
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily View Section -->
+            <div class="mb-8">
                 <h3 class="text-lg font-bold text-gray-900 mb-6">Vistazo diario</h3>
                 
                 <!-- Month Navigation -->
@@ -807,15 +982,24 @@
                                                     </div>
 
                                                     <!-- Action -->
-                                                    <button 
-                                                        @click="approveRecovery(recovery)"
-                                                        :disabled="isApproving"
-                                                        class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 px-6 rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                    >
-                                                        <svg x-show="!isApproving" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                                        <svg x-show="isApproving" class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                        <span x-text="isApproving ? 'Aprobando...' : 'Aprobar Recuperación'"></span>
-                                                    </button>
+                                                    <div class="flex gap-4">
+                                                        <button 
+                                                            @click="rejectRecovery(recovery)"
+                                                            :disabled="isApproving"
+                                                            class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 font-black py-3 px-6 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 border border-red-100 flex items-center justify-center gap-2"
+                                                        >
+                                                            <span>Rechazar</span>
+                                                        </button>
+                                                        <button 
+                                                            @click="approveRecovery(recovery)"
+                                                            :disabled="isApproving"
+                                                            class="flex-[2] bg-green-500 hover:bg-green-600 text-white font-black py-3 px-6 rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                        >
+                                                            <svg x-show="!isApproving" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                            <svg x-show="isApproving" class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                            <span x-text="isApproving ? 'Procesando...' : 'Aprobar'"></span>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </template>
                                         </div>

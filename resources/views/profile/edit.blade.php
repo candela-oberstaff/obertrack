@@ -126,6 +126,33 @@
                                 </div>
                             </div>
                         @endif
+                        @if($user->tipo_usuario === 'empleado')
+                            @php $debtSummary = \App\Http\Controllers\RecoveryHoursController::getDebtSummary($user->id); @endphp
+                            <!-- Recovery Summary -->
+                            <div class="pt-6 border-t border-gray-100">
+                                <label class="block text-sm font-bold text-gray-900 mb-4">Resumen de Recuperación</label>
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                    <div class="bg-gray-50 rounded-xl p-4 text-center">
+                                        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Adeudado</p>
+                                        <p class="text-xl font-black text-red-500">{{ number_format($debtSummary['total_debt'], 1) }}h</p>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-xl p-4 text-center">
+                                        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Recuperado</p>
+                                        <p class="text-xl font-black text-green-500">{{ number_format($debtSummary['total_recovered'], 1) }}h</p>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-xl p-4 text-center">
+                                        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Pendiente</p>
+                                        <p class="text-xl font-black text-orange-500">{{ number_format($debtSummary['pending_approval'], 1) }}h</p>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-xl p-4 text-center border-2 {{ $debtSummary['remaining_debt'] > 0 ? 'border-red-100' : 'border-green-100' }}">
+                                        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Saldo Final</p>
+                                        <p class="text-xl font-black {{ $debtSummary['remaining_debt'] > 0 ? 'text-red-600' : 'text-green-600' }}">
+                                            {{ $debtSummary['remaining_debt'] > 0 ? '-' . number_format($debtSummary['remaining_debt'], 1) . 'h' : 'Libre' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="mt-8 flex justify-center">

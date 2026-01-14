@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\WorkHours;
+use App\Models\RecoveryHour;
 use App\Http\Requests\StoreWorkHoursRequest;
 use App\Http\Requests\ApproveWorkHoursRequest;
 use App\Services\ReportService;
@@ -54,61 +55,14 @@ class WorkHoursController extends Controller
             ->where('work_date', '!=', $request->work_date) // Exclude current day if updating
             ->sum('hours_worked');
     
-        // Handle recovery hours separately (if provided)
-        if ($request->has('recovered_hours') && $request->recovered_hours > 0) {
-            // Validate recovery date is today
-            if ($request->work_date !== now()->format('Y-m-d')) {
-                if ($request->ajax() || $request->wantsJson()) {
-                    return response()->json(['success' => false, 'message' => 'Las horas solo se pueden recuperar el día de hoy.']);
-                }
-                return back()->with('error', 'Las horas solo se pueden recuperar el día de hoy.');
-            }
-
-            // Create separate recovery record
-            WorkHours::create([
-                'user_id' => auth()->id(),
-                'work_date' => $request->work_date,
-                'hours_worked' => 0, // Recovery doesn't count as daily hours
-                'recovered_hours' => $request->recovered_hours,
-                'recovery_comment' => $request->recovery_comment,
-                'recovery_approved' => true, // Auto-approved, just notify employer
-                'approved' => true, // Mark as approved since it's not pending work
-                'user_comment' => 'Recuperación de horas'
-            ]);
-
-            // Send recovery notification to employer
-            try {
-                $user = auth()->user();
-                $employer = $user->empleador_id ? User::find($user->empleador_id) : null;
-                
-                if ($employer) {
-                    $this->emailService->sendRecoveryRequestNotification(
-                        $employer->email,
-                        $employer->name,
-                        [
-                            'employee_name' => $user->name,
-                            'date' => Carbon::parse($request->work_date)->format('d/m/Y'),
-                            'hours' => $request->recovered_hours,
-                            'activities' => $request->recovery_comment
-                        ]
-                    );
-                }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Error sending recovery notification: ' . $e->getMessage());
-            }
-
-            // Return early - recovery is handled separately
+    
+        // Regular work hours registration
+        if ($request->hours_worked > 8) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Horas de recuperación registradas correctamente.',
-                    'is_recovery' => true
-                ]);
+                return response()->json(['success' => false, 'message' => 'No puedes registrar más de 8 horas por día.']);
             }
-            return back()->with('success', 'Horas de recuperación registradas correctamente.');
+            return back()->with('error', 'No puedes registrar más de 8 horas por día.');
         }
-
-        // Regular work hours registration (not recovery)
         if ($request->hours_worked > 8) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'No puedes registrar más de 8 horas por día.']);
@@ -499,15 +453,52 @@ class WorkHoursController extends Controller
 
                 // Monthly stats
                 $monthStart = Carbon::now()->startOfMonth();
-                $monthHours = WorkHours::where('user_id', $professional->id)
-                    ->whereBetween('work_date', [$monthStart->format('Y-m-d'), Carbon::now()->format('Y-m-d')])
-                    ->whereRaw('approved IS TRUE') // Only approved standard hours
-                    ->sum(DB::raw('hours_worked + CASE WHEN recovery_approved = true THEN recovered_hours ELSE 0 END'));
+                $monthWorkHours = WorkHours::where('user_id', $professional->id)
+                    ->whereBetween('work_date', [$monthStart->format('Y-m-d'), $today->format('Y-m-d')])
+                    ->whereRaw('approved IS TRUE')
+                    ->sum('hours_worked');
+                
+                $monthRecoveredNew = RecoveryHour::where('user_id', $professional->id)
+                    ->whereBetween('recovery_date', [$monthStart->format('Y-m-d'), $today->format('Y-m-d')])
+                    ->whereRaw('approved IS TRUE')
+                    ->sum('hours_recovered');
+                
+                $monthRecoveredOld = WorkHours::where('user_id', $professional->id)
+                    ->whereBetween('work_date', [$monthStart->format('Y-m-d'), $today->format('Y-m-d')])
+                    ->where('recovery_approved', true)
+                    ->sum('recovered_hours');
 
-                $pendingRecoveries = WorkHours::where('user_id', $professional->id)
+                $monthHours = $monthWorkHours + $monthRecoveredNew + $monthRecoveredOld;
+
+                // Pending recoveries (New table)
+                $pendingRecoveries = RecoveryHour::where('user_id', $professional->id)
+                    ->whereRaw('approved IS FALSE')
+                    ->get()
+                    ->map(function($r) {
+                        // Map to a consistent structure for the view
+                        return (object)[
+                            'id' => $r->id,
+                            'recovered_hours' => $r->hours_recovered,
+                            'work_date' => $r->recovery_date,
+                            'is_new' => true
+                        ];
+                    });
+
+                // Add legacy pending recoveries if any
+                $legacyPending = WorkHours::where('user_id', $professional->id)
                     ->where('recovered_hours', '>', 0)
-                    ->whereRaw('recovery_approved IS FALSE')
-                    ->get();
+                    ->where('recovery_approved', false)
+                    ->get()
+                    ->map(function($r) {
+                        return (object)[
+                            'id' => $r->id,
+                            'recovered_hours' => $r->recovered_hours,
+                            'work_date' => $r->work_date,
+                            'is_new' => false
+                        ];
+                    });
+                
+                $pendingRecoveries = $pendingRecoveries->concat($legacyPending);
 
                 return [
                     'id' => $professional->id,

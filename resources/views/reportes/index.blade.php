@@ -69,14 +69,23 @@
                                             </span>
                                             <div class="flex flex-wrap gap-2 mt-1">
                                                 @foreach($prof['pending_recoveries'] as $recovery)
-                                                    <button @click="if(confirm('¿Aprobar ' + '{{ $recovery->recovered_hours }}' + 'h para el ' + '{{ $recovery->work_date->format('d/m') }}' + '?')) {
+                                                    @php
+                                                        $approvalUrl = $recovery->is_new 
+                                                            ? route('recovery.update-status', $recovery->id) 
+                                                            : route('work-hours.approve-recovery', $recovery->id);
+                                                    @endphp
+                                                    <button @click="if(confirm('¿Aprobar ' + '{{ $recovery->recovered_hours }}' + 'h para el ' + '{{ \Carbon\Carbon::parse($recovery->work_date)->format('d/m') }}' + '?')) {
                                                                 isApproving = true;
-                                                                fetch('{{ route('work-hours.approve-recovery', $recovery->id) }}', {
+                                                                fetch('{{ $approvalUrl }}', {
                                                                     method: 'POST',
                                                                     headers: {
+                                                                        'Content-Type': 'application/json',
                                                                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
                                                                         'Accept': 'application/json'
-                                                                    }
+                                                                    },
+                                                                    @if($recovery->is_new)
+                                                                    body: JSON.stringify({ approved: true })
+                                                                    @endif
                                                                 }).then(r => r.json()).then(data => {
                                                                     if(data.success) window.location.reload();
                                                                     else alert(data.message);
@@ -84,7 +93,7 @@
                                                             }"
                                                             :disabled="isApproving"
                                                             class="bg-orange-100 text-orange-700 hover:bg-orange-200 px-3 py-1 rounded-full text-[10px] font-bold transition-all flex items-center gap-1 border border-orange-200 transition active:scale-95 disabled:opacity-50">
-                                                        <span>Aprobar {{ $recovery->work_date->format('d/m') }}: {{ $recovery->recovered_hours }}h</span>
+                                                        <span>Aprobar {{ \Carbon\Carbon::parse($recovery->work_date)->format('d/m') }}: {{ $recovery->recovered_hours }}h</span>
                                                     </button>
                                                 @endforeach
                                             </div>

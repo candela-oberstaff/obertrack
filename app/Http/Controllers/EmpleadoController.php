@@ -55,7 +55,7 @@ class EmpleadoController extends Controller
         
         $calendar = $calendarService->generateCalendar($currentMonth, $user->id);
         $totalHours = $calendarService->getTotalHoursForMonth($currentMonth, $user->id);
-        $missingHours = $calendarService->getMissingHours($currentMonth, $user->id);
+        $debtSummary = \App\Http\Controllers\RecoveryHoursController::getDebtSummary($user->id);
 
         $completedTasksCount = $user->assignedTasks()
             ->whereRaw('tasks.completed IS TRUE')
@@ -72,7 +72,7 @@ class EmpleadoController extends Controller
             ->with('createdBy')
             ->get();
 
-        return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'missingHours', 'completedTasksCount', 'pendingTasksCount', 'pendingTasks'));
+        return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'debtSummary', 'completedTasksCount', 'pendingTasksCount', 'pendingTasks'));
     }
 
 }
