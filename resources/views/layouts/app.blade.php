@@ -20,8 +20,44 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
+
+        <style>
+            [x-cloak] { display: none !important; }
+            .loader-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(4px);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+            }
+            .loader-spinner {
+                width: 50px;
+                height: 50px;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #22A9C8;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin-bottom: 1rem;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
     </head>
-    <body class="font-sans antialiased">
+    <body class="font-sans antialiased" x-data="{ globalLoading: false }" @show-loader.window="globalLoading = true">
+        <!-- Global Loader Overlay -->
+        <div x-show="globalLoading" class="loader-overlay" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+            <div class="loader-spinner"></div>
+            <p class="text-[#22A9C8] font-bold text-lg animate-pulse">Procesando...</p>
+        </div>
         <div class="min-h-screen bg-gray-100 dark:bg-white">
             @include('layouts.navigation')
 
@@ -313,6 +349,20 @@
                         }, 1000);
                     @endif
                 @endauth
+
+                // Global form submission handler for loader
+                window.addEventListener('submit', function(e) {
+                    const form = e.target;
+                    // Don't show for search forms or forms with data-no-loader
+                    if (form.method.toLowerCase() === 'post' && !form.hasAttribute('data-no-loader')) {
+                        window.dispatchEvent(new CustomEvent('show-loader'));
+                    }
+                });
+
+                // Global function to show loader (for fetch calls)
+                window.showLoader = function() {
+                    window.dispatchEvent(new CustomEvent('show-loader'));
+                };
             });
         </script>
         @stack('scripts')

@@ -411,6 +411,7 @@
                     errorMessage: '',
                     async sendCode() {
                         this.sending = true;
+                        window.showLoader();
                         this.errorMessage = '';
                         try {
                             const response = await fetch('{{ route('profile.send-password-code') }}', {

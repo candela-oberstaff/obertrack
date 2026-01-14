@@ -107,11 +107,31 @@
         </div>
 
         <!-- Footer / Upload -->
-        <div class="p-8 flex justify-center shrink-0 bg-white">
+        <div class="p-8 flex flex-col justify-center items-center shrink-0 bg-white">
+             <!-- Progress Bar -->
+             <div x-show="isUploading" class="w-full max-w-xs mb-4">
+                 <div class="flex justify-between items-center mb-1">
+                     <span class="text-xs font-bold text-[#22A9C8]">Subiendo...</span>
+                     <span class="text-xs font-medium text-gray-500" x-text="uploadProgress + '%'"></span>
+                 </div>
+                 <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden border border-gray-200">
+                     <div class="bg-[#22A9C8] h-2 rounded-full transition-all duration-300 shadow-sm" :style="'width: ' + uploadProgress + '%'"></div>
+                 </div>
+             </div>
+             
+             <div x-show="isUploading" class="mb-4 text-[#22A9C8] flex items-center gap-2">
+                <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-sm font-medium">Procesando archivo...</span>
+             </div>
+
              <!-- Hidden File Input -->
              <input type="file" x-ref="fileInput" class="hidden" @change="uploadFile(activeTask.id, $event.target.files[0])">
              
              <button 
+                x-show="!isUploading"
                 @click="$refs.fileInput.click()"
                 class="border border-[#22A9C8] text-[#0D1E4C] hover:bg-[#22A9C8] hover:text-white font-medium py-2 px-10 rounded-full transition-colors shadow-sm"
             >

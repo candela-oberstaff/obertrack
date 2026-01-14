@@ -240,7 +240,7 @@
                 </x-responsive-nav-link>
             @else
                 <x-responsive-nav-link :href="route('empleado.registrar-horas')" :active="request()->routeIs('empleado.registrar-horas')">
-                    {{ auth()->user()->is_manager ? 'Mis horas' : 'Registrar tareas' }}
+                    {{ auth()->user()->is_manager ? 'Mis horas' : 'Registro de jornada' }}
                 </x-responsive-nav-link>
 
                 @if(auth()->user()->is_manager)

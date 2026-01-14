@@ -47,10 +47,12 @@
 
                     <div class="flex gap-4">
                         <a :href="'{{ route('reportes.download.weekly', ['user' => $professional->id, 'week' => $weekStart->format('Y-m-d')]) }}' + (sendEmail ? '&send_email=1' : '')" 
+                           @click="window.showLoader()"
                            class="px-6 py-2 border-2 border-[#22A9C8] text-[#0D1E4C] text-sm font-bold rounded-full hover:bg-gray-50 transition-all">
                             Descargar reporte semanal
                         </a>
                         <a :href="'{{ route('reportes.download.monthly', ['user' => $professional->id, 'month' => $weekStart->format('Y-m-d')]) }}' + (sendEmail ? '&send_email=1' : '')" 
+                           @click="window.showLoader()"
                            class="px-6 py-2 bg-[#22A9C8] text-white text-sm font-bold rounded-full hover:opacity-90 transition-all shadow-sm">
                             Descargar reporte mensual
                         </a>

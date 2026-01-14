@@ -1,4 +1,12 @@
-<div x-data="{ isModalOpen: @entangle('isOpen') }"
+<div x-data="{ 
+        isModalOpen: @entangle('isOpen'),
+        isUploading: false,
+        progress: 0
+     }"
+     x-on:livewire-upload-start="isUploading = true; progress = 0"
+     x-on:livewire-upload-finish="isUploading = false"
+     x-on:livewire-upload-error="isUploading = false"
+     x-on:livewire-upload-progress="progress = $event.detail.progress"
      x-show="isModalOpen"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0"
@@ -108,17 +116,30 @@
         </div>
 
         {{-- Footer Action --}}
-        <div class="flex justify-center flex-col items-center">
-             <div wire:loading wire:target="newFile" class="mb-4">
+        {{-- Footer Action --}}
+        <div class="flex justify-center flex-col items-center w-full">
+             {{-- Progress Bar --}}
+             <div x-show="isUploading" class="w-full max-w-xs mb-4">
+                 <div class="flex justify-between items-center mb-1">
+                     <span class="text-xs font-bold text-primary">Subiendo...</span>
+                     <span class="text-xs font-medium text-gray-500" x-text="progress + '%'"></span>
+                 </div>
+                 <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden border border-gray-200">
+                     <div class="bg-primary h-2 rounded-full transition-all duration-300 shadow-sm" :style="'width: ' + progress + '%'"></div>
+                 </div>
+             </div>
+
+             <div wire:loading wire:target="newFile" x-show="!isUploading" class="mb-4">
                 <div class="flex items-center space-x-2 text-primary">
                     <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span class="text-sm font-medium">Subiendo archivo...</span>
+                    <span class="text-sm font-medium">Procesando archivo...</span>
                 </div>
              </div>
-             <label wire:loading.remove wire:target="newFile" class="cursor-pointer border border-primary text-primary hover:bg-primary hover:text-white px-8 py-2 rounded-full font-medium transition duration-300 block text-center">
+
+             <label x-show="!isUploading" wire:loading.remove wire:target="newFile" class="cursor-pointer border border-primary text-primary hover:bg-primary hover:text-white px-8 py-2 rounded-full font-medium transition duration-300 block text-center">
                 Subir archivo
                 <input type="file" wire:model="newFile" class="hidden">
             </label>

@@ -102,7 +102,15 @@
             <div x-show="showInput" class="w-full" style="display: none;">
                 <form wire:submit.prevent="addComment" class="flex gap-2">
                     <input type="text" wire:model="newCommentContent" class="flex-1 rounded-lg border-gray-300 focus:ring-primary focus:border-primary" placeholder="Escribe tu comentario...">
-                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark">Enviar</button>
+                    <button type="submit" 
+                            wire:loading.attr="disabled"
+                            class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark flex items-center justify-center min-w-[80px]">
+                        <span wire:loading.remove>Enviar</span>
+                        <svg wire:loading class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
                     <button type="button" @click="showInput = false" class="text-gray-500 hover:text-gray-700 px-3">Cancelar</button>
                 </form>
             </div>

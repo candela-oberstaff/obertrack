@@ -20,6 +20,7 @@
                     async approveWeek() {
                         if (!this.weekDate) return;
                         this.isApprovingWeek = true;
+                        window.showLoader();
                         this.weekSuccessMessage = '';
                         try {
                             const response = await fetch('{{ route('work-hours.approve-all-week') }}', {
@@ -52,6 +53,7 @@
                     async approveAllMonth() {
                         if (this.isApprovingAll) return;
                         this.isApprovingAll = true;
+                        window.showLoader();
                         this.allMonthSuccessMessage = '';
                         try {
                             const response = await fetch('{{ route('work-hours.approve-all-month') }}', {
@@ -80,16 +82,67 @@
                             this.isApprovingAll = false;
                         }
                     },
+                    pollInterval: null,
+
+                    init() {
+                        this.$watch('showModal', value => {
+                            if (!value) {
+                                this.stopPolling();
+                            }
+                        });
+                    },
+
+                    startPolling(dateStr) {
+                         this.stopPolling();
+                         // Initial fetch to ensure fresh data
+                         this.fetchDayDetails(dateStr);
+                         
+                         this.pollInterval = setInterval(() => {
+                             this.fetchDayDetails(dateStr);
+                         }, 5000); // Poll every 5 seconds
+                    },
+
+                    stopPolling() {
+                        if (this.pollInterval) {
+                            clearInterval(this.pollInterval);
+                            this.pollInterval = null;
+                        }
+                    },
+
+                    async fetchDayDetails(dateStr) {
+                        try {
+                            const response = await fetch(`/empleador/api/day-details/${dateStr}`);
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            
+                            const data = await response.json();
+                            
+                            // Only update if we are still looking at the same day's modal
+                            if (this.showModal && this.selectedDay && this.selectedDay.date.startsWith(dateStr)) {
+                                this.selectedDay = data;
+                            }
+                        } catch (error) {
+                            console.error('Error fetching day details:', error);
+                        }
+                    },
+
                     openDetails(day) {
                         this.selectedDay = JSON.parse(JSON.stringify(day)); // Deep copy to isolate state
                         this.selectedDay.employees.forEach(emp => {
                             if (!emp.hasOwnProperty('new_comment')) emp.new_comment = '';
                         });
                         this.showModal = true;
+                        
+                        // Handle date format (could be ISO string or YYYY-MM-DD)
+                        let dateStr = typeof day.date === 'string' ? day.date : day.date.date;
+                        if (dateStr.includes('T')) dateStr = dateStr.split('T')[0];
+                        else dateStr = dateStr.substring(0, 10);
+                        
+                        this.startPolling(dateStr);
                     },
                     async approveDay(emp) {
                         if (this.isApproving) return;
                         this.isApproving = true;
+                        window.showLoader();
                         
                         try {
                             const response = await fetch('{{ route('work-hours.approve-days') }}', {
@@ -126,6 +179,7 @@
                     async updateComment(emp) {
                         if (this.isApproving) return;
                         this.isApproving = true;
+                        window.showLoader();
                         
                         try {
                             const response = await fetch(`/work-hours/update-comment/${emp.record_id}`, {
@@ -161,6 +215,7 @@
                     async approveRecovery(recovery) {
                         if (this.isApproving) return;
                         this.isApproving = true;
+                        window.showLoader();
                         
                         const url = recovery.is_new_recovery 
                             ? `/recovery-hours/${recovery.recovery_id}/status`
@@ -194,6 +249,7 @@
                         if (this.isApproving) return;
                         if (!confirm('¿Estás seguro de rechazar esta solicitud de recuperación?')) return;
                         this.isApproving = true;
+                        window.showLoader();
                         
                         const url = recovery.is_new_recovery 
                             ? `/recovery-hours/${recovery.recovery_id}/status`
@@ -483,7 +539,10 @@
                            </svg>
                        </a>
                        
-                       <span class="font-bold text-xl text-gray-900">{{ ucfirst($currentMonth->translatedFormat('F Y')) }}</span>
+                       <input type="month" 
+                              value="{{ $currentMonth->format('Y-m') }}" 
+                              class="bg-transparent border-none text-xl font-bold text-gray-900 focus:ring-0 cursor-pointer px-1 text-center"
+                              onchange="window.location.href = '{{ route('empleador.dashboard') }}?month=' + this.value">
                        
                        <a href="{{ route('empleador.dashboard', ['month' => $currentMonth->copy()->addMonth()->format('Y-m')]) }}" class="bg-[#22A9C8] text-white rounded p-1.5 hover:bg-primary-hover transition">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

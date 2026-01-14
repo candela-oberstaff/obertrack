@@ -400,4 +400,84 @@ class DashboardController extends Controller
             'dayTasks'
         ));
     }
+
+    public function getDayDetailsJson($date)
+    {
+        $user = auth()->user();
+        
+        // Security check
+        if (!$user->is_superadmin && $user->tipo_usuario !== 'empleador' && !$user->is_manager) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $targetDate = \Illuminate\Support\Carbon::parse($date);
+        $empleados = $this->employeeDataService->getEmployeesForUser($user);
+
+        // Fetch Data
+        $dayRecords = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+            ->whereDate('work_date', $targetDate)
+            ->get();
+
+        $dayRecoveries = RecoveryHour::whereIn('user_id', $empleados->pluck('id'))
+            ->whereDate('recovery_date', $targetDate)
+            ->get();
+
+        // Assign colors (same logic as dashboard)
+        $colors = ['bg-pink-500', 'bg-cyan-500', 'bg-green-600', 'bg-blue-500', 'bg-purple-500', 'bg-orange-500'];
+        $employeeColors = [];
+        foreach($empleados as $index => $emp) {
+            $employeeColors[$emp->id] = $colors[$index % count($colors)];
+        }
+
+        $employeesData = [];
+
+        foreach ($empleados as $employee) {
+            $record = $dayRecords->where('user_id', $employee->id)->first();
+            $recovery = $dayRecoveries->where('user_id', $employee->id)->first();
+            
+            if ($record || $recovery) {
+                // Calculate Initials
+                $initials = strtoupper(substr($employee->name, 0, 1) . substr(strrchr($employee->name, ' ') ?: ' ' . substr($employee->name, 1), 1, 1));
+
+                $employeesData[] = [
+                    'record_id' => $record ? $record->id : null,
+                    'recovery_id' => $recovery ? $recovery->id : null,
+                    'id' => $employee->id,
+                    'name' => $employee->name,
+                    'avatar' => $employee->avatar,
+                    'initials' => $initials,
+                    'hours' => $record ? $record->hours_worked : 0,
+                    'approved' => $record ? (bool)$record->approved : true,
+                    'user_comment' => $record ? $record->user_comment : null,
+                    'comment' => $record ? $record->approval_comment : null,
+                    'new_comment' => '',
+                    'absence_reason' => $record ? $record->absence_reason : null,
+                    'color_class' => $employeeColors[$employee->id] ?? 'bg-gray-500',
+                    
+                    'recovered_hours' => $recovery ? $recovery->hours_recovered : ($record ? ($record->recovered_hours ?? 0) : 0),
+                    'recovery_comment' => $recovery ? $recovery->activities : ($record ? $record->recovery_comment : null),
+                    'recovery_approved' => $recovery ? (bool)$recovery->approved : ($record ? (bool)$record->recovery_approved : false),
+                    'is_new_recovery' => (bool)$recovery,
+                ];
+            }
+        }
+
+        // Calculate Day Summary stats
+        $pendingRecoveriesCount = collect($employeesData)
+            ->filter(fn($emp) => $emp['recovered_hours'] > 0 && !$emp['recovery_approved'])
+            ->count();
+        
+        $hasPending = collect($employeesData)
+            ->contains(fn($emp) => !$emp['approved'] || ($emp['recovered_hours'] > 0 && !$emp['recovery_approved']));
+
+        return response()->json([
+            'date' => $targetDate->format('Y-m-d'),
+            'day' => $targetDate->day,
+            'is_current_month' => $targetDate->isCurrentMonth(), // Or context specific
+            'has_events' => count($employeesData) > 0,
+            'employees' => $employeesData,
+            'pending_recoveries_count' => $pendingRecoveriesCount,
+            'has_pending' => $hasPending
+        ]);
+    }
 }
