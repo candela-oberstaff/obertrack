@@ -48,6 +48,7 @@ class User extends Authenticatable
         'phone_number',
         'location',
         'country',
+        'city',
         'company_name',
         'related_contact',
         'job_title',
@@ -177,5 +178,18 @@ class User extends Authenticatable
     public function activeStatus()
     {
         return \Illuminate\Support\Facades\Cache::has('user-is-online-' . $this->id);
+    }
+
+    public function getDashboardRoute(): string
+    {
+        if ($this->is_superadmin) {
+            return 'admin.dashboard';
+        }
+
+        if ($this->tipo_usuario === 'empleador') {
+            return 'empleador.dashboard';
+        }
+
+        return 'dashboard';
     }
 }

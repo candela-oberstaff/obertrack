@@ -74,14 +74,7 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        // Redirección basada en el rol
-        if ($user->tipo_usuario === 'empleador') {
-            return redirect()->route('empleador.dashboard');
-        } elseif ($user->tipo_usuario === 'empleado') {
-            return redirect()->route('empleados.tasks.index'); // O la ruta principal para empleados
-        }
-
-        return redirect()->intended('dashboard');
+        return redirect()->intended(route($user->getDashboardRoute(), absolute: false));
     }
 
 

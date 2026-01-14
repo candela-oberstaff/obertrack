@@ -43,7 +43,7 @@
                 </div>
             @endif
 
-            @if (auth()->user()->tipo_usuario === 'empleado' && (empty($user->phone_number) || empty($user->location)))
+            @if (auth()->user()->tipo_usuario === 'empleado' && (empty($user->phone_number) || empty($user->location) || empty($user->country) || empty($user->city)))
                 <div class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-8">
                     <div class="flex">
                         <div class="flex-shrink-0">
@@ -56,7 +56,7 @@
                                 Perfil incompleto
                             </p>
                             <p class="text-sm text-amber-700">
-                                Debes completar tu <strong>teléfono</strong> y <strong>ubicación</strong> para que se habilite la opción de notificar tareas.
+                                Debes completar tu <strong>teléfono, dirección, país y ciudad/estado</strong> para que se habiliten todas las funciones.
                             </p>
                         </div>
                     </div>
@@ -93,39 +93,29 @@
                             </div>
                         </div>
 
-                        <!-- Location -->
+                        <!-- Address -->
                         <div>
-                            <label class="block text-sm font-bold text-gray-900 mb-2">Ubicación</label>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Dirección</label>
                             <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
                                 {{ $user->location ?? 'No registrado' }}
                             </div>
                         </div>
 
-                        @if($user->tipo_usuario === 'empleador')
-                            <!-- Company Name -->
-                            <div>
-                                <label class="block text-sm font-bold text-gray-900 mb-2">Nombre de Empresa</label>
-                                <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
-                                    {{ $user->company_name ?? 'No registrado' }}
-                                </div>
-                            </div>
-
-                            <!-- Related Contact -->
-                            <div>
-                                <label class="block text-sm font-bold text-gray-900 mb-2">Contacto Relacionado</label>
-                                <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
-                                    {{ $user->related_contact ?? 'No registrado' }}
-                                </div>
-                            </div>
-
-                            <!-- Country -->
+                        <!-- Country/City (Visible for all) -->
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-bold text-gray-900 mb-2">País</label>
                                 <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
                                     {{ $user->country ?? 'No registrado' }}
                                 </div>
                             </div>
-                        @endif
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">Ciudad/Estado</label>
+                                <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
+                                    {{ $user->city ?? 'No registrado' }}
+                                </div>
+                            </div>
+                        </div>
                         @if($user->tipo_usuario === 'empleado')
                             @php $debtSummary = \App\Http\Controllers\RecoveryHoursController::getDebtSummary($user->id); @endphp
                             <!-- Recovery Summary -->
@@ -217,11 +207,84 @@
                                         <x-input-error class="mt-2" :messages="$errors->get('phone_number')" />
                                     </div>
 
-                                    <!-- Location -->
+                                    <!-- Address -->
                                     <div>
-                                        <label for="location" class="block text-sm font-bold text-gray-700 mb-1">Ubicación</label>
-                                        <input type="text" name="location" id="location" value="{{ old('location', $user->location) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                        <label for="location" class="block text-sm font-bold text-gray-700 mb-1">Dirección</label>
+                                        <input type="text" name="location" id="location" value="{{ old('location', $user->location) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4" placeholder="Ej: Av. Siempreviva 123">
                                         <x-input-error class="mt-2" :messages="$errors->get('location')" />
+                                    </div>
+
+                                    <!-- Country & City Dropdowns (Dynamic with Alpine.js) -->
+                                    <div class="grid grid-cols-2 gap-4" x-data="{
+                                        countries: [],
+                                        states: [],
+                                        selectedCountry: '{{ old('country', $user->country) }}',
+                                        selectedState: '{{ old('city', $user->city) }}',
+                                        loadingCountries: false,
+                                        loadingStates: false,
+                                        async init() {
+                                            this.loadingCountries = true;
+                                            try {
+                                                const response = await fetch('https://countriesnow.space/api/v0.1/countries');
+                                                const data = await response.json();
+                                                if (!data.error) {
+                                                    this.countries = data.data.map(c => c.country).sort();
+                                                    if (this.selectedCountry) {
+                                                        await this.fetchStates();
+                                                    }
+                                                }
+                                            } catch (e) {
+                                                console.error('Error fetching countries:', e);
+                                            } finally {
+                                                this.loadingCountries = false;
+                                            }
+                                        },
+                                        async fetchStates() {
+                                            if (!this.selectedCountry) {
+                                                this.states = [];
+                                                return;
+                                            }
+                                            this.loadingStates = true;
+                                            try {
+                                                const response = await fetch('https://countriesnow.space/api/v0.1/countries/states', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ country: this.selectedCountry })
+                                                });
+                                                const data = await response.json();
+                                                if (!data.error) {
+                                                    this.states = data.data.states.map(s => s.name).sort();
+                                                } else {
+                                                    this.states = [];
+                                                }
+                                            } catch (e) {
+                                                console.error('Error fetching states:', e);
+                                                this.states = [];
+                                            } finally {
+                                                this.loadingStates = false;
+                                            }
+                                        }
+                                    }">
+                                        <div>
+                                            <label for="country" class="block text-sm font-bold text-gray-700 mb-1">País</label>
+                                            <select name="country" id="country" x-model="selectedCountry" @change="fetchStates()" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                                <option value="" x-text="loadingCountries ? 'Cargando países...' : 'Selecciona un país'"></option>
+                                                <template x-for="country in countries" :key="country">
+                                                    <option :value="country" x-text="country" :selected="country === selectedCountry"></option>
+                                                </template>
+                                            </select>
+                                            <x-input-error class="mt-2" :messages="$errors->get('country')" />
+                                        </div>
+                                        <div>
+                                            <label for="city" class="block text-sm font-bold text-gray-700 mb-1">Ciudad/Estado</label>
+                                            <select name="city" id="city" x-model="selectedState" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                                <option value="" x-text="loadingStates ? 'Cargando...' : (selectedCountry ? 'Selecciona una opción' : 'Primero elige un país')"></option>
+                                                <template x-for="state in states" :key="state">
+                                                    <option :value="state" x-text="state" :selected="state === selectedState"></option>
+                                                </template>
+                                            </select>
+                                            <x-input-error class="mt-2" :messages="$errors->get('city')" />
+                                        </div>
                                     </div>
 
                                     @if($user->tipo_usuario === 'empleador')
@@ -237,13 +300,6 @@
                                             <label for="related_contact" class="block text-sm font-bold text-gray-700 mb-1">Contacto Relacionado</label>
                                             <input type="text" name="related_contact" id="related_contact" value="{{ old('related_contact', $user->related_contact) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
                                             <x-input-error class="mt-2" :messages="$errors->get('related_contact')" />
-                                        </div>
-
-                                        <!-- Country -->
-                                        <div>
-                                            <label for="country" class="block text-sm font-bold text-gray-700 mb-1">País</label>
-                                            <input type="text" name="country" id="country" value="{{ old('country', $user->country) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
-                                            <x-input-error class="mt-2" :messages="$errors->get('country')" />
                                         </div>
                                     @endif
 

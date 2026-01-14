@@ -21,6 +21,7 @@ class ProfileUpdateRequest extends FormRequest
             'phone_number' => ['nullable', 'string', 'max:20'],
             'location' => ['nullable', 'string', 'max:255'],
             'country' => ['nullable', 'string', 'max:100'],
+            'city' => ['nullable', 'string', 'max:100'],
             'company_name' => ['nullable', 'string', 'max:255'],
             'related_contact' => ['nullable', 'string', 'max:255'],
             'avatar' => ['nullable', 'image', 'max:2048'], // Max 2MB

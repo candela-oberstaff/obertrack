@@ -55,11 +55,25 @@
             </div>
         </div>
 
+        {{-- Success/Error Messages --}}
+        @if (session()->has('success'))
+            <div class="mb-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm font-medium flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                {{ session('success') }}
+            </div>
+        @endif
+        @error('newFile')
+            <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm font-medium flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                {{ $message }}
+            </div>
+        @enderror
+
         {{-- Table Headers --}}
         <div class="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-gray-700 uppercase tracking-wider">
             <div class="col-span-5">Nombre del archivo</div>
-            <div class="col-span-2">Tipo</div>
-            <div class="col-span-5">Modificado por última vez</div>
+            <div class="col-span-2">Tipo / Tamaño</div>
+            <div class="col-span-5">Modificado el</div>
         </div>
 
         {{-- Content List --}}
@@ -67,19 +81,18 @@
             @if(isset($files) && $files->count() > 0)
                 <div class="space-y-2">
                     @foreach($files as $file)
-                        <div class="group bg-gray-50 hover:bg-gray-100 rounded-lg p-4 grid grid-cols-12 gap-4 items-center transition duration-200">
+                        <div wire:key="attachment-{{ $file->id }}" class="group bg-gray-50 hover:bg-gray-100 rounded-lg p-4 grid grid-cols-12 gap-4 items-center transition duration-200">
                             <div class="col-span-5 text-gray-800 text-sm font-medium italic truncate flex items-center">
-                                @if($file->file_type == 'pdf')
-                                    <svg class="w-5 h-5 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 3.414L15.586 7 18 10v6a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
-                                @else
-                                    <svg class="w-5 h-5 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 3.414L15.586 7 18 10v6a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
-                                @endif
+                                <svg class="w-5 h-5 mr-2 {{ $file->file_icon }}" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 3.414L15.586 7 18 10v6a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/>
+                                </svg>
                                 <a href="{{ route('tasks.attachments.download', $file) }}" class="hover:underline">
                                     {{ $file->filename }}
                                 </a>
                             </div>
-                            <div class="col-span-2 text-gray-600 text-sm uppercase">
-                                {{ $file->file_type }}
+                            <div class="col-span-2 text-gray-600 text-xs flex flex-col uppercase">
+                                <span class="font-bold">{{ $file->file_type }}</span>
+                                <span class="text-[10px] lowercase text-gray-400 font-normal italic">({{ $file->file_size_human }})</span>
                             </div>
                             <div class="col-span-5 text-gray-500 text-sm italic">
                                 El {{ \Carbon\Carbon::parse($file->created_at)->format('d-m-Y') }} a las {{ \Carbon\Carbon::parse($file->created_at)->format('h:i a') }}
@@ -95,8 +108,17 @@
         </div>
 
         {{-- Footer Action --}}
-        <div class="flex justify-center">
-             <label class="cursor-pointer border border-primary text-primary hover:bg-primary hover:text-white px-8 py-2 rounded-full font-medium transition duration-300 block text-center">
+        <div class="flex justify-center flex-col items-center">
+             <div wire:loading wire:target="newFile" class="mb-4">
+                <div class="flex items-center space-x-2 text-primary">
+                    <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-sm font-medium">Subiendo archivo...</span>
+                </div>
+             </div>
+             <label wire:loading.remove wire:target="newFile" class="cursor-pointer border border-primary text-primary hover:bg-primary hover:text-white px-8 py-2 rounded-full font-medium transition duration-300 block text-center">
                 Subir archivo
                 <input type="file" wire:model="newFile" class="hidden">
             </label>

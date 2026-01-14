@@ -116,6 +116,14 @@ class ProfileController extends Controller
 
         $user->save();
 
+        if ($user->tipo_usuario === 'empleado' && 
+            !empty($user->phone_number) && 
+            !empty($user->location) && 
+            !empty($user->country) && 
+            !empty($user->city)) {
+            return Redirect::route('empleado.registrar-horas')->with('success', 'Perfil completado exitosamente. Ahora puedes registrar tus horas.');
+        }
+
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 

@@ -171,19 +171,46 @@ class TaskController extends Controller
         $task = $attachment->task;
         
         // Check if user has access to this task
-        $user = auth()->user();
+    $user = auth()->user();
+    
+    $isEmployerOfTask = $user->tipo_usuario === 'empleador' && (
+        $task->assignees()->where('empleador_id', $user->id)->exists() ||
+        ($task->createdBy && $task->createdBy->empleador_id === $user->id)
+    );
+
+    $canAccess = $user->id === $task->created_by ||
+                 $task->assignees->contains($user->id) ||
+                 $user->is_superadmin ||
+                 $isEmployerOfTask;
+    
+    if (!$canAccess) {
+        abort(403, 'No tienes permiso para descargar este archivo.');
+    }    
+
+        $path = $attachment->stored_filename;
         
-        $canAccess = $user->id === $task->created_by ||
-                     $task->assignees->contains($user->id) ||
-                     $user->is_superadmin;
-        
-        if (!$canAccess) {
-            abort(403, 'No tienes permiso para descargar este archivo.');
+        // 1. Try exact path on local disk
+        if (\Storage::disk('local')->exists($path)) {
+            return \Storage::disk('local')->download($path, $attachment->filename);
         }
 
-        return \Storage::disk('local')->download(
-            $attachment->stored_filename,
-            $attachment->filename
-        );
+        // 2. Try hyphen/underscore swap on local disk
+        $swappedPath = str_contains($path, 'task-attachments/') 
+            ? str_replace('task-attachments/', 'task_attachments/', $path)
+            : str_replace('task_attachments/', 'task-attachments/', $path);
+            
+        if (\Storage::disk('local')->exists($swappedPath)) {
+            return \Storage::disk('local')->download($swappedPath, $attachment->filename);
+        }
+
+        // 3. Fallback for files stuck on public disk
+        if (str_contains($path, 'task-attachments/')) {
+            $publicPath = $path;
+            if (\Storage::disk('public')->exists($publicPath)) {
+                return \Storage::disk('public')->download($publicPath, $attachment->filename);
+            }
+        }
+
+        abort(404, 'No se pudo encontrar el archivo físico en el almacenamiento.');
     }
 }

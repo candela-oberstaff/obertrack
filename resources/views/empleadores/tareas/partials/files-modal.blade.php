@@ -82,15 +82,16 @@
                 <template x-for="file in activeTask.attachments" :key="file.id">
                     <div class="bg-gray-50 rounded-lg p-4 flex items-center text-sm">
                         <!-- Name -->
-                        <div class="w-1/2 flex items-center gap-2 font-medium text-gray-800 italic">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        <div class="w-1/2 flex items-center gap-2 font-medium text-gray-800 italic truncate pr-4">
+                             <svg xmlns="http://www.w3.org/2000/svg" :class="'h-5 w-5 ' + (file.file_icon || 'text-gray-400')" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 3.414L15.586 7 18 10v6a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/>
                             </svg>
-                           <a :href="'/storage/' + file.stored_filename" target="_blank" class="hover:underline" x-text="file.filename"></a>
+                           <a :href="file.download_url" target="_blank" class="hover:underline truncate" x-text="file.filename"></a>
                         </div>
-                        <!-- Type -->
-                        <div class="w-1/4 text-gray-600 uppercase font-bold text-xs pl-1">
-                             <span x-text="file.filename.split('.').pop()"></span>
+                        <!-- Type / Size -->
+                        <div class="w-1/4 text-gray-600 flex flex-col uppercase">
+                             <span class="font-bold text-xs" x-text="file.file_type || file.filename.split('.').pop()"></span>
+                             <span class="text-[10px] lowercase text-gray-400 font-normal italic" x-text="'(' + (file.file_size_human || '') + ')'"></span>
                         </div>
                         <!-- Modified -->
                         <div class="w-1/4 text-gray-500 text-xs">
