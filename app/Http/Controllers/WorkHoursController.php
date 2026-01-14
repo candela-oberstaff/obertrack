@@ -465,7 +465,7 @@ class WorkHoursController extends Controller
                 
                 $monthRecoveredOld = WorkHours::where('user_id', $professional->id)
                     ->whereBetween('work_date', [$monthStart->format('Y-m-d'), $today->format('Y-m-d')])
-                    ->where('recovery_approved', true)
+                    ->whereRaw('recovery_approved IS TRUE')
                     ->sum('recovered_hours');
 
                 $monthHours = $monthWorkHours + $monthRecoveredNew + $monthRecoveredOld;
@@ -487,7 +487,7 @@ class WorkHoursController extends Controller
                 // Add legacy pending recoveries if any
                 $legacyPending = WorkHours::where('user_id', $professional->id)
                     ->where('recovered_hours', '>', 0)
-                    ->where('recovery_approved', false)
+                    ->whereRaw('recovery_approved IS FALSE')
                     ->get()
                     ->map(function($r) {
                         return (object)[
@@ -662,14 +662,38 @@ class WorkHoursController extends Controller
             if ($i < $daysToCheck && (!$hours || $hours->hours_worked == 0)) {
                 $absences++;
             }
+
+            // Determine Daily Status
+            $statusLabel = 'Ausente';
+            $statusColor = '#dc2626'; // Red
+
+            if ($hours) {
+                if ($hours->hours_worked >= 8) {
+                    $statusLabel = 'Completo';
+                    $statusColor = '#059669'; // Green
+                } else {
+                    $statusLabel = 'Pendiente';
+                    $statusColor = '#d97706'; // Yellow/Orange
+                }
+            }
+
+            // Update the last added entry
+            $dailyHours[count($dailyHours) - 1]['status_label'] = $statusLabel;
+            $dailyHours[count($dailyHours) - 1]['status_color'] = $statusColor;
         }
 
         $totalHours = $weekHours->sum('hours_worked');
         $weeklyAverage = $totalHours > 0 ? round($totalHours / 5, 1) : 0;
         
-        $incompleteTasks = $user->assignedTasks()
-            ->whereRaw('completed IS FALSE')
-            ->count();
+        // Categorize Tasks
+        $allTasks = $user->assignedTasks()->get();
+        $completedTasks = $allTasks->where('completed', true);
+        $inProgressTasks = $allTasks->where('completed', false)->filter(function($t) {
+            return !$t->end_date || \Carbon\Carbon::parse($t->end_date)->endOfDay()->isFuture() || \Carbon\Carbon::parse($t->end_date)->isToday();
+        });
+        $overdueTasks = $allTasks->where('completed', false)->filter(function($t) {
+            return $t->end_date && \Carbon\Carbon::parse($t->end_date)->endOfDay()->isPast() && !\Carbon\Carbon::parse($t->end_date)->isToday();
+        });
 
         $comments = WorkHours::where('user_id', $user->id)
             ->whereBetween('work_date', [$weekStart, $weekEnd])
@@ -685,7 +709,9 @@ class WorkHoursController extends Controller
         'weekEnd' => $weekEnd,
         'totalHours' => $totalHours,
         'weeklyAverage' => $weeklyAverage,
-        'incompleteTasks' => $incompleteTasks,
+        'completedTasks' => $completedTasks,
+        'inProgressTasks' => $inProgressTasks,
+        'overdueTasks' => $overdueTasks,
         'absences' => $absences,
         'dailyHours' => $dailyHours,
         'comments' => $comments
@@ -749,7 +775,15 @@ class WorkHoursController extends Controller
             $current->addDay();
         }
 
-        $incompleteTasks = $user->assignedTasks()->whereRaw('completed IS FALSE')->count();
+        // Categorize Tasks used for Monthly Report
+        $allTasks = $user->assignedTasks()->get();
+        $completedTasks = $allTasks->where('completed', true);
+        $inProgressTasks = $allTasks->where('completed', false)->filter(function($t) {
+            return !$t->end_date || \Carbon\Carbon::parse($t->end_date)->endOfDay()->isFuture() || \Carbon\Carbon::parse($t->end_date)->isToday();
+        });
+        $overdueTasks = $allTasks->where('completed', false)->filter(function($t) {
+            return $t->end_date && \Carbon\Carbon::parse($t->end_date)->endOfDay()->isPast() && !\Carbon\Carbon::parse($t->end_date)->isToday();
+        });
 
         // Calculate weekly breakdown
         $weeksData = [];
@@ -765,12 +799,29 @@ class WorkHoursController extends Controller
             
             $wTotal = $weekH->sum('hours_worked');
             
+            // Strict Approval Logic: All 5 weekdays must be passed and approved
+            $isWeekApproved = true;
+            for ($d=0; $d<5; $d++) {
+                $checkDay = $currentDate->copy()->addDays($d);
+                // If day is future, week is not fully processed yet
+                if ($checkDay->isFuture()) {
+                    $isWeekApproved = false; 
+                    break;
+                }
+                // Check if day has approved record
+                $dayRecord = $weekH->first(fn($h) => Carbon::parse($h->work_date)->isSameDay($checkDay));
+                if (!$dayRecord || !$dayRecord->approved) {
+                    $isWeekApproved = false;
+                    break;
+                }
+            }
+
             // Only add week if it falls within the month (at least partially)
             if ($currentDate->month == $startOfMonth->month || $weekEnd->month == $startOfMonth->month) {
                 $weeksData[] = [
                     'period' => $currentDate->format('d/m') . ' - ' . $weekEnd->format('d/m'),
                     'hours' => $wTotal,
-                    'approved' => $weekH->where('approved', true)->count() > 0 && $weekH->where('approved', false)->count() == 0
+                    'approved' => $isWeekApproved
                 ];
             }
             
@@ -782,7 +833,12 @@ class WorkHoursController extends Controller
             'monthDate' => $startOfMonth,
             'totalApprovedHours' => $totalApprovedHours,
             'absences' => $absences,
-            'incompleteTasks' => $incompleteTasks,
+            'monthDate' => $startOfMonth,
+            'totalApprovedHours' => $totalApprovedHours,
+            'absences' => $absences,
+            'completedTasks' => $completedTasks,
+            'inProgressTasks' => $inProgressTasks,
+            'overdueTasks' => $overdueTasks,
             'weeksData' => $weeksData,
             'comments' => $monthHours
         ]);

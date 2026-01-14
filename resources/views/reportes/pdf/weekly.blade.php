@@ -81,20 +81,60 @@
             </tr>
         </thead>
         <tbody>
+        <tbody>
             @foreach($dailyHours as $day)
             <tr>
                 <td>{{ $day['day'] }}</td>
                 <td>{{ $weekStart->copy()->addDays(array_search($day['day'], ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']))->format('d/m/Y') }}</td>
                 <td>{{ $day['hours'] }} horas</td>
                 <td>
-                    @if($day['hours'] > 0)
-                        <span class="status-present">Presente</span>
-                    @else
-                        <span class="status-absent">Ausente</span>
-                    @endif
+                    <span style="color: {{ $day['status_color'] ?? '#dc2626' }}; font-weight: bold;">
+                        {{ $day['status_label'] ?? 'Ausente' }}
+                    </span>
                 </td>
             </tr>
             @endforeach
+        </tbody>
+    </table>
+
+    <h3 style="margin-top: 30px;">Estado de Tareas</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50%;">Tarea</th>
+                <th style="width: 25%;">Vencimiento</th>
+                <th style="width: 25%;">Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($overdueTasks as $task)
+                <tr>
+                    <td>{{ $task->title }}</td>
+                    <td>{{ $task->end_date ? \Carbon\Carbon::parse($task->end_date)->format('d/m/Y') : '-' }}</td>
+                    <td><span style="color: #dc2626; font-weight: bold;">Incompleta/Vencida</span></td>
+                </tr>
+            @empty
+            @endforelse
+            @foreach($inProgressTasks as $task)
+                <tr>
+                    <td>{{ $task->title }}</td>
+                    <td>{{ $task->end_date ? \Carbon\Carbon::parse($task->end_date)->format('d/m/Y') : '-' }}</td>
+                    <td><span style="color: #d97706; font-weight: bold;">En Progreso</span></td>
+                </tr>
+            @endforeach
+            @foreach($completedTasks as $task)
+                <tr>
+                    <td>{{ $task->title }}</td>
+                    <td>{{ $task->end_date ? \Carbon\Carbon::parse($task->end_date)->format('d/m/Y') : '-' }}</td>
+                    <td><span style="color: #059669; font-weight: bold;">Completada</span></td>
+                </tr>
+            @endforeach
+            
+            @if($overdueTasks->isEmpty() && $inProgressTasks->isEmpty() && $completedTasks->isEmpty())
+                <tr>
+                    <td colspan="3" style="text-align: center; color: #6b7280; font-style: italic;">No hay tareas asignadas para este periodo.</td>
+                </tr>
+            @endif
         </tbody>
     </table>
 
@@ -160,7 +200,7 @@
     </div>
 
     <div class="footer">
-        Generado automáticamente por Obertrack el {{ date('d/m/Y H:i') }}
+        Generado automáticamente el {{ date('d/m/Y H:i') }}
     </div>
 </body>
 </html>
