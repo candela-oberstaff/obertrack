@@ -53,19 +53,23 @@ Route::get('/livewire-script', function () {
 |--------------------------------------------------------------------------
 */
 
+
 // GET /dashboard - Main dashboard (redirects based on user role)
 Route::middleware(['auth'])->get('/dashboard', function () {
     $user = Auth::user();
     
-    // Check if the user is already on their correct dashboard route
+    // Redirect to the appropriate dashboard based on user role
     $targetRoute = $user->getDashboardRoute();
     
-    if (Route::currentRouteName() === $targetRoute) {
+    // If we're already on the dashboard route, show the professional view
+    // (this only happens for professionals since employers/admins have their own routes)
+    if (Route::currentRouteName() === 'dashboard' && $user->tipo_usuario === 'empleado') {
         return view('dashboard-professional');
     }
 
     return redirect()->route($targetRoute);
 })->name('dashboard');
+
 
 // Admin / Analyst Routes
 Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->group(function () {
