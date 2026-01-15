@@ -387,6 +387,93 @@
 
                 isUploading: false,
                 uploadProgress: 0,
+                
+                // Comment Editing State
+                editingCommentId: null,
+                editingContent: '',
+
+                startEditing(comment) {
+                    // Strict check: current user must be owner
+                    if (comment.user.id !== currentUser.id) return;
+                    
+                    this.editingCommentId = comment.id;
+                    this.editingContent = comment.content;
+                },
+
+                cancelEditing() {
+                    this.editingCommentId = null;
+                    this.editingContent = '';
+                },
+
+                async updateComment() {
+                    if (!this.editingContent.trim()) return;
+
+                    const commentId = this.editingCommentId;
+                    const content = this.editingContent;
+
+                    try {
+                        const response = await fetch(`/empleador/comments/${commentId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({ content: content })
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            
+                            // Update local state
+                            const index = this.activeTask.comments.findIndex(c => c.id === commentId);
+                            if (index !== -1) {
+                                this.activeTask.comments[index] = data.comment;
+                                // Also update global store
+                                if (this.tasks[this.activeTask.id]) {
+                                    this.tasks[this.activeTask.id].comments = this.activeTask.comments;
+                                }
+                            }
+                            
+                            this.cancelEditing();
+                        } else {
+                            const data = await response.json();
+                            alert(data.message || 'Error al actualizar el comentario');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error de conexión');
+                    }
+                },
+
+                async deleteComment(commentId) {
+                    if (!confirm('¿Estás seguro de eliminar este comentario?')) return;
+
+                    try {
+                        const response = await fetch(`/empleador/comments/${commentId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        });
+
+                        if (response.ok) {
+                            // Remove from local state
+                            this.activeTask.comments = this.activeTask.comments.filter(c => c.id !== commentId);
+                            
+                            // Update global store
+                            if (this.tasks[this.activeTask.id]) {
+                                this.tasks[this.activeTask.id].comments = this.activeTask.comments;
+                            }
+                        } else {
+                            const data = await response.json();
+                            alert(data.message || 'Error al eliminar el comentario');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error de conexión');
+                    }
+                },
 
                 uploadFile(taskId, file) {
                     if (!file) return;

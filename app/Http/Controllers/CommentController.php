@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\Task;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller
 {
@@ -142,8 +143,8 @@ class CommentController extends Controller
     {
         $comment = Comment::findOrFail($id);
 
-        // Verificar si el usuario autenticado es el autor del comentario o el empleador de la tarea
-        if ($comment->user_id !== Auth::id() && $comment->task->createdBy->id !== Auth::id()) {
+        // Verificar si el usuario autenticado es el autor del comentario
+        if ($comment->user_id !== Auth::id()) {
             return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar este comentario'], 403);
         }
 

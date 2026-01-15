@@ -33,6 +33,61 @@ class TaskCommentsModal extends Component
         $this->isOpen = false;
     }
 
+    public $editingCommentId = null;
+    public $editingContent = '';
+
+    public function startEditing($commentId)
+    {
+        $comment = Comment::findOrFail($commentId);
+        
+        // Strict policy check: Only the owner can edit
+        if (Auth::id() !== $comment->user_id) {
+            return;
+        }
+
+        $this->editingCommentId = $commentId;
+        $this->editingContent = $comment->content;
+    }
+
+    public function cancelEditing()
+    {
+        $this->editingCommentId = null;
+        $this->editingContent = '';
+    }
+
+    public function updateComment()
+    {
+        $this->validate([
+            'editingContent' => 'required|string|max:65535',
+        ]);
+
+        $comment = Comment::findOrFail($this->editingCommentId);
+
+        // Strict policy check
+        if (Auth::id() !== $comment->user_id) {
+            $this->cancelEditing();
+            return;
+        }
+
+        $comment->update([
+            'content' => $this->editingContent
+        ]);
+
+        $this->cancelEditing();
+    }
+
+    public function deleteComment($commentId)
+    {
+        $comment = Comment::findOrFail($commentId);
+
+        // Strict policy check: Only the owner can delete
+        if (Auth::id() !== $comment->user_id) {
+            return; 
+        }
+
+        $comment->delete();
+    }
+
     public function addComment()
     {
         $this->validate([
@@ -54,9 +109,7 @@ class TaskCommentsModal extends Component
         $comment->save();
 
         $this->newCommentContent = '';
-        $this->showCreateForm = false; // Hide form after submit? Or keep open? The mockup shows "Añadir comentario" button at bottom.
-        
-        // Refresh needed? Livewire re-renders automatically
+        $this->showCreateForm = false;
     }
 
     public function render()

@@ -73,15 +73,62 @@
         <div class="flex-1 overflow-y-auto px-8 space-y-4 min-h-0">
             <template x-if="activeTask && activeTask.comments">
                 <template x-for="comment in activeTask.comments" :key="comment.id">
-                    <div class="bg-gray-50 rounded-2xl p-4 flex justify-between items-start">
-                        <p class="text-gray-700 text-sm italic" x-text="comment.content"></p>
-                        <div class="flex items-center gap-4 ml-4 shrink-0">
-                            <span class="text-gray-800 text-sm font-medium" x-text="new Date(comment.created_at).toLocaleDateString()"></span>
-                           <div class="flex items-center gap-2">
+                    <div class="bg-gray-50 rounded-2xl p-4 flex justify-between items-start group">
+                        <div class="w-full pr-4">
+                            <template x-if="editingCommentId === comment.id">
+                                <div class="flex flex-col gap-2 w-full">
+                                    <textarea 
+                                        x-model="editingContent"
+                                        class="w-full rounded-lg border-gray-300 focus:ring-[#22A9C8] focus:border-[#22A9C8] text-sm p-2"
+                                        rows="3"
+                                    ></textarea>
+                                    <div class="flex justify-end gap-2">
+                                        <button 
+                                            @click="cancelEditing()"
+                                            class="text-xs text-gray-500 hover:text-gray-700 font-medium px-3 py-1 bg-white border border-gray-300 rounded-md"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button 
+                                            @click="updateComment()"
+                                            class="text-xs text-white bg-[#22A9C8] hover:bg-[#1B8BA6] font-medium px-3 py-1 rounded-md"
+                                        >
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="editingCommentId !== comment.id">
+                                <div class="flex justify-between items-start w-full">
+                                    <p class="text-gray-700 text-sm italic flex-1" x-text="comment.content"></p>
+                                    
+                                    <div x-show="comment.user_id === currentUser.id" class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
+                                        <button 
+                                            @click="startEditing(comment)"
+                                            class="text-gray-400 hover:text-blue-500 transition-colors"
+                                            title="Editar comentario"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                        </button>
+                                        <button 
+                                            @click="deleteComment(comment.id)"
+                                            class="text-gray-400 hover:text-red-500 transition-colors"
+                                            title="Eliminar comentario"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="flex items-center gap-4 ml-4 shrink-0 flex-col items-end">
+                            <div class="flex items-center gap-2">
+                                 <span class="text-gray-800 text-sm font-medium" x-text="comment.user.name"></span>
                                 <img :src="comment.user.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : '{{ asset('avatars') }}/' + (comment.user.avatar.includes('/') ? comment.user.avatar.split('/').pop() : comment.user.avatar)) : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(comment.user.name) + '&color=FFFFFF&background=22A9C8'" 
                                      class="w-6 h-6 rounded-full border border-gray-200 object-cover"
                                      x-on:error="$el.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(comment.user.name) + '&color=FFFFFF&background=22A9C8'">
                             </div>
+                            <span class="text-gray-500 text-xs" x-text="new Date(comment.created_at).toLocaleDateString() + ' ' + new Date(comment.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})"></span>
                         </div>
                     </div>
                 </template>

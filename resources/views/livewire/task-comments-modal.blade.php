@@ -60,21 +60,68 @@
             @if(isset($comments) && $comments->count() > 0)
                 <div class="space-y-4">
                     @foreach($comments as $comment)
-                        <div class="bg-gray-50 p-4 rounded-xl flex justify-between items-start">
-                            <div class="pr-4">
-                                <p class="text-gray-800 text-sm leading-relaxed italic">
-                                    {{ $comment->content }}
-                                </p>
+                        <div wire:key="comment-{{ $comment->id }}" class="bg-gray-50 p-4 rounded-xl flex justify-between items-start group">
+                            <div class="w-full pr-4">
+                                @if($editingCommentId === $comment->id)
+                                    <div class="flex flex-col gap-2 w-full">
+                                        <textarea 
+                                            wire:model="editingContent"
+                                            class="w-full rounded-lg border-gray-300 focus:ring-primary focus:border-primary text-sm p-2"
+                                            rows="3"
+                                        ></textarea>
+                                        <div class="flex justify-end gap-2">
+                                            <button 
+                                                wire:click="cancelEditing"
+                                                class="text-xs text-gray-500 hover:text-gray-700 font-medium px-3 py-1 bg-white border border-gray-300 rounded-md"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button 
+                                                wire:click="updateComment"
+                                                class="text-xs text-white bg-primary hover:bg-primary-dark font-medium px-3 py-1 rounded-md"
+                                            >
+                                                Guardar
+                                            </button>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="flex justify-between items-start">
+                                        <p class="text-gray-800 text-sm leading-relaxed italic flex-1">
+                                            {{ $comment->content }}
+                                        </p>
+                                        
+                                        @if(auth()->id() === $comment->user_id)
+                                            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
+                                                <button 
+                                                    wire:click="startEditing({{ $comment->id }})"
+                                                    class="text-gray-400 hover:text-blue-500 transition-colors"
+                                                    title="Editar comentario"
+                                                >
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                                </button>
+                                                <button 
+                                                    wire:confirm="¿Estás seguro de eliminar este comentario?"
+                                                    wire:click="deleteComment({{ $comment->id }})"
+                                                    class="text-gray-400 hover:text-red-500 transition-colors"
+                                                    title="Eliminar comentario"
+                                                >
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
-                            <div class="flex items-center space-x-4 min-w-max">
-                                <span class="text-gray-500 text-sm font-medium">
-                                    {{ \Carbon\Carbon::parse($comment->created_at)->format('Y.m.d') }}
-                                </span>
+                            
+                            <div class="flex flex-col items-end gap-1 min-w-max">
                                 <div class="flex items-center text-gray-700 font-bold text-sm">
                                     {{-- User Icon --}}
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                     {{ $comment->user->name ?? 'Usuario' }}
                                 </div>
+                                <span class="text-gray-500 text-xs font-medium">
+                                    {{ \Carbon\Carbon::parse($comment->created_at)->format('Y.m.d H:i') }}
+                                </span>
                             </div>
                         </div>
                     @endforeach
