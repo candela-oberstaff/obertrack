@@ -252,7 +252,7 @@ tailwind.config = {
     --final-width: 66%;
   }
 
-  /* Estilos para hover en métricas */
+  
   .metric-card {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
@@ -275,7 +275,7 @@ tailwind.config = {
     z-index: 10;
   }
 
-  /* ANIMACIONES NUEVAS - ESTILOS SIMPLIFICADOS */
+  
   .animate-on-scroll {
     opacity: 0;
     transform: translateY(20px);
@@ -287,7 +287,7 @@ tailwind.config = {
     transform: translateY(0);
   }
   
-  /* Estilos específicos para animaciones de gráficas */
+  
   .dashboard-progress {
     width: 0% !important;
     transition: width 2s ease-out !important;
@@ -361,13 +361,13 @@ tailwind.config = {
     stroke-width: 8;
     transform: rotate(-90deg);
     transform-origin: 50% 50%;
-    stroke-dasharray: 283; /* Circunferencia del círculo (2πr) */
+    stroke-dasharray: 283; 
     stroke-dashoffset: 283;
     transition: stroke-dashoffset 2s ease-out;
   }
   
   .dona-circle.animate {
-    stroke-dashoffset: 57; /* 80% del círculo (283 * 0.2) */
+    stroke-dashoffset: 57; 
   }
   
   .dona-bg {
@@ -402,7 +402,7 @@ tailwind.config = {
     color: #666;
   }
   
-  /* NUEVA GRÁFICA DE FICHAS APILADAS PARA CARD 2 - REPORTES AUTOMATIZADOS */
+  /* GRÁFICA PARA CARD 2*/
   .report-stack-graph {
     height: 120px;
     width: 100%;
@@ -754,12 +754,12 @@ tailwind.config = {
           </div>
         </div>
         
-        <!-- Card 2 - Reportes Automatizados CON NUEVA GRÁFICA DE FICHAS APILADAS -->
+        <!-- Card 2 - Reportes Automatizados CON GRÁFICA DE FICHAS APILADAS -->
         <div class="brutal-card p-8 transition-transform duration-300 hover:scale-105 report-card" style="animation-delay: 0.4s">
-          <h3 class="text-xl font-extrabold text-brandBlack uppercase mb-3">Reportes Automatizados</h3>
-          <p class="text-sm mb-4 font-poppins">Genera informes detallados de productividad y rendimiento en un clic.</p>
+          <h3 class="text-xl font-extrabold text-brandBlack uppercase mb-3">Auditorías de Rentabilidad</h3>
+          <p class="text-sm mb-4 font-poppins">Exporta informes listos para presentar a clientes o gerencia en un clic.</p>
           
-          <!-- NUEVA Gráfica de fichas apiladas -->
+          <!--Gráfica de fichas apiladas -->
           <div class="report-stack-graph">
             <div class="report-stack-container">
               <!-- Columna 1 - Reportes de Tiempo -->
@@ -853,7 +853,7 @@ tailwind.config = {
         </span>
         <span class="text-gray-400 font-bold text-2xl flex items-center gap-3">
           <div class="w-10 h-10 bg-white flex items-center justify-center brutal-border-thin">
-            <!-- Logo de Asana -->
+          
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F06A6A">
               <path d="M18.78 12.653c-2.882 0-5.22 2.336-5.22 5.22 0 2.882 2.338 5.22 5.22 5.22 2.883 0 5.22-2.338 5.22-5.22 0-2.884-2.337-5.22-5.22-5.22zm-13.56 0c-2.883 0-5.22 2.336-5.22 5.22 0 2.882 2.337 5.22 5.22 5.22 2.882 0 5.22-2.338 5.22-5.22 0-2.884-2.338-5.22-5.22-5.22zm6.78-6.78c-2.883 0-5.22 2.337-5.22 5.22 0 2.882 2.337 5.22 5.22 5.22 2.882 0 5.22-2.338 5.22-5.22 0-2.883-2.338-5.22-5.22-5.22z"/>
             </svg>
@@ -888,7 +888,7 @@ tailwind.config = {
         </span>
         <span class="text-gray-400 font-bold text-2xl flex items-center gap-3">
           <div class="w-10 h-10 bg-white flex items-center justify-center brutal-border-thin">
-            <!-- Logo de Asana -->
+          
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#F06A6A">
               <path d="M18.78 12.653c-2.882 0-5.22 2.336-5.22 5.22 0 2.882 2.338 5.22 5.22 5.22 2.883 0 5.22-2.338 5.22-5.22 0-2.884-2.337-5.22-5.22-5.22zm-13.56 0c-2.883 0-5.22 2.336-5.22 5.22 0 2.882 2.337 5.22 5.22 5.22 2.882 0 5.22-2.338 5.22-5.22 0-2.884-2.338-5.22-5.22-5.22zm6.78-6.78c-2.883 0-5.22 2.337-5.22 5.22 0 2.882 2.337 5.22 5.22 5.22 2.882 0 5.22-2.338 5.22-5.22 0-2.883-2.338-5.22-5.22-5.22z"/>
             </svg>
@@ -1049,7 +1049,7 @@ tailwind.config = {
       modal.classList.add('hidden');
     };
 
-    // SISTEMA DE ANIMACIONES POR SCROLL MEJORADO
+    // SISTEMA DE ANIMACIONES POR SCROLL
     function initScrollAnimations() {
       // Elementos del dashboard
       const dashboardProgressBars = document.querySelectorAll('.dashboard-progress');
@@ -1232,7 +1232,7 @@ tailwind.config = {
         }
       }
       
-      // Función para animar la card de reportes (nueva gráfica de fichas apiladas)
+      // Función para animar la card de reportes 
       function animateReportCard() {
         const isInViewport = isElementInViewport(reportCard);
         
