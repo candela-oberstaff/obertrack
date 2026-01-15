@@ -194,12 +194,14 @@ class WorkHoursController extends Controller
         $user = auth()->user();
         $completedTasksCount = $user->assignedTasks()
             ->whereRaw('completed IS TRUE')
-            ->whereMonth('updated_at', $currentMonth->month)
-            ->whereYear('updated_at', $currentMonth->year)
+            ->whereMonth('end_date', $currentMonth->month)
+            ->whereYear('end_date', $currentMonth->year)
             ->count();
             
         $pendingTasksCount = $user->assignedTasks()
             ->whereRaw('completed IS FALSE')
+            ->whereMonth('end_date', $currentMonth->month)
+            ->whereYear('end_date', $currentMonth->year)
             ->count();
             
         return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'missingHours', 'completedTasksCount', 'pendingTasksCount'));

@@ -18,19 +18,16 @@ class EmployerTaskController extends Controller
 
     public function index()
     {
-        $userId = Auth::id();
-        
-        // Fetch all task creation related data
-        $teamTasks = Task::where('created_by', $userId)
-            ->with(['assignees', 'comments.user', 'attachments.uploader'])
-            ->get()
-            ->values();
+        $user = Auth::user();
+        $teamTasks = $this->taskManagementService->getCompanyTasks($user)->values();
 
         // 2. Employees (needed for modals and dropdowns)
-        if (Auth::user()->isSuperAdmin()) {
+        $ownerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
+        
+        if ($user->isSuperAdmin()) {
             $employees = \App\Models\User::where('tipo_usuario', 'empleado')->get();
         } else {
-             $employees = \App\Models\User::where('empleador_id', Auth::id())->get();
+             $employees = \App\Models\User::where('empleador_id', $ownerId)->get();
         }
 
         return view('empleadores.ver_tareas_empleados', compact('teamTasks', 'employees'));

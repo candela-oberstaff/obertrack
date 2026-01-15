@@ -2,36 +2,48 @@
     <div class="py-8 bg-gray-50 min-h-screen font-sans" x-data="taskManager()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
-            <!-- Header -->
+            <!-- Header & Filters -->
             <div class="mb-8 px-4 sm:px-0">
-                <h2 class="text-2xl sm:text-3xl font-extrabold text-[#0D1E4C]">Seguimiento de tareas</h2>
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-[#0D1E4C]">Seguimiento de tareas</h2>
+                    
+                    <div class="flex flex-col sm:flex-row items-center gap-3">
+                        <!-- Date Filters -->
+                        <div class="flex items-center gap-2 bg-white rounded-xl border border-gray-200 p-1 shadow-sm w-full sm:w-auto">
+                            <input type="date" x-model="filterStartDate" class="border-none focus:ring-0 text-sm p-1 rounded-lg w-full sm:w-auto" placeholder="Desde">
+                            <span class="text-gray-400">/</span>
+                            <input type="date" x-model="filterEndDate" class="border-none focus:ring-0 text-sm p-1 rounded-lg w-full sm:w-auto" placeholder="Hasta">
+                        </div>
+
+                        <button 
+                            x-show="filterStartDate || filterEndDate || searchQuery" 
+                            @click="filterStartDate = ''; filterEndDate = ''; searchQuery = ''"
+                            class="text-xs text-gray-400 hover:text-[#22A9C8] font-medium transition-colors sm:ml-2"
+                        >
+                            Limpiar
+                        </button>
+                        
+                        <!-- Search Box -->
+                        <div class="relative w-full sm:w-64">
+                            <input type="text" x-model="searchQuery" placeholder="Buscar por tarea o profesional..." 
+                                   class="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-[#22A9C8] focus:border-[#22A9C8] text-sm shadow-sm transition-all">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <button 
+                            @click="openCreateTaskModal(null, true)"
+                            class="w-full sm:w-auto bg-[#22A9C8] hover:bg-[#1B8BA6] text-white font-medium py-2 px-6 rounded-full text-sm transition-colors shadow-sm"
+                            id="create-team-task-btn"
+                        >
+                            Agregar tarea
+                        </button>
+                    </div>
+                </div>
             </div>
-
-            @if(session('success'))
-                <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-400 text-green-700 rounded-xl">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-xl">
-                    {{ session('error') }}
-                </div>
-            @endif
-
-
-            <!-- Team Assignments Section -->
-            <div id="team-tasks-section" class="mb-12">
-                <div class="hidden md:flex justify-between items-center mb-6">
-                    <h3 class="text-[#22A9C8] font-medium text-lg">Tareas asignadas</h3>
-                    <button 
-                        @click="openCreateTaskModal(null, true)"
-                        class="bg-[#22A9C8] hover:bg-[#1B8BA6] text-white font-medium py-2 px-6 rounded-full text-sm transition-colors shadow-sm"
-                        id="create-team-task-btn"
-                    >
-                        Agregar tarea
-                    </button>
-                </div>
 
                 <div class="bg-white rounded-3xl p-8 border border-[#22A9C8] shadow-sm overflow-x-auto hidden md:block">
                     <table class="w-full min-w-[800px] border-separate border-spacing-y-4">
@@ -45,50 +57,49 @@
                                 <th class="pb-2 text-center pr-6">Archivos</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @forelse($teamTasks as $task)
+                        <tbody id="tasks-table-body">
+                            <template x-for="task in filteredTasks" :key="task.id">
                                 <tr class="group transition-colors">
-                                    <td class="py-6 pl-6 font-medium text-gray-900 bg-white rounded-l-2xl border-l border-y border-[#22A9C8]">{{ $task->title }}</td>
-                                    <td class="py-6 text-center text-red-500 font-medium bg-white border-y border-[#22A9C8]">
-                                        {{ \Carbon\Carbon::parse($task->end_date)->format('d-m-Y') }}
-                                    </td>
+                                    <td class="py-6 pl-6 font-medium text-gray-900 bg-white rounded-l-2xl border-l border-y border-[#22A9C8]" x-text="task.title"></td>
+                                    <td class="py-6 text-center text-red-500 font-medium bg-white border-y border-[#22A9C8]" x-text="formatDate(task.end_date)"></td>
                                     <td class="py-6 bg-white border-y border-[#22A9C8]">
                                         <div class="flex justify-center -space-x-2">
-                                            @foreach($task->assignees->take(3) as $assignee)
-                                                <x-user-avatar :user="$assignee" size="8" classes="ring-2 ring-white" />
-                                            @endforeach
-                                            @if($task->assignees->count() > 3)
-                                                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600 font-bold ring-2 ring-white">
-                                                    +{{ $task->assignees->count() - 3 }}
+                                            <template x-for="assignee in task.assignees.slice(0, 3)" :key="assignee.id">
+                                                <div class="w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 flex-shrink-0">
+                                                    <img :src="getAvatarSrc(assignee)" :alt="assignee.name" class="w-full h-full object-cover">
                                                 </div>
-                                            @endif
+                                            </template>
+                                            <template x-if="task.assignees.length > 3">
+                                                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600 font-bold ring-2 ring-white">
+                                                    +<span x-text="task.assignees.length - 3"></span>
+                                                </div>
+                                            </template>
                                         </div>
                                     </td>
+                                    <td class="py-6 text-center bg-white border-y border-[#22A9C8]" x-html="getStatusBadge(task.status)"></td>
                                     <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
-                                        <x-tasks.status-badge :status="$task->status" :priority="$task->priority" />
-                                    </td>
-                                    <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
-                                        <button @click="openComments({{ $task->id }})" class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
+                                        <button @click="openComments(task.id)" class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                             </svg>
-                                            <span class="text-sm font-medium" x-text="tasks[{{ $task->id }}]?.comments?.length || 0"></span>
+                                            <span class="text-sm font-medium" x-text="task.comments?.length || 0"></span>
                                         </button>
                                     </td>
                                     <td class="py-6 text-center pr-6 bg-white rounded-r-2xl border-r border-y border-[#22A9C8]">
-                                        <button @click="openFiles({{ $task->id }})" class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
+                                        <button @click="openFiles(task.id)" class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                             </svg>
-                                            <span class="text-sm font-medium" x-text="tasks[{{ $task->id }}]?.attachments?.length || 0"></span>
+                                            <span class="text-sm font-medium" x-text="task.attachments?.length || 0"></span>
                                         </button>
                                     </td>
                                 </tr>
-                            @empty
+                            </template>
+                            <template x-if="filteredTasks.length === 0">
                                 <tr>
-                                    <td colspan="6" class="py-8 text-center text-gray-500">No hay tareas asignadas.</td>
+                                    <td colspan="6" class="py-8 text-center text-gray-500">No se encontraron tareas con estos filtros.</td>
                                 </tr>
-                            @endforelse
+                            </template>
                         </tbody>
                     </table>
                 </div>
@@ -132,54 +143,57 @@
                 </div>
                 
                 <div class="space-y-4">
-                    @forelse($teamTasks as $task)
+                    <template x-for="task in filteredTasks" :key="'mobile-'+task.id">
                         <div class="bg-white rounded-2xl p-6 border border-[#22A9C8] shadow-sm flex flex-col gap-4">
                             <!-- Title -->
-                            <h4 class="font-bold text-gray-900 text-lg break-words">{{ $task->title }}</h4>
+                            <h4 class="font-bold text-gray-900 text-lg break-words" x-text="task.title"></h4>
                             
                             <!-- Details Grid -->
                             <div class="grid grid-cols-2 gap-x-4 gap-y-4 text-sm">
                                 <div class="text-gray-600 font-medium">Fecha límite</div>
-                                <div class="text-right text-red-500 font-bold">{{ \Carbon\Carbon::parse($task->end_date)->format('d-m-Y') }}</div>
+                                <div class="text-right text-red-500 font-bold" x-text="formatDate(task.end_date)"></div>
                                 
                                 <div class="text-gray-600 font-medium">Asignado</div>
                                 <div class="flex justify-end -space-x-2">
-                                     @foreach($task->assignees->take(3) as $assignee)
-                                                <x-user-avatar :user="$assignee" size="7" classes="ring-2 ring-white" />
-                                    @endforeach
-                                    @if($task->assignees->count() > 3)
-                                        <div class="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600 font-bold ring-2 ring-white">+{{ $task->assignees->count() - 3 }}</div>
-                                    @endif
+                                     <template x-for="assignee in task.assignees.slice(0, 3)" :key="'mobile-avatar-'+assignee.id">
+                                          <div class="w-7 h-7 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 flex-shrink-0">
+                                              <img :src="getAvatarSrc(assignee)" :alt="assignee.name" class="w-full h-full object-cover">
+                                          </div>
+                                    </template>
+                                    <template x-if="task.assignees.length > 3">
+                                        <div class="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600 font-bold ring-2 ring-white">
+                                            +<span x-text="task.assignees.length - 3"></span>
+                                        </div>
+                                    </template>
                                 </div>
                                 
                                 <div class="text-gray-600 font-medium self-center">Estado</div>
-                                <div class="flex justify-end">
-                                    <x-tasks.status-badge :status="$task->status" :priority="$task->priority" />
-                                </div>
+                                <div class="flex justify-end" x-html="getStatusBadge(task.status)"></div>
                             </div>
                             
                             <!-- Footer: Comments & Files -->
                             <div class="flex justify-between pt-4 border-t border-gray-100 mt-2">
                                 <div class="flex items-center gap-1 text-gray-400">Comentarios</div>
                                 <div class="flex items-center gap-4">
-                                     <button @click="openComments({{ $task->id }})" class="flex items-center gap-1 text-gray-600">
+                                     <button @click="openComments(task.id)" class="flex items-center gap-1 text-gray-600">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                         </svg>
-                                        <span class="font-bold">{{ $task->comments->count() }}</span>
+                                        <span class="font-bold" x-text="task.comments?.length || 0"></span>
                                     </button>
-                                     <button @click="openFiles({{ $task->id }})" class="flex items-center gap-1 text-gray-600">
+                                     <button @click="openFiles(task.id)" class="flex items-center gap-1 text-gray-600">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                         </svg>
-                                        <span class="font-bold">{{ $task->attachments->count() }}</span>
+                                        <span class="font-bold" x-text="task.attachments?.length || 0"></span>
                                     </button>
                                 </div>
                             </div>
                         </div>
-                    @empty
-                        <div class="text-center text-gray-500 py-4">No hay tareas de equipo.</div>
-                    @endforelse
+                    </template>
+                    <template x-if="filteredTasks.length === 0">
+                        <div class="text-center text-gray-500 py-4">No se encontraron tareas.</div>
+                    </template>
                 </div>
             </div>
 
@@ -297,8 +311,72 @@
                     // Initialize events
                 },
 
+                // Filtering State
+                filterStartDate: '',
+                filterEndDate: '',
+                searchQuery: '',
+
                 // Reactive tasks store
                 tasks: initialTasksData,
+
+                get filteredTasks() {
+                    let tasksArray = Object.values(this.tasks);
+
+                    // Date range filter
+                    if (this.filterStartDate || this.filterEndDate) {
+                        tasksArray = tasksArray.filter(task => {
+                            const taskDate = task.end_date; // Format YYYY-MM-DD
+                            if (this.filterStartDate && taskDate < this.filterStartDate) return false;
+                            if (this.filterEndDate && taskDate > this.filterEndDate) return false;
+                            return true;
+                        });
+                    }
+
+                    // Search query filter
+                    if (this.searchQuery) {
+                        const query = this.searchQuery.toLowerCase();
+                        tasksArray = tasksArray.filter(task => {
+                            const matchTitle = task.title.toLowerCase().includes(query);
+                            const matchAssignee = task.assignees.some(v => 
+                                v.name.toLowerCase().includes(query) || 
+                                (v.email && v.email.toLowerCase().includes(query))
+                            );
+                            return matchTitle || matchAssignee;
+                        });
+                    }
+
+                    return tasksArray.sort((a, b) => b.id - a.id);
+                },
+
+                getStatusBadge(status) {
+                    const styles = {
+                        'por_hacer': 'bg-red-500 text-white',
+                        'en_proceso': 'bg-yellow-400 text-white',
+                        'finalizado': 'bg-green-400 text-white',
+                    };
+                    const labels = {
+                        'por_hacer': 'Por hacer',
+                        'en_proceso': 'En proceso',
+                        'finalizado': 'Finalizado',
+                    };
+                    const style = styles[status] || 'bg-gray-200 text-gray-800';
+                    const label = labels[status] || status;
+                    return `<span class="inline-flex items-center px-4 py-1 rounded-full text-sm font-medium ${style}">${label}</span>`;
+                },
+
+                getAvatarSrc(user) {
+                    if (!user.avatar) {
+                        return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&color=FFFFFF&background=22A9C8`;
+                    }
+                    return user.avatar.startsWith('http') ? user.avatar : `/storage/${user.avatar}`;
+                },
+
+                formatDate(dateStr) {
+                    if (!dateStr) return '';
+                    const datePart = dateStr.split('T')[0];
+                    const parts = datePart.split('-');
+                    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                },
                 
                 openCreateTaskModal(employeeId = null, isTeam = false) {
                     this.isTeamTask = isTeam;

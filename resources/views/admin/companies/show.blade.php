@@ -53,8 +53,8 @@
                     </div>
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
                         <div>
-                            <div class="text-sm text-gray-400 font-bold uppercase tracking-wider">Tareas Creadas</div>
-                            <div class="text-3xl font-bold text-gray-900">{{ $totalTasksCreated }}</div>
+                            <div class="text-sm text-gray-400 font-bold uppercase tracking-wider">Gestión de Tareas</div>
+                            <div class="text-3xl font-bold text-gray-900">{{ $totalTasks }}</div>
                         </div>
                         <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>

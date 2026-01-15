@@ -22,7 +22,11 @@
                 <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
                     <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas pendientes</p>
                     @php
-                        $totalPending = auth()->user()->assignedTasks()->whereRaw('completed IS FALSE')->count();
+                        $totalPending = auth()->user()->assignedTasks()
+                            ->whereRaw('tasks.completed IS FALSE')
+                            ->whereMonth('tasks.end_date', now()->month)
+                            ->whereYear('tasks.end_date', now()->year)
+                            ->count();
                     @endphp
                     <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C]">{{ str_pad($totalPending, 2, '0', STR_PAD_LEFT) }}</p>
                 </div>
@@ -55,9 +59,9 @@
                     <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas finalizadas</p>
                     @php
                         $completedTasks = auth()->user()->assignedTasks()
-                            ->whereRaw('completed IS TRUE')
-                            ->whereYear('tasks.updated_at', now()->year)
-                            ->whereMonth('tasks.updated_at', now()->month)
+                            ->whereRaw('tasks.completed IS TRUE')
+                            ->whereMonth('tasks.end_date', now()->month)
+                            ->whereYear('tasks.end_date', now()->year)
                             ->count();
                     @endphp
                     <div class="flex items-center gap-3">

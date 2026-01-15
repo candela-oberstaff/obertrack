@@ -12,10 +12,10 @@ class EmployeeTaskController extends Controller
     public function index()
     {
         $user = Auth::user();
-        // Fetch all assigned tasks with their assignees to determine if they are team or individual
+        // Fetch only tasks for the current month based on end_date
         $allTasks = $user->assignedTasks()
-                         ->with(['assignees', 'createdBy', 'comments', 'attachments']) // Eager load
-                         ->orderBy('created_at', 'desc')
+                         ->with(['assignees', 'createdBy', 'comments', 'attachments'])
+                         ->orderBy('end_date', 'desc')
                          ->get();
 
         $teamTasks = $allTasks;

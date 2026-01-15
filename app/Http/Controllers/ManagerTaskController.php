@@ -15,6 +15,9 @@ use App\Http\Requests\UpdateTaskRequest;
 
 class ManagerTaskController extends Controller
 {
+    public function __construct(
+        private \App\Services\TaskManagementService $taskManagementService
+    ) {}
     private function checkManagerAccess()
     {
         if (!(auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager)) {
@@ -24,10 +27,7 @@ class ManagerTaskController extends Controller
 
     public function index()
     {
-        $tareas = Task::where('created_by', Auth::id())
-                      ->with('assignees')
-                      ->orderBy('created_at', 'desc')
-                      ->paginate(10);
+        $tareas = $this->taskManagementService->getCompanyTasks(Auth::user());
         return view('manager.tasks.index', compact('tareas'));
     }
 

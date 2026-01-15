@@ -174,7 +174,13 @@ class AdminDashboardController extends Controller
         
         // Stats
         $totalEmployees = $company->empleados->count();
-        $totalTasksCreated = \App\Models\Task::where('created_by', $company->id)->count();
+        $employeeIds = $company->empleados->pluck('id');
+        $totalTasks = \App\Models\Task::where(function($q) use ($employeeIds, $company) {
+            $q->whereIn('created_by', $employeeIds->push($company->id))
+              ->orWhereHas('assignees', function($sub) use ($employeeIds, $company) {
+                  $sub->whereIn('users.id', $employeeIds);
+              });
+        })->count();
         
         // Current Employees
         $currentEmployees = $this->activityService->getStatusesForUsers($company->empleados)
@@ -206,7 +212,7 @@ class AdminDashboardController extends Controller
         // Merge both lists (convert to base Collection since we're working with arrays, not models)
         $employeesWithStatus = collect($currentEmployees)->merge(collect($disconnectedEmployees));
 
-        return view('admin.companies.show', compact('company', 'totalEmployees', 'totalTasksCreated', 'employeesWithStatus'));
+        return view('admin.companies.show', compact('company', 'totalEmployees', 'totalTasks', 'employeesWithStatus'));
     }
 
     public function showProfessional($id)

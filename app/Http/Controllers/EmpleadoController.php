@@ -59,12 +59,14 @@ class EmpleadoController extends Controller
 
         $completedTasksCount = $user->assignedTasks()
             ->whereRaw('tasks.completed IS TRUE')
-            ->whereMonth('tasks.updated_at', $currentMonth->month)
-            ->whereYear('tasks.updated_at', $currentMonth->year)
+            ->whereMonth('tasks.end_date', $currentMonth->month)
+            ->whereYear('tasks.end_date', $currentMonth->year)
             ->count();
             
         $pendingTasksCount = $user->assignedTasks()
             ->whereRaw('tasks.completed IS FALSE')
+            ->whereMonth('tasks.end_date', $currentMonth->month)
+            ->whereYear('tasks.end_date', $currentMonth->year)
             ->count();
 
         $pendingTasks = $user->assignedTasks()

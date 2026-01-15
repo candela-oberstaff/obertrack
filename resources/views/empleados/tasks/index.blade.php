@@ -7,8 +7,43 @@
         </div>
     </x-slot>
 
-    <div class="py-8 bg-white min-h-screen" x-data>
+    <div class="py-8 bg-white min-h-screen" x-data="{
+        startDate: '',
+        endDate: '',
+        searchQuery: '',
+        matches(task) {
+            const taskDate = task.date;
+            const taskTitle = task.title.toLowerCase();
+            const q = this.searchQuery.toLowerCase();
+
+            if (this.searchQuery && !taskTitle.includes(q)) return false;
+            if (!this.startDate && !this.endDate) return true;
+            if (this.startDate && taskDate < this.startDate) return false;
+            if (this.endDate && taskDate > this.endDate) return false;
+            return true;
+        }
+    }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+
+            {{-- Date Filters --}}
+            <section class="px-2 sm:px-0 flex flex-col sm:flex-row items-center gap-4">
+                <div class="flex items-center gap-2 bg-gray-50 rounded-2xl border border-gray-200 p-2 shadow-sm w-full sm:w-auto">
+                    <span class="text-xs font-bold text-gray-500 ml-2 uppercase">Filtrar por fecha:</span>
+                    <input type="date" x-model="startDate" class="border-none bg-transparent focus:ring-0 text-sm p-1 rounded-lg w-full sm:w-auto" placeholder="Desde">
+                    <span class="text-gray-400">/</span>
+                    <input type="date" x-model="endDate" class="border-none bg-transparent focus:ring-0 text-sm p-1 rounded-lg w-full sm:w-auto" placeholder="Hasta">
+                </div>
+
+                {{-- Search Box --}}
+                <div class="relative w-full sm:w-64">
+                    <input type="text" x-model="searchQuery" placeholder="Buscar tarea..." class="w-full pl-10 pr-4 py-2 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-gray-50">
+                    <svg class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+
+                <button @click="startDate = ''; endDate = ''; searchQuery = ''" class="text-xs text-gray-400 hover:text-primary transition-colors font-medium" x-show="startDate || endDate || searchQuery">
+                    Limpiar filtros
+                </button>
+            </section>
 
             {{-- Vistazo General Cards --}}
             <section class="px-2 sm:px-0">
@@ -59,7 +94,8 @@
                             </thead>
                             <tbody>
                                 @forelse($teamTasks as $task)
-                                    <tr class="bg-gray-50 hover:bg-gray-100 transition group rounded-lg">
+                                    <tr class="bg-gray-50 hover:bg-gray-100 transition group rounded-lg" 
+                                        x-show="matches({ date: '{{ $task->end_date->format('Y-m-d') }}', title: '{{ addslashes($task->title) }}' })">
                                         <td class="p-4 pl-6 font-medium text-gray-800 rounded-l-lg">
                                             {{ $task->title }}
                                             <div class="text-xs text-gray-500 font-normal mt-1">{{ Str::limit($task->description, 50) }}</div>
@@ -102,6 +138,10 @@
                                         <td colspan="6" class="p-6 text-center text-gray-500">No tienes asignaciones en equipo.</td>
                                     </tr>
                                 @endforelse
+                                <!-- Empty state when filtered -->
+                                <tr x-show="[...$el.parentElement.children].filter(c => c.tagName === 'TR' && c.style.display !== 'none').length === 0" style="display: none;">
+                                    <td colspan="6" class="p-6 text-center text-gray-500 italic">No se encontraron tareas en este rango de fechas.</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>

@@ -89,19 +89,18 @@ class DashboardController extends Controller
             // Obtener los empleados
             $employees = $this->employeeDataService->getEmployeesForUser($user);
 
-            // Obtener las tareas creadas por los empleados
-            $tasks = $this->taskManagementService->getEmployeeTasks($employees, $request->all());
-
-            // Obtener las tareas creadas para los empleados (por el empleador, manager o superadmin)
-            $teamTasks = $this->taskManagementService->getEmployerTasks($user, $employees, $request->all());
+            // Obtener todas las tareas de la organización (incluye las de los profesionales)
+            $teamTasks = $this->taskManagementService->getCompanyTasks($user, $request->all());
 
             // Asignar las tareas individuales a cada empleado
-            $employees->each(function ($employee) use ($tasks) {
-                $employee->individualTasks = $tasks->where('created_by', $employee->id);
+            $employees->each(function ($employee) use ($teamTasks) {
+                $employee->individualTasks = $teamTasks->filter(function($t) use ($employee) {
+                    return $t->created_by == $employee->id || $t->assignees->contains('id', $employee->id);
+                });
             });
 
             // Preparar datos para el gráfico
-            $chartData = $this->taskDataService->prepareChartData($tasks->concat($teamTasks));
+            $chartData = $this->taskDataService->prepareChartData($teamTasks);
 
             // Obtener las horas trabajadas de los empleados por semana
             $weekStart = $request->week ? Carbon::parse($request->week) : Carbon::now()->startOfWeek(Carbon::MONDAY);
@@ -120,7 +119,6 @@ class DashboardController extends Controller
             $empleadosInfo = $this->employeeDataService->getEmployeesInfo($employees, $currentMonth, $this->workHoursService);
 
             return compact(
-                'tasks',
                 'teamTasks',
                 'chartData',
                 'workHoursSummary',
@@ -167,14 +165,22 @@ class DashboardController extends Controller
         // Professional Activity Statuses
         $professionalStatuses = $this->activityService->getStatusesForUsers($empleados);
 
-        // Fetch all tasks for the month for these employees (either created by them or assigned to them)
-        $monthlyTasks = \App\Models\Task::where(function($query) use ($empleados) {
-            $query->whereIn('created_by', $empleados->pluck('id'))
-                  ->orWhereHas('assignees', function($q) use ($empleados) {
-                      $q->whereIn('user_id', $empleados->pluck('id'));
+        // Fetch all organizationally relevant tasks (Active during the month)
+        $monthlyTasks = \App\Models\Task::where(function($query) use ($empleados, $user) {
+            $query->whereIn('created_by', $empleados->pluck('id')->push($user->id))
+                  ->orWhereHas('assignees', function($q) use ($empleados, $user) {
+                      $q->whereIn('users.id', $empleados->pluck('id')->push($user->id));
                   });
         })
-        ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+        ->where(function($q) use ($startOfMonth, $endOfMonth) {
+            $q->whereBetween('end_date', [$startOfMonth, $endOfMonth])
+              ->orWhereBetween('start_date', [$startOfMonth, $endOfMonth])
+              ->orWhere(function($sub) use ($startOfMonth, $endOfMonth) {
+                  $sub->where('start_date', '<=', $startOfMonth)
+                      ->where('end_date', '>=', $endOfMonth);
+              })
+              ->orWhereBetween('created_at', [$startOfMonth, $endOfMonth]);
+        })
         ->with('assignees')
         ->get();
 
@@ -369,12 +375,11 @@ class DashboardController extends Controller
             ->with('user')
             ->get();
             
-        // Fetch all tasks for this day (either created by them or assigned to them)
-        // Strictly filtered to the employer's team and overlapping with the target date
-        $dayTasks = \App\Models\Task::where(function($query) use ($empleados) {
-            $query->whereIn('created_by', $empleados->pluck('id'))
-                  ->orWhereHas('assignees', function($q) use ($empleados) {
-                      $q->whereIn('user_id', $empleados->pluck('id'));
+        // Fetch all tasks for this day (Created by or assigned to anyone in the company)
+        $dayTasks = \App\Models\Task::where(function($query) use ($empleados, $user) {
+            $query->whereIn('created_by', $empleados->pluck('id')->push($user->id))
+                  ->orWhereHas('assignees', function($q) use ($empleados, $user) {
+                      $q->whereIn('users.id', $empleados->pluck('id')->push($user->id));
                   });
         })
         ->where(function($query) use ($targetDate) {
@@ -382,6 +387,7 @@ class DashboardController extends Controller
                 $q->whereDate('start_date', '<=', $targetDate)
                   ->whereDate('end_date', '>=', $targetDate);
             })
+            ->orWhereDate('created_at', $targetDate)
             ->orWhereDate('updated_at', $targetDate);
         })
         ->with(['assignees', 'createdBy'])

@@ -150,15 +150,17 @@ class TaskManagementService
      */
     public function getEmployeeTasks($empleados, $filters = [])
     {
-        $query = Task::whereIn('created_by', $empleados->pluck('id'))
-            ->with(['comments.user', 'createdBy', 'attachments.uploader']);
+        $employeeIds = $empleados->pluck('id');
+        $query = Task::where(function($q) use ($employeeIds) {
+            $q->whereIn('created_by', $employeeIds)
+              ->orWhereHas('assignees', function($sub) use ($employeeIds) {
+                  $sub->whereIn('users.id', $employeeIds);
+              });
+        })->with(['comments.user', 'createdBy', 'attachments.uploader', 'assignees']);
 
         return $this->applyFilters($query, $filters)->get();
     }
 
-    /**
-     * Get tasks created for employees (by employer/manager)
-     */
     public function getEmployerTasks($user, $empleados, $filters = [])
     {
         $query = Task::where(function ($query) use ($user) {
@@ -168,9 +170,34 @@ class TaskManagementService
         })->whereHas('assignees', function($q) use ($empleados) {
                        $q->whereIn('user_id', $empleados->pluck('id'));
                    })
-                     ->with(['comments.user', 'assignees', 'attachments.uploader']); // Loaded assignees and attachments.uploader
+                     ->with(['comments.user', 'assignees', 'attachments.uploader']);
 
         return $this->applyFilters($query, $filters)->get();
+    }
+
+    /**
+     * Get all tasks related to a company (created by or assigned to any member)
+     */
+    public function getCompanyTasks($user, $filters = [])
+    {
+        $ownerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
+        
+        if (!$ownerId) {
+            return collect([]);
+        }
+
+        $companyUserIds = User::where('empleador_id', $ownerId)
+            ->pluck('id')
+            ->push($ownerId);
+
+        $query = Task::where(function($q) use ($companyUserIds) {
+            $q->whereIn('created_by', $companyUserIds)
+              ->orWhereHas('assignees', function($sub) use ($companyUserIds) {
+                  $sub->whereIn('users.id', $companyUserIds);
+              });
+        })->with(['assignees', 'comments.user', 'attachments.uploader', 'createdBy']);
+
+        return $this->applyFilters($query, $filters)->orderBy('created_at', 'desc')->get();
     }
 
     /**
@@ -183,7 +210,15 @@ class TaskManagementService
         }
 
         if (isset($filters['search']) && $filters['search']) {
-            $query->where('title', 'like', '%' . $filters['search'] . '%');
+            $searchTerm = '%' . $filters['search'] . '%';
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('title', 'like', $searchTerm)
+                  ->orWhere('description', 'like', $searchTerm)
+                  ->orWhereHas('assignees', function($sub) use ($searchTerm) {
+                      $sub->where('name', 'like', $searchTerm)
+                          ->orWhere('email', 'like', $searchTerm);
+                  });
+            });
         }
 
         return $query;
