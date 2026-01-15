@@ -73,6 +73,7 @@
         <div class="flex-1 overflow-y-auto px-8 space-y-4 min-h-0">
             <template x-if="activeTask && activeTask.comments">
                 <template x-for="comment in activeTask.comments" :key="comment.id">
+<<<<<<< HEAD
                     <div class="bg-gray-50 rounded-2xl p-4 flex justify-between items-start group">
                         <div class="w-full pr-4">
                             <template x-if="editingCommentId === comment.id">
@@ -124,6 +125,13 @@
                         <div class="flex items-center gap-4 ml-4 shrink-0 flex-col items-end">
                             <div class="flex items-center gap-2">
                                  <span class="text-gray-800 text-sm font-medium" x-text="comment.user.name"></span>
+=======
+                    <div class="bg-gray-50 rounded-2xl p-4 flex justify-between items-start">
+                        <p class="text-gray-700 text-sm italic whitespace-nowrap overflow-x-auto overflow-y-hidden scrollbar-thin" x-text="comment.content"></p>
+                        <div class="flex items-center gap-4 ml-4 shrink-0">
+                            <span class="text-gray-800 text-sm font-medium" x-text="new Date(comment.created_at).toLocaleDateString()"></span>
+                           <div class="flex items-center gap-2">
+>>>>>>> 4eb547636d3c427f8bd14080667dd1d341868886
                                 <img :src="comment.user.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : '{{ asset('avatars') }}/' + (comment.user.avatar.includes('/') ? comment.user.avatar.split('/').pop() : comment.user.avatar)) : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(comment.user.name) + '&color=FFFFFF&background=22A9C8'" 
                                      class="w-6 h-6 rounded-full border border-gray-200 object-cover"
                                      x-on:error="$el.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(comment.user.name) + '&color=FFFFFF&background=22A9C8'">

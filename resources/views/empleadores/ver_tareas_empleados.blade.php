@@ -484,6 +484,58 @@
                         <div x-show="!$el.parentNode.querySelectorAll('div[x-show]:not([style*=\'display: none\'])').length" style="display: none;" class="text-center text-gray-500 py-4 italic">
                             No se encontraron resultados
                         </div>
+<<<<<<< HEAD
+=======
+                    @empty
+                        <div class="text-center text-gray-500 py-4">No hay tareas de equipo.</div>
+                    @endforelse
+                </div>
+            </div>
+
+
+        </div>
+
+        @include('empleadores.tareas.partials.create-modal')
+        @include('empleadores.tareas.partials.comments-modal')
+        @include('empleadores.tareas.partials.files-modal')
+        <x-work-hours.approval-modal />
+        
+
+
+        <!-- Mass Communication Section -->
+         <!--
+        <div class="mt-16 bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="bg-[#22A9C8] p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg md:text-xl font-bold text-gray-900">Comunicación con profesionales</h3>
+                    <p class="text-gray-500 text-xs md:text-sm">Envía un correo electrónico a todo tu equipo o a un profesional seleccionado.</p>
+                </div>
+            </div>
+
+            <form action="{{ route('empleador.mass-email') }}" method="POST" enctype="multipart/form-data" class="space-y-4 px-2 sm:px-0" onsubmit="saveScrollPosition(this)">
+                @csrf
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="recipient_id" class="block text-sm font-semibold text-gray-700 mb-1">Destinatario</label>
+                        <select name="recipient_id" id="recipient_id" 
+                                class="w-full rounded-xl border-gray-200 shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all">
+                            <option value="">Todo el equipo de profesionales</option>
+                            @foreach($employees as $employee)
+                                <option value="{{ $employee->id }}">{{ $employee->name }} ({{ $employee->job_title ?? 'Profesional' }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="subject" class="block text-sm font-semibold text-gray-700 mb-1">Asunto del mensaje</label>
+                        <input type="text" name="subject" id="subject" required
+                               class="w-full rounded-xl border-gray-200 shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all"
+                               placeholder="Ej: Anuncio importante sobre el proyecto">
+>>>>>>> 4eb547636d3c427f8bd14080667dd1d341868886
                     </div>
                 </div>
             </div>
@@ -563,6 +615,7 @@
             @include('empleadores.tareas.partials.create-modal')
             <x-work-hours.approval-modal />
         </div>
+-->
 
     <!-- Re-adding script helper for Approval modal logic (not fully integrated into Alpine yet, preserved as global) -->
     <script>

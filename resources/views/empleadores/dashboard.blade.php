@@ -318,7 +318,7 @@
 
             <!-- Recovery Overview Section (Informativo Detallado) -->
             <div class="mb-12">
-                <h3 class="text-[#22A9C8] font-medium text-base mb-6">Detalle de Recuperación y Deudas</h3>
+                <h3 class="text-[#22A9C8] font-medium text-base mb-6">Detalle de Recuperación</h3>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <!-- Left: Debt Summary (2/3) -->
@@ -336,9 +336,9 @@
                                     <thead>
                                         <tr class="bg-gray-50/20">
                                             <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400">Profesional</th>
-                                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Deuda Total</th>
-                                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Recuperado</th>
-                                            <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-right">Saldo Actual</th>
+                                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Total de Horas Pendientes</th>
+                                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Horas Recuperadas</th>
+                                            <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-right">Horas Pendientes</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-50">
@@ -863,7 +863,7 @@
                     
                                 <label for="week_date" class="form-label">Selecciona cualquier día de la semana</label>
                                 <input type="date" id="week_date" x-model="weekDate" class="form-control w-full mb-3 rounded-lg border-gray-300" required>
-                                <p class="text-sm text-gray-500 mb-4">El sistema tomará automáticamente el lunes y viernes de esa semana.</p>
+                                <p class="text-sm text-gray-500 mb-4">El sistema tomará automáticamente la semana completa a la que corresponde el día seleccionado.</p>
                     
                                 <div x-show="weekSuccessMessage" x-transition class="mb-4 p-3 bg-green-50 text-green-700 rounded-lg">
                                     <p x-text="weekSuccessMessage"></p>
@@ -1027,5 +1027,4 @@
         </div>
     </div>
 </x-app-layout>
-
 

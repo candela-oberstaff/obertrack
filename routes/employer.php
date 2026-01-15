@@ -106,8 +106,22 @@ Route::middleware(['auth'])->prefix('empleador')->name('empleador.')->group(func
 // Legacy route - kept for backward compatibility
 // GET /empleadores/tareas-asignadas - View assigned tasks to employees
 Route::middleware(['auth'])->get('/empleadores/tareas-asignadas', [DashboardController::class, 'verTareasEmpleados'])
-    ->name('empleadores.tareas-asignadas');
+    ->name('empleadores.tareas-asignadas'); 
 
+    //comunicacion con profesionales manager 
+    Route::middleware(['auth'])->get('/empleadores/comunicacion-profesionales', [DashboardController::class, 'verTareasEmpleados2'])
+    ->name('empleadores.comunicacion-profesionales'); 
+ 
 // Legacy route - kept for backward compatibility
 // GET /grafico-tareas - View tasks chart
 Route::middleware(['auth'])->get('/grafico-tareas', [DashboardController::class, 'verTareasEmpleados']);
+  
+
+
+
+
+
+
+//Nueva ruta para ocpión de tareas empleador
+Route::middleware(['auth'])->get('/empleadores/tareas', [DashboardController::class, 'verTareas'])
+    ->name('empleadores.tareas');

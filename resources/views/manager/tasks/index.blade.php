@@ -3,7 +3,7 @@
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Tareas asignadas a mi equipo') }}
         </h2>
-    </x-slot>
+    </x-slot> 
 
     <div class="py-12" x-data="{
         currentUser: {{ json_encode([
@@ -258,6 +258,7 @@
                         <a href="{{ route('manager.tasks.create') }}" class="w-full lg:w-auto text-center inline-flex items-center justify-center px-4 py-2 bg-primary border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-hover active:bg-blue-800 focus:outline-none focus:border-blue-800 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                             Crear Nueva Tarea
+
                         </a>
                     </div>
                 </div>

@@ -60,6 +60,7 @@
             @if(isset($comments) && $comments->count() > 0)
                 <div class="space-y-4">
                     @foreach($comments as $comment)
+<<<<<<< HEAD
                         <div wire:key="comment-{{ $comment->id }}" class="bg-gray-50 p-4 rounded-xl flex justify-between items-start group">
                             <div class="w-full pr-4">
                                 @if($editingCommentId === $comment->id)
@@ -111,6 +112,13 @@
                                         @endif
                                     </div>
                                 @endif
+=======
+                        <div class="bg-gray-50 p-4 rounded-xl flex justify-between items-start gap-x-4">
+                            <div class="pr-4  whitespace-nowrap overflow-x-auto overflow-y-hidden scrollbar-thin" >
+                                <p class="text-gray-800 text-sm leading-relaxed italic ">
+                                    {{ $comment->content }}
+                                </p>
+>>>>>>> 4eb547636d3c427f8bd14080667dd1d341868886
                             </div>
                             
                             <div class="flex flex-col items-end gap-1 min-w-max">
