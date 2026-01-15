@@ -60,9 +60,9 @@
             @if(isset($comments) && $comments->count() > 0)
                 <div class="space-y-4">
                     @foreach($comments as $comment)
-                        <div class="bg-gray-50 p-4 rounded-xl flex justify-between items-start">
-                            <div class="pr-4">
-                                <p class="text-gray-800 text-sm leading-relaxed italic">
+                        <div class="bg-gray-50 p-4 rounded-xl flex justify-between items-start gap-x-4">
+                            <div class="pr-4  whitespace-nowrap overflow-x-auto overflow-y-hidden scrollbar-thin" >
+                                <p class="text-gray-800 text-sm leading-relaxed italic ">
                                     {{ $comment->content }}
                                 </p>
                             </div>

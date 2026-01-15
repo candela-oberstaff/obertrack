@@ -5,7 +5,7 @@
                 {{ __('Seguimiento de tareas') }}
             </h2>
         </div>
-    </x-slot>
+    </x-slot> 
 
     <div class="py-8 bg-white min-h-screen" x-data>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
@@ -81,7 +81,7 @@
                                                 @endif
                                             </div>
                                         </td>
-                                        <td class="p-4">
+                                        <td class="p-4 ">
                                             <livewire:task-status-selector :task="$task" :wire:key="'task-status-'.$task->id" />
                                         </td>
                                         <td class="p-4 text-center">

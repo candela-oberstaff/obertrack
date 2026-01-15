@@ -10,7 +10,7 @@
                 <p class="text-gray-600 mt-1">
                     Aquí está tu resumen de actividades
                 </p>
-            </div>
+            </div> 
 
             {{-- Summary Cards --}}
             <div id="dashboard-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -39,7 +39,7 @@
                         $hasPendingApproval = $registeredHours->where('approved', false)->count() > 0;
                     @endphp
                     <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">
-                        Horas de tareas 
+                        Horas registradas
                         <span class="text-[8px] md:text-[10px] text-gray-400 font-medium">({{ $currentPeriodStart->format('M d') }} - {{ $currentPeriodEnd->format('M d') }})</span>
                     </p>
                     <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C] mb-2">{{ (int)$totalHours }} h</p>
@@ -72,12 +72,12 @@
 
                 {{-- Recuperación de Horas --}}
                 <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
-                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Saldo de Recuperación</p>
+                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Horas de Recuperación</p>
                     <div class="flex items-center justify-between">
                         <div>
                             @php $remainingDebt = $debtSummary['remaining_debt']; @endphp
                             <p class="text-4xl md:text-5xl font-extrabold {{ $remainingDebt > 0 ? 'text-red-500' : 'text-green-500' }}">
-                                {{ $remainingDebt > 0 ? '-' . number_format($remainingDebt, 1) : 'Ok' }}<span class="text-lg">h</span>
+                                {{ $remainingDebt > 0 ? '-' . number_format($remainingDebt, 1) : '0' }}<span class="text-lg">h</span>
                             </p>
                         </div>
                         <div class="text-right">
@@ -86,7 +86,7 @@
                         </div>
                     </div>
                     <div class="mt-2 text-[10px] text-gray-400 flex justify-between">
-                        <span>Adeudado: {{ number_format($debtSummary['total_debt'], 1) }}h</span>
+                        <span>Pendiente: {{ number_format($debtSummary['total_debt'], 1) }}h</span>
                         @if($debtSummary['pending_approval'] > 0)
                             <span class="text-orange-500 font-bold">+{{ number_format($debtSummary['pending_approval'], 1) }}h pnd</span>
                         @endif
@@ -236,7 +236,7 @@
                                             <!-- Description -->
                                             <div>
                                                 <h4 class="text-sm font-medium text-gray-900">Descripción</h4>
-                                                <p class="mt-1 text-sm text-gray-500 whitespace-pre-line" x-text="selectedTask?.description || 'Sin descripción'"></p>
+                                                <p class="mt-1 text-sm text-gray-500 whitespace-pre-line whitespace-nowrap    overflow-x-auto overflow-y-hidden   scrollbar-thin" x-text="selectedTask?.description || 'Sin descripción'"></p>
                                             </div>
             
                                             <!-- Stats Grid -->
@@ -325,7 +325,7 @@
                                                                     <span class="text-xs font-semibold text-gray-900" x-text="comment.user?.name || 'Usuario'"></span>
                                                                     <span class="text-xs text-gray-500" x-text="new Date(comment.created_at).toLocaleDateString() + ' ' + new Date(comment.created_at).toLocaleTimeString().slice(0,5)"></span>
                                                                 </div>
-                                                                <p class="mt-1 text-sm text-gray-600" x-text="comment.content"></p>
+                                                                <p class="mt-1 text-sm text-gray-600  whitespace-nowrap   overflow-x-auto  overflow-y-hidden scrollbar-thin" x-text="comment.content"></p>
                                                             </li>
                                                         </template>
                                                     </ul>
@@ -372,8 +372,8 @@
                             @endphp
                             
                             @forelse($latestComments as $comment)
-                                <div class="bg-gray-50 rounded-lg p-3">
-                                    <p class="text-sm text-gray-800 mb-2">{{ $comment->content }}</p>
+                                <div class="bg-gray-50 rounded-lg p-3 ">
+                                    <p class="text-sm text-gray-800 mb-2  whitespace-nowrap   overflow-x-auto  overflow-y-hidden scrollbar-thin">{{ $comment->content }}</p>
                                     <div class="flex items-center justify-between text-xs">
                                         <span class="text-gray-500">{{ $comment->created_at->format('Y.m.d') }}</span>
                                         <div class="flex items-center gap-1 text-gray-600">

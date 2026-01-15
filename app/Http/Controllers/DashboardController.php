@@ -70,6 +70,20 @@ class DashboardController extends Controller
         return redirect()->back()->with('success', 'Tarea creada y asignada con éxito.');
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     public function verTareasEmpleados(Request $request)
     {
         $user = auth()->user();
@@ -135,6 +149,84 @@ class DashboardController extends Controller
 
         return view('empleadores.ver_tareas_empleados', $data);
     }
+
+
+
+    public function verTareasEmpleados2(Request $request)
+    {
+        $user = auth()->user();
+
+        // Cache key único por usuario y parámetros de request
+        $cacheKey = 'dashboard_' . $user->id . '_' . md5(json_encode($request->all()));
+
+        // Track cache keys for this user (for invalidation)
+        $userCacheKeys = cache()->get('cache_keys_' . $user->id, []);
+        if (!in_array($cacheKey, $userCacheKeys)) {
+            $userCacheKeys[] = $cacheKey;
+            cache()->put('cache_keys_' . $user->id, $userCacheKeys, 3600);
+        }
+
+        // Cachear por 60 segundos para evitar queries repetidas
+        $data = cache()->remember($cacheKey, 60, function () use ($user, $request) {
+            // Obtener los empleados
+            $employees = $this->employeeDataService->getEmployeesForUser($user);
+
+            // Obtener las tareas creadas por los empleados
+            $tasks = $this->taskManagementService->getEmployeeTasks($employees, $request->all());
+
+            // Obtener las tareas creadas para los empleados (por el empleador, manager o superadmin)
+            $teamTasks = $this->taskManagementService->getEmployerTasks($user, $employees, $request->all());
+
+            // Asignar las tareas individuales a cada empleado
+            $employees->each(function ($employee) use ($tasks) {
+                $employee->individualTasks = $tasks->where('created_by', $employee->id);
+            });
+
+            // Preparar datos para el gráfico
+            $chartData = $this->taskDataService->prepareChartData($tasks->concat($teamTasks));
+
+            // Obtener las horas trabajadas de los empleados por semana
+            $weekStart = $request->week ? Carbon::parse($request->week) : Carbon::now()->startOfWeek(Carbon::MONDAY);
+            $weekEnd = $weekStart->copy()->endOfWeek(Carbon::FRIDAY);
+            $workHoursSummary = $this->workHoursService->getWorkHoursSummary($employees, $weekStart, $weekEnd);
+
+            // Obtener las semanas pendientes
+            $pendingWeeks = $this->workHoursService->getPendingWeeks($employees);
+
+            $currentMonth = Carbon::now()->startOfMonth();
+
+            // Calcular el total de horas aprobadas para el mes actual
+            $totalApprovedHours = $this->workHoursService->getTotalApprovedHoursForMonth($employees, $currentMonth);
+
+            // Obtener información detallada de los empleados
+            $empleadosInfo = $this->employeeDataService->getEmployeesInfo($employees, $currentMonth, $this->workHoursService);
+
+            return compact(
+                'tasks',
+                'teamTasks',
+                'chartData',
+                'workHoursSummary',
+                'weekStart',
+                'currentMonth',
+                'totalApprovedHours',
+                'pendingWeeks',
+                'empleadosInfo',
+                'employees'
+            );
+        });
+
+        return view('empleadores.comunicacion_profesionales', $data);
+    }
+
+
+
+
+
+
+
+
+
+
 
     public function empleadorDashboard(Request $request)
     {
@@ -479,5 +571,5 @@ class DashboardController extends Controller
             'pending_recoveries_count' => $pendingRecoveriesCount,
             'has_pending' => $hasPending
         ]);
-    }
+    } 
 }

@@ -74,7 +74,7 @@
             <template x-if="activeTask && activeTask.comments">
                 <template x-for="comment in activeTask.comments" :key="comment.id">
                     <div class="bg-gray-50 rounded-2xl p-4 flex justify-between items-start">
-                        <p class="text-gray-700 text-sm italic" x-text="comment.content"></p>
+                        <p class="text-gray-700 text-sm italic whitespace-nowrap overflow-x-auto overflow-y-hidden scrollbar-thin" x-text="comment.content"></p>
                         <div class="flex items-center gap-4 ml-4 shrink-0">
                             <span class="text-gray-800 text-sm font-medium" x-text="new Date(comment.created_at).toLocaleDateString()"></span>
                            <div class="flex items-center gap-2">

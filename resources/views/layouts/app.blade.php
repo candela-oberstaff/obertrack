@@ -52,7 +52,12 @@
             }
         </style>
     </head>
-    <body class="font-sans antialiased">
+    <body class="font-sans antialiased" x-data="{ globalLoading: false }" @show-loader.window="globalLoading = true">
+        <!-- Global Loader Overlay -->
+        <div x-show="globalLoading" class="loader-overlay" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+            <div class="loader-spinner"></div>
+            <p class="text-[#22A9C8] font-bold text-lg animate-pulse">Procesando...</p>
+        </div>
         <div class="min-h-screen bg-gray-100 dark:bg-white">
             @include('layouts.navigation')
 
@@ -66,11 +71,9 @@
             @endisset
 
             <!-- Page Content -->
-            <main class="flex-grow">
+            <main>
                 {{ $slot }}
             </main>
-            
-            <x-layout.footer />
         </div>
         <script>
             // Handle Session Expiration (419 Page Expired)

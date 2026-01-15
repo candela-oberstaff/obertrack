@@ -37,14 +37,16 @@
                         <h1 class="text-2xl font-bold text-gray-900">Notificar tareas</h1>
                         <p class="text-primary font-medium text-xs">Total de tareas notificadas hasta el momento</p>
                     </div>
+                    <!--
                     {{-- Mini Stats --}}
                     <div class="flex items-center gap-4">
                         <div class="text-right">
                              <p class="text-xl font-bold text-orange-500 leading-none">{{ $pendingTasksCount }}</p>
-                             <p class="text-xs text-gray-400">Pendientes</p>
+                             <p class="text-xs text-gray-400">Tareas Pendientes</p>
                         </div>
                     </div>
-                </div>
+                     -->
+                </div> 
             </div>
 
             {{-- Summary Card (Task Centric) --}}
@@ -62,14 +64,14 @@
                 <div class="flex flex-wrap gap-6 items-center mt-4 md:mt-0 px-4 md:px-0">
                     <div class="text-center group cursor-help relative">
                         <span class="block text-3xl font-bold text-primary">{{ $completedTasksCount }}</span>
-                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Tareas Hechas</span>
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Tareas Realizadas</span>
                         <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
                             Tareas completadas este mes
                         </div>
                     </div>
                     
                     <div class="h-12 w-px bg-gray-200 hidden sm:block"></div>
-                    
+                    <!--
                     <div class="text-center group cursor-help relative">
                         <span class="block text-3xl font-bold text-red-500">{{ number_format($debtSummary['total_debt'], 1) }}h</span>
                         <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Horas Adeudadas</span>
@@ -77,12 +79,22 @@
                             Total de horas por ausencias sin recuperar
                         </div>
                     </div>
+                    -->
+
+                    {{-- Mini Stats --}}
+                       <div class="text-center group cursor-help relative">
+                        <span class="block text-3xl font-bold text-red-500">{{ $pendingTasksCount }}</span>
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Tareas Pendientes</span>
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                            Tareas Pendientes
+                        </div>
+                    </div>
 
                     <div class="h-12 w-px bg-gray-200 hidden sm:block"></div>
 
                     <div class="text-center group cursor-help relative">
                         <span class="block text-3xl font-bold text-green-500">{{ number_format($debtSummary['total_recovered'], 1) }}h</span>
-                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Recuperadas</span>
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Horas Recuperadas</span>
                         @if($debtSummary['pending_approval'] > 0)
                             <span class="block text-[9px] text-orange-500 font-bold">(+{{ number_format($debtSummary['pending_approval'], 1) }}h pnd)</span>
                         @endif
@@ -98,7 +110,7 @@
                         <span class="block text-3xl font-black {{ $remaining > 0 ? 'text-red-600' : 'text-green-600' }}">
                             {{ $remaining > 0 ? '-' . number_format($remaining, 1) . 'h' : '✓' }}
                         </span>
-                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Saldo Pendiente</span>
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Horas Pendientes</span>
                         <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
                             Balance actual de horas pendientes
                         </div>
@@ -659,7 +671,7 @@
                                     <div class="flex items-center gap-1.5 mt-1">
                                         <div class="w-1.5 h-1.5 rounded-full bg-[#22A9C8]"></div>
                                         <p class="text-[11px] text-gray-500 font-medium">
-                                            Disponibles: <span class="text-[#22A9C8] font-bold" x-text="missingHours.toFixed(1)"></span>h
+                                            Pendientes: <span class="text-[#22A9C8] font-bold" x-text="missingHours.toFixed(1)"></span>h
                                         </p>
                                     </div>
                                 </div>
@@ -851,40 +863,83 @@
                               }
                           });
                   },
-                  
-                  toggleTask(taskId) {
-                      const task = this.pendingTasks.find(t => t.id === taskId);
-                      if (!task) return;
 
-                      fetch(`/empleados/tareas/${taskId}/toggle-completion`, {
-                          method: 'POST',
-                          headers: {
-                              'Content-Type': 'application/json',
-                              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                          }
-                      })
-                      .then(response => response.json())
-                      .then(data => {
-                          if (data.success) {
-                              task.completed = data.completed;
-                              
-                              if (data.completed) {
-                                  if (!this.activities.includes(task.title)) {
-                                      this.activities.push(task.title);
-                                  }
-                              } else {
-                                  const index = this.activities.indexOf(task.title);
-                                  if (index > -1) {
-                                      this.activities.splice(index, 1);
-                                  }
-                              }
-                          }
-                      })
-                      .catch(error => {
-                          console.error('Error toggling task:', error);
-                          alert('Error al actualizar el estado de la tarea');
-                      });
-                  },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                  
+          toggleTask(taskId) {
+    const task = this.pendingTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Guardar el estado anterior
+    const previousState = task.completed;
+    
+    // Cambiar inmediatamente el estado visual
+    task.completed = !task.completed;
+
+    // Actualizar actividades localmente
+    if (task.completed) {
+        if (!this.activities.includes(task.title)) {
+            this.activities.push(task.title);
+        }
+    } else {
+        const index = this.activities.indexOf(task.title);
+        if (index > -1) {
+            this.activities.splice(index, 1);
+        }
+    }
+
+    // Enviar petición al servidor PERO ignorar la respuesta
+    fetch(`/empleados/tareas/${taskId}/toggle-completion`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // NO actualizamos con data.completed - mantenemos el estado local
+        if (!data.success) {
+            // Solo revertir si hubo un error
+            task.completed = previousState;
+            alert('Error: ' + (data.message || 'No se pudo actualizar'));
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling task:', error);
+    });
+},
+ 
+
+
+
+
+
+
+
+
+
+
+
                  
                  absenceOptions: [
                      'Cita médica',

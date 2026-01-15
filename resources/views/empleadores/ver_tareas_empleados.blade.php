@@ -191,7 +191,10 @@
         @include('empleadores.tareas.partials.files-modal')
         <x-work-hours.approval-modal />
         
+
+
         <!-- Mass Communication Section -->
+         <!--
         <div class="mt-16 bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
             <div class="flex items-center gap-3 mb-6">
                 <div class="bg-[#22A9C8] p-2 rounded-lg">
@@ -260,6 +263,7 @@
                 </div>
             </form>
         </div>
+-->
 
     </div>
 

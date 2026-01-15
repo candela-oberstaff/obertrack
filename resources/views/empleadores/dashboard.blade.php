@@ -1,129 +1,134 @@
 ﻿<x-app-layout>
    
     <div class="py-8 bg-white min-h-screen font-sans">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
-            <!-- Header -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <div class="flex items-center gap-4">
-                     <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1E293B]">Monitoreo de horas</h2>
-                </div>
-            </div>
-
-            @if(session('success'))
-                <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-400 text-green-700">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700">
-                    {{ session('error') }}
-                </div>
-            @endif
-
-            <!-- Subtitle -->
-            <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas totales registradas por los profesionales</h3>
-            
-            <!-- Employee Stats Cards -->
-            <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-                @foreach($employeeSummaries as $summary)
-                    @php
-                        $percentage = $summary['target_hours'] > 0 ? min(100, ($summary['total_hours'] / $summary['target_hours']) * 100) : 0;
-                        // Semi-circle calculations
-                        // We want a bottom arc. Let's use a simple SVG dasharray trick or path.
-                        // Path for background: Semi-circle
-                        $radius = 35;
-                        $circumference = pi() * $radius; // Semi-circle length
-                        $dashArray = ($percentage / 100) * $circumference;
-                        $dateRange = $currentMonth->copy()->startOfMonth()->format('M 1') . ' - ' . $currentMonth->copy()->endOfMonth()->format('M d'); // Update localization if needed
-                    @endphp
-                    
-                    <div class="bg-[#F8F9FA] rounded-[20px] p-6 relative flex flex-col items-center shadow-sm h-[320px]">
-                        
-                        <!-- Header -->
-                        <div class="w-full text-center mb-8 mt-6 relative">
-                            <!-- Status Indicator -->
-                            @if($summary['activity_status'] === 'red')
-                                <div class="absolute -top-4 right-0 flex items-center gap-1">
-                                    <span class="flex h-3 w-3 rounded-full bg-red-500 animate-pulse"></span>
-                                    <span class="text-[10px] font-bold text-red-600 uppercase">Inactivo 2+ días</span>
-                                </div>
-                            @elseif($summary['activity_status'] === 'yellow')
-                                <div class="absolute -top-4 right-0 flex items-center gap-1">
-                                    <span class="flex h-3 w-3 rounded-full bg-yellow-400 animate-pulse"></span>
-                                    <span class="text-[10px] font-bold text-yellow-600 uppercase">Inactivo 1 día</span>
-                                </div>
-                            @endif
-
-                            <h4 class="text-xl font-bold text-gray-900">{{ $summary['user']->name }}</h4>
-                            <p class="text-gray-500 text-sm font-light">{{ $summary['role'] }}</p>
-                        </div>
-
-                        <!-- Semi Circular Chart (U Shape) -->
-                        <div class="relative w-48 h-28 mb-4 flex justify-center overflow-hidden">
-                             <!-- Half circle SVG -->
-                             <svg viewBox="0 0 100 60" class="w-full h-full">
-                                 <!-- Background Arc -->
-                                 <path d="M 10,10 A 40,40 0 0 0 90,10" 
-                                       fill="none" 
-                                       stroke="#E2E8F0" 
-                                       stroke-width="8" 
-                                       stroke-linecap="round" />
-                                 <!-- Progress Arc -->
-                                  <path d="M 10,10 A 40,40 0 0 0 90,10" 
-                                       fill="none" 
-                                       stroke="#22A9C8" 
-                                       stroke-width="8" 
-                                       stroke-linecap="round"
-                                       stroke-dasharray="{{ 126 }}" 
-                                       stroke-dashoffset="{{ 126 - (126 * $percentage / 100) }}"
-                                       class="transition-all duration-1000 ease-out" />
-                             </svg>
-                             <!-- Number -->
-                             <div class="absolute top-8 text-center">
-                                 <span class="text-4xl font-bold text-gray-900 block leading-none mb-1">{{ round($summary['total_hours']) }}</span>
-                             </div>
-                        </div>
-
-                        <!-- Footer Text -->
-                        <div class="text-center mt-auto mb-2">
-                            <p class="text-gray-500 text-sm leading-tight max-w-[200px] mx-auto">
-                                {{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas registradas actualmente ({{ $dateRange }})
-                            </p>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-
-            <!-- Daily View Section -->
-            <div class="mb-8">
-                <h3 class="text-lg font-bold text-gray-900 mb-6">Vistazo diario</h3>
-                
-                <!-- Month Navigation -->
-                <div class="flex items-center gap-4 mb-6">
-                   <a href="{{ route('empleador.dashboard', ['month' => $currentMonth->copy()->subMonth()->format('Y-m')]) }}" class="bg-[#22A9C8] text-white rounded p-1.5 hover:bg-primary-hover transition">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                       </svg>
-                   </a>
-                   
-                   <span class="font-bold text-xl text-gray-900">{{ ucfirst($currentMonth->translatedFormat('F Y')) }}</span>
-                   
-                   <a href="{{ route('empleador.dashboard', ['month' => $currentMonth->copy()->addMonth()->format('Y-m')]) }}" class="bg-[#22A9C8] text-white rounded p-1.5 hover:bg-primary-hover transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                   </a>
-                </div>
-
-                <!-- Calendar Grid (Interactive) -->
-                <div id="employer-calendar" x-data="{ 
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" x-data="{ 
                     selectedDay: null,
                     showModal: false,
+                    selectedDay: null,
+                    showModal: false,
+                    // removed showRecoveryModal
+                    // removed selectedRecoveries
                     isApproving: false,
+                    
+                    // Approval Logic State
+                    showApproveWeekModal: false,
+                    showApproveAllModal: false,
+                    isApprovingWeek: false,
+                    isApprovingAll: false,
+                    weekDate: '',
+                    weekSuccessMessage: '',
+                    allMonthSuccessMessage: '',
+                    
+                    async approveWeek() {
+                        if (!this.weekDate) return;
+                        this.isApprovingWeek = true;
+                        window.showLoader();
+                        this.weekSuccessMessage = '';
+                        try {
+                            const response = await fetch('{{ route('work-hours.approve-all-week') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ week_date: this.weekDate })
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                this.weekSuccessMessage = '✅ Las horas de la semana fueron aprobadas correctamente';
+                                setTimeout(() => {
+                                    this.showApproveWeekModal = false;
+                                    window.location.reload();
+                                }, 2000);
+                            } else {
+                                alert(data.message || 'Error al aprobar la semana');
+                            }
+                        } catch (error) {
+                            console.error(error);
+                            alert('Error de conexión al intentar aprobar');
+                        } finally {
+                            this.isApprovingWeek = false;
+                        }
+                    },
+                    
+                    async approveAllMonth() {
+                        if (this.isApprovingAll) return;
+                        this.isApprovingAll = true;
+                        window.showLoader();
+                        this.allMonthSuccessMessage = '';
+                        try {
+                            const response = await fetch('{{ route('work-hours.approve-all-month') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ month: '{{ $currentMonth->format('Y-m') }}' })
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                this.allMonthSuccessMessage = '✅ ' + data.message;
+                                setTimeout(() => {
+                                    this.showApproveAllModal = false;
+                                    window.location.reload();
+                                }, 2000);
+                            } else {
+                                this.allMonthSuccessMessage = '❌ ' + (data.message || 'Error al aprobar las horas');
+                            }
+                        } catch (error) {
+                            console.error(error);
+                            this.allMonthSuccessMessage = '❌ Error de conexión al intentar aprobar';
+                        } finally {
+                            this.isApprovingAll = false;
+                        }
+                    },
+                    pollInterval: null,
+
+                    init() {
+                        this.$watch('showModal', value => {
+                            if (!value) {
+                                this.stopPolling();
+                            }
+                        });
+                    },
+
+                    startPolling(dateStr) {
+                         this.stopPolling();
+                         // Initial fetch to ensure fresh data
+                         this.fetchDayDetails(dateStr);
+                         
+                         this.pollInterval = setInterval(() => {
+                             this.fetchDayDetails(dateStr);
+                         }, 5000); // Poll every 5 seconds
+                    },
+
+                    stopPolling() {
+                        if (this.pollInterval) {
+                            clearInterval(this.pollInterval);
+                            this.pollInterval = null;
+                        }
+                    },
+
+                    async fetchDayDetails(dateStr) {
+                        try {
+                            const response = await fetch(`/empleador/api/day-details/${dateStr}`);
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            
+                            const data = await response.json();
+                            
+                            // Only update if we are still looking at the same day's modal
+                            if (this.showModal && this.selectedDay && this.selectedDay.date.startsWith(dateStr)) {
+                                this.selectedDay = data;
+                            }
+                        } catch (error) {
+                            console.error('Error fetching day details:', error);
+                        }
+                    },
+
                     openDetails(day) {
-                        this.selectedDay = JSON.parse(JSON.stringify(day));
+                        this.selectedDay = JSON.parse(JSON.stringify(day)); // Deep copy to isolate state
                         this.selectedDay.employees.forEach(emp => {
                             if (!emp.hasOwnProperty('new_comment')) emp.new_comment = '';
                         });
@@ -136,7 +141,6 @@
                         
                         this.startPolling(dateStr);
                     },
-                    
                     async approveDay(emp) {
                         if (this.isApproving) return;
                         this.isApproving = true;
@@ -174,48 +178,6 @@
                             this.isApproving = false;
                         }
                     },
-
-
-                    async approveWeek() {
-    if (!this.weekDate) return;
-
-    this.isApprovingWeek = true;
-    this.weekSuccessMessage = '';
-
-    try {
-        const response = await fetch('{{ route('work-hours.approve-all-week') }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                week_date: this.weekDate
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            this.weekSuccessMessage = '✅ Las horas de la semana fueron aprobadas correctamente';
-            // Opcional: cerrar modal automáticamente después de 2 segundos
-            setTimeout(() => {
-                this.showApproveWeekModal = false;
-                window.location.reload(); // refresca para reflejar cambios
-            }, 2000);
-        } else {
-            alert(data.message || 'Error al aprobar la semana');
-        }
-
-    } catch (error) {
-        console.error(error);
-        alert('Error de conexión al intentar aprobar');
-    } finally {
-        this.isApprovingWeek = false;
-    }
-},
-                    
                     async updateComment(emp) {
                         if (this.isApproving) return;
                         this.isApproving = true;
@@ -247,16 +209,306 @@
                         } finally {
                             this.isApproving = false;
                         }
+                    },
+                    // removed openRecoveryModal
+                    // removed approveRecovery
+                    // removed rejectRecovery
+                    parseComment(comment) {
+                        if (!comment) return { activities: [], summary: '' };
+                        if (comment.includes('Resumen adicional:')) {
+                            const parts = comment.split('Resumen adicional:');
+                            return {
+                                activities: parts[0].trim().split('\n').filter(a => a.trim() !== ''),
+                                summary: parts[1].trim()
+                            };
+                        }
+                        return {
+                            activities: comment.split('\n').filter(a => a.trim() !== ''),
+                            summary: ''
+                        };
                     }
                 }">
+            
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div class="flex items-center gap-4">
+                     <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1E293B]">Monitoreo de horas</h2>
+                </div>
+            </div>
+
+            @if(session('success'))
+                <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-400 text-green-700">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            <!-- Subtitle -->
+            <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas registradas por los profesionales</h3>
+            
+            <!-- Employee Stats Cards -->
+            <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+                @foreach($employeeSummaries as $summary)
+                    @php
+                        $percentage = $summary['target_hours'] > 0 ? min(100, ($summary['total_hours'] / $summary['target_hours']) * 100) : 0;
+                        $dateRange = $currentMonth->copy()->startOfMonth()->format('M 1') . ' - ' . $currentMonth->copy()->endOfMonth()->format('M d');
+                    @endphp
+                    
+                    <div class="bg-[#F8F9FA] rounded-[2rem] p-6 relative flex flex-col items-center shadow-sm h-[320px] transition-all hover:shadow-md">
+                        
+                        <!-- Header -->
+                        <div class="w-full text-center mb-6 mt-2 relative">
+                            <!-- Status Indicator -->
+                            @if($summary['activity_status'] === 'red')
+                                <div class="absolute -top-4 right-0 flex items-center gap-1 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
+                                    <span class="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                                    <span class="text-[8px] font-black text-red-600 uppercase tracking-wider">Inactivo 2+ d</span>
+                                </div>
+                            @elseif($summary['activity_status'] === 'yellow')
+                                <div class="absolute -top-4 right-0 flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100">
+                                    <span class="flex h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                                    <span class="text-[8px] font-black text-yellow-600 uppercase tracking-wider">Inactivo 1 d</span>
+                                </div>
+                            @endif
+
+                            <h4 class="text-lg font-black text-[#1a202c] leading-tight mb-0.5 truncate px-2">{{ $summary['user']->name }}</h4>
+                            <p class="text-gray-400 text-xs font-medium uppercase tracking-widest">{{ $summary['role'] }}</p>
+                        </div>
+
+                        <!-- Semi Circular Chart (U Shape) -->
+                        <div class="relative w-44 h-24 mb-4 flex justify-center overflow-hidden">
+                             <!-- Half circle SVG -->
+                             <svg viewBox="0 0 100 60" class="w-full h-full">
+                                 <!-- Background Arc -->
+                                 <path d="M 10,10 A 40,40 0 0 0 90,10" 
+                                       fill="none" 
+                                       stroke="#E2E8F0" 
+                                       stroke-width="12" 
+                                       stroke-linecap="round" />
+                                 <!-- Progress Arc -->
+                                  <path d="M 10,10 A 40,40 0 0 0 90,10" 
+                                       fill="none" 
+                                       stroke="#22A9C8" 
+                                       stroke-width="12" 
+                                       stroke-linecap="round"
+                                       stroke-dasharray="{{ 126 }}" 
+                                       stroke-dashoffset="{{ 126 - (126 * $percentage / 100) }}"
+                                       class="transition-all duration-1000 ease-out" />
+                             </svg>
+                             <!-- Number -->
+                             <div class="absolute top-6 text-center">
+                                 <span class="text-4xl font-black text-[#1a202c] block leading-none">{{ $summary['days_registered'] }}</span>
+                             </div>
+                        </div>
+
+                        <!-- Footer Text -->
+                        <div class="text-center mt-auto mb-2">
+                            <p class="text-[#1a202c] text-[10px] font-bold leading-tight max-w-[180px] mx-auto opacity-60">
+                                {{ $summary['days_registered'] }} días registrados ({{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas mensuales)
+                            </p>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- Recovery Overview Section (Informativo Detallado) -->
+            <div class="mb-12">
+                <h3 class="text-[#22A9C8] font-medium text-base mb-6">Detalle de Recuperación</h3>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Left: Debt Summary (2/3) -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden h-full">
+                            <div class="bg-gray-50/50 px-8 py-6 border-b border-gray-100 flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-black text-gray-800">Estado por Profesional</h3>
+                                    <p class="text-xs text-gray-400 font-medium uppercase tracking-wider mt-1">Acumulado histórico</p>
+                                </div>
+                            </div>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead>
+                                        <tr class="bg-gray-50/20">
+                                            <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400">Profesional</th>
+                                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Total de Horas Pendientes</th>
+                                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Horas Recuperadas</th>
+                                            <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-right">Horas Pendientes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-50">
+                                        @foreach($employeeSummaries as $sum)
+                                            <tr class="hover:bg-gray-50/30 transition-colors">
+                                                <td class="px-8 py-5">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="w-10 h-10 rounded-xl overflow-hidden shadow-sm bg-gray-100 flex-shrink-0">
+                                                            <img src="{{ $sum['user']->avatar ? (str_starts_with($sum['user']->avatar, 'http') ? $sum['user']->avatar : '/avatars/' . $sum['user']->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($sum['user']->name) . '&color=FFFFFF&background=22A9C8' }}" class="w-full h-full object-cover">
+                                                        </div>
+                                                        <div>
+                                                            <p class="text-sm font-bold text-gray-700">{{ $sum['user']->name }}</p>
+                                                            <p class="text-[10px] text-gray-400 font-medium uppercase truncate max-w-[120px]">{{ $sum['role'] }}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-5 text-center">
+                                                    <span class="text-sm font-bold text-red-600">{{ number_format($sum['debt_summary']['total_debt'], 1) }}h</span>
+                                                </td>
+                                                <td class="px-6 py-5 text-center">
+                                                    <div class="flex flex-col items-center">
+                                                        <span class="text-sm font-bold text-green-600">{{ number_format($sum['debt_summary']['total_recovered'], 1) }}h</span>
+                                                        @if($sum['debt_summary']['pending_approval'] > 0)
+                                                            <span class="text-[9px] text-orange-500 font-bold uppercase tracking-tighter">(+{{ number_format($sum['debt_summary']['pending_approval'], 1) }}h pnd)</span>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                                <td class="px-8 py-5 text-right">
+                                                    @php $remaining = $sum['debt_summary']['remaining_debt']; @endphp
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-black {{ $remaining > 0 ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-green-50 text-green-700 border border-green-100' }}">
+                                                        {{ $remaining > 0 ? '-' . number_format($remaining, 1) . 'h' : 'Al día' }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Quick Actions / Recent Requests (1/3) -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden h-full flex flex-col">
+                            <div class="bg-gray-50/50 px-8 py-6 border-b border-gray-100">
+                                <h3 class="text-lg font-black text-gray-800">Solicitudes Recientes</h3>
+                            </div>
+                            
+                            <div class="flex-1 overflow-y-auto no-scrollbar max-h-[450px]">
+                                @forelse($recoveryHistory as $recovery)
+                                    <div class="px-6 py-5 border-b border-gray-50 last:border-0 hover:bg-gray-50/30 transition-colors">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-gray-50 border border-gray-100">
+                                                    <img src="{{ $recovery->user->avatar ? (str_starts_with($recovery->user->avatar, 'http') ? $recovery->user->avatar : '/avatars/' . $recovery->user->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($recovery->user->name) . '&color=FFFFFF&background=22A9C8' }}" class="w-full h-full object-cover">
+                                                </div>
+                                                <div>
+                                                    <p class="text-xs font-bold text-gray-700 line-clamp-1">{{ $recovery->user->name }}</p>
+                                                    <p class="text-[9px] text-gray-400 font-black tracking-widest uppercase">{{ $recovery->recovery_date->format('d/m/Y') }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-xs font-black text-[#22A9C8]">{{ number_format($recovery->hours_recovered, 1) }}h</span>
+                                            </div>
+                                        </div>
+                                        
+                                        @if($recovery->activities)
+                                            <div class="mt-3 bg-gray-50/50 rounded-lg p-2.5 border border-gray-50">
+                                                <p class="text-[10px] text-gray-500 italic line-clamp-2">"{{ $recovery->activities }}"</p>
+                                            </div>
+                                        @endif
+
+                                        <div class="mt-3 flex items-center justify-between">
+                                            @if($recovery->approved)
+                                                <span class="text-[9px] font-black uppercase text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 flex items-center gap-1">
+                                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                    Aprobado
+                                                </span>
+                                            @else
+                                                <div class="flex items-center gap-2">
+                                                     <button 
+                                                        @click="if(confirm('¿Aprobar recuperación?')) {
+                                                            isApproving = true;
+                                                            fetch('{{ route('recovery.update-status', $recovery->id) }}', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                                                body: JSON.stringify({ approved: true })
+                                                            }).then(r => r.json()).then(() => window.location.reload()).finally(() => isApproving = false);
+                                                        }"
+                                                        class="px-2.5 py-1 bg-green-500 text-white text-[9px] font-black rounded-lg hover:bg-green-600 transition-all shadow-sm uppercase">Aprobar</button>
+                                                     <button 
+                                                        @click="if(confirm('¿Rechazar recuperación?')) {
+                                                            isApproving = true;
+                                                            fetch('{{ route('recovery.update-status', $recovery->id) }}', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                                                body: JSON.stringify({ approved: false })
+                                                            }).then(r => r.json()).then(() => window.location.reload()).finally(() => isApproving = false);
+                                                        }"
+                                                        class="px-2.5 py-1 bg-white text-red-500 text-[9px] font-black rounded-lg border border-red-100 hover:bg-red-50 transition-all uppercase">Rechazar</button>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="px-8 py-12 text-center">
+                                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Sin solicitudes<br>pendientes</p>
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily View Section -->
+            <div class="mb-8">
+                <h3 class="text-lg font-bold text-gray-900 mb-6">Vistazo diario</h3>
+                
+                <!-- Month Navigation -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div class="flex items-center gap-4">
+                       <a href="{{ route('empleador.dashboard', ['month' => $currentMonth->copy()->subMonth()->format('Y-m')]) }}" class="bg-[#22A9C8] text-white rounded p-1.5 hover:bg-primary-hover transition">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                           </svg>
+                       </a>
+                       
+                       <input type="month" 
+                              value="{{ $currentMonth->format('Y-m') }}" 
+                              class="bg-transparent border-none text-xl font-bold text-gray-900 focus:ring-0 cursor-pointer px-1 text-center"
+                              onchange="window.location.href = '{{ route('empleador.dashboard') }}?month=' + this.value">
+                       
+                       <a href="{{ route('empleador.dashboard', ['month' => $currentMonth->copy()->addMonth()->format('Y-m')]) }}" class="bg-[#22A9C8] text-white rounded p-1.5 hover:bg-primary-hover transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                       </a>
+                    </div>
+                
+                    <div class="flex justify-end gap-3">
+                         <button 
+                             @click="showApproveAllModal = true"
+                             class="bg-[#22A9C8] hover:bg-[#0D5C7D] text-white font-bold py-2.5 px-5 rounded-lg transition-all shadow-md flex items-center gap-2 text-sm hover:shadow-lg"
+                         >
+                             Aprobar todo el mes
+                         </button>
+                
+                         <button 
+                             type="button" 
+                             class="bg-[#22A9C8] hover:bg-[#0D5C7D] text-white font-bold py-2.5 px-5 rounded-lg transition-all shadow-md flex items-center gap-2 text-sm"
+                             @click="showApproveWeekModal = true"
+                         >
+                             Aprobar semana
+                         </button>
+                    </div>
+                </div>
+
+                <!-- Calendar Grid (Interactive) -->
+                <div id="employer-calendar">
                     <!-- MOBILE VIEW: Simple calendar with modal (current behavior) -->
                     <div class="block md:hidden w-full border border-[#22A9C8] rounded-xl p-6 bg-white">
-                        <div class="grid grid-cols-7 gap-4 mb-8">
+                        <!-- Headers -->
+                         <div class="grid grid-cols-7 gap-4 mb-8">
                             @foreach(['Dom', 'Lun', 'Mar', 'Mier', 'Jue', 'Vie', 'Sab'] as $dayName)
                                 <div class="text-center font-bold text-gray-900 text-base">{{ $dayName }}</div>
                             @endforeach
-                        </div>
+                         </div>
 
+                        <!-- Days -->
                         <div class="grid grid-cols-7 gap-y-6 gap-x-4">
                             @foreach($calendar as $day)
                                 <div class="flex flex-col items-center justify-start min-h-[60px]">
@@ -268,8 +520,8 @@
                                         >
                                             <span class="z-10">{{ str_pad($day['day'], 2, '0', STR_PAD_LEFT) }}</span>
                                             
-                                            <!-- Red Dot Indicator -->
-                                            @if(count($day['employees']) > 0)
+                                            <!-- Red Dot Indicator: Only if there are unapproved hours or recoveries -->
+                                            @if($day['has_pending'])
                                                 <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
                                             @endif
 
@@ -282,14 +534,16 @@
                         </div>
                     </div>
 
-                    <!-- DESKTOP VIEW -->
+                    <!-- DESKTOP VIEW: Detailed calendar showing all hours -->
                     <div class="hidden md:block w-full border border-[#22A9C8] rounded-xl p-6 bg-white">
+                        <!-- Headers -->
                         <div class="grid grid-cols-7 gap-3 mb-6">
                             @foreach(['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as $dayName)
                                 <div class="text-center font-bold text-gray-900 text-sm">{{ $dayName }}</div>
                             @endforeach
                         </div>
 
+                        <!-- Days Grid -->
                         <div class="grid grid-cols-7 gap-3">
                             @foreach($calendar as $day)
                                 <div 
@@ -301,8 +555,8 @@
                                     @endif
                                 >
                                     @if($day['is_current_month'])
-                                        <!-- Day Number Badge -->
-                                        <div class="flex justify-center mb-3">
+                                        <!-- Day Number Badge & Actionable Indicator -->
+                                        <div class="flex justify-center items-center gap-2 mb-3">
                                             <span class="bg-[#22A9C8] text-white rounded-full px-3 py-1 text-xs font-bold">
                                                 {{ str_pad($day['day'], 2, '0', STR_PAD_LEFT) }}
                                             </span>
@@ -317,11 +571,15 @@
                                             @endif
                                         </div>
 
+                                        <!-- Professionals Hours -->
                                         @if(count($day['employees']) > 0)
                                             <div class="space-y-2 flex-1">
                                                 @foreach($day['employees'] as $employee)
                                                     <div class="flex items-center gap-2" title="{{ $employee['name'] }}">
+                                                        <!-- Avatar / Initials -->
                                                         <x-user-avatar :name="$employee['name']" :avatar="$employee['avatar']" size="6" />
+                                                        
+                                                        <!-- Hours -->
                                                         <span class="text-xs text-gray-700 font-medium">
                                                             {{ round($employee['hours']) }}h
                                                         </span>
@@ -337,6 +595,7 @@
                                         <!-- Red Badge for Pending Recoveries -->
                                         <!-- Red Badge for Pending Recoveries Removed -->
                                     @else
+                                        <!-- Empty cell for days outside current month -->
                                         <div class="opacity-30">
                                             <div class="flex justify-center mb-3">
                                                 <span class="bg-gray-300 text-gray-500 rounded-full px-3 py-1 text-xs font-bold">
@@ -350,197 +609,7 @@
                         </div>
                     </div>
 
-<!-- Modal para aprobar semana -->
-<div
-    x-show="showApproveWeekModal"
-    x-transition
-    style="display: none;"
-    class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
-    aria-labelledby="approveWeekModalLabel"
-    role="dialog"
-    aria-modal="true"
->
-    <!-- Backdrop -->
-    <div
-        x-show="showApproveWeekModal"
-        x-transition.opacity
-        class="fixed inset-0 bg-gray-500 bg-opacity-75"
-        @click="showApproveWeekModal = false"
-    ></div>
-
-    <!-- Panel -->
-    <div
-        x-show="showApproveWeekModal"
-        x-transition
-        class="relative bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full z-10"
-    >
-        <form @submit.prevent="approveWeek()" class="p-6">
-            <h5 class="text-lg font-bold mb-4">Aprobar horas de la semana</h5>
-
-            <label for="week_date" class="form-label">Selecciona cualquier día de la semana</label>
-            <input type="date" id="week_date" x-model="weekDate" class="form-control w-full mb-3" required>
-            <p class="text-sm text-gray-500 mb-4">El sistema tomará automáticamente la semana completa a la que corresponde el día seleccionado.</p>
-
-            <!-- Mensaje de confirmación -->
-            <div x-show="weekSuccessMessage" x-transition class="mb-4 p-3 bg-green-50 text-green-700 rounded-lg">
-                <p x-text="weekSuccessMessage"></p>
-            </div>
-
-            <div class="flex justify-end gap-3">
-                <button type="button" @click="showApproveWeekModal = false" class="px-4 py-2 bg-gray-200 rounded-lg">Cancelar</button>
-                <button type="submit" :disabled="isApprovingWeek"
-                        class="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center gap-2 disabled:opacity-50">
-                    <span x-text="isApprovingWeek ? 'Aprobando...' : 'Aprobar semana'"></span>
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-
-
-                    <!-- Modal para aprobar todo el mes -->
-                    <div
-                        x-show="showApproveAllModal"
-                        style="display: none;"
-                        class="fixed inset-0 z-[60] overflow-y-auto"
-                        aria-labelledby="approve-all-modal-title"
-                        role="dialog"
-                        aria-modal="true"
-                    >
-                        <div
-                            x-show="showApproveAllModal"
-                            x-transition:enter="ease-out duration-300"
-                            x-transition:enter-start="opacity-0"
-                            x-transition:enter-end="opacity-100"
-                            x-transition:leave="ease-in duration-200"
-                            x-transition:leave-start="opacity-100"
-                            x-transition:leave-end="opacity-0"
-                            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-                            @click="showApproveAllModal = false"
-                        ></div>
-
-                        <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
-                            <div
-                                x-show="showApproveAllModal"
-                                x-transition:enter="ease-out duration-300"
-                                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                                x-transition:leave="ease-in duration-200"
-                                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                                class="relative bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full"
-                            >
-                                <div class="bg-white px-6 pt-6 pb-4">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="p-2 bg-yellow-50 rounded-lg">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <h3 class="text-lg font-bold text-gray-900" id="approve-all-modal-title">
-                                                    Aprobar todo el mes
-                                                </h3>
-                                                <p class="text-sm text-gray-500 mt-1">
-                                                    {{ ucfirst($currentMonth->translatedFormat('F Y')) }}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            @click="showApproveAllModal = false" 
-                                            class="text-gray-400 hover:text-gray-500 transition-colors"
-                                        >
-                                            <span class="sr-only">Cerrar</span>
-                                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="bg-white px-6 py-4">
-                                    <div class="space-y-4">
-                                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
-                                            <div class="flex">
-                                                <div class="flex-shrink-0">
-                                                    <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                                    </svg>
-                                                </div>
-                                                <div class="ml-3">
-                                                    <p class="text-sm text-yellow-700 font-medium">
-                                                        ¡Atención! Esta acción aprobará TODAS las horas pendientes del mes.
-                                                    </p>
-                                                    <p class="text-sm text-yellow-600 mt-2">
-                                                        • Se aprobarán horas de todos los empleados<br>
-                                                        • Esta acción no se puede deshacer
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="bg-gray-50 rounded-lg p-4">
-                                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Resumen del mes</h4>
-                                            <div class="grid grid-cols-2 gap-4">
-                                                <div class="text-center">
-                                                    <p class="text-2xl font-bold text-[#22A9C8]">
-                                                        {{ count($employeeSummaries) }}
-                                                    </p>
-                                                    <p class="text-xs text-gray-500">Empleados</p>
-                                                </div>
-                                                <div class="text-center">
-                                                    <p class="text-2xl font-bold text-green-500">
-                                                        {{ collect($calendar)->where('is_current_month', true)->sum(fn($day) => count($day['employees'])) }}
-                                                    </p>
-                                                    <p class="text-xs text-gray-500">Registros totales</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Mensaje de confirmación -->
-<div 
-    x-show="allMonthSuccessMessage"
-    x-transition
-    class="mb-4 p-3 bg-green-50 text-green-700 rounded-lg"
->
-    <p x-text="allMonthSuccessMessage"></p>
-</div>
-
-                                <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
-                                    <div class="flex justify-end gap-3">
-                                        <button 
-                                            type="button" 
-                                            @click="showApproveAllModal = false"
-                                            class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
-                                        >
-                                            Cancelar
-                                        </button>
-                                        <button 
-                                            type="button" 
-                                            @click="approveAllMonth()"
-                                            :disabled="isApprovingAll"
-                                            class="px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                        >
-                                            <svg x-show="!isApprovingAll" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            <svg x-show="isApprovingAll" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            <span x-text="isApprovingAll ? 'Aprobando...' : 'Confirmar Aprobación'"></span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Custom Backdrop & Modal para detalles diarios (EXISTENTE) -->
+                    <!-- Custom Backdrop & Modal -->
                     <div
                         x-show="showModal"
                         style="display: none;"
@@ -794,7 +863,7 @@
                     
                                 <label for="week_date" class="form-label">Selecciona cualquier día de la semana</label>
                                 <input type="date" id="week_date" x-model="weekDate" class="form-control w-full mb-3 rounded-lg border-gray-300" required>
-                                <p class="text-sm text-gray-500 mb-4">El sistema tomará automáticamente el lunes y viernes de esa semana.</p>
+                                <p class="text-sm text-gray-500 mb-4">El sistema tomará automáticamente la semana completa a la que corresponde el día seleccionado.</p>
                     
                                 <div x-show="weekSuccessMessage" x-transition class="mb-4 p-3 bg-green-50 text-green-700 rounded-lg">
                                     <p x-text="weekSuccessMessage"></p>
@@ -951,7 +1020,11 @@
                         </div>
                     </div>
                 </div>
+
             </div>
+
+
         </div>
     </div>
 </x-app-layout>
+
