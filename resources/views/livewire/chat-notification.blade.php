@@ -5,11 +5,8 @@
     >
         Chat
         
-        @if($unreadCount > 0)
-            <span class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm animate-pulse">
-                {{ $unreadCount > 99 ? '99+' : $unreadCount }}
-            </span>
-        @endif
+        {{-- Notification badge removed per user request --}}
+        {{-- Notification badge removed per user request --}}
     </a>
 
     <audio id="notification-sound" preload="auto">

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro - Obertrack</title>
+    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,11 +48,7 @@
     <div class="w-full max-w-sm glass-card rounded-3xl p-6 sm:p-8">
         <!-- Logo -->
         <div class="flex flex-col items-center mb-4">
-            <x-application-logo class="block h-10 w-auto fill-current text-gray-800 mb-1" />
-            <div class="text-center">
-                <span class="font-bold text-xl tracking-tight text-gray-900 leading-none">Obertrack</span>
-                <span class="text-[0.5rem] font-bold tracking-widest text-gray-500 uppercase leading-none block mt-0.5">REMOTE WORK TRACKING</span>
-            </div>
+            <x-application-logo class="block h-16 w-auto" />
         </div>
 
         <h2 class="text-xl font-bold text-center text-[#1e1b4b] mb-4">
@@ -156,6 +153,13 @@
                     ¿Ya tienes una cuenta? <a href="{{ route('login') }}" class="text-primary hover:text-primary-hover underline">Inicia sesión</a>
                 </p>
 
+                <p id="msg_empleado" class="hidden text-xs text-gray-600 text-center mb-4 transition-all duration-300">
+                    Recibirás notificaciones por WhatsApp relacionadas con tus tareas.
+                </p>
+                <p id="msg_empleador" class="hidden text-xs text-gray-600 text-center mb-4 transition-all duration-300">
+                    Recibirás notificaciones por Whatsapp relacionadas con tus profesionales.
+                </p>
+
                 <button type="submit" class="bg-primary hover:bg-primary-hover text-white font-bold py-2.5 px-10 rounded-full transition duration-300 shadow-lg w-auto inline-block text-sm">
                     Registrarse
                 </button>
@@ -171,14 +175,20 @@
                     $('#empleado_por_id_container').slideDown(200);
                     $('#job_title_container').slideDown(200);
                     $('#company_fields_container').slideUp(200);
+                    $('#msg_empleado').removeClass('hidden');
+                    $('#msg_empleador').addClass('hidden');
                 } else if (selectedValue === 'empleador') {
                     $('#empleado_por_id_container').slideUp(200);
                     $('#job_title_container').slideUp(200);
                     $('#company_fields_container').slideDown(200);
+                    $('#msg_empleado').addClass('hidden');
+                    $('#msg_empleador').removeClass('hidden');
                 } else {
                     $('#empleado_por_id_container').slideUp(200);
                     $('#job_title_container').slideUp(200);
                     $('#company_fields_container').slideUp(200);
+                    $('#msg_empleado').addClass('hidden');
+                    $('#msg_empleador').addClass('hidden');
                 }
             });
             // Trigger change on load if value is pre-selected
@@ -187,10 +197,14 @@
                  $('#empleado_por_id_container').show();
                  $('#job_title_container').show();
                  $('#company_fields_container').hide();
+                 $('#msg_empleado').removeClass('hidden');
+                 $('#msg_empleador').addClass('hidden');
             } else if(currentVal === 'empleador') {
                  $('#empleado_por_id_container').hide();
                  $('#job_title_container').hide();
                  $('#company_fields_container').show();
+                 $('#msg_empleado').addClass('hidden');
+                 $('#msg_empleador').removeClass('hidden');
             }
         });
     </script>

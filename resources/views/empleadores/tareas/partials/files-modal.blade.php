@@ -82,15 +82,16 @@
                 <template x-for="file in activeTask.attachments" :key="file.id">
                     <div class="bg-gray-50 rounded-lg p-4 flex items-center text-sm">
                         <!-- Name -->
-                        <div class="w-1/2 flex items-center gap-2 font-medium text-gray-800 italic">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        <div class="w-1/2 flex items-center gap-2 font-medium text-gray-800 italic truncate pr-4">
+                             <svg xmlns="http://www.w3.org/2000/svg" :class="'h-5 w-5 ' + (file.file_icon || 'text-gray-400')" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 3.414L15.586 7 18 10v6a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/>
                             </svg>
-                           <a :href="'/storage/' + file.stored_filename" target="_blank" class="hover:underline" x-text="file.filename"></a>
+                           <a :href="file.download_url" target="_blank" class="hover:underline truncate" x-text="file.filename"></a>
                         </div>
-                        <!-- Type -->
-                        <div class="w-1/4 text-gray-600 uppercase font-bold text-xs pl-1">
-                             <span x-text="file.filename.split('.').pop()"></span>
+                        <!-- Type / Size -->
+                        <div class="w-1/4 text-gray-600 flex flex-col uppercase">
+                             <span class="font-bold text-xs" x-text="file.file_type || file.filename.split('.').pop()"></span>
+                             <span class="text-[10px] lowercase text-gray-400 font-normal italic" x-text="'(' + (file.file_size_human || '') + ')'"></span>
                         </div>
                         <!-- Modified -->
                         <div class="w-1/4 text-gray-500 text-xs">
@@ -106,11 +107,31 @@
         </div>
 
         <!-- Footer / Upload -->
-        <div class="p-8 flex justify-center shrink-0 bg-white">
+        <div class="p-8 flex flex-col justify-center items-center shrink-0 bg-white">
+             <!-- Progress Bar -->
+             <div x-show="isUploading" class="w-full max-w-xs mb-4">
+                 <div class="flex justify-between items-center mb-1">
+                     <span class="text-xs font-bold text-[#22A9C8]">Subiendo...</span>
+                     <span class="text-xs font-medium text-gray-500" x-text="uploadProgress + '%'"></span>
+                 </div>
+                 <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden border border-gray-200">
+                     <div class="bg-[#22A9C8] h-2 rounded-full transition-all duration-300 shadow-sm" :style="'width: ' + uploadProgress + '%'"></div>
+                 </div>
+             </div>
+             
+             <div x-show="isUploading" class="mb-4 text-[#22A9C8] flex items-center gap-2">
+                <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-sm font-medium">Procesando archivo...</span>
+             </div>
+
              <!-- Hidden File Input -->
              <input type="file" x-ref="fileInput" class="hidden" @change="uploadFile(activeTask.id, $event.target.files[0])">
              
              <button 
+                x-show="!isUploading"
                 @click="$refs.fileInput.click()"
                 class="border border-[#22A9C8] text-[#0D1E4C] hover:bg-[#22A9C8] hover:text-white font-medium py-2 px-10 rounded-full transition-colors shadow-sm"
             >

@@ -4,15 +4,8 @@
         <div class="flex justify-between h-20 items-center">
             <!-- Logo -->
             <div class="shrink-0 flex items-center">
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
-                    <x-application-logo class="block h-10 w-auto fill-current text-gray-800" />
-                    <div class="flex flex-col">
-                        <div class="relative inline-block">
-                            <span class="font-bold text-2xl tracking-tight text-gray-900 leading-none">Obertrack</span>
-                            <span class="absolute -top-1 -right-3 text-[0.5rem] font-bold text-gray-900">TM</span>
-                        </div>
-                        <span class="text-[0.6rem] font-bold tracking-widest text-gray-500 uppercase leading-none mt-0.5">Remote Work Tracking</span>
-                    </div>
+                <a href="{{ route('dashboard') }}" class="flex items-center">
+                    <x-application-logo class="block h-16 w-auto" />
                 </a>
             </div>
 
@@ -27,7 +20,7 @@
                 
                 @if(auth()->user()->tipo_usuario === 'empleador')
                     <a href="{{ route('empleador.dashboard') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
-                        Monitoreo de horas
+                        Dashboard
                     </a>
                     <a href="{{ route('empleadores.tareas-asignadas') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleadores.tareas-asignadas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Tareas
@@ -38,7 +31,7 @@
                 @elseif(auth()->user()->is_manager)
                     <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         <span class="flex items-center gap-2">
-                            Mis horas
+                            Mis tareas
                             <span class="px-2 py-0.5 bg-primary text-white text-xs rounded-full">Manager</span>
                         </span>
                     </a>
@@ -51,10 +44,10 @@
 
                 @else
                     <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
-                        Registrar horas
+                        Registrar jornada
                     </a>
                     <a href="{{ route('empleados.tasks.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleados.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
-                        Tareas
+                        Tareas asignadas
                     </a>
                 @endif
 
@@ -64,12 +57,15 @@
                     </a>
                 @endif
 
-                <a href="https://wa.me/5491112345678" target="_blank" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out text-[#25D366] hover:bg-[#25D366]/10">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                    </svg>
-                    <span class="ms-2">WhatsApp</span>
-                </a>
+                @if(auth()->user()->tipo_usuario === 'empleado')
+                    <a href="{{ route('whatsapp.chat') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('whatsapp.chat') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-[#25D366] hover:bg-[#25D366]/10' }}">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                        </svg>
+                        <span class="ms-2">WhatsApp</span>
+                    </a>
+                @endif
+                {{-- Cache buster: Force recompile --}}
 
                 <livewire:chat-notification />
 
@@ -90,7 +86,13 @@
                         ->whereRaw('approved IS FALSE')
                         ->exists();
                     
-                    if ($totalPendingHours && $empleados->count() > 0) {
+                    // Check for pending recoveries
+                    $totalPendingRecoveries = \App\Models\WorkHours::whereIn('user_id', $empleados->pluck('id'))
+                        ->where('recovered_hours', '>', 0)
+                        ->whereRaw('recovery_approved IS FALSE')
+                        ->exists();
+                    
+                    if (($totalPendingHours || $totalPendingRecoveries) && $empleados->count() > 0) {
                         // Get detailed breakdown by employee
                         $workHoursSummary = [];
                         foreach ($empleados as $empleado) {
@@ -106,16 +108,34 @@
                             }
                         }
                         
-                        if (!empty($workHoursSummary)) {
+                        // Get recovery requests
+                        $recoveryRequests = \App\Models\WorkHours::whereIn('user_id', $empleados->pluck('id'))
+                            ->where('recovered_hours', '>', 0)
+                            ->whereRaw('recovery_approved IS FALSE')
+                            ->with('user')
+                            ->get();
+                        
+                        if (!empty($workHoursSummary) || $recoveryRequests->count() > 0) {
                             $pendingWeeks[] = [
                                 'start' => \Illuminate\Support\Carbon::now()->subWeek(),
                                 'end' => \Illuminate\Support\Carbon::now(),
-                                'summary' => $workHoursSummary
+                                'summary' => $workHoursSummary,
+                                'recovery_requests' => $recoveryRequests
                             ];
                         }
                     }
                     
-                    $pendingCount = count($pendingWeeks);
+                    // Count both pending hours and recovery requests
+                    $pendingCount = 0;
+                    foreach ($pendingWeeks as $week) {
+                        // Only count employees who actually have pending hours in this week
+                        $pendingCount += collect($week['summary'])->filter(fn($emp) => $emp['pending_hours'] > 0)->count();
+                        
+                        // Add recovery requests if present
+                        if (isset($week['recovery_requests'])) {
+                            $pendingCount += $week['recovery_requests']->count();
+                        }
+                    }
                 @endphp
                 <x-notifications.employer-bell :pendingCount="$pendingCount" :pendingWeeks="$pendingWeeks" />
             @endif
@@ -201,9 +221,16 @@
                 </x-responsive-nav-link>
             @endif
             
-            @if(auth()->user()->tipo_usuario === 'empleador')
+            @if(auth()->user()->role === 'empleado')
+            <x-responsive-nav-link :href="route('empleado.registrar-horas')" :active="request()->routeIs('empleado.registrar-horas')">
+                {{ __('Notificar tareas') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('empleados.tasks.index')" :active="request()->routeIs('empleados.tasks.index')">
+                {{ __('Tareas asignadas') }}
+            </x-responsive-nav-link>
+        @endif        @if(auth()->user()->tipo_usuario === 'empleador')
                 <x-responsive-nav-link :href="route('empleador.dashboard')" :active="request()->routeIs('empleador.dashboard')">
-                    Monitoreo de horas
+                    Dashboard
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('empleadores.tareas-asignadas')" :active="request()->routeIs('empleadores.tareas-asignadas')">
                     Tareas
@@ -213,7 +240,7 @@
                 </x-responsive-nav-link>
             @else
                 <x-responsive-nav-link :href="route('empleado.registrar-horas')" :active="request()->routeIs('empleado.registrar-horas')">
-                    {{ auth()->user()->is_manager ? 'Mis horas' : 'Registrar horas' }}
+                    {{ auth()->user()->is_manager ? 'Mis horas' : 'Registro de jornada' }}
                 </x-responsive-nav-link>
 
                 @if(auth()->user()->is_manager)
@@ -223,7 +250,7 @@
                 @endif
 
                 <x-responsive-nav-link :href="route('empleadores.tareas-asignadas')" :active="request()->routeIs('empleadores.tareas-asignadas')">
-                    Tareas
+                    Tareas asignadas
                 </x-responsive-nav-link>
                 
 
@@ -233,14 +260,16 @@
                 {{ __('Chat') }}
             </x-responsive-nav-link>
 
-            <a href="https://wa.me/5491112345678" target="_blank" class="flex items-center w-full ps-3 pe-4 py-2 border-l-4 border-transparent text-left text-base font-medium text-[#25D366] hover:text-[#128C7E] hover:bg-gray-50 hover:border-[#25D366] transition duration-150 ease-in-out">
-                <div class="flex items-center gap-3">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                    </svg>
-                    <span>WhatsApp</span>
-                </div>
-            </a>
+            @if(auth()->user()->tipo_usuario === 'empleado')
+                <x-responsive-nav-link :href="route('whatsapp.chat')" :active="request()->routeIs('whatsapp.chat')">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                        </svg>
+                        <span>WhatsApp</span>
+                    </div>
+                </x-responsive-nav-link>
+            @endif
 
 
         </div>

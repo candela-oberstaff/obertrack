@@ -1,0 +1,144 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\RecoveryHour;
+use App\Models\User;
+use App\Models\WorkHours;
+use App\Services\BrevoEmailService;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class RecoveryHoursController extends Controller
+{
+    public function __construct(
+        private BrevoEmailService $emailService
+    ) {}
+
+    /**
+     * Store a new recovery hour record.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'hours' => 'required|numeric|min:0.5|max:12',
+            'activities' => 'required|string|min:5',
+        ]);
+
+        $user = auth()->user();
+        $today = now()->toDateString();
+
+        // Create recovery record
+        try {
+            $recovery = RecoveryHour::create([
+                'user_id' => $user->id,
+                'recovery_date' => $today,
+                'hours_recovered' => $request->hours,
+                'activities' => $request->activities,
+                'approved' => \DB::raw('false'), // Needs employer approval
+            ]);
+
+            // Notify employer
+            $employer = $user->empleador_id ? User::find($user->empleador_id) : null;
+            if ($employer) {
+                try {
+                    $this->emailService->sendRecoveryRequestNotification(
+                        $employer->email,
+                        $employer->name,
+                        [
+                            'employee_name' => $user->name,
+                            'date' => now()->format('d/m/Y'),
+                            'hours' => $request->hours,
+                            'activities' => $request->activities
+                        ]
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Error sending recovery notification: ' . $e->getMessage());
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Solicitud de recuperación registrada correctamente. Pendiente de aprobación.',
+                'recovery' => $recovery
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error saving recovery hours: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al registrar la recuperación: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get recovery history for the authenticated professional.
+     */
+    public function index()
+    {
+        $user = auth()->user();
+        $recoveries = RecoveryHour::where('user_id', $user->id)
+            ->orderBy('recovery_date', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'recoveries' => $recoveries
+        ]);
+    }
+
+    /**
+     * Approve or reject a recovery request (Employer/Admin).
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'approved' => 'required|boolean'
+        ]);
+
+        $recovery = RecoveryHour::findOrFail($id);
+        
+        // Authorization check (could use a Policy)
+        if (auth()->user()->tipo_usuario !== 'empleador' && !auth()->user()->is_superadmin) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $recovery->update([
+            'approved' => $request->approved ? \DB::raw('true') : \DB::raw('false'),
+            'approved_at' => $request->approved ? now() : null
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $request->approved ? 'Recuperación aprobada' : 'Recuperación rechazada'
+        ]);
+    }
+
+    /**
+     * Helper to get total debt vs recovered for a user.
+     */
+    public static function getDebtSummary($userId)
+    {
+        // Debt comes from WorkHours records with absence
+        $totalDebt = WorkHours::where('user_id', $userId)
+            ->where('absence_hours', '>', 0)
+            ->sum('absence_hours');
+
+        // Recovered comes from the new RecoveryHour table
+        $totalRecovered = RecoveryHour::where('user_id', $userId)
+            ->whereRaw('approved IS TRUE')
+            ->sum('hours_recovered');
+        $pendingApproval = RecoveryHour::where('user_id', $userId)
+            ->whereRaw('approved IS FALSE')
+            ->sum('hours_recovered');
+
+        return [
+            'total_debt' => (float)$totalDebt,
+            'total_recovered' => (float)$totalRecovered,
+            'pending_approval' => (float)$pendingApproval,
+            'remaining_debt' => (float)max(0, $totalDebt - $totalRecovered)
+        ];
+    }
+}

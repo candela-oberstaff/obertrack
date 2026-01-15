@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\WorkHours;
+use App\Models\RecoveryHour;
 use Illuminate\Support\Carbon;
 
 class WorkHoursSummaryService
@@ -75,12 +76,38 @@ class WorkHoursSummaryService
                 ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
                 ->whereRaw('approved IS FALSE')
                 ->exists();
+
+            if (!$pendingHoursExists) {
+                $pendingHoursExists = RecoveryHour::whereIn('user_id', $empleados->pluck('id'))
+                    ->whereBetween('recovery_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
+                    ->whereRaw('approved IS FALSE')
+                    ->exists();
+            }
             
             if ($pendingHoursExists) {
+                $summary = $this->getWorkHoursSummary($empleados, $weekStart, $weekEnd);
+                
+                // Add recovery pending data
+                $recoveryPending = RecoveryHour::whereIn('user_id', $empleados->pluck('id'))
+                    ->whereBetween('recovery_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
+                    ->whereRaw('approved IS FALSE')
+                    ->get();
+
+                // Merge with old recoveries for transition period
+                $oldRecoveryPending = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+                    ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
+                    ->where('recovered_hours', '>', 0)
+                    ->whereRaw('recovery_approved IS FALSE')
+                    ->get();
+                
+                // We'll pass the new ones primarily, but keep legacy support if needed in view
+                // For now, let's just use the new ones as the source of truth for "RecoveryHour" objects
+                
                 $pendingWeeks[] = [
                     'start' => $weekStart,
                     'end' => $weekEnd,
-                    'summary' => $this->getWorkHoursSummary($empleados, $weekStart, $weekEnd)
+                    'summary' => $summary,
+                    'recovery_requests' => $recoveryPending
                 ];
             }
         }

@@ -35,8 +35,8 @@ class ProfileController extends Controller
     }
 
     // Cambiar el estado de is_superadmin
-    $user->is_superadmin = !$user->is_superadmin; // Alternar el valor
-    $user->save();
+    $newValue = !$user->is_superadmin;
+    $user->update(['is_superadmin' => $newValue ? DB::raw('true') : DB::raw('false')]);
 
     $action = $user->is_superadmin ? 'promovido a' : 'degradado de';
     return back()->with('status', "El usuario ha sido {$action} SuperAdmin exitosamente.");
@@ -61,18 +61,28 @@ class ProfileController extends Controller
 
     public function promoverAManager(User $user)
     {
-        if ($user->tipo_usuario === 'empleado' && !$user->is_manager) {
-            $user->promoverAManager();
-            return redirect()->back()->with('success', 'Usuario promovido a manager exitosamente.');
+        if ($user->tipo_usuario === 'empleado') {
+            \Illuminate\Support\Facades\DB::table('users')
+                ->where('id', $user->id)
+                ->update(['is_manager' => \Illuminate\Support\Facades\DB::raw('true')]);
+
+            $freshStatus = \Illuminate\Support\Facades\DB::table('users')->where('id', $user->id)->value('is_manager');
+            $statusText = $freshStatus ? 'Manager' : 'Profesional';
+            return redirect()->back()->with('success', "Usuario promovido a manager exitosamente. Estado actual en DB: {$statusText}");
         }
         return redirect()->back()->with('error', 'No se pudo promover al usuario a manager.');
     }
 
     public function degradarDeManager(User $user)
     {
-        if ($user->tipo_usuario === 'empleado' && $user->is_manager) {
-            $user->degradarDeManager();
-            return redirect()->back()->with('success', 'Manager degradado a empleado regular exitosamente.');
+        if ($user->tipo_usuario === 'empleado') {
+            \Illuminate\Support\Facades\DB::table('users')
+                ->where('id', $user->id)
+                ->update(['is_manager' => \Illuminate\Support\Facades\DB::raw('false')]);
+
+            $freshStatus = \Illuminate\Support\Facades\DB::table('users')->where('id', $user->id)->value('is_manager');
+            $statusText = $freshStatus ? 'Manager' : 'Profesional';
+            return redirect()->back()->with('success', "Manager degradado exitosamente. Estado actual en DB: {$statusText}");
         }
         return redirect()->back()->with('error', 'No se pudo degradar al manager.');
     }
@@ -105,6 +115,14 @@ class ProfileController extends Controller
         }
 
         $user->save();
+
+        if ($user->tipo_usuario === 'empleado' && 
+            !empty($user->phone_number) && 
+            !empty($user->location) && 
+            !empty($user->country) && 
+            !empty($user->city)) {
+            return Redirect::route('empleado.registrar-horas')->with('success', 'Perfil completado exitosamente. Ahora puedes registrar tus horas.');
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

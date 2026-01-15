@@ -74,7 +74,8 @@ class EmployeeTaskController extends Controller
             abort(403);
         }
 
-        $task->update(['completed' => !$task->completed]);
+        $newValue = !$task->completed;
+        $task->update(['completed' => $newValue ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false')]);
 
         return response()->json([
             'success' => true,

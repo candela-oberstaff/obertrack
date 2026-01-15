@@ -138,9 +138,6 @@
             <!-- Header -->
             <div class="header">
                 <img src="https://obertrack.com/images/logo.png" alt="Obertrack" class="logo">
-                <div style="margin-top: 10px;">
-                    <span style="font-weight: bold; font-size: 20px; color: #22A9C8;">Obertrack</span>
-                </div>
             </div>
 
             <!-- Content -->

@@ -23,6 +23,14 @@ Route::middleware(['auth'])->prefix('empleador')->name('empleador.')->group(func
     // GET /empleador/dashboard - View employer dashboard with employee work hours summary
     Route::get('/dashboard', [DashboardController::class, 'empleadorDashboard'])
         ->name('dashboard');
+
+    // GET /empleador/detalle-diario/{date} - View full details of a specific day for all employees
+    Route::get('/detalle-diario/{date}', [DashboardController::class, 'dailyDetail'])
+        ->name('detalle-diario');
+
+    // API: GET /empleador/api/day-details/{date} - Get JSON details for real-time updates
+    Route::get('/api/day-details/{date}', [DashboardController::class, 'getDayDetailsJson'])
+        ->name('api.day-details');
     
     // Task Management
     // GET /empleador/tareas - View all employee tasks with filters and charts

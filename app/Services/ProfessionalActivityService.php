@@ -15,8 +15,9 @@ class ProfessionalActivityService
     public function getStatusesForUsers(Collection $users): Collection
     {
         return $users->map(function ($professional) {
-            $lastWorkDay = $this->getLastWorkingDay();
-            $dayBeforeLastWorkDay = $this->getWorkingDayBefore($lastWorkDay);
+            $lastWorkDay = $this->getLastWorkingDay()->startOfDay();
+            $dayBeforeLastWorkDay = $this->getWorkingDayBefore($lastWorkDay)->startOfDay();
+            $registrationDate = $professional->created_at->startOfDay();
 
             $hasHoursLast = $this->hasHoursOn($professional->id, $lastWorkDay);
             $hasHoursBefore = $this->hasHoursOn($professional->id, $dayBeforeLastWorkDay);
@@ -24,13 +25,14 @@ class ProfessionalActivityService
             $status = 'active';
             $daysInactive = 0;
 
-            if (!$hasHoursLast) {
+            // Only consider inactive if they were registered on or before the target workday
+            if (!$hasHoursLast && $registrationDate->lessThanOrEqualTo($lastWorkDay)) {
                 $status = 'yellow';
                 $daysInactive = 1;
                 
-                if (!$hasHoursBefore) {
+                if (!$hasHoursBefore && $registrationDate->lessThanOrEqualTo($dayBeforeLastWorkDay)) {
                     $status = 'red';
-                    $daysInactive = 2; // Simplification: at least 2
+                    $daysInactive = 2; // Inactive for at least 2 working days
                 }
             }
 

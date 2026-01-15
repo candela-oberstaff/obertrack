@@ -5,6 +5,7 @@ namespace App\Services;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\WorkHours;
+use App\Models\RecoveryHour;
 
 class ReportService
 {
@@ -174,5 +175,59 @@ class ReportService
             'summary' => $summary,
             'fileName' => "reporte_mensual_{$employee->name}_{$month->format('Y_m')}.csv"
         ];
+    }
+
+    /**
+     * Generate PDF Report for Client (Weekly/Monthly)
+     */
+    public function generateClientReportPDF(User $company, Carbon $startDate, Carbon $endDate, string $type = 'Semanal')
+    {
+        $professionals = $company->empleados;
+        $professionalsData = [];
+        
+        foreach ($professionals as $prof) {
+            $records = WorkHours::where('user_id', $prof->id)
+                ->whereBetween('work_date', [$startDate, $endDate])
+                ->orderBy('work_date')
+                ->get();
+
+            $recoveryRecords = RecoveryHour::where('user_id', $prof->id)
+                ->whereBetween('recovery_date', [$startDate, $endDate])
+                ->orderBy('recovery_date')
+                ->get();
+            
+            $totalHours = $records->sum('hours_worked');
+            $approvedHours = $records->where('approved', true)->sum('hours_worked');
+            $pendingHours = $records->where('approved', false)->sum('hours_worked');
+            $absencesCount = $records->where('absence_hours', '>', 0)->count();
+            
+            // Add recovered hours to stats (Collection filtering is safe)
+            $totalRecovered = $recoveryRecords->where('approved', true)->sum('hours_recovered');
+            $pendingRecovered = $recoveryRecords->where('approved', false)->sum('hours_recovered');
+            
+            $professionalsData[] = [
+                'user' => $prof,
+                'name' => $prof->name,
+                'email' => $prof->email,
+                'total_hours' => $totalHours,
+                'approved_hours' => $approvedHours,
+                'pending_hours' => $pendingHours,
+                'absences_count' => $absencesCount,
+                'total_recovered' => $totalRecovered,
+                'pending_recovered' => $pendingRecovered,
+                'records' => $records,
+                'recovery_records' => $recoveryRecords
+            ];
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.client_pdf', [
+            'companyName' => $company->company_name ?? $company->name,
+            'startDate' => $startDate->format('d/m/Y'),
+            'endDate' => $endDate->format('d/m/Y'),
+            'type' => $type,
+            'professionalsData' => $professionalsData
+        ]);
+        
+        return $pdf->output();
     }
 }

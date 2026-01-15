@@ -61,9 +61,53 @@ class CalendarService
      */
     public function getTotalHoursForMonth(Carbon $month, int $userId): float
     {
-        return WorkHours::where('user_id', $userId)
+        return (float) WorkHours::where('user_id', $userId)
             ->whereYear('work_date', $month->year)
             ->whereMonth('work_date', $month->month)
-            ->sum('hours_worked');
+            ->sum(\Illuminate\Support\Facades\DB::raw('hours_worked + CASE WHEN recovery_approved = true THEN recovered_hours ELSE 0 END'));
+    }
+
+    /**
+     * Get missing hours (deficit) for the month up to today
+     * 
+     * @param Carbon $month The month to calculate for
+     * @param int $userId User ID
+     * @return float Missing hours
+     */
+    public function getMissingHours(Carbon $month, int $userId): float
+    {
+        $today = Carbon::now();
+        $startOfMonth = $month->copy()->startOfMonth();
+        $endOfMonth = $month->copy()->endOfMonth();
+        
+        // If we are looking at a future month, expected hours is 0
+        if ($startOfMonth->isFuture()) {
+            return 0;
+        }
+
+        // We only expect hours up to today (if in current month) or end of month (if in past)
+        $limitDate = $month->isCurrentMonth() ? $today : $endOfMonth;
+
+        // 1. Calculate Expected Hours (8 hours per weekday)
+        $expectedHours = 0;
+        $tempDate = $startOfMonth->copy();
+        while ($tempDate->lte($limitDate)) {
+            if ($tempDate->isWeekday()) {
+                $expectedHours += 8;
+            }
+            $tempDate->addDay();
+        }
+
+        // 2. Calculate Actual + Pending Recovery Hours
+        // We sum hours_worked and ALL recovered_hours (approved or pending)
+        // because once requested, they count against the deficit limit.
+        $actualHours = (float) WorkHours::where('user_id', $userId)
+            ->whereYear('work_date', $month->year)
+            ->whereMonth('work_date', $month->month)
+            ->sum(\Illuminate\Support\Facades\DB::raw('hours_worked + recovered_hours'));
+
+        $missing = $expectedHours - $actualHours;
+        
+        return max(0, $missing);
     }
 }

@@ -28,8 +28,7 @@
 </head>
 <body>
     <div class="header">
-        <img src="{{ public_path('images/logo.png') }}" class="logo" alt="Obertrack Logo">
-        <div class="brand">Obertrack</div>
+        <img src="{{ public_path('images/logo.png') }}" class="logo" style="width: 250px;" alt="Obertrack Logo">
         <div class="report-title">Reporte Semanal de Actividad</div>
     </div>
 
@@ -42,30 +41,22 @@
 
     <table class="stats-grid">
         <tr>
-            <td width="50%" style="border: none; padding: 0 5px 10px 0;">
+            <td width="33%" style="border: none; padding: 0 5px 0 0;">
                 <div class="stat-box">
-                    <span class="stat-label">Total Horas</span>
+                    <span class="stat-label">Total Horas de Tareas</span>
                     <span class="stat-value">{{ $totalHours }}</span>
                 </div>
             </td>
-            <td width="50%" style="border: none; padding: 0 0 10px 5px;">
-                <div class="stat-box">
-                    <span class="stat-label">Promedio Diario</span>
-                    <span class="stat-value">{{ $weeklyAverage }}</span>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td width="50%" style="border: none; padding: 10px 5px 0 0;">
+            <td width="33%" style="border: none; padding: 0 5px;">
                 <div class="stat-box">
                     <span class="stat-label">Ausencias</span>
                     <span class="stat-value">{{ $absences }}</span>
                 </div>
             </td>
-            <td width="50%" style="border: none; padding: 10px 0 0 5px;">
+            <td width="33%" style="border: none; padding: 0 0 0 5px;">
                 <div class="stat-box">
                     <span class="stat-label">Tareas Incompletas</span>
-                    <span class="stat-value">{{ $incompleteTasks }}</span>
+                    <span class="stat-value">{{ $overdueTasks->count() }}</span>
                 </div>
             </td>
         </tr>
@@ -77,10 +68,11 @@
             <tr>
                 <th>Día</th>
                 <th>Fecha</th>
-                <th>Horas Registradas</th>
+                <th>Horas de Tareas</th>
                 <th>Estado</th>
             </tr>
         </thead>
+        <tbody>
         <tbody>
             @foreach($dailyHours as $day)
             <tr>
@@ -88,14 +80,53 @@
                 <td>{{ $weekStart->copy()->addDays(array_search($day['day'], ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']))->format('d/m/Y') }}</td>
                 <td>{{ $day['hours'] }} horas</td>
                 <td>
-                    @if($day['hours'] > 0)
-                        <span class="status-present">Presente</span>
-                    @else
-                        <span class="status-absent">Ausente</span>
-                    @endif
+                    <span style="color: {{ $day['status_color'] ?? '#dc2626' }}; font-weight: bold;">
+                        {{ $day['status_label'] ?? 'Ausente' }}
+                    </span>
                 </td>
             </tr>
             @endforeach
+        </tbody>
+    </table>
+
+    <h3 style="margin-top: 30px;">Estado de Tareas</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50%;">Tarea</th>
+                <th style="width: 25%;">Vencimiento</th>
+                <th style="width: 25%;">Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($overdueTasks as $task)
+                <tr>
+                    <td>{{ $task->title }}</td>
+                    <td>{{ $task->end_date ? \Carbon\Carbon::parse($task->end_date)->format('d/m/Y') : '-' }}</td>
+                    <td><span style="color: #dc2626; font-weight: bold;">Incompleta/Vencida</span></td>
+                </tr>
+            @empty
+            @endforelse
+            @foreach($inProgressTasks as $task)
+                <tr>
+                    <td>{{ $task->title }}</td>
+                    <td>{{ $task->end_date ? \Carbon\Carbon::parse($task->end_date)->format('d/m/Y') : '-' }}</td>
+                    <td><span style="color: #d97706; font-weight: bold;">En Progreso</span></td>
+                </tr>
+            @endforeach
+            @foreach($completedTasks as $task)
+                <tr>
+                    <td>{{ $task->title }}</td>
+                    <td>{{ $task->end_date ? \Carbon\Carbon::parse($task->end_date)->format('d/m/Y') : '-' }}</td>
+                    <td><span style="color: #059669; font-weight: bold;">Completada</span></td>
+                </tr>
+            @endforeach
+            
+            @if($overdueTasks->isEmpty() && $inProgressTasks->isEmpty() && $completedTasks->isEmpty())
+                <tr>
+                    <td colspan="3" style="text-align: center; color: #6b7280; font-style: italic;">No hay tareas asignadas para este periodo.</td>
+                </tr>
+            @endif
         </tbody>
     </table>
 
@@ -105,18 +136,50 @@
         @foreach($comments as $record)
             @if($record->user_comment || $record->approval_comment)
                 @php $hasComments = true; @endphp
-                <div style="background: #f9fafb; padding: 12px; border-left: 4px solid #22A9C8; margin-bottom: 10px;">
-                    <div style="font-size: 11px; font-weight: bold; color: #6b7280; text-transform: uppercase; margin-bottom: 5px;">
-                        {{ Carbon\Carbon::parse($record->work_date)->format('l d/m/Y') }}
+                <div style="background: #f9fafb; padding: 12px; border-left: 4px solid #22A9C8; margin-bottom: 15px;">
+                    <div style="font-size: 11px; font-weight: bold; color: #6b7280; text-transform: uppercase; margin-bottom: 8px;">
+                        {{ Carbon\Carbon::parse($record->work_date)->translatedFormat('l d/m/Y') }}
                     </div>
+                    
                     @if($record->user_comment)
+                        @php
+                            $pComment = $record->user_comment;
+                            $pActivities = [];
+                            $pSummary = '';
+                            if (str_contains($pComment, 'Resumen adicional:')) {
+                                $parts = explode('Resumen adicional:', $pComment);
+                                $pActivities = array_filter(explode("\n", trim($parts[0])), fn($a) => !empty(trim($a)));
+                                $pSummary = trim($parts[1]);
+                            } elseif (str_contains($pComment, "\n")) {
+                                $pActivities = array_filter(explode("\n", trim($pComment)), fn($a) => !empty(trim($a)));
+                            } else {
+                                $pSummary = $pComment;
+                            }
+                        @endphp
+                        
                         <div style="font-size: 13px; margin-bottom: 4px;">
-                            <span style="font-weight: bold;">Profesional:</span> {{ $record->user_comment }}
+                            <span style="font-weight: bold; color: #1f2937;">Tareas realizadas:</span>
+                            @if(count($pActivities) > 0)
+                                <ul style="margin: 5px 0 5px 15px; padding: 0; list-style-type: disc;">
+                                    @foreach($pActivities as $activity)
+                                        <li style="margin-bottom: 2px;">{{ $activity }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                            @if($pSummary)
+                                <div style="margin-top: {{ count($pActivities) > 0 ? '5px' : '0' }}; font-style: italic; color: #4b5563;">
+                                    {{ $pSummary }}
+                                </div>
+                            @endif
                         </div>
                     @endif
+
                     @if($record->approval_comment)
-                        <div style="font-size: 13px;">
-                            <span style="font-weight: bold;">Empresa:</span> {{ $record->approval_comment }}
+                        <div style="font-size: 13px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                            <span style="font-weight: bold; color: #1f2937;">Feedback Empresa:</span>
+                            <div style="margin-top: 3px; font-style: italic; color: #4b5563;">
+                                "{{ $record->approval_comment }}"
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -129,7 +192,7 @@
     </div>
 
     <div class="footer">
-        Generado automáticamente por Obertrack el {{ date('d/m/Y H:i') }}
+        Generado automáticamente el {{ date('d/m/Y H:i') }}
     </div>
 </body>
 </html>

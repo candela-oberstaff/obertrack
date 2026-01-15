@@ -116,6 +116,49 @@ class BrevoEmailService
     }
 
     /**
+     * Send email notification for recovery hours request
+     */
+    public function sendRecoveryRequestNotification($recipientEmail, $recipientName, $recoveryData)
+    {
+        try {
+            $htmlContent = view('emails.recovery-report', [
+                'recipientName' => $recipientName,
+                'recoveryData' => $recoveryData
+            ])->render();
+
+            return $this->sendEmail($recipientEmail, $recipientName, '🔄 Reporte de Horas Recuperadas', $htmlContent);
+        } catch (\Exception $e) {
+            Log::error('Brevo: Failed to send recovery request notification', [
+                'recipient' => $recipientEmail,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send email notification for absence registration
+     */
+    public function sendAbsenceNotification($recipientEmail, $recipientName, $date, $endOfMonth)
+    {
+        try {
+            $htmlContent = view('emails.absence-registered', [
+                'recipientName' => $recipientName,
+                'date' => $date,
+                'endOfMonth' => $endOfMonth
+            ])->render();
+
+            return $this->sendEmail($recipientEmail, $recipientName, '📅 Registro de Ausencia - Obertrack', $htmlContent);
+        } catch (\Exception $e) {
+            Log::error('Brevo: Failed to send absence notification', [
+                'recipient' => $recipientEmail,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
      * Send email functionality for password reset code
      */
     public function sendPasswordResetCode($recipientEmail, $recipientName, $code)
@@ -180,7 +223,7 @@ class BrevoEmailService
             'priorityColor' => $priorityColor,
             'startDate' => $startDate,
             'endDate' => $endDate,
-            'assignedBy' => $taskData['assigned_by'] ?? 'Oberstaff',
+            'assignedBy' => $taskData['assigned_by'] ?? 'Obertrack',
             'taskUrl' => route('empleados.tasks.index')
         ])->render();
     }
@@ -216,30 +259,68 @@ class BrevoEmailService
         return $this->sendEmail($toEmail, $toName, 'Alertas de Inactividad - Nivel ROJO', $htmlContent);
     }
 
-    public function sendRegistrationReminder(string $toEmail, string $toName): bool
+    public function sendRegistrationReminder(string $toEmail, string $toName, array $absences = []): bool
     {
+        $absenceHtml = '';
+        if (!empty($absences)) {
+            $dates = implode(', ', array_map(fn($d) => date('d/m/Y', strtotime($d)), $absences));
+            $absenceHtml = "<p><strong>Nota:</strong> Tienes ausencias registradas registradas recientemente en las siguientes fechas: {$dates}.</p>";
+        }
+
         $htmlContent = "
             <h2>Hola, {$toName}</h2>
-            <p>Notamos que aún no has registrado tus horas del último día hábil.</p>
-            <p>Mantener tus registros al día es muy importante para el seguimiento y aprobación de tus tareas.</p>
-            <p><a href=\"" . route('empleado.registrar-horas') . "\">Haz clic aquí para registrar tus horas</a></p>
+            <p>Este es un recordatorio automatizado para mantener tu registro de horas al día.</p>
+            <p>Si tienes horas pendientes de cargar, por favor ingrésalas lo antes posible.</p>
+            {$absenceHtml}
+            <p><a href=\"" . route('empleado.registrar-horas') . "\">Ir a registrar horas</a></p>
         ";
 
-        return $this->sendEmail($toEmail, $toName, 'Recordatorio: Registro de Horas en Obertrack', $htmlContent);
+        return $this->sendEmail($toEmail, $toName, 'Recordatorio de Registro de Horas', $htmlContent);
+    }
+
+    /**
+     * Send email reminder for pending recovery hours
+     */
+    public function sendRecoveryReminder(string $toEmail, string $toName, float $pendingHours, string $deadline): bool
+    {
+        try {
+            $htmlContent = view('emails.recovery-reminder', [
+                'recipientName' => $toName,
+                'pendingHours' => $pendingHours,
+                'deadline' => $deadline
+            ])->render();
+
+            return $this->sendEmail($toEmail, $toName, '⏰ Recordatorio: Horas pendientes de recuperación', $htmlContent);
+        } catch (\Exception $e) {
+            Log::error('Brevo: Failed to send recovery reminder', [
+                'recipient' => $toEmail,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
     }
 
     /**
      * Generic method to send an email via Brevo
      */
-    public function sendEmail(string $toEmail, string $toName, string $subject, string $htmlContent): bool
+    public function sendEmail(string $toEmail, string $toName, string $subject, string $htmlContent, ?array $attachment = null): bool
     {
         try {
-            $sendSmtpEmail = new SendSmtpEmail([
+            $emailData = [
                 'subject' => $subject,
                 'sender' => ['name' => $this->senderName, 'email' => $this->senderEmail],
                 'to' => [['email' => $toEmail, 'name' => $toName]],
                 'htmlContent' => $htmlContent,
-            ]);
+            ];
+
+            if ($attachment) {
+                $emailData['attachment'] = [[
+                    'content' => base64_encode($attachment['content']),
+                    'name' => $attachment['name']
+                ]];
+            }
+
+            $sendSmtpEmail = new SendSmtpEmail($emailData);
 
             $this->apiInstance->sendTransacEmail($sendSmtpEmail);
             return true;
@@ -300,20 +381,30 @@ class BrevoEmailService
     /**
      * Send weekly report to company
      */
-    public function sendWeeklyReport(string $toEmail, string $toName, array $data): bool
+    public function sendWeeklyReport(string $toEmail, string $toName, array $data, ?array $attachment = null): bool
     {
         try {
-            $sendSmtpEmail = new SendSmtpEmail([
+            $emailData = [
                 'to' => [['email' => $toEmail, 'name' => $toName]],
                 'templateId' => 1, // Weekly report template
                 'params' => $data,
-            ]);
+            ];
+
+            if ($attachment) {
+                $emailData['attachment'] = [[
+                    'content' => base64_encode($attachment['content']),
+                    'name' => $attachment['name']
+                ]];
+            }
+
+            $sendSmtpEmail = new SendSmtpEmail($emailData);
 
             $this->apiInstance->sendTransacEmail($sendSmtpEmail);
             
             Log::info('Weekly report email sent', [
                 'to' => $toEmail,
-                'week' => $data['week_start'] . ' - ' . $data['week_end']
+                'week' => $data['week_start'] . ' - ' . $data['week_end'],
+                'has_attachment' => !is_null($attachment)
             ]);
             
             return true;
@@ -329,20 +420,30 @@ class BrevoEmailService
     /**
      * Send monthly report to company
      */
-    public function sendMonthlyReport(string $toEmail, string $toName, array $data): bool
+    public function sendMonthlyReport(string $toEmail, string $toName, array $data, ?array $attachment = null): bool
     {
         try {
-            $sendSmtpEmail = new SendSmtpEmail([
+            $emailData = [
                 'to' => [['email' => $toEmail, 'name' => $toName]],
                 'templateId' => 2, // Monthly report template
                 'params' => $data,
-            ]);
+            ];
+
+            if ($attachment) {
+                $emailData['attachment'] = [[
+                    'content' => base64_encode($attachment['content']),
+                    'name' => $attachment['name']
+                ]];
+            }
+
+            $sendSmtpEmail = new SendSmtpEmail($emailData);
 
             $this->apiInstance->sendTransacEmail($sendSmtpEmail);
             
             Log::info('Monthly report email sent', [
                 'to' => $toEmail,
-                'month' => $data['month']
+                'month' => $data['month'],
+                'has_attachment' => !is_null($attachment)
             ]);
             
             return true;

@@ -19,6 +19,18 @@ class TaskAttachment extends Model
         'file_size',
     ];
 
+    protected $appends = [
+        'file_size_human',
+        'file_type',
+        'file_icon',
+        'download_url',
+    ];
+
+    public function getDownloadUrlAttribute(): string
+    {
+        return route('tasks.attachments.download', $this->id);
+    }
+
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class);
@@ -43,6 +55,14 @@ class TaskAttachment extends Model
         } else {
             return round($bytes / 1048576, 2) . ' MB';
         }
+    }
+
+    /**
+     * Get file extension as file type
+     */
+    public function getFileTypeAttribute(): string
+    {
+        return pathinfo($this->filename, PATHINFO_EXTENSION) ?: 'file';
     }
 
     /**

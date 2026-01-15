@@ -41,22 +41,21 @@ class TaskFilesModal extends Component
 
         $task = Task::findOrFail($this->taskId);
         
-        $path = $this->newFile->store('task-attachments');
+        $path = $this->newFile->store('task_attachments', 'local');
         
         $attachment = new TaskAttachment([
             'task_id' => $this->taskId,
+            'uploaded_by' => auth()->id(),
             'filename' => $this->newFile->getClientOriginalName(),
             'stored_filename' => $path,
-            'file_type' => $this->newFile->guessExtension() ?? 'file',
+            'mime_type' => $this->newFile->getMimeType(),
             'file_size' => $this->newFile->getSize(),
-             // Assuming created_by or user_id field needs to be added to TaskAttachment model if tracking uploader is needed
-             // Based on schema from earlier listing it might not check user, but good mostly.
         ]);
         
-        $attachment->save(); // Migrations show 2025_12_10_195400_create_task_attachments_table.php
+        $attachment->save();
 
         $this->newFile = null;
-        // Refresh?
+        session()->flash('success', 'Archivo subido con éxito.');
     }
 
     public function render()

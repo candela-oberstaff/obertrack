@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\WorkHours;
+use App\Models\RecoveryHour;
 use App\Http\Requests\StoreWorkHoursRequest;
 use App\Http\Requests\ApproveWorkHoursRequest;
 use App\Services\ReportService;
@@ -54,6 +55,14 @@ class WorkHoursController extends Controller
             ->where('work_date', '!=', $request->work_date) // Exclude current day if updating
             ->sum('hours_worked');
     
+    
+        // Regular work hours registration
+        if ($request->hours_worked > 8) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No puedes registrar más de 8 horas por día.']);
+            }
+            return back()->with('error', 'No puedes registrar más de 8 horas por día.');
+        }
         if ($request->hours_worked > 8) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'No puedes registrar más de 8 horas por día.']);
@@ -70,6 +79,7 @@ class WorkHoursController extends Controller
     
         $existingRecord = WorkHours::where('user_id', auth()->id())
             ->where('work_date', $request->work_date)
+            ->where('recovered_hours', 0) // Only get non-recovery records
             ->first();
 
         if ($existingRecord && $existingRecord->approved) {
@@ -78,12 +88,19 @@ class WorkHoursController extends Controller
                 'user_comment' => $request->user_comment
             ]);
         } else {
+            $absenceHours = $request->absence_hours ?? ($request->hours_worked < 8 ? (8 - $request->hours_worked) : 0);
+            
             WorkHours::updateOrCreate(
-                ['user_id' => auth()->id(), 'work_date' => $request->work_date],
+                [
+                    'user_id' => auth()->id(), 
+                    'work_date' => $request->work_date,
+                    'recovered_hours' => 0 // Ensure we're not updating recovery records
+                ],
                 [
                     'hours_worked' => $request->hours_worked, 
                     'user_comment' => $request->user_comment,
-                    'absence_reason' => $request->absence_reason
+                    'absence_reason' => $request->absence_reason,
+                    'absence_hours' => $absenceHours
                 ]
             );
         }
@@ -92,7 +109,7 @@ class WorkHoursController extends Controller
         $totalHours = WorkHours::where('user_id', auth()->id())
             ->whereYear('work_date', $currentMonth->year)
             ->whereMonth('work_date', $currentMonth->month)
-            ->sum('hours_worked');
+            ->sum(DB::raw('hours_worked + CASE WHEN recovery_approved = true THEN recovered_hours ELSE 0 END'));
     
         // Send notification to employer with cooldown
         try {
@@ -129,8 +146,22 @@ class WorkHoursController extends Controller
                     }
                 }
             }
+            
+            
+            // Send notification to the professional if absence is recorded (< 8 hours)
+            if ($request->hours_worked < 8) {
+                $endOfMonthFormatted = $currentMonth->copy()->endOfMonth()->locale('es')->isoFormat('D [de] MMMM');
+                $this->emailService->sendAbsenceNotification(
+                    $user->email,
+                    $user->name,
+                    $workDate->format('d/m/Y'),
+                    $endOfMonthFormatted
+                );
+            }
+
+
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Error sending pending hours notification: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Error sending notifications: ' . $e->getMessage());
         }
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -153,12 +184,25 @@ class WorkHoursController extends Controller
         $calendar = $this->calendarService->generateCalendar($currentMonth, auth()->id());
 
         $totalHours = $this->calendarService->getTotalHoursForMonth($currentMonth, auth()->id());
+        $missingHours = $this->calendarService->getMissingHours($currentMonth, auth()->id());
 
         if (session('totalHours')) {
             $totalHours = session('totalHours');
         }
 
-        return view('work_hours.index', compact('calendar', 'currentMonth', 'totalHours'));
+        // Task Stats
+        $user = auth()->user();
+        $completedTasksCount = $user->assignedTasks()
+            ->whereRaw('completed IS TRUE')
+            ->whereMonth('updated_at', $currentMonth->month)
+            ->whereYear('updated_at', $currentMonth->year)
+            ->count();
+            
+        $pendingTasksCount = $user->assignedTasks()
+            ->whereRaw('completed IS FALSE')
+            ->count();
+            
+        return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'missingHours', 'completedTasksCount', 'pendingTasksCount'));
     }
 
     public function approveWeek(ApproveWorkHoursRequest $request)
@@ -184,6 +228,18 @@ class WorkHoursController extends Controller
             'dates' => 'required|array',
             'comment' => 'nullable|string'
         ]);
+
+        $employee = User::findOrFail($request->employee_id);
+        $user = Auth::user();
+
+        // Security check: superadmin, employer of the employee, or manager of the same employer
+        $isAuthorized = $user->is_superadmin || 
+                        ($user->tipo_usuario === 'empleador' && $employee->empleador_id === $user->id) ||
+                        ($user->is_manager && $employee->empleador_id === $user->empleador_id);
+
+        if (!$isAuthorized) {
+            return response()->json(['success' => false, 'message' => 'No tienes permiso para aprobar estas horas.'], 403);
+        }
 
         $this->approvalService->approveDates(
             $request->employee_id,
@@ -220,15 +276,37 @@ class WorkHoursController extends Controller
 
         $workHour = WorkHours::findOrFail($id);
         
-        // Ensure the user has permission (employer of the employee)
+        // Ensure the user has permission (employer of the employee, or manager, or superadmin)
         $employee = User::find($workHour->user_id);
-        if (Auth::user()->tipo_usuario !== 'empleador' || $employee->empleador_id !== Auth::id()) {
+        $user = Auth::user();
+
+        $isAuthorized = $user->is_superadmin || 
+                        ($user->tipo_usuario === 'empleador' && $employee->empleador_id === $user->id) ||
+                        ($user->is_manager && $employee->empleador_id === $user->empleador_id);
+
+        if (!$isAuthorized) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         $workHour->update(['approval_comment' => $request->comment]);
 
         return response()->json(['success' => true, 'message' => 'Comentario actualizado.']);
+    }
+
+    public function approveRecovery(Request $request, $id)
+    {
+        $workHour = WorkHours::findOrFail($id);
+        $user = auth()->user();
+
+        // Check if user is the employer of the professional
+        $professional = User::findOrFail($workHour->user_id);
+        if (!$user->is_superadmin && sprintf('%s', $professional->empleador_id) !== sprintf('%s', $user->id)) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $workHour->update(['recovery_approved' => DB::raw('TRUE')]);
+
+        return response()->json(['success' => true, 'message' => 'Recuperación aprobada correctamente.']);
     }
 
 
@@ -240,6 +318,10 @@ class WorkHoursController extends Controller
 
         $employeeId = $request->query('employee_id');
         $employee = User::findOrFail($employeeId);
+        // Clean month parameter if it contains query string artifacts
+        if ($month && str_contains($month, '?')) {
+            $month = explode('?', $month)[0];
+        }
         $monthDate = Carbon::parse($month);
 
         try {
@@ -319,8 +401,13 @@ class WorkHoursController extends Controller
             $professionalsQuery = User::where('empleador_id', $employerId);
         }
 
-        $weekStart = $request->query('week') 
-            ? Carbon::parse($request->query('week'))->startOfWeek(Carbon::MONDAY)
+        $weekInput = $request->query('week');
+        if ($weekInput && str_contains($weekInput, '?')) {
+            $weekInput = explode('?', $weekInput)[0];
+        }
+
+        $weekStart = $weekInput 
+            ? Carbon::parse($weekInput)->startOfWeek(Carbon::MONDAY)
             : Carbon::now()->startOfWeek(Carbon::MONDAY);
         
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
@@ -366,10 +453,52 @@ class WorkHoursController extends Controller
 
                 // Monthly stats
                 $monthStart = Carbon::now()->startOfMonth();
-                $monthHours = WorkHours::where('user_id', $professional->id)
-                    ->whereBetween('work_date', [$monthStart->format('Y-m-d'), Carbon::now()->format('Y-m-d')])
+                $monthWorkHours = WorkHours::where('user_id', $professional->id)
+                    ->whereBetween('work_date', [$monthStart->format('Y-m-d'), $today->format('Y-m-d')])
                     ->whereRaw('approved IS TRUE')
                     ->sum('hours_worked');
+                
+                $monthRecoveredNew = RecoveryHour::where('user_id', $professional->id)
+                    ->whereBetween('recovery_date', [$monthStart->format('Y-m-d'), $today->format('Y-m-d')])
+                    ->whereRaw('approved IS TRUE')
+                    ->sum('hours_recovered');
+                
+                $monthRecoveredOld = WorkHours::where('user_id', $professional->id)
+                    ->whereBetween('work_date', [$monthStart->format('Y-m-d'), $today->format('Y-m-d')])
+                    ->whereRaw('recovery_approved IS TRUE')
+                    ->sum('recovered_hours');
+
+                $monthHours = $monthWorkHours + $monthRecoveredNew + $monthRecoveredOld;
+
+                // Pending recoveries (New table)
+                $pendingRecoveries = RecoveryHour::where('user_id', $professional->id)
+                    ->whereRaw('approved IS FALSE')
+                    ->get()
+                    ->map(function($r) {
+                        // Map to a consistent structure for the view
+                        return (object)[
+                            'id' => $r->id,
+                            'recovered_hours' => $r->hours_recovered,
+                            'work_date' => $r->recovery_date,
+                            'is_new' => true
+                        ];
+                    });
+
+                // Add legacy pending recoveries if any
+                $legacyPending = WorkHours::where('user_id', $professional->id)
+                    ->where('recovered_hours', '>', 0)
+                    ->whereRaw('recovery_approved IS FALSE')
+                    ->get()
+                    ->map(function($r) {
+                        return (object)[
+                            'id' => $r->id,
+                            'recovered_hours' => $r->recovered_hours,
+                            'work_date' => $r->work_date,
+                            'is_new' => false
+                        ];
+                    });
+                
+                $pendingRecoveries = $pendingRecoveries->concat($legacyPending);
 
                 return [
                     'id' => $professional->id,
@@ -380,6 +509,8 @@ class WorkHoursController extends Controller
                     'incomplete_tasks' => $incompleteTasks,
                     'comment_count' => $commentsCount,
                     'has_pending_weeks' => $pendingHours > 0,
+                    'pending_recoveries' => $pendingRecoveries,
+                    'has_pending_recoveries' => $pendingRecoveries->count() > 0,
                     'month_hours' => $monthHours,
                     'index' => $index + 1,
                     'professional' => $professional
@@ -407,8 +538,13 @@ class WorkHoursController extends Controller
             }
         }
 
-        $weekStart = $request->query('week') 
-            ? Carbon::parse($request->query('week'))->startOfWeek(Carbon::MONDAY)
+        $weekInput = $request->query('week');
+        if ($weekInput && str_contains($weekInput, '?')) {
+            $weekInput = explode('?', $weekInput)[0];
+        }
+
+        $weekStart = $weekInput 
+            ? Carbon::parse($weekInput)->startOfWeek(Carbon::MONDAY)
             : Carbon::now()->startOfWeek(Carbon::MONDAY);
         
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
@@ -464,7 +600,7 @@ class WorkHoursController extends Controller
         $monthHours = WorkHours::where('user_id', $user->id)
             ->whereBetween('work_date', [$monthStart->format('Y-m-d'), min($today, $monthEnd)->format('Y-m-d')])
             ->whereRaw('approved IS TRUE')
-            ->sum('hours_worked');
+            ->sum(DB::raw('hours_worked + CASE WHEN recovery_approved = true THEN recovered_hours ELSE 0 END'));
 
         return view('reportes.show', [
             'professional' => $user,
@@ -492,8 +628,13 @@ class WorkHoursController extends Controller
             }
         }
 
-        $weekStart = $request->query('week') 
-            ? Carbon::parse($request->query('week'))->startOfWeek(Carbon::MONDAY)
+        $weekInput = $request->query('week');
+        if ($weekInput && str_contains($weekInput, '?')) {
+            $weekInput = explode('?', $weekInput)[0];
+        }
+
+        $weekStart = $weekInput 
+            ? Carbon::parse($weekInput)->startOfWeek(Carbon::MONDAY)
             : Carbon::now()->startOfWeek(Carbon::MONDAY);
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
 
@@ -521,14 +662,38 @@ class WorkHoursController extends Controller
             if ($i < $daysToCheck && (!$hours || $hours->hours_worked == 0)) {
                 $absences++;
             }
+
+            // Determine Daily Status
+            $statusLabel = 'Ausente';
+            $statusColor = '#dc2626'; // Red
+
+            if ($hours) {
+                if ($hours->hours_worked >= 8) {
+                    $statusLabel = 'Completo';
+                    $statusColor = '#059669'; // Green
+                } else {
+                    $statusLabel = 'Pendiente';
+                    $statusColor = '#d97706'; // Yellow/Orange
+                }
+            }
+
+            // Update the last added entry
+            $dailyHours[count($dailyHours) - 1]['status_label'] = $statusLabel;
+            $dailyHours[count($dailyHours) - 1]['status_color'] = $statusColor;
         }
 
         $totalHours = $weekHours->sum('hours_worked');
         $weeklyAverage = $totalHours > 0 ? round($totalHours / 5, 1) : 0;
         
-        $incompleteTasks = $user->assignedTasks()
-            ->whereRaw('completed IS FALSE')
-            ->count();
+        // Categorize Tasks
+        $allTasks = $user->assignedTasks()->get();
+        $completedTasks = $allTasks->where('completed', true);
+        $inProgressTasks = $allTasks->where('completed', false)->filter(function($t) {
+            return !$t->end_date || \Carbon\Carbon::parse($t->end_date)->endOfDay()->isFuture() || \Carbon\Carbon::parse($t->end_date)->isToday();
+        });
+        $overdueTasks = $allTasks->where('completed', false)->filter(function($t) {
+            return $t->end_date && \Carbon\Carbon::parse($t->end_date)->endOfDay()->isPast() && !\Carbon\Carbon::parse($t->end_date)->isToday();
+        });
 
         $comments = WorkHours::where('user_id', $user->id)
             ->whereBetween('work_date', [$weekStart, $weekEnd])
@@ -538,19 +703,33 @@ class WorkHoursController extends Controller
             ->get();
 
         // Generate PDF
-        $pdf = Pdf::loadView('reportes.pdf.weekly', [
-            'professional' => $user,
-            'weekStart' => $weekStart,
-            'weekEnd' => $weekEnd,
-            'totalHours' => $totalHours,
-            'weeklyAverage' => $weeklyAverage,
-            'incompleteTasks' => $incompleteTasks,
-            'absences' => $absences,
-            'dailyHours' => $dailyHours,
-            'comments' => $comments
-        ]);
+    $pdf = Pdf::loadView('reportes.pdf.weekly', [
+        'professional' => $user,
+        'weekStart' => $weekStart,
+        'weekEnd' => $weekEnd,
+        'totalHours' => $totalHours,
+        'weeklyAverage' => $weeklyAverage,
+        'completedTasks' => $completedTasks,
+        'inProgressTasks' => $inProgressTasks,
+        'overdueTasks' => $overdueTasks,
+        'absences' => $absences,
+        'dailyHours' => $dailyHours,
+        'comments' => $comments
+    ]);
 
-        return $pdf->download("Reporte_Semanal_{$user->name}_{$weekStart->format('d-m-Y')}.pdf");
+    $fileName = "Reporte_Semanal_{$user->name}_{$weekStart->format('d-m-Y')}.pdf";
+
+    if ($request->has('send_email')) {
+        $this->emailService->sendEmail(
+            Auth::user()->email,
+            Auth::user()->name,
+            "📋 Reporte Semanal: {$user->name}",
+            "<p>Hola,</p><p>Adjunto encontrarás el reporte semanal solicitado para <strong>{$user->name}</strong> correspondiente a la semana del {$weekStart->format('d/m/Y')} al {$weekEnd->format('d/m/Y')}.</p><p>Saludos,<br>Equipo Obertrack</p>",
+            ['content' => $pdf->output(), 'name' => $fileName]
+        );
+    }
+
+    return $pdf->download($fileName);
     }
 
     /**
@@ -567,7 +746,12 @@ class WorkHoursController extends Controller
             }
         }
 
-        $date = $request->query('month') ? Carbon::parse($request->query('month')) : Carbon::now();
+        $monthInput = $request->query('month');
+        if ($monthInput && str_contains($monthInput, '?')) {
+            $monthInput = explode('?', $monthInput)[0];
+        }
+
+        $date = $monthInput ? Carbon::parse($monthInput) : Carbon::now();
         $startOfMonth = $date->copy()->startOfMonth();
         $endOfMonth = $date->copy()->endOfMonth();
 
@@ -576,7 +760,7 @@ class WorkHoursController extends Controller
             ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
             ->get();
             
-        $totalApprovedHours = $monthHours->where('approved', true)->sum('hours_worked');
+        $totalApprovedHours = $monthHours->where('approved', true)->sum('hours_worked') + $monthHours->where('recovery_approved', true)->sum('recovered_hours');
 
         // Calculate absences for the month
         $absences = 0;
@@ -591,28 +775,59 @@ class WorkHoursController extends Controller
             $current->addDay();
         }
 
-        $incompleteTasks = $user->assignedTasks()->whereRaw('completed IS FALSE')->count();
+        // Categorize Tasks used for Monthly Report
+        $allTasks = $user->assignedTasks()->get();
+        $completedTasks = $allTasks->where('completed', true);
+        $inProgressTasks = $allTasks->where('completed', false)->filter(function($t) {
+            return !$t->end_date || \Carbon\Carbon::parse($t->end_date)->endOfDay()->isFuture() || \Carbon\Carbon::parse($t->end_date)->isToday();
+        });
+        $overdueTasks = $allTasks->where('completed', false)->filter(function($t) {
+            return $t->end_date && \Carbon\Carbon::parse($t->end_date)->endOfDay()->isPast() && !\Carbon\Carbon::parse($t->end_date)->isToday();
+        });
 
         // Calculate weekly breakdown
         $weeksData = [];
         $currentDate = $startOfMonth->copy()->startOfWeek(Carbon::MONDAY);
         
+        // Fetch extended hours to cover full weeks (for the weekly summary logic)
+        $extendedEnd = $endOfMonth->copy()->endOfWeek(Carbon::SUNDAY);
+        $extendedMonthHours = WorkHours::where('user_id', $user->id)
+            ->whereBetween('work_date', [$currentDate, $extendedEnd])
+            ->get();
+        
         while ($currentDate->lte($endOfMonth)) {
             $weekEnd = $currentDate->copy()->endOfWeek(Carbon::SUNDAY);
             
-            // Filter hours for this week
-            $weekH = $monthHours->filter(function($h) use ($currentDate, $weekEnd) {
+            // Filter hours for this week from the extended collection
+            $weekH = $extendedMonthHours->filter(function($h) use ($currentDate, $weekEnd) {
                 return Carbon::parse($h->work_date)->between($currentDate, $weekEnd);
             });
             
             $wTotal = $weekH->sum('hours_worked');
             
+            // Strict Approval Logic: All 5 weekdays must be passed and approved
+            $isWeekApproved = true;
+            for ($d=0; $d<5; $d++) {
+                $checkDay = $currentDate->copy()->addDays($d);
+                // If day is future, week is not fully processed yet
+                if ($checkDay->isFuture()) {
+                    $isWeekApproved = false; 
+                    break;
+                }
+                // Check if day has approved record
+                $dayRecord = $weekH->first(fn($h) => Carbon::parse($h->work_date)->isSameDay($checkDay));
+                if (!$dayRecord || !$dayRecord->approved) {
+                    $isWeekApproved = false;
+                    break;
+                }
+            }
+
             // Only add week if it falls within the month (at least partially)
             if ($currentDate->month == $startOfMonth->month || $weekEnd->month == $startOfMonth->month) {
                 $weeksData[] = [
                     'period' => $currentDate->format('d/m') . ' - ' . $weekEnd->format('d/m'),
                     'hours' => $wTotal,
-                    'approved' => $weekH->where('approved', true)->count() > 0 && $weekH->where('approved', false)->count() == 0
+                    'approved' => $isWeekApproved
                 ];
             }
             
@@ -624,11 +839,255 @@ class WorkHoursController extends Controller
             'monthDate' => $startOfMonth,
             'totalApprovedHours' => $totalApprovedHours,
             'absences' => $absences,
-            'incompleteTasks' => $incompleteTasks,
-            'weeksData' => $weeksData
+            'monthDate' => $startOfMonth,
+            'totalApprovedHours' => $totalApprovedHours,
+            'absences' => $absences,
+            'completedTasks' => $completedTasks,
+            'inProgressTasks' => $inProgressTasks,
+            'overdueTasks' => $overdueTasks,
+            'weeksData' => $weeksData,
+            'comments' => $monthHours
         ]);
 
-        return $pdf->download("Reporte_Mensual_{$user->name}_{$startOfMonth->format('F_Y')}.pdf");
+    $fileName = "Reporte_Mensual_{$user->name}_{$startOfMonth->format('F_Y')}.pdf";
+
+    if ($request->has('send_email')) {
+        $this->emailService->sendEmail(
+            Auth::user()->email,
+            Auth::user()->name,
+            "📊 Reporte Mensual: {$user->name}",
+            "<p>Hola,</p><p>Adjunto encontrarás el reporte mensual solicitado para <strong>{$user->name}</strong> correspondiente al mes de {$startOfMonth->translatedFormat('F Y')}.</p><p>Saludos,<br>Equipo Obertrack</p>",
+            ['content' => $pdf->output(), 'name' => $fileName]
+        );
+    }
+
+    return $pdf->download($fileName);
+    }
+
+    /**
+     * Aprobar todas las horas del mes actual para todos los empleados del empleador
+     */
+    public function approveAllMonth(Request $request)
+    {
+        $request->validate([
+            'month' => 'required|date_format:Y-m',
+        ]);
+    
+        $user = Auth::user();
+        $month = $request->input('month');
+        
+        // Validar que el usuario es empleador
+        if ($user->tipo_usuario !== 'empleador' && !$user->is_superadmin) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+            }
+            return back()->with('error', 'No autorizado');
+        }
+    
+        // Obtener todos los empleados del empleador
+        $employerId = $user->is_superadmin ? null : $user->id;
+        $employeesQuery = User::where('tipo_usuario', 'empleado');
+        
+        if ($employerId) {
+            $employeesQuery->where('empleador_id', $employerId);
+        }
+        
+        $employees = $employeesQuery->get();
+        
+        if ($employees->isEmpty()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No hay empleados registrados']);
+            }
+            return back()->with('error', 'No hay empleados registrados');
+        }
+    
+        $monthDate = Carbon::parse($month);
+        $startOfMonth = $monthDate->copy()->startOfMonth();
+        $endOfMonth = $monthDate->copy()->endOfMonth();
+    
+        $totalApproved = 0;
+        $totalHours = 0;
+        $approvedEmployees = [];
+    
+        DB::beginTransaction();
+        try {
+            foreach ($employees as $employee) {
+                // Aprobar todas las horas del mes para este empleado
+                $approvedRecords = DB::update(
+                    "UPDATE work_hours 
+                     SET approved = true, 
+                         approved_at = ?, 
+                         updated_at = ? 
+                     WHERE user_id = ? 
+                       AND work_date BETWEEN ? AND ? 
+                       AND approved = false",
+                    [
+                        now(),
+                        now(),
+                        $employee->id,
+                        $startOfMonth,
+                        $endOfMonth
+                    ]
+                );
+    
+                if ($approvedRecords > 0) {
+                    $employeeHours = WorkHours::where('user_id', $employee->id)
+                        ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
+                        ->sum('hours_worked');
+                        
+                    $totalApproved += $approvedRecords;
+                    $totalHours += $employeeHours;
+                    $approvedEmployees[] = [
+                        'name' => $employee->name,
+                        'records' => $approvedRecords,
+                        'hours' => $employeeHours
+                    ];
+                }
+            }
+    
+            DB::commit();
+    
+            $response = [
+                'success' => true,
+                'message' => "Se aprobaron {$totalApproved} registros de horas para {$monthDate->translatedFormat('F Y')}.",
+                'details' => [
+                    'total_approved' => $totalApproved,
+                    'total_hours' => $totalHours,
+                    'month' => $monthDate->format('Y-m'),
+                    'employees_count' => count($approvedEmployees)
+                ]
+            ];
+    
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json($response);
+            }
+    
+            return back()->with('success', $response['message']);
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error approving all month hours: ' . $e->getMessage());
+    
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al aprobar las horas: ' . $e->getMessage()
+                ], 500);
+            }
+    
+            return back()->with('error', 'Error al aprobar las horas: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Aprobar todas las horas de una semana específica para todos los empleados del empleador
+     */
+    public function approveAllWeek(Request $request)
+    {
+        $request->validate([
+            'week_date' => 'required|date',
+        ]);
+    
+        $user = Auth::user();
+        $weekDate = Carbon::parse($request->week_date);
+        
+        // Validar que el usuario es empleador o superadmin
+        if ($user->tipo_usuario !== 'empleador' && !$user->is_superadmin) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+            }
+            return back()->with('error', 'No autorizado');
+        }
+    
+        // Obtener todos los empleados del empleador
+        $employeesQuery = User::where('tipo_usuario', 'empleado');
+        if (!$user->is_superadmin) {
+            $employeesQuery->where('empleador_id', $user->id);
+        }
+        $employees = $employeesQuery->get();
+    
+        if ($employees->isEmpty()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No hay empleados registrados']);
+            }
+            return back()->with('error', 'No hay empleados registrados');
+        }
+    
+        $startOfWeek = $weekDate->copy()->startOfWeek(Carbon::MONDAY);
+        $endOfWeek = $weekDate->copy()->endOfWeek(Carbon::FRIDAY); // Solo días hábiles
+    
+        $totalApproved = 0;
+        $totalHours = 0;
+        $approvedEmployees = [];
+    
+        DB::beginTransaction();
+        try {
+            foreach ($employees as $employee) {
+                $approvedRecords = DB::update(
+                    "UPDATE work_hours 
+                     SET approved = true, 
+                         approved_at = ?, 
+                         updated_at = ? 
+                     WHERE user_id = ? 
+                       AND work_date BETWEEN ? AND ? 
+                       AND approved = false",
+                    [
+                        now(),
+                        now(),
+                        $employee->id,
+                        $startOfWeek,
+                        $endOfWeek
+                    ]
+                );
+    
+                if ($approvedRecords > 0) {
+                    $employeeHours = WorkHours::where('user_id', $employee->id)
+                        ->whereBetween('work_date', [$startOfWeek, $endOfWeek])
+                        ->sum('hours_worked');
+    
+                    $totalApproved += $approvedRecords;
+                    $totalHours += $employeeHours;
+                    $approvedEmployees[] = [
+                        'name' => $employee->name,
+                        'records' => $approvedRecords,
+                        'hours' => $employeeHours
+                    ];
+                }
+            }
+    
+            DB::commit();
+    
+            $response = [
+                'success' => true,
+                'message' => "Se aprobaron {$totalApproved} registros de horas para la semana {$startOfWeek->format('d/m/Y')} - {$endOfWeek->format('d/m/Y')}.",
+                'details' => [
+                    'total_approved' => $totalApproved,
+                    'total_hours' => $totalHours,
+                    'week_start' => $startOfWeek->format('Y-m-d'),
+                    'week_end' => $endOfWeek->format('Y-m-d'),
+                    'employees_count' => count($approvedEmployees)
+                ]
+            ];
+    
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json($response);
+            }
+    
+            return back()->with('success', $response['message']);
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error approving all week hours: ' . $e->getMessage());
+    
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al aprobar las horas: ' . $e->getMessage()
+                ], 500);
+            }
+    
+            return back()->with('error', 'Error al aprobar las horas: ' . $e->getMessage());
+        }
     }
 
 

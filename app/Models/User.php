@@ -48,6 +48,7 @@ class User extends Authenticatable
         'phone_number',
         'location',
         'country',
+        'city',
         'company_name',
         'related_contact',
         'job_title',
@@ -130,18 +131,16 @@ class User extends Authenticatable
 
     public function promoverAManager(): void
     {
-        if ($this->tipo_usuario === 'empleado') {
-            $this->is_manager = true;
-            $this->save();
-        }
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $this->id)
+            ->update(['is_manager' => \Illuminate\Support\Facades\DB::raw('true')]);
     }
 
     public function degradarDeManager(): void
     {
-        if ($this->tipo_usuario === 'empleado' && $this->is_manager) {
-            $this->is_manager = false;
-            $this->save();
-        }
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $this->id)
+            ->update(['is_manager' => \Illuminate\Support\Facades\DB::raw('false')]);
     }
 
     public function compañerosDeTrabajo()
@@ -179,5 +178,18 @@ class User extends Authenticatable
     public function activeStatus()
     {
         return \Illuminate\Support\Facades\Cache::has('user-is-online-' . $this->id);
+    }
+
+    public function getDashboardRoute(): string
+    {
+        if ($this->is_superadmin) {
+            return 'admin.dashboard';
+        }
+
+        if ($this->tipo_usuario === 'empleador') {
+            return 'empleador.dashboard';
+        }
+
+        return 'dashboard';
     }
 }

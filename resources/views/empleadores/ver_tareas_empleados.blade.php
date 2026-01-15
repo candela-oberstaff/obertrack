@@ -385,37 +385,63 @@
                     }
                 },
 
-                async uploadFile(taskId, file) {
+                isUploading: false,
+                uploadProgress: 0,
+
+                uploadFile(taskId, file) {
                     if (!file) return;
+
+                    this.isUploading = true;
+                    this.uploadProgress = 0;
 
                     const formData = new FormData();
                     formData.append('file', file);
                     formData.append('task_id', taskId);
+                    
+                    const xhr = new XMLHttpRequest();
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-                    try {
-                        // Assuming this route exists or we create it
-                        const response = await fetch(`/empleador/tareas/${taskId}/files`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: formData
-                        });
+                    xhr.open('POST', `/empleador/tareas/${taskId}/files`, true);
+                    xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); // Good practice for Laravel
 
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (!this.activeTask.attachments) this.activeTask.attachments = [];
-                            this.activeTask.attachments.unshift(data.attachment);
-                             // Also update store
-                            this.tasks[taskId].attachments.unshift(data.attachment);
-                        } else {
-                            console.error('Error uploading file');
-                             alert('Error al subir el archivo.');
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            this.uploadProgress = Math.round((e.loaded / e.total) * 100);
                         }
-                    } catch (error) {
-                        console.error('Error:', error);
-                         alert('Error de conexión.');
-                    }
+                    };
+
+                    xhr.onload = () => {
+                        this.isUploading = false;
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            try {
+                                const data = JSON.parse(xhr.responseText);
+                                if (!this.activeTask.attachments) this.activeTask.attachments = [];
+                                this.activeTask.attachments.unshift(data.attachment);
+                                // Also update store
+                                this.tasks[taskId].attachments.unshift(data.attachment);
+                                
+                                // Reset file input
+                                if (this.$refs.fileInput) {
+                                    this.$refs.fileInput.value = '';
+                                }
+                            } catch (e) {
+                                console.error('Error parsing response', e);
+                                alert('Error al procesar la respuesta del servidor.');
+                            }
+                        } else {
+                           console.error('Error uploading file');
+                           alert('Error al subir el archivo.');
+                        }
+                    };
+
+                    xhr.onerror = () => {
+                        this.isUploading = false;
+                        console.error('Network Error');
+                        alert('Error de conexión.');
+                    };
+
+                    xhr.send(formData);
                 }
             }
         }

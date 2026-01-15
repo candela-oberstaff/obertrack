@@ -13,7 +13,10 @@
             </div>
 
             {{-- Summary Cards --}}
-            <div id="dashboard-stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div id="dashboard-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                @php
+                    $debtSummary = \App\Http\Controllers\RecoveryHoursController::getDebtSummary(auth()->id());
+                @endphp
                 
                 {{-- Tareas Pendientes --}}
                 <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
@@ -36,7 +39,7 @@
                         $hasPendingApproval = $registeredHours->where('approved', false)->count() > 0;
                     @endphp
                     <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">
-                        Horas registradas 
+                        Horas de tareas 
                         <span class="text-[8px] md:text-[10px] text-gray-400 font-medium">({{ $currentPeriodStart->format('M d') }} - {{ $currentPeriodEnd->format('M d') }})</span>
                     </p>
                     <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C] mb-2">{{ (int)$totalHours }} h</p>
@@ -64,6 +67,29 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                             </svg>
                         </div>
+                    </div>
+                </div>
+
+                {{-- Recuperación de Horas --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
+                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Saldo de Recuperación</p>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            @php $remainingDebt = $debtSummary['remaining_debt']; @endphp
+                            <p class="text-4xl md:text-5xl font-extrabold {{ $remainingDebt > 0 ? 'text-red-500' : 'text-green-500' }}">
+                                {{ $remainingDebt > 0 ? '-' . number_format($remainingDebt, 1) : 'Ok' }}<span class="text-lg">h</span>
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase">Recuperado</p>
+                            <p class="text-sm font-black text-green-600">{{ number_format($debtSummary['total_recovered'], 1) }}h</p>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-[10px] text-gray-400 flex justify-between">
+                        <span>Adeudado: {{ number_format($debtSummary['total_debt'], 1) }}h</span>
+                        @if($debtSummary['pending_approval'] > 0)
+                            <span class="text-orange-500 font-bold">+{{ number_format($debtSummary['pending_approval'], 1) }}h pnd</span>
+                        @endif
                     </div>
                 </div>
 

@@ -48,7 +48,7 @@
                                 Ver reporte completo
                             </a>
                             
-                            <div class="flex items-center gap-2">
+                            <div class="flex flex-col gap-2">
                                 @if($prof['has_pending_weeks'])
                                     <span class="text-sm font-bold text-red-500 italic flex items-center gap-1.5">
                                         Semanas pendientes
@@ -56,7 +56,52 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                         </svg>
                                     </span>
-                                @else
+                                @endif
+
+                                @if($prof['has_pending_recoveries'])
+                                    <div x-data="{ isApproving: false }">
+                                        <div class="flex flex-col gap-1">
+                                            <span class="text-xs font-bold text-orange-500 italic flex items-center gap-1.5 uppercase tracking-wider">
+                                                Recuperación pendiente ({{ $prof['pending_recoveries']->count() }})
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                                </svg>
+                                            </span>
+                                            <div class="flex flex-wrap gap-2 mt-1">
+                                                @foreach($prof['pending_recoveries'] as $recovery)
+                                                    @php
+                                                        $approvalUrl = $recovery->is_new 
+                                                            ? route('recovery.update-status', $recovery->id) 
+                                                            : route('work-hours.approve-recovery', $recovery->id);
+                                                    @endphp
+                                                    <button @click="if(confirm('¿Aprobar ' + '{{ $recovery->recovered_hours }}' + 'h para el ' + '{{ \Carbon\Carbon::parse($recovery->work_date)->format('d/m') }}' + '?')) {
+                                                                isApproving = true;
+                                                                fetch('{{ $approvalUrl }}', {
+                                                                    method: 'POST',
+                                                                    headers: {
+                                                                        'Content-Type': 'application/json',
+                                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                                        'Accept': 'application/json'
+                                                                    },
+                                                                    @if($recovery->is_new)
+                                                                    body: JSON.stringify({ approved: true })
+                                                                    @endif
+                                                                }).then(r => r.json()).then(data => {
+                                                                    if(data.success) window.location.reload();
+                                                                    else alert(data.message);
+                                                                }).finally(() => isApproving = false);
+                                                            }"
+                                                            :disabled="isApproving"
+                                                            class="bg-orange-100 text-orange-700 hover:bg-orange-200 px-3 py-1 rounded-full text-[10px] font-bold transition-all flex items-center gap-1 border border-orange-200 transition active:scale-95 disabled:opacity-50">
+                                                        <span>Aprobar {{ \Carbon\Carbon::parse($recovery->work_date)->format('d/m') }}: {{ $recovery->recovered_hours }}h</span>
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if(!$prof['has_pending_weeks'] && !$prof['has_pending_recoveries'])
                                     <span class="text-sm font-bold text-green-500 italic flex items-center gap-1.5">
                                         Todo al día
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -10,7 +10,8 @@ Artisan::command('inspire', function () {
 
 // 1. Daily reminder for professionals (Yellow/Red status)
 Schedule::command('remind:professional-registration')
-    ->dailyAt('10:00')
+    ->days([1, 3, 5])
+    ->at('10:00')
     ->timezone('America/Argentina/Buenos_Aires');
 
 // 2. Activity check for Analyst (Red alerts)
@@ -32,4 +33,9 @@ Schedule::command('reports:send-weekly')
 // 5. Monthly reports to companies (1st of each month at 9:00 AM)
 Schedule::command('reports:send-monthly')
     ->monthlyOn(1, '09:00')
+    ->timezone('America/Argentina/Buenos_Aires');
+
+// 6. Daily recovery reminders for professionals with pending hours (Every day at 9:00 AM)
+Schedule::command('app:send-recovery-reminders')
+    ->dailyAt('09:00')
     ->timezone('America/Argentina/Buenos_Aires');

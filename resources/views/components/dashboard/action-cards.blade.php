@@ -40,21 +40,40 @@
     <div class="bg-gray-100 rounded-2xl p-6 flex flex-col justify-between h-48 transition-transform hover:scale-105 duration-300 border border-transparent hover:border-[#22A9C8] shadow-md">
         <div>
             @if(auth()->user()->tipo_usuario === 'empleador')
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Monitoreo de horas</h3>
-                <p class="text-gray-600 text-sm leading-relaxed">Revisa el registro de horas de los profesionales.</p>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Monitoreo de tareas</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">Revisa las notificaciones de tareas de los profesionales.</p>
             @else
                 <h3 class="text-lg font-bold text-gray-900 mb-2">Reportar actividades</h3>
-                <p class="text-gray-600 text-sm leading-relaxed">Registra tus horas y actividades diarias.</p>
+                <p class="text-gray-600 text-sm leading-relaxed">Registra tus tareas y actividades diarias.</p>
             @endif
         </div>
-        <div>
+        <!-- Register Hours Card -->
+    <a href="{{ route('empleado.registrar-horas') }}" class="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+        
+        <div class="relative flex items-center gap-4">
+            <div class="p-3 bg-primary/10 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-semibold text-gray-900 group-hover:text-primary transition-colors">Notificar tareas</h3>
+                <p class="text-sm text-gray-500 mt-1">Registra tu jornada laboral diaria</p>
+            </div>
+            <div class="ml-auto">
+                <svg class="w-5 h-5 text-gray-300 group-hover:text-primary group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </div>
+        </div>
+    </a>        <div>
             @if(auth()->user()->tipo_usuario === 'empleador')
                 <a href="{{ route('empleador.dashboard') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#22A9C8] transition-colors">
                     Ver resumen
                 </a>
             @else
                 <a href="{{ route('empleado.registrar-horas') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#22A9C8] transition-colors">
-                    Registrar
                 </a>
             @endif
         </div>
