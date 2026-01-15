@@ -233,25 +233,6 @@
     }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
 
-            {{-- Date Filters --}}
-            <section class="px-2 sm:px-0 flex flex-col sm:flex-row items-center gap-4">
-                <div class="flex items-center gap-2 bg-gray-50 rounded-2xl border border-gray-200 p-2 shadow-sm w-full sm:w-auto">
-                    <span class="text-xs font-bold text-gray-500 ml-2 uppercase">Filtrar por fecha:</span>
-                    <input type="date" x-model="startDate" class="border-none bg-transparent focus:ring-0 text-sm p-1 rounded-lg w-full sm:w-auto" placeholder="Desde">
-                    <span class="text-gray-400">/</span>
-                    <input type="date" x-model="endDate" class="border-none bg-transparent focus:ring-0 text-sm p-1 rounded-lg w-full sm:w-auto" placeholder="Hasta">
-                </div>
-
-                {{-- Search Box --}}
-                <div class="relative w-full sm:w-64">
-                    <input type="text" x-model="searchQuery" placeholder="Buscar tarea..." class="w-full pl-10 pr-4 py-2 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-gray-50">
-                    <svg class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-
-                <button @click="startDate = ''; endDate = ''; searchQuery = ''" class="text-xs text-gray-400 hover:text-primary transition-colors font-medium" x-show="startDate || endDate || searchQuery">
-                    Limpiar filtros
-                </button>
-            </section>
 
             {{-- Vistazo General Cards --}}
             <section class="px-2 sm:px-0">
@@ -287,6 +268,27 @@
             {{-- Team Assignments Table --}}
             <section class="px-2 sm:px-0">
                 <h3 class="text-primary font-medium text-base md:text-lg mb-4">Mis asignaciones</h3>
+                
+                {{-- Date Filters --}}
+                <div class="flex flex-col sm:flex-row items-center gap-4 mb-6">
+                    <div class="flex items-center gap-2 bg-gray-50 rounded-2xl border border-gray-200 p-2 shadow-sm w-full sm:w-auto">
+                        <span class="text-xs font-bold text-gray-500 ml-2 uppercase">Filtrar por fecha:</span>
+                        <input type="date" x-model="startDate" class="border-none bg-transparent focus:ring-0 text-sm p-1 rounded-lg w-full sm:w-auto" placeholder="Desde">
+                        <span class="text-gray-400">/</span>
+                        <input type="date" x-model="endDate" class="border-none bg-transparent focus:ring-0 text-sm p-1 rounded-lg w-full sm:w-auto" placeholder="Hasta">
+                    </div>
+
+                    {{-- Search Box --}}
+                    <div class="relative w-full sm:w-64">
+                        <input type="text" x-model="searchQuery" placeholder="Buscar tarea..." class="w-full pl-10 pr-4 py-2 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-gray-50">
+                        <svg class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+
+                    <button @click="startDate = ''; endDate = ''; searchQuery = ''" class="text-xs text-gray-400 hover:text-primary transition-colors font-medium" x-show="startDate || endDate || searchQuery">
+                        Limpiar filtros
+                    </button>
+                </div>
+                
                 <div class="bg-white rounded-3xl border-2 border-primary p-2 md:p-4">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-separate border-spacing-y-2">
