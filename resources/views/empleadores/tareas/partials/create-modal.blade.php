@@ -47,7 +47,7 @@
             <form action="{{ route('empleador.tareas.store') }}" method="POST" id="createTaskForm">
                 @csrf
                 
-                <h3 class="text-[#22A9C8] font-medium text-lg mb-6" x-text="isTeamTask ? 'Crea una tarea en equipo' : 'Crea una tarea para este profesional'"></h3>
+                <h3 class="text-[#22A9C8] font-medium text-lg mb-6" x-text="this.isTeamTask ? 'Crea una tarea en equipo' : 'Crea una tarea para este profesional'"></h3>
 
                 <!-- Row 1: Title & Priority -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -79,7 +79,7 @@
 
                 <!-- Row 3: Assignees (Conditional) -->
                 <!-- TEAM Selection -->
-                <div class="mb-6" x-show="isTeamTask">
+                <div class="mb-6" x-show="this.isTeamTask">
                     <div class="bg-gray-50 rounded-lg p-4 max-h-32 overflow-y-auto">
                         <p class="text-xs text-gray-500 mb-2 uppercase font-bold tracking-wider">Asigna a los profesionales</p>
                         <div class="space-y-2">
@@ -96,7 +96,7 @@
 
                 <!-- INDIVIDUAL Selection (Hidden Input) -->
                 <!-- We insert this input ONLY if !isTeamTask to avoid conflict or duplicate names. x-if works on template, but simple x-show with Disabled attribute is safer for form submission -->
-                <input type="hidden" name="assignees[]" :value="targetEmployeeId" x-bind:disabled="isTeamTask">
+                <input type="hidden" name="assignees[]" :value="targetEmployeeId" x-bind:disabled="this.isTeamTask">
 
                 <!-- Description -->
                 <div class="mb-8">

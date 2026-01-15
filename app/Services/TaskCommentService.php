@@ -26,7 +26,10 @@ class TaskCommentService
     {
         $comment = Comment::findOrFail($commentId);
         
-        // Check authorization if needed (usually handled in controller/policy)
+        // Only the author can update their comment
+        if ($comment->user_id !== Auth::id()) {
+            abort(403, 'No tienes permiso para editar este comentario.');
+        }
         
         $comment->update([
             'content' => $content,
@@ -44,6 +47,11 @@ class TaskCommentService
         $comment = Comment::where('task_id', $taskId)
             ->where('id', $commentId)
             ->firstOrFail();
+        
+        // Only the author can delete their comment
+        if ($comment->user_id !== Auth::id()) {
+            abort(403, 'No tienes permiso para eliminar este comentario.');
+        }
             
         return $comment->delete();
     }

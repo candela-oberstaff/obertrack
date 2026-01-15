@@ -156,4 +156,34 @@ class ManagerTaskController extends Controller
     
         return response()->json(['success' => true]);
     }
+
+    public function uploadFile(Request $request, Task $task)
+    {
+        $this->checkManagerAccess();
+
+        $request->validate([
+            'file' => 'required|file|max:10240', // 10MB max
+        ]);
+
+        $file = $request->file('file');
+        $filename = $file->getClientOriginalName();
+        $path = $file->store('task-attachments', 'public');
+
+        $attachment = new \App\Models\TaskAttachment();
+        $attachment->task_id = $task->id;
+        $attachment->uploaded_by = Auth::id();
+        $attachment->filename = $filename;
+        $attachment->stored_filename = $path;
+        $attachment->mime_type = $file->getMimeType();
+        $attachment->file_size = $file->getSize();
+        $attachment->save();
+
+        // Load uploader for response
+        $attachment->load('uploader');
+
+        return response()->json([
+            'success' => true,
+            'attachment' => $attachment
+        ]);
+    }
 }

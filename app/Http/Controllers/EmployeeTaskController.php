@@ -48,7 +48,11 @@ class EmployeeTaskController extends Controller
 
     public function addComment(Request $request, Task $task)
     {
-        // ... (same as before)
+        // Permission check
+        if (!$task->assignees->contains(Auth::id()) && $task->created_by !== Auth::id()) {
+            abort(403);
+        }
+
         $request->validate([
             'content' => 'required|string'
         ]);
@@ -66,7 +70,37 @@ class EmployeeTaskController extends Controller
         ]);
     }
 
-    // ... (updateComment and deleteComment can remain same as they check comment ownership)
+    public function updateComment(Request $request, Comment $comment)
+    {
+        if ($comment->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'content' => 'required|string'
+        ]);
+
+        $comment->update(['content' => $request->content]);
+        
+        // Return structured data to match what the frontend expects
+        $comment->load('user');
+        
+        return response()->json([
+            'success' => true,
+            'comment' => $comment
+        ]);
+    }
+
+    public function deleteComment(Comment $comment)
+    {
+        if ($comment->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $comment->delete();
+
+        return response()->json(['success' => true]);
+    }
 
     public function toggleCompletion(Request $request, Task $task)
     {
@@ -80,6 +114,39 @@ class EmployeeTaskController extends Controller
         return response()->json([
             'success' => true,
             'completed' => $task->completed
+        ]);
+    }
+
+    public function uploadFile(Request $request, Task $task)
+    {
+        // Permission check
+        if (!$task->assignees->contains(Auth::id()) && $task->created_by !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
+        $request->validate([
+            'file' => 'required|file|max:10240', // 10MB max
+        ]);
+
+        $file = $request->file('file');
+        $filename = $file->getClientOriginalName();
+        $path = $file->store('task-attachments', 'public');
+
+        $attachment = new \App\Models\TaskAttachment();
+        $attachment->task_id = $task->id;
+        $attachment->uploaded_by = Auth::id();
+        $attachment->filename = $filename;
+        $attachment->stored_filename = $path;
+        $attachment->mime_type = $file->getMimeType();
+        $attachment->file_size = $file->getSize();
+        $attachment->save();
+
+        // Load uploader for response
+        $attachment->load('uploader');
+
+        return response()->json([
+            'success' => true,
+            'attachment' => $attachment
         ]);
     }
 }

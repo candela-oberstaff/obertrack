@@ -40,6 +40,10 @@ Route::middleware(['auth'])->group(function () {
     // GET /tasks/attachments/{attachment}/download - Download a task attachment
     Route::get('/tasks/attachments/{attachment}/download', [TaskController::class, 'downloadAttachment'])
         ->name('tasks.attachments.download');
+
+    // DELETE /tasks/attachments/{attachment} - Delete a task attachment
+    Route::delete('/tasks/attachments/{attachment}', [TaskController::class, 'deleteAttachment'])
+        ->name('tasks.attachments.destroy');
     
     // Comments Management
     // GET /tasks/{taskId}/comments - Get all comments for a task

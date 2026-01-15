@@ -45,6 +45,10 @@ Route::middleware(['auth'])->prefix('empleados')->name('empleados.')->group(func
     Route::delete('/tareas/comment/{comment}', [EmployeeTaskController::class, 'deleteComment'])
         ->name('tasks.comment.delete');
     
+    // POST /empleados/tareas/{task}/files - Upload a file
+    Route::post('/tareas/{task}/files', [EmployeeTaskController::class, 'uploadFile'])
+        ->name('tasks.files.upload');
+    
     // Legacy Routes
     // GET /empleados/editar-tareas - Edit tasks view (legacy)
     Route::get('/editar-tareas', [TaskController::class, 'index'])

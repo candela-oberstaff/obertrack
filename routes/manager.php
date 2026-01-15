@@ -52,4 +52,8 @@ Route::middleware(['auth'])->prefix('manager')->name('manager.')->group(function
     // DELETE /manager/comments/{comment} - Delete a comment
     Route::delete('/comments/{comment}', [ManagerTaskController::class, 'deleteComment'])
         ->name('tasks.comment.delete');
+    
+    // POST /manager/tasks/{task}/files - Upload a file
+    Route::post('/tasks/{task}/files', [ManagerTaskController::class, 'uploadFile'])
+        ->name('tasks.files.upload');
 });

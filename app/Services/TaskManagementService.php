@@ -170,7 +170,7 @@ class TaskManagementService
         })->whereHas('assignees', function($q) use ($empleados) {
                        $q->whereIn('user_id', $empleados->pluck('id'));
                    })
-                     ->with(['comments.user', 'assignees', 'attachments.uploader']);
+                     ->with(['comments.user', 'assignees', 'attachments.uploader', 'createdBy']);
 
         return $this->applyFilters($query, $filters)->get();
     }

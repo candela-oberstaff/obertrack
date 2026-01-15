@@ -213,4 +213,28 @@ class TaskController extends Controller
 
         abort(404, 'No se pudo encontrar el archivo físico en el almacenamiento.');
     }
+
+    public function deleteAttachment(\App\Models\TaskAttachment $attachment)
+    {
+        $task = $attachment->task;
+        $user = Auth::user();
+
+        // Only the uploader can delete the attachment
+        if ($attachment->uploaded_by !== $user->id) {
+            return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar este archivo.'], 403);
+        }
+
+
+        if ($attachment->stored_filename) {
+            if (\Storage::disk('public')->exists($attachment->stored_filename)) {
+                \Storage::disk('public')->delete($attachment->stored_filename);
+            } elseif (\Storage::disk('local')->exists($attachment->stored_filename)) {
+                \Storage::disk('local')->delete($attachment->stored_filename);
+            }
+        }
+
+        $attachment->delete();
+
+        return response()->json(['success' => true, 'message' => 'Archivo eliminado correctamente.']);
+    }
 }

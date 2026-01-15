@@ -8,9 +8,38 @@
     </x-slot>
 
     <div class="py-8 bg-white min-h-screen" x-data="{
+        currentUser: {{ json_encode([
+            'id' => auth()->id(),
+            'name' => auth()->user()->name,
+            'avatar' => auth()->user()->avatar ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : asset('storage/' . auth()->user()->avatar)) : '',
+            'initials' => substr(auth()->user()->name, 0, 1),
+            // Permissions check for upload/delete
+            'tipo_usuario' => auth()->user()->tipo_usuario,
+            'is_superadmin' => auth()->user()->is_superadmin
+        ]) }},
         startDate: '',
         endDate: '',
         searchQuery: '',
+        
+        // Modal State
+        selectedTask: null,
+        isDetailsModalOpen: false,
+        currentTab: 'details',
+        
+        // UI State
+        isUploadingFile: false,
+        newCommentText: '',
+        isSubmittingComment: false,
+        editingCommentId: null,
+        editCommentContent: '',
+        
+        // Delete Confirmation State
+        deleteConfirmation: {
+            isOpen: false,
+            type: null, // 'file' or 'comment'
+            id: null
+        },
+
         matches(task) {
             const taskDate = task.date;
             const taskTitle = task.title.toLowerCase();
@@ -21,6 +50,185 @@
             if (this.startDate && taskDate < this.startDate) return false;
             if (this.endDate && taskDate > this.endDate) return false;
             return true;
+        },
+        
+        openDetailsModal(task, tab = 'details') {
+            this.selectedTask = task;
+            this.currentTab = tab;
+            this.isDetailsModalOpen = true;
+        },
+        
+        formatDate(dateStr) {
+            if (!dateStr) return '';
+            const datePart = dateStr.split('T')[0];
+            const parts = datePart.split('-');
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        },
+
+        // --- Comment Logic ---
+
+        async submitComment() {
+            if (!this.newCommentText.trim()) return;
+            this.isSubmittingComment = true;
+            
+            const taskId = this.selectedTask.id;
+            const content = this.newCommentText;
+            
+            const tempId = 'temp_' + Date.now();
+            const optimisticComment = {
+                id: tempId,
+                content: content,
+                created_at: new Date().toISOString(),
+                user: this.currentUser,
+                task_id: taskId
+            };
+            
+            if (!this.selectedTask.comments) this.selectedTask.comments = [];
+            this.selectedTask.comments.unshift(optimisticComment);
+            this.newCommentText = ''; 
+
+            try {
+                // Route: POST /empleados/tareas/{task}/comment
+                const response = await fetch(`/empleados/tareas/${taskId}/comment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                    },
+                    body: JSON.stringify({ content: content })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const index = this.selectedTask.comments.findIndex(c => c.id === tempId);
+                    if (index !== -1) this.selectedTask.comments[index] = data.comment;
+                } else {
+                    this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
+                    alert('Error al enviar el comentario.');
+                }
+            } catch (error) {
+                this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
+                console.error('Error:', error);
+                alert('Error de conexión.');
+            } finally {
+                this.isSubmittingComment = false;
+            }
+        },
+
+        startEditingComment(comment) {
+            this.editingCommentId = comment.id;
+            this.editCommentContent = comment.content;
+        },
+
+        async updateComment(commentId) {
+            if (!this.editCommentContent.trim()) return;
+
+            try {
+                // Route: PUT /empleados/tareas/comment/{comment}
+                const response = await fetch(`/empleados/tareas/comment/${commentId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                    },
+                    body: JSON.stringify({ content: this.editCommentContent })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const index = this.selectedTask.comments.findIndex(c => c.id === commentId);
+                    if (index !== -1) this.selectedTask.comments[index] = data.comment;
+                    this.editingCommentId = null;
+                } else {
+                    alert('Error al actualizar.');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Error de conexión');
+            }
+        },
+
+        confirmDeleteComment(id) {
+            this.deleteConfirmation = { isOpen: true, type: 'comment', id: id };
+        },
+
+        // --- File Logic ---
+
+        async uploadFile(file) {
+            if (!file) return;
+            this.isUploadingFile = true;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                 // Route: POST /empleados/tareas/{task}/files
+                const response = await fetch(`/empleados/tareas/${this.selectedTask.id}/files`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
+                    this.selectedTask.attachments.unshift(data.attachment);
+                } else {
+                    const data = await response.json();
+                    alert(data.message || 'Error al subir el archivo.');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Error de conexión.');
+            } finally {
+                this.isUploadingFile = false;
+            }
+        },
+
+        confirmDeleteFile(id) {
+            this.deleteConfirmation = { isOpen: true, type: 'file', id: id };
+        },
+
+        async performDelete() {
+            const { type, id } = this.deleteConfirmation;
+            this.deleteConfirmation.isOpen = false;
+
+            if (type === 'file') {
+                try {
+                    // Generic Route: DELETE /tasks/attachments/{attachment}
+                    const response = await fetch(`/tasks/attachments/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                        }
+                    });
+                    if (response.ok) {
+                        this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
+                    } else {
+                        const data = await response.json();
+                        alert(data.message || 'Error al eliminar archivo');
+                    }
+                } catch (e) { alert('Error de conexión'); }
+            } else if (type === 'comment') {
+                try {
+                    // Route: DELETE /empleados/tareas/comment/{comment}
+                    const response = await fetch(`/empleados/tareas/comment/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                        }
+                    });
+                     if (response.ok) {
+                        this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
+                    } else {
+                        alert('Error al eliminar comentario');
+                    }
+                } catch (e) { alert('Error de conexión'); }
+            }
         }
     }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
@@ -95,8 +303,9 @@
                             <tbody>
                                 @forelse($teamTasks as $task)
                                     <tr class="bg-gray-50 hover:bg-gray-100 transition group rounded-lg" 
-                                        x-show="matches({ date: '{{ $task->end_date->format('Y-m-d') }}', title: '{{ addslashes($task->title) }}' })">
-                                        <td class="p-4 pl-6 font-medium text-gray-800 rounded-l-lg">
+                                        x-show="matches({ date: '{{ $task->end_date->format('Y-m-d') }}', title: '{{ addslashes($task->title) }}' })"
+                                    >
+                                        <td @click='openDetailsModal(@json($task, JSON_HEX_APOS))' class="p-4 pl-6 font-medium text-gray-800 rounded-l-lg cursor-pointer hover:text-primary transition-colors">
                                             {{ $task->title }}
                                             <div class="text-xs text-gray-500 font-normal mt-1">{{ Str::limit($task->description, 50) }}</div>
                                         </td>
@@ -121,13 +330,13 @@
                                             <livewire:task-status-selector :task="$task" :wire:key="'task-status-'.$task->id" />
                                         </td>
                                         <td class="p-4 text-center">
-                                            <button @click="Livewire.dispatch('open-task-comments', { taskId: '{{ $task->id }}' })" class="text-gray-500 hover:text-primary transition flex items-center justify-center mx-auto space-x-1">
+                                            <button @click.stop="openDetailsModal(@json($task, JSON_HEX_APOS), 'comments')" class="text-gray-500 hover:text-primary transition flex items-center justify-center mx-auto space-x-1">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                                                 <span>{{ $task->comments->count() }}</span>
                                             </button>
                                         </td>
                                         <td class="p-4 text-center rounded-r-lg">
-                                            <button @click="Livewire.dispatch('open-task-files', { taskId: '{{ $task->id }}' })" class="text-gray-500 hover:text-primary transition flex items-center justify-center mx-auto space-x-1">
+                                            <button @click.stop="openDetailsModal(@json($task, JSON_HEX_APOS), 'files')" class="text-gray-500 hover:text-primary transition flex items-center justify-center mx-auto space-x-1">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                                                 <span>{{ $task->attachments->count() }}</span>
                                             </button>
@@ -150,10 +359,8 @@
 
 
         </div>
+    {{-- Modals --}}
+    @include('tareas.partials.task-details-modal')
     </div>
-
-    {{-- Livewire Modals --}}
-    <livewire:task-comments-modal />
-    <livewire:task-files-modal />
 
 </x-app-layout>
