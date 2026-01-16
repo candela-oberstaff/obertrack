@@ -38,12 +38,7 @@
                         <p class="text-primary font-medium text-xs">Total de tareas notificadas hasta el momento</p>
                     </div>
                     {{-- Mini Stats --}}
-                    <div class="flex items-center gap-4">
-                        <div class="text-right">
-                             <p class="text-xl font-bold text-orange-500 leading-none">{{ $pendingTasksCount }}</p>
-                             <p class="text-xs text-gray-400">Pendientes</p>
-                        </div>
-                    </div>
+                    {{-- Mini Stats (Moved to main card) --}}
                 </div>
             </div>
 
@@ -60,21 +55,24 @@
                 </div>
 
                 <div class="flex flex-wrap gap-6 items-center mt-4 md:mt-0 px-4 md:px-0">
+                    
+                    {{-- Tareas Pendientes --}}
+                    <div class="text-center group cursor-help relative">
+                        <span class="block text-3xl font-bold text-orange-500">{{ $pendingTasksCount }}</span>
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Pendientes</span>
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                            Tareas asignadas pendientes
+                        </div>
+                    </div>
+
+                    <div class="h-12 w-px bg-gray-200 hidden sm:block"></div>
+
+                    {{-- Tareas Realizadas --}}
                     <div class="text-center group cursor-help relative">
                         <span class="block text-3xl font-bold text-primary">{{ $completedTasksCount }}</span>
                         <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Tareas realizadas</span>
                         <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
                             Tareas completadas este mes
-                        </div>
-                    </div>
-                    
-                    <div class="h-12 w-px bg-gray-200 hidden sm:block"></div>
-                    
-                    <div class="text-center group cursor-help relative">
-                        <span class="block text-3xl font-bold text-red-500">{{ number_format($debtSummary['total_debt'], 1) }}h</span>
-                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Horas Adeudadas</span>
-                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
-                            Total de horas por ausencias sin recuperar
                         </div>
                     </div>
 
@@ -619,7 +617,7 @@
                      x-transition:leave="ease-in duration-200"
                      x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                      x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                     class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                     class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
                     
                     {{-- Modal Header --}}
                     <div class="bg-gray-50 px-4 py-4 sm:px-6 flex justify-between items-center border-b border-gray-100 rounded-t-2xl">

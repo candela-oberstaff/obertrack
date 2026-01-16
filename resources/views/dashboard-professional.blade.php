@@ -13,7 +13,7 @@
             </div>
 
             {{-- Summary Cards --}}
-            <div id="dashboard-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div id="dashboard-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 @php
                     $debtSummary = \App\Http\Controllers\RecoveryHoursController::getDebtSummary(auth()->id());
                 @endphp
@@ -31,28 +31,7 @@
                     <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C]">{{ str_pad($totalPending, 2, '0', STR_PAD_LEFT) }}</p>
                 </div>
 
-                {{-- Horas Registradas --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
-                    @php
-                        $currentPeriodStart = now()->startOfMonth();
-                        $currentPeriodEnd = now();
-                        $registeredHours = auth()->user()->workHours()
-                            ->whereBetween('work_date', [$currentPeriodStart, $currentPeriodEnd])
-                            ->get();
-                        $totalHours = $registeredHours->sum('hours_worked');
-                        $hasPendingApproval = $registeredHours->where('approved', false)->count() > 0;
-                    @endphp
-                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">
-                        Horas de tareas 
-                        <span class="text-[8px] md:text-[10px] text-gray-400 font-medium">({{ $currentPeriodStart->format('M d') }} - {{ $currentPeriodEnd->format('M d') }})</span>
-                    </p>
-                    <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C] mb-2">{{ (int)$totalHours }} h</p>
-                    @if($hasPendingApproval)
-                        <p class="text-[10px] text-red-500 font-bold italic line-clamp-1">
-                            Pendientes de aprobación
-                        </p>
-                    @endif
-                </div>
+                {{-- Horas de tareas (Eliminado) --}}
 
                 {{-- Tareas Completadas --}}
                 <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
@@ -262,32 +241,41 @@
                     type: null,
                     id: null
                 },
+                
+                // Helper to refresh data from server
+                async refreshTaskDetails() {
+                    if (!this.selectedTask?.id) return;
+                    try {
+                        const response = await fetch(`/tasks/${this.selectedTask.id}/details`);
+                        if (response.ok) {
+                            this.selectedTask = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Error refreshing details:', error);
+                    }
+                },
+
                 async openDetailsModal(task) {
                     this.selectedTask = task;
                     this.isDetailsModalOpen = true;
                     this.currentTab = 'details';
                     this.newCommentText = '';
-                    
-                    try {
-                        const response = await fetch(`/tasks/${task.id}/details`);
-                        if (response.ok) {
-                            this.selectedTask = await response.json();
-                        }
-                    } catch (error) {
-                        console.error('Error fetching task details:', error);
-                    }
+                    await this.refreshTaskDetails();
                 },
+
                 closeModal() {
                     this.isDetailsModalOpen = false;
                     this.selectedTask = null;
                     this.currentTab = 'details';
                 },
+
                 formatDate(dateStr) {
                     if (!dateStr) return '';
                     const datePart = dateStr.split('T')[0];
                     const parts = datePart.split('-');
                     return `${parts[2]}/${parts[1]}/${parts[0]}`;
                 },
+
                 async submitComment() {
                     if (!this.newCommentText.trim() || this.isSubmittingComment) return;
                     
@@ -306,10 +294,8 @@
                         });
                         
                         if (response.ok) {
-                            const newComment = await response.json();
-                            if (!this.selectedTask.comments) this.selectedTask.comments = [];
-                            this.selectedTask.comments.push(newComment);
                             this.newCommentText = '';
+                            await this.refreshTaskDetails();
                         }
                     } catch (error) {
                         console.error('Error submitting comment:', error);
@@ -317,10 +303,12 @@
                         this.isSubmittingComment = false;
                     }
                 },
+
                 startEditingComment(comment) {
                     this.editingCommentId = comment.id;
                     this.editCommentContent = comment.content;
                 },
+
                 async updateComment(commentId) {
                     try {
                         const response = await fetch(`/tasks/comments/${commentId}`, {
@@ -333,6 +321,7 @@
                         });
                         
                         if (response.ok) {
+                            // Local update is fine for text edit
                             const comment = this.selectedTask.comments.find(c => c.id === commentId);
                             if (comment) comment.content = this.editCommentContent;
                             this.editingCommentId = null;
@@ -341,12 +330,15 @@
                         console.error('Error updating comment:', error);
                     }
                 },
+
                 confirmDeleteComment(commentId) {
                     this.deleteConfirmation = { isOpen: true, type: 'comment', id: commentId };
                 },
+
                 confirmDeleteFile(fileId) {
                     this.deleteConfirmation = { isOpen: true, type: 'file', id: fileId };
                 },
+
                 async performDelete() {
                     const { type, id } = this.deleteConfirmation;
                     try {
@@ -359,11 +351,7 @@
                         });
                         
                         if (response.ok) {
-                            if (type === 'comment') {
-                                this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
-                            } else {
-                                this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
-                            }
+                            await this.refreshTaskDetails();
                         }
                     } catch (error) {
                         console.error('Error deleting:', error);
@@ -371,6 +359,7 @@
                         this.deleteConfirmation = { isOpen: false, type: null, id: null };
                     }
                 },
+
                 async uploadFile(file) {
                     if (!file || this.isUploadingFile) return;
                     
@@ -388,9 +377,8 @@
                         });
                         
                         if (response.ok) {
-                            const newAttachment = await response.json();
-                            if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
-                            this.selectedTask.attachments.push(newAttachment);
+                            // Force refresh to get correct file paths and IDs
+                            await this.refreshTaskDetails();
                         }
                     } catch (error) {
                         console.error('Error uploading file:', error);
