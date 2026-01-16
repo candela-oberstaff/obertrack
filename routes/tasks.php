@@ -45,20 +45,33 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/tasks/attachments/{attachment}', [TaskController::class, 'deleteAttachment'])
         ->name('tasks.attachments.destroy');
     
+    // Task Details
+    Route::get('/tasks/{task}/details', [TaskController::class, 'getDetails'])
+        ->name('tasks.details');
+
     // Comments Management
     // GET /tasks/{taskId}/comments - Get all comments for a task
     Route::get('/tasks/{taskId}/comments', [CommentController::class, 'index'])
         ->name('comments.index');
     
-    // POST /comments - Create a new comment
-    Route::post('/comments', [CommentController::class, 'store'])
-        ->name('comments.store');
+    // POST /tasks/{task}/comments - Create a new comment (Alias for store, requires task_id in body or we can merge it)
+    Route::post('/tasks/{task}/comments', [CommentController::class, 'store'])
+        ->name('tasks.comments.store');
+
+    // PUT /tasks/comments/{id} - Update a comment
+    Route::put('/tasks/comments/{id}', [CommentController::class, 'update'])
+        ->name('tasks.comments.update');
+        
+    // DELETE /tasks/comments/{comment} - Delete a comment
+    Route::delete('/tasks/comments/{comment}', [CommentController::class, 'destroy'])
+        ->name('tasks.comments.destroy');
+
+    // Attachments
+    Route::post('/tasks/{task}/attachments', [TaskController::class, 'uploadAttachment'])
+        ->name('tasks.attachments.store');
     
-    // PUT /comments/{id} - Update a comment
-    Route::put('/comments/{id}', [CommentController::class, 'update'])
-        ->name('comments.update');
-    
-    // DELETE /comments/{comment} - Delete a comment
-    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])
-        ->name('comments.destroy');
+    // Legacy / Generic Comment Routes (Keep for compatibility if used elsewhere)
+    Route::post('/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::put('/comments/{id}', [CommentController::class, 'update'])->name('comments.update');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 });

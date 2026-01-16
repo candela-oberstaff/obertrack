@@ -338,7 +338,7 @@
                                             <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400">Profesional</th>
                                             <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Deuda Total</th>
                                             <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Recuperado</th>
-                                            <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-right">Saldo Actual</th>
+                                            <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-right">Horas pendientes</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-50">

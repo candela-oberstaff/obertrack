@@ -214,6 +214,37 @@ class TaskController extends Controller
         abort(404, 'No se pudo encontrar el archivo físico en el almacenamiento.');
     }
 
+    public function getDetails($taskId)
+    {
+        $task = Task::with(['comments.user', 'attachments.uploader', 'assignees', 'createdBy'])->findOrFail($taskId);
+        return response()->json($task);
+    }
+
+    public function uploadAttachment(Request $request, $taskId)
+    {
+        $task = Task::findOrFail($taskId);
+        
+        $request->validate([
+            'file' => 'required|file|max:10240', // Max 10MB
+        ]);
+
+        $file = $request->file('file');
+        
+        // Match consistency with DashboardController
+        $filename = $file->getClientOriginalName();
+        $path = $file->store('task_attachments', 'local'); // Use local disk and underscore
+
+        $attachment = $task->attachments()->create([
+            'filename' => $filename,
+            'stored_filename' => $path,
+            'mime_type' => $file->getMimeType(), // Correct column name
+            'file_size' => $file->getSize(),
+            'uploaded_by' => request()->user()->id,
+        ]);
+
+        return response()->json($attachment->load('uploader'));
+    }
+
     public function deleteAttachment(\App\Models\TaskAttachment $attachment)
     {
         $task = $attachment->task;

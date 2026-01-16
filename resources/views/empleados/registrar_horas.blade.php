@@ -62,7 +62,7 @@
                 <div class="flex flex-wrap gap-6 items-center mt-4 md:mt-0 px-4 md:px-0">
                     <div class="text-center group cursor-help relative">
                         <span class="block text-3xl font-bold text-primary">{{ $completedTasksCount }}</span>
-                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Tareas Hechas</span>
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Tareas realizadas</span>
                         <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
                             Tareas completadas este mes
                         </div>
@@ -98,7 +98,7 @@
                         <span class="block text-3xl font-black {{ $remaining > 0 ? 'text-red-600' : 'text-green-600' }}">
                             {{ $remaining > 0 ? '-' . number_format($remaining, 1) . 'h' : '✓' }}
                         </span>
-                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Saldo Pendiente</span>
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Horas pendientes</span>
                         <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
                             Balance actual de horas pendientes
                         </div>

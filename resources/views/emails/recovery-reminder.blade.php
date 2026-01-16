@@ -79,6 +79,6 @@
     </div>
     
     <p class="text" style="font-size: 14px; color: #718096; margin-top: 30px; border-top: 1px solid #edf2f7; padding-top: 20px;">
-        💡 <strong>Obertrack Tip:</strong> Recuerda usar la opción "Recuperar horas" al registrar tu actividad para que se descuenten de tu saldo pendiente.
+        💡 <strong>Obertrack Tip:</strong> Recuerda usar la opción "Recuperar horas" al registrar tu actividad para que se descuenten de tus horas pendientes.
     </p>
 @endsection

@@ -135,7 +135,7 @@
                                         <p class="text-xl font-black text-orange-500">{{ number_format($debtSummary['pending_approval'], 1) }}h</p>
                                     </div>
                                     <div class="bg-gray-50 rounded-xl p-4 text-center border-2 {{ $debtSummary['remaining_debt'] > 0 ? 'border-red-100' : 'border-green-100' }}">
-                                        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Saldo Final</p>
+                                        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Horas pendientes</p>
                                         <p class="text-xl font-black {{ $debtSummary['remaining_debt'] > 0 ? 'text-red-600' : 'text-green-600' }}">
                                             {{ $debtSummary['remaining_debt'] > 0 ? '-' . number_format($debtSummary['remaining_debt'], 1) . 'h' : 'Libre' }}
                                         </p>

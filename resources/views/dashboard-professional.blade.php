@@ -76,7 +76,7 @@
 
                 {{-- Recuperación de Horas --}}
                 <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
-                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Saldo de Recuperación</p>
+                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Horas de recuperación</p>
                     <div class="flex items-center justify-between">
                         <div>
                             @php $remainingDebt = $debtSummary['remaining_debt']; @endphp
@@ -104,24 +104,9 @@
                 
                 {{-- Últimas Tareas (2/3 width) --}}
                 <div class="lg:col-span-2" id="dashboard-latest-tasks">
-                    <div class="bg-white rounded-lg border border-gray-200" x-data="{ 
-                        selectedTask: null, 
-                        isDetailsModalOpen: false,
-                        openDetailsModal(task) {
-                            this.selectedTask = task;
-                            this.isDetailsModalOpen = true;
-                        },
-                        closeModal() {
-                            this.isDetailsModalOpen = false;
-                            this.selectedTask = null;
-                        },
-                        formatDate(dateStr) {
-                            if (!dateStr) return '';
-                            const datePart = dateStr.split('T')[0];
-                            const parts = datePart.split('-');
-                            return `${parts[2]}/${parts[1]}/${parts[0]}`;
-                        }
-                    }">
+                    <div class="bg-white rounded-lg border border-gray-200" 
+                         x-data="taskModal()" 
+                         @task-modal-init.window="init()">
                         <div class="px-6 py-4 border-b border-gray-200">
                             <h2 class="text-lg font-semibold text-gray-900">Últimas tareas</h2>
                         </div>
@@ -259,4 +244,161 @@
 
     {{-- Footer --}}
     <x-layout.footer />
+
+    <script>
+        function taskModal() {
+            return {
+                selectedTask: null, 
+                isDetailsModalOpen: false,
+                currentTab: 'details',
+                currentUser: @json(auth()->user()),
+                newCommentText: '',
+                editingCommentId: null,
+                editCommentContent: '',
+                isSubmittingComment: false,
+                isUploadingFile: false,
+                deleteConfirmation: {
+                    isOpen: false,
+                    type: null,
+                    id: null
+                },
+                async openDetailsModal(task) {
+                    this.selectedTask = task;
+                    this.isDetailsModalOpen = true;
+                    this.currentTab = 'details';
+                    this.newCommentText = '';
+                    
+                    try {
+                        const response = await fetch(`/tasks/${task.id}/details`);
+                        if (response.ok) {
+                            this.selectedTask = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Error fetching task details:', error);
+                    }
+                },
+                closeModal() {
+                    this.isDetailsModalOpen = false;
+                    this.selectedTask = null;
+                    this.currentTab = 'details';
+                },
+                formatDate(dateStr) {
+                    if (!dateStr) return '';
+                    const datePart = dateStr.split('T')[0];
+                    const parts = datePart.split('-');
+                    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                },
+                async submitComment() {
+                    if (!this.newCommentText.trim() || this.isSubmittingComment) return;
+                    
+                    this.isSubmittingComment = true;
+                    try {
+                        const response = await fetch(`/tasks/${this.selectedTask.id}/comments`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ 
+                                content: this.newCommentText,
+                                task_id: this.selectedTask.id
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const newComment = await response.json();
+                            if (!this.selectedTask.comments) this.selectedTask.comments = [];
+                            this.selectedTask.comments.push(newComment);
+                            this.newCommentText = '';
+                        }
+                    } catch (error) {
+                        console.error('Error submitting comment:', error);
+                    } finally {
+                        this.isSubmittingComment = false;
+                    }
+                },
+                startEditingComment(comment) {
+                    this.editingCommentId = comment.id;
+                    this.editCommentContent = comment.content;
+                },
+                async updateComment(commentId) {
+                    try {
+                        const response = await fetch(`/tasks/comments/${commentId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ content: this.editCommentContent })
+                        });
+                        
+                        if (response.ok) {
+                            const comment = this.selectedTask.comments.find(c => c.id === commentId);
+                            if (comment) comment.content = this.editCommentContent;
+                            this.editingCommentId = null;
+                        }
+                    } catch (error) {
+                        console.error('Error updating comment:', error);
+                    }
+                },
+                confirmDeleteComment(commentId) {
+                    this.deleteConfirmation = { isOpen: true, type: 'comment', id: commentId };
+                },
+                confirmDeleteFile(fileId) {
+                    this.deleteConfirmation = { isOpen: true, type: 'file', id: fileId };
+                },
+                async performDelete() {
+                    const { type, id } = this.deleteConfirmation;
+                    try {
+                        const url = type === 'comment' ? `/tasks/comments/${id}` : `/tasks/attachments/${id}`;
+                        const response = await fetch(url, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            if (type === 'comment') {
+                                this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
+                            } else {
+                                this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error deleting:', error);
+                    } finally {
+                        this.deleteConfirmation = { isOpen: false, type: null, id: null };
+                    }
+                },
+                async uploadFile(file) {
+                    if (!file || this.isUploadingFile) return;
+                    
+                    this.isUploadingFile = true;
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    try {
+                        const response = await fetch(`/tasks/${this.selectedTask.id}/attachments`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: formData
+                        });
+                        
+                        if (response.ok) {
+                            const newAttachment = await response.json();
+                            if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
+                            this.selectedTask.attachments.push(newAttachment);
+                        }
+                    } catch (error) {
+                        console.error('Error uploading file:', error);
+                    } finally {
+                        this.isUploadingFile = false;
+                    }
+                }
+            }
+        }
+    </script>
 </x-app-layout>

@@ -15,7 +15,7 @@
     <h1>Reporte Mensual de Tareas</h1>
     <p>Profesional: {{ $employee->name }}</p>
     <p>Período: {{ $startDate->format('d/m/Y') }} - {{ $endDate->format('d/m/Y') }}</p>
-    <p>Total de horas de tareas: {{ $totalHours }}</p>
+    <p>Total de horas registradas: {{ $totalHours }}</p>
 
     <table>
         <thead>
