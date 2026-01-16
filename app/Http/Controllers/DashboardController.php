@@ -299,6 +299,32 @@ class DashboardController extends Controller
         ));
     }
 
+    public function showMassEmailForm()
+    {
+        $user = auth()->user();
+        
+        // Security check
+        if (!$user->is_superadmin && $user->tipo_usuario !== 'empleador' && !$user->is_manager) {
+            return redirect()->route('dashboard')->with('error', 'No tienes permiso para ver esta información.');
+        }
+
+        $allProfessionals = $this->employeeDataService->getEmployeesForUser($user);
+        $allCompanies = collect(); // Managers/Employers typically don't email other companies
+
+        // Get email stats for the sidebar
+        $emailStats = [
+            'total_recipients' => 0, // Placeholder - would need a log table to be accurate
+            'by_segment' => [
+                'professionals' => $allProfessionals->count(),
+                'companies' => 0
+            ],
+            'total_sessions' => 0,
+            'recent_logs' => collect()
+        ];
+        
+        return view('empleadores.emails', compact('allProfessionals', 'allCompanies', 'emailStats'));
+    }
+
     public function sendMassEmail(Request $request, \App\Services\BrevoEmailService $emailService)
     {
         $request->validate([

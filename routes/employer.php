@@ -98,6 +98,9 @@ Route::middleware(['auth'])->prefix('empleador')->name('empleador.')->group(func
     // Employee Management
     // POST /empleador/empleados/{employee}/toggle-manager - Toggle manager status
     // Mass Communication
+    Route::get('/comunicaciones/email', [DashboardController::class, 'showMassEmailForm'])
+        ->name('emails.create');
+
     Route::post('/mass-email', [DashboardController::class, 'sendMassEmail'])
         ->name('mass-email');
 });
