@@ -11,7 +11,7 @@
         $currentUserData = [
             'id' => auth()->id(),
             'name' => auth()->user()->name,
-            'avatar' => auth()->user()->avatar ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : asset('storage/' . auth()->user()->avatar)) : '',
+            'avatar' => auth()->user()->avatar ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : asset('avatars/' . auth()->user()->avatar)) : '',
             'initials' => substr(auth()->user()->name, 0, 1),
             'tipo_usuario' => auth()->user()->tipo_usuario,
             'is_superadmin' => auth()->user()->is_superadmin

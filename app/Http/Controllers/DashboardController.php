@@ -257,7 +257,7 @@ class DashboardController extends Controller
                         'recovery_id' => $recovery ? $recovery->id : null,
                         'id' => $employee->id,
                         'name' => $employee->name,
-                        'avatar' => $employee->avatar,
+                        'avatar' => $employee->avatar ? (str_starts_with($employee->avatar, 'http') ? $employee->avatar : asset('avatars/' . $employee->avatar)) : '',
                         'initials' => $employeeSummaries->firstWhere('user.id', $employee->id)['initials'],
                         'hours' => $record ? $record->hours_worked : 0,
                         'approved' => $record ? (bool)$record->approved : true, // If no record, nothing to approve here
@@ -476,7 +476,7 @@ class DashboardController extends Controller
                     'recovery_id' => $recovery ? $recovery->id : null,
                     'id' => $employee->id,
                     'name' => $employee->name,
-                    'avatar' => $employee->avatar,
+                    'avatar' => $employee->avatar ? (str_starts_with($employee->avatar, 'http') ? $employee->avatar : asset('avatars/' . $employee->avatar)) : '',
                     'initials' => $initials,
                     'hours' => $record ? $record->hours_worked : 0,
                     'approved' => $record ? (bool)$record->approved : true,

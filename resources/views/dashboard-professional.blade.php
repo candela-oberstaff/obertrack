@@ -83,8 +83,17 @@
                 
                 {{-- Últimas Tareas (2/3 width) --}}
                 <div class="lg:col-span-2" id="dashboard-latest-tasks">
+                    @php
+                        $currentUserData = [
+                            'id' => auth()->id(),
+                            'name' => auth()->user()->name,
+                            'avatar' => auth()->user()->avatar ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : asset('avatars/' . auth()->user()->avatar)) : '',
+                            'tipo_usuario' => auth()->user()->tipo_usuario,
+                            'is_superadmin' => auth()->user()->is_superadmin
+                        ];
+                    @endphp
                     <div class="bg-white rounded-lg border border-gray-200" 
-                         x-data="taskModal()" 
+                         x-data="taskModal({{ json_encode($currentUserData) }})" 
                          @task-modal-init.window="init()">
                         <div class="px-6 py-4 border-b border-gray-200">
                             <h2 class="text-lg font-semibold text-gray-900">Últimas tareas</h2>
@@ -105,7 +114,7 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @php
                                         $latestTasks = auth()->user()->assignedTasks()
-                                            ->with(['visibleTo', 'comments.user', 'attachments', 'createdBy'])
+                                            ->with(['assignees', 'comments.user', 'attachments', 'createdBy'])
                                             ->latest('tasks.created_at')
                                             ->take(5)
                                             ->get();
@@ -120,8 +129,8 @@
                                             </td>
                                             <td class="px-4 md:px-6 py-4 text-sm text-gray-600 whitespace-nowrap hidden sm:table-cell">{{ $task->end_date->format('d/m/Y') }}</td>
                                             <td class="px-4 md:px-6 py-4 hidden lg:table-cell">
-                                                @if($task->visibleTo)
-                                                    <x-user-avatar :user="$task->visibleTo" size="8" />
+                                                @if($task->assignees->isNotEmpty())
+                                                    <x-user-avatar :user="$task->assignees->first()" size="8" />
                                                 @endif
                                             </td>
                                             <td class="px-4 md:px-6 py-4 hidden md:table-cell">

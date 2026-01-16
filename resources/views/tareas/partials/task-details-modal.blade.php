@@ -176,7 +176,7 @@
                                 <template x-for="comment in selectedTask?.comments" :key="comment.id">
                                     <div class="flex gap-3 group">
                                         <div class="flex-shrink-0">
-                                            <img :src="comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : '/storage/' + comment.user.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(comment.user?.name || 'U')+'&color=FFFFFF&background=22A9C8'" 
+                                            <img :src="comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : '/avatars/' + comment.user.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(comment.user?.name || 'U')+'&color=FFFFFF&background=22A9C8'" 
                                                  class="w-8 h-8 rounded-full bg-gray-200">
                                         </div>
                                         <div class="flex-1 bg-gray-50 rounded-2xl rounded-tl-none p-3 relative hover:bg-gray-100 transition-colors">
@@ -228,7 +228,7 @@
                             <div class="bg-white border-t border-gray-100 pt-4 -mx-6 px-6 sm:-mx-8 sm:px-8 mt-auto sticky bottom-0">
                                 <div class="flex gap-3">
                                     <div class="flex-shrink-0 pt-1">
-                                        <img :src="currentUser.avatar ? (currentUser.avatar.startsWith('http') ? currentUser.avatar : '/storage/' + currentUser.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(currentUser.name)+'&color=FFFFFF&background=22A9C8'" 
+                                        <img :src="currentUser.avatar ? (currentUser.avatar.startsWith('http') ? currentUser.avatar : '/avatars/' + currentUser.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(currentUser.name)+'&color=FFFFFF&background=22A9C8'" 
                                                  class="w-8 h-8 rounded-full bg-gray-200">
                                     </div>
                                     <div class="flex-1">

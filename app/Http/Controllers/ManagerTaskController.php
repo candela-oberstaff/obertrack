@@ -36,6 +36,7 @@ class ManagerTaskController extends Controller
         $currentUserData = [
             'id' => $user->id,
             'name' => $user->name,
+            'avatar' => $user->avatar ? (str_starts_with($user->avatar, 'http') ? $user->avatar : asset('avatars/' . $user->avatar)) : '',
             'tipo_usuario' => $user->tipo_usuario,
             'is_superadmin' => $user->is_superadmin
         ];
