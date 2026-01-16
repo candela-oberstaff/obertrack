@@ -19,7 +19,10 @@
         searchQuery: '',
         selectedTask: null,
         isDetailsModalOpen: false,
+        isCreateModalOpen: false,
         currentTab: 'details',
+        isTeamTask: true,
+        targetEmployeeId: null,
         
         // UI State
         isUploadingFile: false,
@@ -30,6 +33,16 @@
         
         // Delete Confirmation State
         deleteConfirmation: { isOpen: false, type: null, id: null },
+        
+        // Task Edit State
+        isEditingTask: false,
+        isSavingTask: false,
+        editTaskData: {
+            title: '',
+            description: '',
+            priority: '',
+            end_date: ''
+        },
         
         allTasks: @json($tareas),
         get filteredTasks() {
@@ -229,9 +242,98 @@
                         alert('Error al eliminar comentario');
                     }
                 } catch (e) { alert('Error de conexión'); }
+            } else if (type === 'task') {
+                try {
+                    const response = await fetch(`/tareas/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                        }
+                    });
+                    if (response.ok) {
+                        this.isDetailsModalOpen = false;
+                        location.reload();
+                    } else {
+                        const data = await response.json();
+                        alert(data.message || 'Error al eliminar tarea');
+                    }
+                } catch (e) { alert('Error de conexión'); }
             }
+        },
+
+        // --- Task Edit Actions ---
+
+        startEditingTask() {
+            this.editTaskData = {
+                title: this.selectedTask.title,
+                description: this.selectedTask.description || '',
+                priority: this.selectedTask.priority,
+                start_date: (this.selectedTask.start_date || '').split('T')[0],
+                end_date: (this.selectedTask.end_date || '').split('T')[0]
+            };
+            this.isEditingTask = true;
+        },
+
+        async saveTask() {
+            this.isSavingTask = true;
+            try {
+                const response = await fetch(`/tareas/${this.selectedTask.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(this.editTaskData)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.selectedTask = data.task;
+                    this.isEditingTask = false;
+                    location.reload();
+                } else {
+                    const data = await response.json();
+                    alert(data.message || 'Error al guardar cambios');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error de conexión');
+            } finally {
+                this.isSavingTask = false;
+            }
+        },
+
+        confirmDeleteTask() {
+            this.deleteConfirmation = { isOpen: true, type: 'task', id: this.selectedTask.id };
+        },
+        openCreateTaskModal(employeeId = null, isTeam = false) {
+            this.isTeamTask = isTeam;
+            this.targetEmployeeId = employeeId;
+            this.isCreateModalOpen = true;
         }
+    }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @if($errors->any())
+                <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6 rounded-xl shadow-sm">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">Hay errores en el formulario:</p>
+                            <ul class="mt-1 text-xs text-red-600 list-disc list-inside">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            @endif
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <div class="flex flex-col lg:flex-row justify-between items-center gap-4">
@@ -255,10 +357,10 @@
                             Limpiar
                         </button>
 
-                        <a href="{{ route('manager.tasks.create') }}" class="w-full lg:w-auto text-center inline-flex items-center justify-center px-4 py-2 bg-primary border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-hover active:bg-blue-800 focus:outline-none focus:border-blue-800 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150">
+                        <button @click="openCreateTaskModal(null, true)" class="w-full lg:w-auto text-center inline-flex items-center justify-center px-4 py-2 bg-primary border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-hover active:bg-blue-800 focus:outline-none focus:border-blue-800 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                             Crear Nueva Tarea
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -282,14 +384,13 @@
                                     <span class="mr-2 text-sm">Ver detalles</span>
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                 </button>
+                                
                             </div>
-                        </div>
-                        </div>
-                    </div>
                 </div>
             </template>
 
             @include('tareas.partials.task-details-modal')
+            @include('empleadores.tareas.partials.create-modal')
 
             <div x-show="filteredTasks.length === 0" class="text-center py-12 text-gray-500">
                 No se encontraron tareas con estos criterios.

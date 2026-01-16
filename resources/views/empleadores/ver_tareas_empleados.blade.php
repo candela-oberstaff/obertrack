@@ -23,6 +23,8 @@
         startDate: '',
         endDate: '',
         searchQuery: '',
+        isTeamTask: true,
+        targetEmployeeId: null,
         
         // Modal States
         selectedTask: null,
@@ -43,8 +45,18 @@
         // Delete Confirmation State
         deleteConfirmation: {
             isOpen: false,
-            type: null, // 'file' or 'comment'
+            type: null, // 'file', 'comment', or 'task'
             id: null
+        },
+
+        // Task Edit State
+        isEditingTask: false,
+        isSavingTask: false,
+        editTaskData: {
+            title: '',
+            description: '',
+            priority: '',
+            end_date: ''
         },
 
         // Comment Input State (Moved from modal)
@@ -254,11 +266,98 @@
                         alert('Error al eliminar comentario');
                     }
                 } catch (e) { alert('Error de conexión'); }
+            } else if (type === 'task') {
+                try {
+                    const response = await fetch(`/tareas/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                        }
+                    });
+                    if (response.ok) {
+                        // Close modal and refresh or remove from local state
+                        this.isDetailsModalOpen = false;
+                        location.reload(); // Simplest way to ensure list is updated
+                    } else {
+                        const data = await response.json();
+                        alert(data.message || 'Error al eliminar tarea');
+                    }
+                } catch (e) { alert('Error de conexión'); }
             }
+        },
+
+        // --- Task Edit Actions ---
+
+        startEditingTask() {
+            this.editTaskData = {
+                title: this.selectedTask.title,
+                description: this.selectedTask.description || '',
+                priority: this.selectedTask.priority,
+                start_date: (this.selectedTask.start_date || '').split('T')[0],
+                end_date: (this.selectedTask.end_date || '').split('T')[0]
+            };
+            this.isEditingTask = true;
+        },
+
+        async saveTask() {
+            this.isSavingTask = true;
+            try {
+                const response = await fetch(`/tareas/${this.selectedTask.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(this.editTaskData)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.selectedTask = data.task;
+                    this.isEditingTask = false;
+                    location.reload(); // Refresh list to reflect changes in the table
+                } else {
+                    const data = await response.json();
+                    alert(data.message || 'Error al guardar cambios');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error de conexión');
+            } finally {
+                this.isSavingTask = false;
+            }
+        },
+
+        confirmDeleteTask() {
+            this.deleteConfirmation = { isOpen: true, type: 'task', id: this.selectedTask.id };
         }
     }">
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+            
+            @if($errors->any())
+                <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6 rounded-xl shadow-sm">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">
+                                Hay errores en el formulario:
+                            </p>
+                            <ul class="mt-1 text-xs text-red-600 list-disc list-inside">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            @endif
             
             <!-- Filters & Actions -->
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -359,7 +458,7 @@
                                     </span>
                                 </td>
                                 <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
-                                    <button @click.stop="openDetailsModal(@json($task, JSON_HEX_APOS), 'comments')" class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
+                                    <button @click.stop='openDetailsModal(@json($task, JSON_HEX_APOS), "comments")' class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                         </svg>
@@ -367,7 +466,7 @@
                                     </button>
                                 </td>
                                 <td class="py-6 text-center pr-6 bg-white rounded-r-2xl border-r border-y border-[#22A9C8]">
-                                    <button @click.stop="openDetailsModal(@json($task, JSON_HEX_APOS), 'files')" class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
+                                    <button @click.stop='openDetailsModal(@json($task, JSON_HEX_APOS), "files")' class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                         </svg>
@@ -377,12 +476,12 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="py-8 text-center text-gray-500">No hay tareas asignadas.</td>
+                                <td colspan="7" class="py-8 text-center text-gray-500">No hay tareas asignadas.</td>
                             </tr>
                         @endforelse
                         <!-- Empty state when filtered -->
                         <tr x-show="!$el.parentNode.querySelectorAll('tr[x-show]:not([style*=\'display: none\'])').length" style="display: none;">
-                            <td colspan="6" class="p-6 text-center text-gray-500 italic">No se encontraron tareas con estos filtros.</td>
+                            <td colspan="7" class="p-6 text-center text-gray-500 italic">No se encontraron tareas con estos filtros.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -461,20 +560,19 @@
                                     </div>
                                 </div>
                                 
-                                <div class="flex justify-between pt-4 border-t border-gray-100 mt-2">
-                                    <div class="flex items-center gap-1 text-gray-400">Comentarios</div>
+                                 <div class="flex justify-between items-center pt-4 border-t border-gray-100 mt-2">
                                     <div class="flex items-center gap-4">
-                                         <button @click.stop="openComments(@json($task, JSON_HEX_APOS))" class="flex items-center gap-1 text-gray-600">
+                                         <button @click.stop='openDetailsModal(@json($task, JSON_HEX_APOS), "comments")' class="flex items-center gap-1 text-gray-600 hover:text-[#22A9C8] transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                             </svg>
-                                            <span class="font-bold">{{ $task->comments->count() }}</span>
+                                            <span class="font-bold text-sm">{{ $task->comments->count() }}</span>
                                         </button>
-                                         <button @click.stop="openFiles(@json($task, JSON_HEX_APOS))" class="flex items-center gap-1 text-gray-600">
+                                         <button @click.stop='openDetailsModal(@json($task, JSON_HEX_APOS), "files")' class="flex items-center gap-1 text-gray-600 hover:text-[#22A9C8] transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                             </svg>
-                                            <span class="font-bold">{{ $task->attachments->count() }}</span>
+                                            <span class="font-bold text-sm">{{ $task->attachments->count() }}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -488,75 +586,6 @@
                 </div>
             </div>
             
-             <!-- Mass Communication Section -->
-            <div class="mt-16 bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="bg-[#22A9C8] p-2 rounded-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-lg md:text-xl font-bold text-gray-900">Comunicación con profesionales</h3>
-                        <p class="text-gray-500 text-xs md:text-sm">Envía un correo electrónico a todo tu equipo o a un profesional seleccionado.</p>
-                    </div>
-                </div>
-
-                <form action="{{ route('empleador.mass-email') }}" method="POST" enctype="multipart/form-data" class="space-y-4 px-2 sm:px-0" onsubmit="saveScrollPosition(this)">
-                    @csrf
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="recipient_id" class="block text-sm font-semibold text-gray-700 mb-1">Destinatario</label>
-                            <select name="recipient_id" id="recipient_id" 
-                                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all">
-                                <option value="">Todo el equipo de profesionales</option>
-                                @foreach($employees as $employee)
-                                    <option value="{{ $employee->id }}">{{ $employee->name }} ({{ $employee->job_title ?? 'Profesional' }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label for="subject" class="block text-sm font-semibold text-gray-700 mb-1">Asunto del mensaje</label>
-                            <input type="text" name="subject" id="subject" required
-                                   class="w-full rounded-xl border-gray-200 shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all"
-                                   placeholder="Ej: Anuncio importante sobre el proyecto">
-                        </div>
-                    </div>
-                    <div>
-                        <label for="message" class="block text-sm font-semibold text-gray-700 mb-1">Cuerpo del mensaje</label>
-                        <textarea name="message" id="message" rows="4" required
-                                  class="w-full rounded-xl border-gray-200 shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-20 transition-all"
-                                  placeholder="Escribe aquí tu mensaje..."></textarea>
-                    </div>
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div class="flex-1">
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Adjuntar archivos (opcional)</label>
-                            <div class="relative">
-                                <input type="file" name="attachments[]" id="attachments" multiple 
-                                       accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-                                       class="hidden">
-                                <button type="button" onclick="document.getElementById('attachments').click()"
-                                        class="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-200 rounded-xl text-gray-500 hover:border-[#22A9C8] hover:text-[#22A9C8] transition-all">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                    </svg>
-                                    <span>Seleccionar documentos o imágenes</span>
-                                </button>
-                                <div id="file-list" class="mt-2 text-xs text-gray-500 flex flex-wrap gap-2"></div>
-                            </div>
-                        </div>
-                        <div class="flex justify-end items-end">
-                            <button type="submit" 
-                                    class="bg-[#22A9C8] hover:bg-[#1C8CA8] text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md flex items-center gap-2">
-                                <span>Enviar mensaje</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
 
             <!-- Modals moved to bottom of scope for safety -->
             @include('tareas.partials.task-details-modal')

@@ -129,6 +129,11 @@ class User extends Authenticatable
         return $this->tipo_usuario === 'empleador' || $this->is_manager;
     }
 
+    public function isEmpleadorOrSuperAdmin(): bool
+    {
+        return $this->tipo_usuario === 'empleador' || $this->is_superadmin;
+    }
+
     public function promoverAManager(): void
     {
         \Illuminate\Support\Facades\DB::table('users')

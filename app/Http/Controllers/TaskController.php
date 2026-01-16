@@ -38,13 +38,38 @@ class TaskController extends Controller
     public function update(UpdateTaskRequest $request, $id)
     {
         $task = Task::findOrFail($id);
+        
+        if ($task->created_by !== Auth::id()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No tienes permiso para editar esta tarea'], 403);
+            }
+            return back()->with('error', 'No tienes permiso para editar esta tarea.');
+        }
+
         $this->taskManagementService->updateTask($task, $request->validated());
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Tarea actualizada exitosamente.', 'task' => $task->fresh(['comments.user', 'attachments.uploader', 'assignees', 'createdBy'])]);
+        }
         return back()->with('success', 'Tarea actualizada exitosamente.');
     }
 
-    public function destroy($taskId)
+    public function destroy(Request $request, $taskId)
     {
+        $task = Task::findOrFail($taskId);
+        
+        if ($task->created_by !== Auth::id()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar esta tarea'], 403);
+            }
+            return back()->with('error', 'No tienes permiso para eliminar esta tarea.');
+        }
+
         $this->taskManagementService->deleteTask($taskId);
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Tarea eliminada con éxito']);
+        }
         return redirect()->back()->with('success', 'Tarea eliminada con éxito');
     }
 

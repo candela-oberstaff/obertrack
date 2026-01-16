@@ -224,6 +224,8 @@
     {{-- Footer --}}
     <x-layout.footer />
 
+    @include('tareas.partials.task-details-modal')
+
     <script>
         function taskModal() {
             return {
@@ -240,6 +242,14 @@
                     isOpen: false,
                     type: null,
                     id: null
+                },
+                isEditingTask: false,
+                isSavingTask: false,
+                editTaskData: {
+                    title: '',
+                    description: '',
+                    priority: '',
+                    end_date: ''
                 },
                 
                 // Helper to refresh data from server
@@ -342,7 +352,11 @@
                 async performDelete() {
                     const { type, id } = this.deleteConfirmation;
                     try {
-                        const url = type === 'comment' ? `/tasks/comments/${id}` : `/tasks/attachments/${id}`;
+                        let url = '';
+                        if (type === 'comment') url = `/tasks/comments/${id}`;
+                        else if (type === 'file') url = `/tasks/attachments/${id}`;
+                        else if (type === 'task') url = `/tareas/${id}`;
+
                         const response = await fetch(url, {
                             method: 'DELETE',
                             headers: {
@@ -351,13 +365,63 @@
                         });
                         
                         if (response.ok) {
-                            await this.refreshTaskDetails();
+                            if (type === 'task') {
+                                this.isDetailsModalOpen = false;
+                                location.reload();
+                            } else {
+                                await this.refreshTaskDetails();
+                            }
                         }
                     } catch (error) {
                         console.error('Error deleting:', error);
                     } finally {
                         this.deleteConfirmation = { isOpen: false, type: null, id: null };
                     }
+                },
+
+                startEditingTask() {
+                    this.editTaskData = {
+                        title: this.selectedTask.title,
+                        description: this.selectedTask.description || '',
+                        priority: this.selectedTask.priority,
+                        start_date: (this.selectedTask.start_date || '').split('T')[0],
+                        end_date: (this.selectedTask.end_date || '').split('T')[0]
+                    };
+                    this.isEditingTask = true;
+                },
+
+                async saveTask() {
+                    this.isSavingTask = true;
+                    try {
+                        const response = await fetch(`/tareas/${this.selectedTask.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify(this.editTaskData)
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.selectedTask = data.task;
+                            this.isEditingTask = false;
+                            location.reload();
+                        } else {
+                            const data = await response.json();
+                            alert(data.message || 'Error al guardar cambios');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Error de conexión');
+                    } finally {
+                        this.isSavingTask = false;
+                    }
+                },
+
+                confirmDeleteTask() {
+                    this.deleteConfirmation = { isOpen: true, type: 'task', id: this.selectedTask.id };
                 },
 
                 async uploadFile(file) {
