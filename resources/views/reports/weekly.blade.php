@@ -8,7 +8,7 @@
 <body>
     <h1>Reporte Semanal de Tareas</h1>
     <p>Semana del {{ $weekStart->format('d/m/Y') }} al {{ $weekEnd->format('d/m/Y') }}</p>
-    <p>Total de horas de tareas: {{ $totalHours }}</p>
+    <p>Total de horas registradas: {{ $totalHours }}</p>
 
     <table>
         <thead>

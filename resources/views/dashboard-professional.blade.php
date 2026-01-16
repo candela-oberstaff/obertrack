@@ -85,7 +85,7 @@
                             </p>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] text-gray-400 font-bold uppercase">Recuperado</p>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase">Horas de recuperación</p>
                             <p class="text-sm font-black text-green-600">{{ number_format($debtSummary['total_recovered'], 1) }}h</p>
                         </div>
                     </div>
