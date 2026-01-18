@@ -28,8 +28,8 @@
 
             @if($sessionStatus === 'STOPPED')
                 <button wire:click="startSession" wire:loading.attr="disabled" class="w-full py-3 px-6 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                    <span wire:loading.remove>Generar Código QR</span>
-                    <span wire:loading class="loading loading-spinner loading-sm"></span>
+                    <span wire:loading.remove wire:target="startSession">Generar Código QR</span>
+                    <span wire:loading wire:target="startSession" class="loading loading-spinner loading-sm"></span>
                 </button>
             @elseif($sessionStatus === 'STARTING')
                  <div class="flex flex-col items-center">

@@ -24,20 +24,42 @@ class TaskStatusSelector extends Component
             return;
         }
 
+        $wasCompleted = $this->task->completed;
         $this->status = $newStatus;
         
-        // Update both status and completed boolean for backward compatibility
-        // Using DB::raw for completed because PostgreSQL with ATTR_EMULATE_PREPARES=true
-        // might send booleans as integers (1/0), which fails.
-        $this->task->update([
-            'status' => $newStatus,
-            'completed' => DB::raw($newStatus === Task::STATUS_COMPLETED ? 'true' : 'false')
-        ]);
+        $isNowCompleted = $newStatus === Task::STATUS_COMPLETED;
+        
+        // Nuclear option: Direct DB update with explicit RAW boolean literals.
+        // This bypasses Laravel's PDO integer binding which fails on Postgres strict booleans.
+        try {
+            \Illuminate\Support\Facades\DB::table('tasks')
+                ->where('id', $this->task->id)
+                ->update([
+                    'status' => $newStatus,
+                    'completed' => \Illuminate\Support\Facades\DB::raw($isNowCompleted ? 'true' : 'false'),
+                    'updated_at' => \Carbon\Carbon::now()
+                ]);
+        } catch (\Exception $e) {
+            \Log::error("Task update failed: " . $e->getMessage());
+            $this->dispatch('notify', message: 'Error de base de datos: ' . $e->getMessage());
+            return;
+        }
+        
+        // Refresh model to reflect the DB change we just made
+        $this->task->refresh();
+        
+        // Force local state sync just in case
+        $this->status = $this->task->status;
 
         $this->isOpen = false;
         
-        // Dispatch event if needed for parent refresh
-        $this->dispatch('task-status-updated');
+        // Dispatch event with all necessary data for frontend sync
+        $this->dispatch('task-status-updated', 
+            taskId: $this->task->id, 
+            status: $newStatus,
+            completed: $isNowCompleted,
+            wasCompleted: $wasCompleted
+        );
     }
 
     public function toggleDropdown()

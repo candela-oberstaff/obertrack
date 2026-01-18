@@ -1,5 +1,23 @@
 <x-app-layout>
-    <div class="min-h-screen bg-white py-8">
+    @php
+        // Fetch Next Deadline Task (Oldest incomplete task with a deadline)
+        $nextDeadlineTask = auth()->user()->assignedTasks()
+            ->whereRaw('tasks.completed IS FALSE')
+            ->whereNotNull('tasks.end_date')
+            ->orderBy('tasks.end_date', 'asc')
+            ->first();
+            
+        $completedTasks = 0; // Disabled as we replaced the counter
+    @endphp
+    <div class="min-h-screen bg-white py-8" 
+         x-data="dashboardController(0, {{ $completedTasks }}, {{ json_encode([
+            'id' => auth()->id(),
+            'name' => auth()->user()->name,
+            'avatar' => auth()->user()->avatar ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : asset('avatars/' . auth()->user()->avatar)) : '',
+            'tipo_usuario' => auth()->user()->tipo_usuario,
+            'is_superadmin' => auth()->user()->is_superadmin
+        ]) }})"
+         @task-status-updated.window="handleStatusUpdate($event.detail)">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
             {{-- Header Section --}}
@@ -18,39 +36,48 @@
                     $debtSummary = \App\Http\Controllers\RecoveryHoursController::getDebtSummary(auth()->id());
                 @endphp
                 
-                {{-- Tareas Pendientes --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
-                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas pendientes</p>
-                    @php
-                        $totalPending = auth()->user()->assignedTasks()
-                            ->whereRaw('tasks.completed IS FALSE')
-                            ->whereMonth('tasks.end_date', now()->month)
-                            ->whereYear('tasks.end_date', now()->year)
-                            ->count();
-                    @endphp
-                    <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C]">{{ str_pad($totalPending, 2, '0', STR_PAD_LEFT) }}</p>
+                {{-- Próxima Entrega --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm flex flex-col justify-between">
+                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Próxima entrega</p>
+
+                    @if($nextDeadlineTask)
+                        <div>
+                            <p class="text-lg md:text-xl font-bold text-[#0D1E4C] line-clamp-2 leading-tight" title="{{ $nextDeadlineTask->title }}">
+                                {{ $nextDeadlineTask->title }}
+                            </p>
+                            <p class="text-sm text-orange-500 font-bold mt-1">
+                                {{ \Carbon\Carbon::parse($nextDeadlineTask->end_date)->isToday() ? 'Vence hoy' : 'Vence el ' . \Carbon\Carbon::parse($nextDeadlineTask->end_date)->format('d/m') }}
+                            </p>
+                        </div>
+                    @else
+                        <div class="flex items-center text-green-500">
+                            <svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span class="font-bold">Estás al día</span>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Horas de tareas (Eliminado) --}}
 
-                {{-- Tareas Completadas --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
-                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas finalizadas</p>
-                    @php
-                        $completedTasks = auth()->user()->assignedTasks()
-                            ->whereRaw('tasks.completed IS TRUE')
-                            ->whereMonth('tasks.end_date', now()->month)
-                            ->whereYear('tasks.end_date', now()->year)
-                            ->count();
-                    @endphp
-                    <div class="flex items-center gap-3">
-                        <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C]">{{ str_pad($completedTasks, 2, '0', STR_PAD_LEFT) }}</p>
-                        <div class="w-8 h-8 md:w-10 md:h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                            <svg class="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
-                            </svg>
+                {{-- Mi Empresa (Replaces Tareas Finalizadas) --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm flex flex-col justify-between">
+                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Mi Empresa</p>
+
+                    @if(auth()->user()->empleador)
+                        <div>
+                            <p class="text-lg md:text-xl font-bold text-[#0D1E4C] line-clamp-1" title="{{ auth()->user()->empleador->company_name ?? auth()->user()->empleador->name }}">
+                                {{ auth()->user()->empleador->company_name ?? auth()->user()->empleador->name }}
+                            </p>
+                            <div class="flex items-center gap-1 mt-1 text-gray-500">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                <p class="text-xs truncate">{{ auth()->user()->empleador->email }}</p>
+                            </div>
                         </div>
-                    </div>
+                    @else
+                        <div class="flex items-center text-gray-400">
+                           <span class="text-sm italic">Sin vinculación empresarial</span>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Recuperación de Horas --}}
@@ -92,9 +119,7 @@
                             'is_superadmin' => auth()->user()->is_superadmin
                         ];
                     @endphp
-                    <div class="bg-white rounded-lg border border-gray-200" 
-                         x-data="taskModal({{ json_encode($currentUserData) }})" 
-                         @task-modal-init.window="init()">
+                    <div class="bg-white rounded-lg border border-gray-200">
                         <div class="px-6 py-4 border-b border-gray-200">
                             <h2 class="text-lg font-semibold text-gray-900">Últimas tareas</h2>
                         </div>
@@ -146,16 +171,9 @@
                                                 @endif
                                             </td>
                                             <td class="px-4 md:px-6 py-4">
-                                                @if($task->completed)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-green-100 text-green-700">
-                                                        Hecho
-                                                    </span>
-                                                @else
-                                                    @php $isOverdue = $task->end_date->endOfDay()->isPast(); @endphp
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider {{ $isOverdue ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700' }}">
-                                                        {{ $isOverdue ? 'Vencida' : 'Pendiente' }}
-                                                    </span>
-                                                @endif
+                                                <div @click.stop>
+                                                    <livewire:task-status-selector :task="$task" :wire:key="'dash-task-'.$task->id" />
+                                                </div>
                                             </td>
                                             <td class="px-4 md:px-6 py-4 hidden lg:table-cell">
                                                 <div class="flex items-center gap-1 text-gray-500">
@@ -236,12 +254,17 @@
     @include('tareas.partials.task-details-modal')
 
     <script>
-        function taskModal() {
+        function dashboardController(initialPending, initialCompleted, currentUserData) {
             return {
+                // Counters
+                pendingCount: initialPending,
+                completedCount: initialCompleted,
+                
+                // Modal & Task State
                 selectedTask: null, 
                 isDetailsModalOpen: false,
                 currentTab: 'details',
-                currentUser: @json(auth()->user()),
+                currentUser: currentUserData,
                 newCommentText: '',
                 editingCommentId: null,
                 editCommentContent: '',
@@ -260,14 +283,55 @@
                     priority: '',
                     end_date: ''
                 },
-                
-                // Helper to refresh data from server
+                updatedTaskStates: {},
+
+                // Status Update Handler (Unified)
+                handleStatusUpdate(detail) {
+                    // detail: { taskId, status, completed, wasCompleted }
+                    
+                    // Determine the previous state (Trusted Source: Local > Server)
+                    let previousCompleted = detail.wasCompleted;
+                    if (this.updatedTaskStates[detail.taskId]) {
+                        previousCompleted = this.updatedTaskStates[detail.taskId].completed;
+                    }
+
+                    // 0. Update registry
+                    this.updatedTaskStates[detail.taskId] = {
+                        status: detail.status,
+                        completed: detail.completed
+                    };
+                    
+                    // 1. Update Counters
+                    if (!previousCompleted && detail.completed) {
+                        this.pendingCount = Math.max(0, this.pendingCount - 1);
+                        this.completedCount++;
+                    }
+                    else if (previousCompleted && !detail.completed) {
+                        this.pendingCount++;
+                        this.completedCount = Math.max(0, this.completedCount - 1);
+                    }
+
+                     // 2. Update Selected Task if open (Fixes Modal staleness)
+                    if (this.selectedTask && this.selectedTask.id == detail.taskId) {
+                        this.selectedTask.status = detail.status;
+                        this.selectedTask.completed = detail.completed;
+                    }
+                },
+
+                 // Helper to refresh data from server
                 async refreshTaskDetails() {
                     if (!this.selectedTask?.id) return;
                     try {
                         const response = await fetch(`/tasks/${this.selectedTask.id}/details`);
                         if (response.ok) {
-                            this.selectedTask = await response.json();
+                            const remoteTask = await response.json();
+                            // If we have local override, re-apply it over server data to be safe
+                            // (Though server *should* be up to date if db updated)
+                            if (this.updatedTaskStates[remoteTask.id]) {
+                                remoteTask.status = this.updatedTaskStates[remoteTask.id].status;
+                                remoteTask.completed = this.updatedTaskStates[remoteTask.id].completed;
+                            }
+                            this.selectedTask = remoteTask;
                         }
                     } catch (error) {
                         console.error('Error refreshing details:', error);
@@ -275,6 +339,11 @@
                 },
 
                 async openDetailsModal(task) {
+                    // Apply local overrides immediately
+                    if (this.updatedTaskStates[task.id]) {
+                        task.status = this.updatedTaskStates[task.id].status;
+                        task.completed = this.updatedTaskStates[task.id].completed;
+                    }
                     this.selectedTask = task;
                     this.isDetailsModalOpen = true;
                     this.currentTab = 'details';
@@ -340,7 +409,6 @@
                         });
                         
                         if (response.ok) {
-                            // Local update is fine for text edit
                             const comment = this.selectedTask.comments.find(c => c.id === commentId);
                             if (comment) comment.content = this.editCommentContent;
                             this.editingCommentId = null;
@@ -450,7 +518,6 @@
                         });
                         
                         if (response.ok) {
-                            // Force refresh to get correct file paths and IDs
                             await this.refreshTaskDetails();
                         }
                     } catch (error) {

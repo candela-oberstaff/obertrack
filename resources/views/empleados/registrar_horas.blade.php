@@ -555,7 +555,7 @@
                             <div x-show="userComment && userComment.trim() !== ''" class="mt-4">
                                 <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2 px-1">Resumen adicional</p>
                                 <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
-                                    <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line" x-text="userComment"></p>
+                                    <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line break-words" x-text="userComment"></p>
                                 </div>
                             </div>
 
