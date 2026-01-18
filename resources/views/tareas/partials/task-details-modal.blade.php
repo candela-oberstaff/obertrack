@@ -161,6 +161,18 @@
                                     </div>
                                 </div>
 
+                                <div>
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block ml-1">Asignar a</label>
+                                    <div class="space-y-2 max-h-32 overflow-y-auto bg-gray-50 p-2 rounded-xl border border-gray-100">
+                                        @foreach($employees as $employee)
+                                            <label class="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded-lg cursor-pointer">
+                                                <input type="checkbox" value="{{ $employee->id }}" x-model="editTaskData.assignees" class="rounded text-[#22A9C8] focus:ring-[#22A9C8] border-gray-300">
+                                                <span class="text-sm text-gray-700">{{ $employee->name }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+
                                 <div class="flex justify-end gap-3 pt-4">
                                     <button @click="isEditingTask = false" class="px-6 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors">Cancelar</button>
                                     <button @click="saveTask()" class="bg-[#22A9C8] hover:bg-[#1B8BA6] text-white text-sm font-bold py-2 px-8 rounded-full transition-colors shadow-md disabled:opacity-50" :disabled="isSavingTask">

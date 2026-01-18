@@ -59,7 +59,7 @@ class TaskPolicy
      */
     public function update(User $user, Task $task)
     {
-        return $user->id === $task->created_by || $user->isEmpleadorOrSuperAdmin();
+        return $user->id === $task->created_by || $user->isEmpleadorOrSuperAdmin() || $user->is_manager;
     }
 
     /**

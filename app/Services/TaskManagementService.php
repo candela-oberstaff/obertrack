@@ -88,6 +88,24 @@ class TaskManagementService
      */
     public function updateTask(Task $task, array $data)
     {
+        // Handle assignees update if provided
+        $assignees = $data['assignees'] ?? null;
+        
+        // Backward compatibility for single employee_id
+        if ($assignees === null && isset($data['employee_id'])) {
+            $assignees = [$data['employee_id']];
+        }
+
+        if ($assignees !== null) {
+            // Ensure all IDs are integers
+            $assignees = array_map('intval', array_filter($assignees));
+            $task->assignees()->sync($assignees);
+        }
+
+        // Remove assignees from data before updating model (it's not a fillable field)
+        unset($data['assignees']);
+        unset($data['employee_id']);
+
         $task->update($data);
         return $task;
     }

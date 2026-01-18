@@ -20,14 +20,16 @@ class UpdateTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required|string|max:255',
+            'title' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'priority' => 'required|in:low,medium,high,urgent',
+            'start_date' => 'sometimes|nullable|date',
+            'end_date' => 'sometimes|nullable|date',
+            'priority' => 'sometimes|required|in:low,medium,high,urgent',
             'employee_id' => 'sometimes|required|exists:users,id',
             'visible_para' => 'sometimes|required|exists:users,id',
             'completed' => 'sometimes|boolean',
+            'assignees' => 'sometimes|array',
+            'assignees.*' => 'exists:users,id',
         ];
     }
 
@@ -48,6 +50,7 @@ class UpdateTaskRequest extends FormRequest
             'priority.in' => 'La prioridad debe ser: baja, media, alta o urgente.',
             'employee_id.exists' => 'El empleado seleccionado no existe.',
             'visible_para.exists' => 'El usuario seleccionado no existe.',
+            'assignees.*.exists' => 'Uno de los usuarios asignados no es válido.',
         ];
     }
 }

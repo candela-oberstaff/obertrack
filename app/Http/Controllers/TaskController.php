@@ -39,7 +39,7 @@ class TaskController extends Controller
     {
         $task = Task::findOrFail($id);
         
-        if ($task->created_by !== Auth::id()) {
+        if ($request->user()->cannot('update', $task)) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'No tienes permiso para editar esta tarea'], 403);
             }
@@ -66,13 +66,7 @@ class TaskController extends Controller
             return redirect()->back()->with('success', 'La tarea ya había sido eliminada');
         }
         
-        $user = Auth::user();
-        $canDelete = $task->created_by === $user->id || 
-                     $user->is_superadmin || 
-                     ($user->tipo_usuario === 'empleador' && $task->createdBy && $task->createdBy->empleador_id === $user->id) ||
-                     ($user->is_manager && $task->createdBy && $task->createdBy->empleador_id === $user->empleador_id);
-
-        if (!$canDelete) {
+        if ($request->user()->cannot('delete', $task)) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar esta tarea'], 403);
             }

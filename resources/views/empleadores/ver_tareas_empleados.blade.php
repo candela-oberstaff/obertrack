@@ -68,8 +68,10 @@
         // Helper to check if a task matches filters
         formatDate(dateString) {
             if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            // Handle ISO string or YYYY-MM-DD by extracting just the date part
+            const datePart = dateString.split('T')[0];
+            const [year, month, day] = datePart.split('-');
+            return `${day}/${month}/${year}`;
         },
 
         matches(taskEndRaw, taskTitle, assigneeNames) {
@@ -278,13 +280,16 @@
                         headers: {
                             'Content-Type': 'application/json',
                             'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
+                            'X-Requested-With': 'XMLHttpRequest'
                         }
                     });
                     if (response.ok) {
                         this.deleteConfirmation.isOpen = false;
                         this.isDetailsModalOpen = false;
-                        location.reload(); 
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('t', new Date().getTime());
+                        window.location.href = currentUrl.toString();
                     } else {
                         const data = await response.json();
                         alert(data.message || 'Error al eliminar tarea');
@@ -314,7 +319,8 @@
                 description: this.selectedTask.description || '',
                 priority: this.selectedTask.priority,
                 start_date: (this.selectedTask.start_date || '').split('T')[0],
-                end_date: (this.selectedTask.end_date || '').split('T')[0]
+                end_date: (this.selectedTask.end_date || '').split('T')[0],
+                assignees: this.selectedTask.assignees ? this.selectedTask.assignees.map(a => a.id) : []
             };
             this.isEditingTask = true;
         },
@@ -327,22 +333,34 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify(this.editTaskData)
                 });
 
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
                 if (response.ok) {
-                    const data = await response.json();
                     this.selectedTask = data.task;
                     this.isEditingTask = false;
-                    location.reload(); // Refresh list to reflect changes in the table
+                    // Force non-cached reload explicitly
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('t', new Date().getTime());
+                    window.location.href = currentUrl.toString();
                 } else {
-                    const data = await response.json();
-                    alert(data.message || 'Error al guardar cambios');
+                    // Handle validation errors (422)
+                    if (data.errors) {
+                        const errorMessages = Object.values(data.errors).flat().join('\n');
+                        alert('Errores de validación:\n' + errorMessages);
+                    } else {
+                        alert(data.message || 'Error al guardar cambios');
+                    }
                 }
             } catch (e) {
-                console.error(e);
+                console.error('Network error:', e);
                 alert('Error de conexión');
             } finally {
                 this.isSavingTask = false;
