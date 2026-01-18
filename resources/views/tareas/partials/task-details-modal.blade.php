@@ -121,7 +121,7 @@
                                             </div>
                                             <div class="flex -space-x-2">
                                                  <template x-for="assignee in selectedTask?.assignees" :key="assignee.id">
-                                                    <img :src="assignee.avatar ? (assignee.avatar.startsWith('http') ? assignee.avatar : '/storage/' + assignee.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(assignee.name)+'&color=FFFFFF&background=22A9C8'" 
+                                                    <img :src="assignee.avatar ? (assignee.avatar.startsWith('http') ? assignee.avatar : '/avatars/' + assignee.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(assignee.name)+'&color=FFFFFF&background=22A9C8'" 
                                                          :title="assignee.name"
                                                          class="w-8 h-8 rounded-full border-2 border-white bg-gray-200 object-cover">
                                                  </template>

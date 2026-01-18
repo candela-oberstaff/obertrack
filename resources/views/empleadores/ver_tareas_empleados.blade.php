@@ -131,6 +131,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
                     },
                     body: JSON.stringify({ content: content })
@@ -168,6 +169,7 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
                     },
                     body: JSON.stringify({ content: this.editCommentContent })
@@ -206,6 +208,7 @@
                 const response = await fetch(`/empleador/tareas/${this.selectedTask.id}/files`, {
                     method: 'POST',
                     headers: {
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
                     },
                     body: formData
@@ -240,6 +243,7 @@
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
                         }
                     });
@@ -257,6 +261,7 @@
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
                         }
                     });
@@ -272,6 +277,7 @@
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
                         }
                     });
@@ -427,7 +433,7 @@
                                     <div class="flex justify-center -space-x-2">
                                         @foreach($task->assignees->take(3) as $assignee)
                                             <div class="w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 flex-shrink-0">
-                                                <img src="{{ $assignee->avatar ? (str_starts_with($assignee->avatar, 'http') ? $assignee->avatar : asset('storage/' . $assignee->avatar)) : 'https://ui-avatars.com/api/?name='.urlencode($assignee->name).'&color=FFFFFF&background=22A9C8' }}" 
+                                                <img src="{{ $assignee->avatar ? (str_starts_with($assignee->avatar, 'http') ? $assignee->avatar : asset('avatars/' . $assignee->avatar)) : 'https://ui-avatars.com/api/?name='.urlencode($assignee->name).'&color=FFFFFF&background=22A9C8' }}" 
                                                      alt="{{ $assignee->name }}" class="w-full h-full object-cover">
                                             </div>
                                         @endforeach
@@ -533,7 +539,7 @@
                                     <div class="flex justify-end -space-x-2">
                                         @foreach($task->assignees->take(3) as $assignee)
                                             <div class="w-7 h-7 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 flex-shrink-0">
-                                                <img src="{{ $assignee->avatar ? (str_starts_with($assignee->avatar, 'http') ? $assignee->avatar : asset('storage/' . $assignee->avatar)) : 'https://ui-avatars.com/api/?name='.urlencode($assignee->name).'&color=FFFFFF&background=22A9C8' }}" 
+                                                <img src="{{ $assignee->avatar ? (str_starts_with($assignee->avatar, 'http') ? $assignee->avatar : asset('avatars/' . $assignee->avatar)) : 'https://ui-avatars.com/api/?name='.urlencode($assignee->name).'&color=FFFFFF&background=22A9C8' }}" 
                                                      class="w-full h-full object-cover">
                                             </div>
                                         @endforeach

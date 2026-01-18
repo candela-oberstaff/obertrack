@@ -8,9 +8,11 @@ use App\Models\Task;
 use App\Models\Comment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class EmployerTaskController extends Controller
 {
+    use AuthorizesRequests;
     public function __construct(
         private \App\Services\TaskManagementService $taskManagementService,
         private \App\Services\TaskCommentService $taskCommentService
@@ -113,6 +115,7 @@ class EmployerTaskController extends Controller
         ]);
 
         $comment = $this->taskCommentService->addComment($taskId, $validatedData['content']);
+        $comment->load('user');
 
         return response()->json([
             'success' => true,
@@ -158,7 +161,8 @@ class EmployerTaskController extends Controller
         $file = $request->file('file');
 
         $filename = $file->getClientOriginalName();
-        $path = $file->store('task-attachments', 'public');
+        // Standardize to use 'local' disk and 'task_attachments' folder to match download logic
+        $path = $file->store('task_attachments', 'local');
 
         $attachment = new \App\Models\TaskAttachment();
         $attachment->task_id = $task->id;

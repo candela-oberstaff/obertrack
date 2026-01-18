@@ -9,9 +9,11 @@ use App\Services\TaskManagementService;
 use App\Services\TaskCommentService;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class TaskController extends Controller
 {
+    use AuthorizesRequests;
     public function __construct(
         private TaskManagementService $taskManagementService,
         private TaskCommentService $taskCommentService
@@ -37,40 +39,44 @@ class TaskController extends Controller
 
     public function update(UpdateTaskRequest $request, $id)
     {
-        $task = Task::findOrFail($id);
-        
-        if ($task->created_by !== Auth::id()) {
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'No tienes permiso para editar esta tarea'], 403);
-            }
-            return back()->with('error', 'No tienes permiso para editar esta tarea.');
-        }
+        try {
+            $task = Task::findOrFail($id);
+            
+            $this->authorize('update', $task);
 
-        $this->taskManagementService->updateTask($task, $request->validated());
-        
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Tarea actualizada exitosamente.', 'task' => $task->fresh(['comments.user', 'attachments.uploader', 'assignees', 'createdBy'])]);
+            $this->taskManagementService->updateTask($task, $request->validated());
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Tarea actualizada exitosamente.', 'task' => $task->fresh(['comments.user', 'attachments.uploader', 'assignees', 'createdBy'])]);
+            }
+            return back()->with('success', 'Tarea actualizada exitosamente.');
+        } catch (\Throwable $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Error al actualizar: ' . $e->getMessage()], 500);
+            }
+            return back()->with('error', 'Error al actualizar: ' . $e->getMessage());
         }
-        return back()->with('success', 'Tarea actualizada exitosamente.');
     }
 
     public function destroy(Request $request, $taskId)
     {
-        $task = Task::findOrFail($taskId);
-        
-        if ($task->created_by !== Auth::id()) {
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar esta tarea'], 403);
-            }
-            return back()->with('error', 'No tienes permiso para eliminar esta tarea.');
-        }
+        try {
+            $task = Task::findOrFail($taskId);
+            
+            $this->authorize('delete', $task);
 
-        $this->taskManagementService->deleteTask($taskId);
-        
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Tarea eliminada con éxito']);
+            $this->taskManagementService->deleteTask($taskId);
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Tarea eliminada con éxito']);
+            }
+            return redirect()->back()->with('success', 'Tarea eliminada con éxito');
+        } catch (\Throwable $e) {
+            if ($request->ajax() || $request->wantsJson() || $request->isJson()) {
+                return response()->json(['success' => false, 'message' => 'Error al eliminar la tarea: ' . $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', 'Error al eliminar la tarea: ' . $e->getMessage());
         }
-        return redirect()->back()->with('success', 'Tarea eliminada con éxito');
     }
 
     public function toggleCompletion(Request $request, $taskId)

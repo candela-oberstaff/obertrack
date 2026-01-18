@@ -88,6 +88,18 @@ class TaskManagementService
      */
     public function updateTask(Task $task, array $data)
     {
+        // Handle assignees update if provided
+        $assignees = $data['assignees'] ?? null;
+        
+        // Backward compatibility for single employee_id
+        if ($assignees === null && isset($data['employee_id'])) {
+            $assignees = [$data['employee_id']];
+        }
+
+        if ($assignees !== null) {
+            $task->assignees()->sync($assignees);
+        }
+
         $task->update($data);
         return $task;
     }
@@ -99,12 +111,14 @@ class TaskManagementService
     {
         $task = Task::findOrFail($taskId);
         
-        // Delete associated work hours if any
-        WorkHours::where([
-            'user_id' => $task->created_by,
-            'work_date' => $task->created_at->toDateString(),
-        ])->delete();
-
+        // Remove pivot table entries
+        $task->assignees()->detach();
+        $task->readBy()->detach();
+        
+        // Delete related hasMany records to prevent foreign key constraint errors
+        $task->comments()->delete();
+        $task->attachments()->delete();
+        
         return $task->delete();
     }
 
