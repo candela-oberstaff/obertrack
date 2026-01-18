@@ -1,168 +1,244 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro - Obertrack</title>
     <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        tailwind.config = {
+          theme: {
+            extend: {
+              fontFamily: { 
+                sans: ['Space Grotesk', 'sans-serif'],
+                poppins: ['Poppins', 'sans-serif']
+              },
+              colors: {
+                brandBlue: '#22A9C8',
+                brandBlueDark: '#0D5C7D',
+                brandBlack: '#1B1725',
+                brandGray: '#F3F4F6',
+                brutalYellow: '#FFDE59',
+                brutalRed: '#FF5A5F',
+                brutalGreen: '#00D4AA',
+                brutalPurple: '#9D4EDD'
+              }
+            }
+          }
+        }
+    </script>
     <style>
-        body { font-family: 'Montserrat', sans-serif; }
-        .bg-gradient-brand {
-            background: linear-gradient(180deg, #FFFFFF 0%, #E0F7FA 40%, #22A9C8 100%);
+        body { font-family: 'Space Grotesk', sans-serif; }
+        
+        .graphic-grid {
+            background-image: 
+              linear-gradient(to right, rgba(27, 23, 37, 0.05) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(27, 23, 37, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            background-color: #FFFFFF;
         }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.45);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+
+        .brutal-card {
+            border: 3px solid #1B1725 !important;
+            background: #FFFFFF !important;
+            box-shadow: 6px 6px 0px 0px #1B1725 !important;
+            position: relative;
         }
-        .form-input-custom {
-            background: white;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 14px; /* Reduced vertical padding */
-            font-size: 0.95rem;
-            color: #6B7280; /* Text-gray-500 */
+
+        .brutal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #22A9C8;
         }
-        .form-input-custom::placeholder {
-            color: #D1D5DB; /* Gray-300 */
+
+        .brutal-input {
+            border: 2px solid #1B1725 !important;
+            background: #FFFFFF !important;
+            box-shadow: 4px 4px 0px 0px rgba(27, 23, 37, 0.2) !important;
+            transition: all 0.2s ease !important;
+            border-radius: 0.5rem;
         }
-        .form-input-custom:focus {
-            ring: 2px;
-            ring-color: #22A9C8;
+
+        .brutal-input:focus {
+            outline: none;
+            box-shadow: 6px 6px 0px 0px #22A9C8 !important;
+            transform: translate(-2px, -2px);
         }
-        /* Custom scrollbar handling for modal if needed on small screens */
-        .glass-card {
-            max-height: 95vh;
-            overflow-y: auto;
+
+        .brutal-button {
+            border: 3px solid #1B1725 !important;
+            box-shadow: 4px 4px 0px 0px #1B1725 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .brutal-button:hover {
+            transform: translate(2px, 2px) !important;
+            box-shadow: 2px 2px 0px 0px #1B1725 !important;
+        }
+
+        .brutal-select {
+            border: 2px solid #1B1725 !important;
+            background: #FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%231B1725' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 0.75rem center !important;
+            box-shadow: 4px 4px 0px 0px rgba(27, 23, 37, 0.2) !important;
+            transition: all 0.2s ease !important;
+            border-radius: 0.5rem;
+            appearance: none;
+        }
+
+        .brutal-select:focus {
+            outline: none;
+            box-shadow: 6px 6px 0px 0px #22A9C8 !important;
+            transform: translate(-2px, -2px);
         }
     </style>
 </head>
-<body class="h-full bg-gradient-brand flex items-center justify-center p-4">
+<body class="min-h-screen graphic-grid flex items-center justify-center py-8 px-4">
 
-    <!-- Reduced padding p-6 sm:p-8 and max-w-sm -->
-    <div class="w-full max-w-sm glass-card rounded-3xl p-6 sm:p-8">
+    <!-- Card Container -->
+    <div class="w-full max-w-sm brutal-card rounded-xl p-8">
+        
         <!-- Logo -->
-        <div class="flex flex-col items-center mb-4">
+        <div class="flex flex-col items-center mb-6">
             <x-application-logo class="block h-16 w-auto" />
         </div>
 
-        <h2 class="text-xl font-bold text-center text-[#1e1b4b] mb-4">
-            Regístrate en Obertrack
+        <h2 class="text-2xl font-extrabold text-center text-brandBlack mb-6 uppercase tracking-tight">
+            Regístrate
         </h2>
 
-        <form method="POST" action="{{ route('register') }}" class="space-y-3">
+        <form method="POST" action="{{ route('register') }}" class="space-y-4">
             @csrf
 
             <!-- Name -->
             <div>
+                <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Nombre</label>
                 <input id="name" name="name" type="text" placeholder="Nombre y apellido" required autofocus
-                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
+                       class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
                        value="{{ old('name') }}">
-                <x-input-error :messages="$errors->get('name')" class="mt-1 text-xs" />
+                <x-input-error :messages="$errors->get('name')" class="mt-2 text-xs font-bold text-brutalRed" />
             </div>
 
             <!-- Email -->
             <div>
-                <input id="email" name="email" type="email" placeholder="Email" required
-                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
+                <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Email</label>
+                <input id="email" name="email" type="email" placeholder="ejemplo@obertrack.com" required
+                       class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
                        value="{{ old('email') }}">
-                <x-input-error :messages="$errors->get('email')" class="mt-1 text-xs" />
+                <x-input-error :messages="$errors->get('email')" class="mt-2 text-xs font-bold text-brutalRed" />
             </div>
 
             <!-- Password -->
             <div>
-                <input id="password" name="password" type="password" placeholder="Contraseña" required
-                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm">
-                <x-input-error :messages="$errors->get('password')" class="mt-1 text-xs" />
+                <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Contraseña</label>
+                <input id="password" name="password" type="password" placeholder="••••••••" required
+                       class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400">
+                <x-input-error :messages="$errors->get('password')" class="mt-2 text-xs font-bold text-brutalRed" />
             </div>
 
             <!-- Confirm Password -->
             <div>
-                <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Confirma la contraseña" required
-                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm">
-                <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1 text-xs" />
+                <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Confirmar Contraseña</label>
+                <input id="password_confirmation" name="password_confirmation" type="password" placeholder="••••••••" required
+                       class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400">
+                <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2 text-xs font-bold text-brutalRed" />
             </div>
 
             <!-- User Type -->
             <div>
+                <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Tipo de Usuario</label>
                 <select id="tipo_usuario" name="tipo_usuario" required
-                        class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm text-gray-600 appearance-none">
-                    <option value="" disabled selected>Tipo de usuario</option>
+                        class="w-full brutal-select py-2.5 px-4 text-brandBlack">
+                    <option value="" disabled selected>Selecciona una opción</option>
                     <option value="empleador">Empresa</option>
                     <option value="empleado">Profesional</option>
                 </select>
-                <x-input-error :messages="$errors->get('tipo_usuario')" class="mt-1 text-xs" />
+                <x-input-error :messages="$errors->get('tipo_usuario')" class="mt-2 text-xs font-bold text-brutalRed" />
             </div>
             
             <!-- Job Title (Hidden by default) -->
             <div id="job_title_container" class="hidden">
-                 <input id="job_title" name="job_title" type="text" placeholder="Cargo / Profesión"
-                       class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
+                <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Cargo / Profesión</label>
+                <input id="job_title" name="job_title" type="text" placeholder="Ej: Desarrollador, Diseñador..."
+                       class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
                        value="{{ old('job_title') }}">
-                <x-input-error :messages="$errors->get('job_title')" class="mt-1 text-xs" />
+                <x-input-error :messages="$errors->get('job_title')" class="mt-2 text-xs font-bold text-brutalRed" />
             </div>
 
             <!-- Company Specific Fields (Hidden by default) -->
-            <div id="company_fields_container" class="hidden space-y-3">
+            <div id="company_fields_container" class="hidden space-y-4">
                 <div>
-                    <input id="company_name" name="company_name" type="text" placeholder="Nombre de empresa"
-                           class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
+                    <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Nombre de Empresa</label>
+                    <input id="company_name" name="company_name" type="text" placeholder="Tu empresa S.A."
+                           class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
                            value="{{ old('company_name') }}">
-                    <x-input-error :messages="$errors->get('company_name')" class="mt-1 text-xs" />
+                    <x-input-error :messages="$errors->get('company_name')" class="mt-2 text-xs font-bold text-brutalRed" />
                 </div>
                 <div>
-                    <input id="related_contact" name="related_contact" type="text" placeholder="Contacto relacionado"
-                           class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
+                    <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Contacto Relacionado</label>
+                    <input id="related_contact" name="related_contact" type="text" placeholder="Nombre del contacto"
+                           class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
                            value="{{ old('related_contact') }}">
-                    <x-input-error :messages="$errors->get('related_contact')" class="mt-1 text-xs" />
+                    <x-input-error :messages="$errors->get('related_contact')" class="mt-2 text-xs font-bold text-brutalRed" />
                 </div>
                 <div>
-                    <input id="phone_number" name="phone_number" type="text" placeholder="Teléfono"
-                           class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
+                    <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Teléfono</label>
+                    <input id="phone_number" name="phone_number" type="text" placeholder="+1 234 567 890"
+                           class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
                            value="{{ old('phone_number') }}">
-                    <x-input-error :messages="$errors->get('phone_number')" class="mt-1 text-xs" />
+                    <x-input-error :messages="$errors->get('phone_number')" class="mt-2 text-xs font-bold text-brutalRed" />
                 </div>
                 <div>
-                    <input id="country" name="country" type="text" placeholder="País"
-                           class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm"
+                    <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">País</label>
+                    <input id="country" name="country" type="text" placeholder="Venezuela, España, etc."
+                           class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
                            value="{{ old('country') }}">
-                    <x-input-error :messages="$errors->get('country')" class="mt-1 text-xs" />
+                    <x-input-error :messages="$errors->get('country')" class="mt-2 text-xs font-bold text-brutalRed" />
                 </div>
             </div>
 
             <!-- Employer Selection (Hidden by default) -->
             <div id="empleado_por_id_container" class="hidden">
-                 <select name="empleado_por_id" id="empleado_por_id"
-                        class="w-full form-input-custom focus:outline-none focus:ring-2 focus:ring-primary transition shadow-sm text-gray-600 appearance-none">
+                <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Selecciona tu Empresa</label>
+                <select name="empleado_por_id" id="empleado_por_id"
+                        class="w-full brutal-select py-2.5 px-4 text-brandBlack">
                     <option value="">Selecciona tu empresa</option>
                     @foreach ($empleadores as $empleadorId => $nombreEmpleador)
                         <option value="{{ $empleadorId }}">{{ $nombreEmpleador }}</option>
                     @endforeach
                 </select>
-                <x-input-error :messages="$errors->get('empleado_por_id')" class="mt-1 text-xs" />
+                <x-input-error :messages="$errors->get('empleado_por_id')" class="mt-2 text-xs font-bold text-brutalRed" />
             </div>
 
-            <!-- Footer & Button -->
-            <div class="pt-2 text-center">
-                <p class="text-xs font-semibold text-gray-600 mb-4">
-                    ¿Ya tienes una cuenta? <a href="{{ route('login') }}" class="text-primary hover:text-primary-hover underline">Inicia sesión</a>
-                </p>
+            <!-- Messages -->
+            <p id="msg_empleado" class="hidden text-xs text-gray-600 text-center transition-all duration-300 font-poppins">
+                Recibirás notificaciones por WhatsApp relacionadas con tus tareas.
+            </p>
+            <p id="msg_empleador" class="hidden text-xs text-gray-600 text-center transition-all duration-300 font-poppins">
+                Recibirás notificaciones por WhatsApp relacionadas con tus profesionales.
+            </p>
 
-                <p id="msg_empleado" class="hidden text-xs text-gray-600 text-center mb-4 transition-all duration-300">
-                    Recibirás notificaciones por WhatsApp relacionadas con tus tareas.
-                </p>
-                <p id="msg_empleador" class="hidden text-xs text-gray-600 text-center mb-4 transition-all duration-300">
-                    Recibirás notificaciones por Whatsapp relacionadas con tus profesionales.
-                </p>
-
-                <button type="submit" class="bg-primary hover:bg-primary-hover text-white font-bold py-2.5 px-10 rounded-full transition duration-300 shadow-lg w-auto inline-block text-sm">
+            <!-- Submit Button -->
+            <div class="pt-2">
+                <button type="submit" class="w-full bg-brandBlue text-white font-extrabold uppercase tracking-wide py-3 px-4 rounded-lg brutal-button">
                     Registrarse
                 </button>
+            </div>
+
+            <!-- Login Link -->
+            <div class="text-center mt-4">
+                <p class="text-sm text-gray-600 font-medium">
+                    ¿Ya tienes una cuenta? <a href="{{ route('login') }}" class="text-brandBlue hover:text-brandBlueDark font-bold underline decoration-2">Inicia sesión</a>
+                </p>
             </div>
         </form>
     </div>

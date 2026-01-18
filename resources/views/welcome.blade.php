@@ -579,13 +579,13 @@ tailwind.config = {
 </head>
 <body class="font-sans text-brandBlack overflow-x-hidden graphic-grid">
   <!-- Header -->
-  <header class="fixed top-0 left-0 w-full bg-white z-50 h-16 flex items-center brutal-border-thin">
+  <header class="fixed top-0 left-0 w-full bg-white z-50 h-16 flex items-center">
     <div class="max-w-7xl mx-auto w-full flex justify-between items-center px-5">
       <a class="flex items-center gap-3" href="#">
        <img 
           src="images/logo.png" 
           alt="Obertrack Logo" 
-          class="h-16 w-auto object-contain animate-fadeInUp"
+          class="h-12 w-auto object-contain animate-fadeInUp"
           style="animation-delay: 0.1s"
         >
       </a>
@@ -607,7 +607,7 @@ tailwind.config = {
     <div class="max-w-7xl mx-auto px-5 grid lg:grid-cols-2 gap-12 items-center relative z-10">
       <div class="text-left">
         <h1 class="text-3xl md:text-5xl font-extrabold text-brandBlack uppercase leading-tight mb-6 animate-fadeInUp" style="animation-delay: 0.1s">
-          Maximiza la rentabilidad de tu equipo remoto <br>
+          Maximiza la rentabilidad de <br> tu equipo remoto <br>
           <span class="typing-container text-brandBlue">
             <span class="overflow-hidden whitespace-nowrap border-r-4 border-brandBlue pr-1 animate-typing">con visibilidad total</span>
           </span>

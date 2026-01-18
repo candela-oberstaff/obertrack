@@ -17,6 +17,11 @@
             'tipo_usuario' => auth()->user()->tipo_usuario,
             'is_superadmin' => auth()->user()->is_superadmin
         ]) }},
+        
+        // Counters
+        pendingCount: {{ $pendingTasksCount }},
+        completedCount: {{ $completedTasksCount }},
+        
         startDate: '',
         endDate: '',
         searchQuery: '',
@@ -25,6 +30,17 @@
         selectedTask: null,
         isDetailsModalOpen: false,
         currentTab: 'details',
+        
+        // Edit Task State
+        isEditingTask: false,
+        isSavingTask: false,
+        editTaskData: {
+            id: null,
+            title: '',
+            description: '',
+            priority: 'low',
+            end_date: ''
+        },
         
         // UI State
         isUploadingFile: false,
@@ -36,9 +52,11 @@
         // Delete Confirmation State
         deleteConfirmation: {
             isOpen: false,
-            type: null, // 'file' or 'comment'
+            type: null, // 'file', 'comment', or 'task'
             id: null
         },
+        
+        updatedTaskStates: {}, // Registry for local overrides
 
         matches(task) {
             const taskDate = task.date;
@@ -53,9 +71,49 @@
         },
         
         openDetailsModal(task, tab = 'details') {
+            // Apply local overrides if they exist (fixes stale data from server-rendered onclick)
+            if (this.updatedTaskStates[task.id]) {
+                task.status = this.updatedTaskStates[task.id].status;
+                task.completed = this.updatedTaskStates[task.id].completed;
+            }
             this.selectedTask = task;
             this.currentTab = tab;
             this.isDetailsModalOpen = true;
+            this.isEditingTask = false;
+        },
+        
+        startEditingTask() {
+            if (!this.selectedTask) return;
+            this.editTaskData = {
+                id: this.selectedTask.id,
+                title: this.selectedTask.title,
+                description: this.selectedTask.description,
+                priority: this.selectedTask.priority,
+                end_date: this.selectedTask.end_date ? this.selectedTask.end_date.split('T')[0] : ''
+            };
+            this.isEditingTask = true;
+        },
+
+        async saveTask() {
+            // Placeholder: Implement actual API call for task update here
+            this.isSavingTask = true;
+            await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
+            
+            // Optimistic update
+            this.selectedTask.title = this.editTaskData.title;
+            this.selectedTask.description = this.editTaskData.description;
+            this.selectedTask.priority = this.editTaskData.priority;
+            this.selectedTask.end_date = this.editTaskData.end_date;
+            
+            this.isSavingTask = false;
+            this.isEditingTask = false;
+        },
+        
+        confirmDeleteTask() {
+           // Reuse the same confirmation modal if possible, or simple alert for now
+           if(confirm('¿Eliminar esta tarea?')) {
+               // Implement delete logic
+           }
         },
         
         formatDate(dateStr) {
@@ -229,8 +287,44 @@
                     }
                 } catch (e) { alert('Error de conexión'); }
             }
+        },
+        
+        handleStatusUpdate(detail) {
+            // detail: { taskId, status, completed, wasCompleted }
+            
+            // Determine the previous state (Trusted Source: Local > Server)
+            let previousCompleted = detail.wasCompleted;
+            if (this.updatedTaskStates[detail.taskId]) {
+                previousCompleted = this.updatedTaskStates[detail.taskId].completed;
+            }
+
+            // 0. Update registry for future references
+            this.updatedTaskStates[detail.taskId] = {
+                status: detail.status,
+                completed: detail.completed
+            };
+            
+            // 1. Update Selected Task (if open) - use == for safe int/string comparison
+            if (this.selectedTask && this.selectedTask.id == detail.taskId) {
+                this.selectedTask.status = detail.status;
+                this.selectedTask.completed = detail.completed;
+            }
+            
+            // 2. Update Counters (Using derived previousCompleted)
+            // If it WASN'T completed and NOW IS completed -> Pending--, Completed++
+            if (!previousCompleted && detail.completed) {
+                this.pendingCount = Math.max(0, this.pendingCount - 1);
+                this.completedCount++;
+            }
+            // If it WAS completed and NOW IS NOT completed -> Pending++, Completed--
+            else if (previousCompleted && !detail.completed) {
+                this.pendingCount++;
+                this.completedCount = Math.max(0, this.completedCount - 1);
+            }
         }
-    }">
+    }"
+    @task-status-updated.window="handleStatusUpdate($event.detail)"
+    >
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
 
 
@@ -242,7 +336,7 @@
                     <div class="bg-gray-100 rounded-3xl p-6 md:p-8 flex justify-between items-center shadow-none">
                         <div>
                             <p class="text-gray-800 font-bold mb-2 text-sm md:text-base">Tareas pendientes</p>
-                            <p class="text-4xl md:text-6xl font-extrabold text-black">{{ str_pad($pendingTasksCount, 2, '0', STR_PAD_LEFT) }}</p>
+                            <p class="text-4xl md:text-6xl font-extrabold text-black" x-text="String(pendingCount).padStart(2, '0')">{{ str_pad($pendingTasksCount, 2, '0', STR_PAD_LEFT) }}</p>
                         </div>
                         <div class="text-right text-[10px] md:text-sm text-gray-500">
 
@@ -255,7 +349,7 @@
                         <div>
                             <p class="text-gray-800 font-bold mb-2 text-sm md:text-base">Tareas completadas con éxito</p>
                             <div class="flex items-center">
-                                <p class="text-4xl md:text-6xl font-extrabold text-black">{{ str_pad($completedTasksCount, 2, '0', STR_PAD_LEFT) }}</p>
+                                <p class="text-4xl md:text-6xl font-extrabold text-black" x-text="String(completedCount).padStart(2, '0')">{{ str_pad($completedTasksCount, 2, '0', STR_PAD_LEFT) }}</p>
                                 <div class="ml-4 bg-green-500 rounded-full p-1.5 md:p-2 text-white">
                                     <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                 </div>

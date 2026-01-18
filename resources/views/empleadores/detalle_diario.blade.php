@@ -135,7 +135,7 @@
                                                     @if($summary)
                                                         <div class="{{ count($activities) > 0 ? 'mt-6 pt-6 border-t border-gray-50' : '' }}">
                                                             <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Resumen Adicional</p>
-                                                            <p class="text-sm text-gray-600 leading-relaxed font-medium whitespace-pre-line">{{ $summary }}</p>
+                                                            <p class="text-sm text-gray-600 leading-relaxed font-medium whitespace-pre-line break-words">{{ $summary }}</p>
                                                         </div>
                                                     @endif
 
@@ -192,7 +192,7 @@
 
                                                         <div class="bg-white/50 rounded-xl p-4 border border-blue-50">
                                                             <p class="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-2">Actividades de recuperación</p>
-                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line">{{ $recovery->activities }}</p>
+                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line break-words">{{ $recovery->activities }}</p>
                                                         </div>
                                                     </div>
                                                 @endforeach
@@ -234,7 +234,7 @@
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                                                     <span class="text-[10px] font-black uppercase tracking-widest leading-none">Tu Feedback</span>
                                                 </div>
-                                                <p class="text-sm text-gray-700 font-medium italic">"{{ $record->approval_comment }}"</p>
+                                                <p class="text-sm text-gray-700 font-medium italic break-words">"{{ $record->approval_comment }}"</p>
                                             </div>
                                         @endif
                                     </div>

@@ -1,4 +1,5 @@
 <div wire:poll.5s="poll" class="relative inline-flex items-center">
+    @if(!(auth()->user()->is_superadmin || auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager))
     <a 
         href="{{ route('chat') }}" 
         class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out relative {{ request()->routeIs('chat') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}"
@@ -25,4 +26,5 @@
             });
         });
     </script>
+    @endif
 </div>

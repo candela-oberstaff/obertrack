@@ -727,7 +727,7 @@
                                                                     <template x-if="parsed.summary">
                                                                         <div :class="parsed.activities.length > 0 ? 'mt-4 pt-4 border-t border-gray-100' : ''">
                                                                             <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Resumen adicional</p>
-                                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line" x-text="parsed.summary"></p>
+                                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line break-words" x-text="parsed.summary"></p>
                                                                         </div>
                                                                     </template>
                                                                 </div>

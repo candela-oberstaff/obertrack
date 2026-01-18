@@ -18,13 +18,21 @@
             <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col max-h-[90vh]"
                      @click.stop>
+                     
+                    <!-- Close Button (Absolute Top-Right) -->
+                    <button type="button" @click="isDetailsModalOpen = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-500 transition-colors z-10 p-2 bg-gray-50 rounded-full hover:bg-gray-100">
+                        <span class="sr-only">Cerrar</span>
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                     
                     <!-- Header & Tabs -->
                     <div class="bg-gray-50 flex-shrink-0 border-b border-gray-100">
                         <div class="px-6 py-4 sm:px-8 flex justify-between items-start">
                             <div class="flex-1">
                                  <h3 class="text-xl font-bold leading-6 text-[#0D1E4C]" x-text="selectedTask?.title" x-show="!isEditingTask"></h3>
-                                 <p class="mt-1 text-sm text-gray-500" x-show="!isEditingTask" x-text="'Creada por: ' + (selectedTask?.createdBy?.name || 'Sistema')"></p>
+                                 <p class="mt-1 text-sm text-gray-500" x-show="!isEditingTask" x-text="'Creada por: ' + (selectedTask?.createdBy?.name || selectedTask?.created_by?.name || 'Sistema')"></p>
                                  <h3 class="text-xl font-bold leading-6 text-[#0D1E4C]" x-show="isEditingTask">Editando tarea</h3>
                             </div>
                             <div class="flex items-center gap-3 ml-4">
@@ -43,11 +51,7 @@
                                         </button>
                                     </div>
                                 </template>
-                            <button type="button" @click="isDetailsModalOpen = false" class="text-gray-400 hover:text-gray-500 transition-colors">
-                                <span class="sr-only">Cerrar</span>
-                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                            <button type="button" @click="isDetailsModalOpen = false" class="hidden"> <!-- Placeholder to keep structure or just remove -->
                             </button>
                         </div>
                         
@@ -85,7 +89,7 @@
                                 <div>
                                     <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Descripción</h4>
                                     <div class="bg-gray-50 rounded-2xl p-4">
-                                        <p class="text-sm text-gray-600 whitespace-pre-line" x-text="selectedTask?.description || 'Sin descripción'"></p>
+                                        <p class="text-sm text-gray-600 whitespace-pre-line break-words" x-text="selectedTask?.description || 'Sin descripción'"></p>
                                     </div>
                                 </div>
 
@@ -189,7 +193,7 @@
                                             
                                             <!-- Content -->
                                             <template x-if="editingCommentId !== comment.id">
-                                                <p class="text-sm text-gray-700 whitespace-pre-wrap leading-snug" x-text="comment.content"></p>
+                                                <p class="text-sm text-gray-700 whitespace-pre-wrap leading-snug break-words" x-text="comment.content"></p>
                                             </template>
 
                                             <!-- Edit Mode -->
