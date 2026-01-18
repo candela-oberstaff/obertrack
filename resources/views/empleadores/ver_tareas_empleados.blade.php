@@ -63,6 +63,7 @@
         isAddingComment: false,
         commentText: '',
         isSubmitting: false,
+        isDeleting: false,
 
         // Helper to check if a task matches filters
         formatDate(dateString) {
@@ -231,9 +232,13 @@
         },
 
         async performDelete() {
-            const { type, id } = this.deleteConfirmation;
-            this.deleteConfirmation.isOpen = false;
+            if (this.isDeleting) return;
+            this.isDeleting = true;
 
+            const { type, id } = this.deleteConfirmation;
+            // Keep the modal open while deleting to show loading state if desired, or close it. 
+            // For now, keeping logic similar but adding safety.
+            
             if (type === 'file') {
                 try {
                     const response = await fetch(`/tasks/attachments/${id}`, {
@@ -272,18 +277,32 @@
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
                         }
                     });
                     if (response.ok) {
-                        // Close modal and refresh or remove from local state
+                        this.deleteConfirmation.isOpen = false;
                         this.isDetailsModalOpen = false;
-                        location.reload(); // Simplest way to ensure list is updated
+                        location.reload(); 
                     } else {
                         const data = await response.json();
                         alert(data.message || 'Error al eliminar tarea');
+                        this.deleteConfirmation.isOpen = false;
                     }
-                } catch (e) { alert('Error de conexión'); }
+                } catch (e) { 
+                    alert('Error de conexión'); 
+                    this.deleteConfirmation.isOpen = false;
+                } finally {
+                    this.isDeleting = false;
+                }
+            } else {
+                // For other types (file, comment), just close and reset for now
+                if (type === 'file' || type === 'comment') {
+                     // ... logic simplified above, ensure finally resets isDeleting
+                     this.isDeleting = false; 
+                     this.deleteConfirmation.isOpen = false;
+                }
             }
         },
 
@@ -424,18 +443,12 @@
                                     {{ \Carbon\Carbon::parse($task->end_date)->format('d/m/Y') }}
                                 </td>
                                 <td class="py-6 bg-white border-y border-[#22A9C8]">
-                                    <div class="flex justify-center -space-x-2">
-                                        @foreach($task->assignees->take(3) as $assignee)
-                                            <div class="w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 flex-shrink-0">
-                                                <img src="{{ $assignee->avatar ? (str_starts_with($assignee->avatar, 'http') ? $assignee->avatar : asset('storage/' . $assignee->avatar)) : 'https://ui-avatars.com/api/?name='.urlencode($assignee->name).'&color=FFFFFF&background=22A9C8' }}" 
-                                                     alt="{{ $assignee->name }}" class="w-full h-full object-cover">
-                                            </div>
+                                    <div class="flex justify-center flex-wrap gap-1">
+                                        @foreach($task->assignees as $assignee)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {{ $assignee->name }}
+                                            </span>
                                         @endforeach
-                                        @if($task->assignees->count() > 3)
-                                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600 font-bold ring-2 ring-white">
-                                                +{{ $task->assignees->count() - 3 }}
-                                            </div>
-                                        @endif
                                     </div>
                                 </td>
                                 <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
@@ -530,18 +543,12 @@
                                     <div class="text-right text-red-500 font-bold">{{ \Carbon\Carbon::parse($task->end_date)->format('d/m/Y') }}</div>
                                     
                                     <div class="text-gray-600 font-medium">Asignado</div>
-                                    <div class="flex justify-end -space-x-2">
-                                        @foreach($task->assignees->take(3) as $assignee)
-                                            <div class="w-7 h-7 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 flex-shrink-0">
-                                                <img src="{{ $assignee->avatar ? (str_starts_with($assignee->avatar, 'http') ? $assignee->avatar : asset('storage/' . $assignee->avatar)) : 'https://ui-avatars.com/api/?name='.urlencode($assignee->name).'&color=FFFFFF&background=22A9C8' }}" 
-                                                     class="w-full h-full object-cover">
-                                            </div>
+                                    <div class="flex justify-center flex-wrap gap-1 text-right">
+                                        @foreach($task->assignees as $assignee)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {{ $assignee->name }}
+                                            </span>
                                         @endforeach
-                                        @if($task->assignees->count() > 3)
-                                            <div class="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600 font-bold ring-2 ring-white">
-                                                +{{ $task->assignees->count() - 3 }}
-                                            </div>
-                                        @endif
                                     </div>
 
                                     <div class="text-gray-600 font-medium self-center">Estado</div>

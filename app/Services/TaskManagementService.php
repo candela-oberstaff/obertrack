@@ -97,15 +97,25 @@ class TaskManagementService
      */
     public function deleteTask($taskId)
     {
-        $task = Task::findOrFail($taskId);
-        
-        // Delete associated work hours if any
-        WorkHours::where([
-            'user_id' => $task->created_by,
-            'work_date' => $task->created_at->toDateString(),
-        ])->delete();
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($taskId) {
+            $task = Task::findOrFail($taskId);
+            
+            // Delete associated work hours if any
+            // Check if created_by is valid first to avoid errors
+            if ($task->created_by) {
+                WorkHours::where([
+                    'user_id' => $task->created_by,
+                    'work_date' => $task->created_at->toDateString(),
+                ])->delete();
+            }
 
-        return $task->delete();
+            // Manually delete relations just in case DB cascade is missing/broken
+            $task->comments()->delete();
+            $task->attachments()->delete();
+            $task->assignees()->detach();
+
+            return $task->delete();
+        });
     }
 
     /**

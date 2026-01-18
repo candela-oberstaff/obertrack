@@ -16,7 +16,7 @@
 
             <!-- Modal Panel -->
             <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col max-h-[90vh]"
+                <div class="relative overflow-hidden rounded-3xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col"
                      @click.stop>
                      
                     <!-- Close Button (Absolute Top-Right) -->
@@ -78,7 +78,7 @@
                     </div>
 
                     <!-- Body Content -->
-                    <div class="px-6 py-6 sm:px-8 overflow-y-auto flex-1">
+                    <div class="px-6 py-6 sm:px-8 overflow-y-auto pb-10" style="max-height: 65vh; overflow-y: auto;">
                         
                         <!-- TAB: DETAILS -->
                         <div x-show="currentTab === 'details'" class="space-y-6">
@@ -123,11 +123,9 @@
                                                     </span>
                                                 </template>
                                             </div>
-                                            <div class="flex -space-x-2">
+                                            <div class="flex flex-wrap gap-2 justify-end">
                                                  <template x-for="assignee in selectedTask?.assignees" :key="assignee.id">
-                                                    <img :src="assignee.avatar ? (assignee.avatar.startsWith('http') ? assignee.avatar : '/storage/' + assignee.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(assignee.name)+'&color=FFFFFF&background=22A9C8'" 
-                                                         :title="assignee.name"
-                                                         class="w-8 h-8 rounded-full border-2 border-white bg-gray-200 object-cover">
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" x-text="assignee.name"></span>
                                                  </template>
                                             </div>
                                         </div>

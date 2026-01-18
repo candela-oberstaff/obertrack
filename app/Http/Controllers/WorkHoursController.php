@@ -403,6 +403,14 @@ class WorkHoursController extends Controller
             $professionalsQuery = User::where('empleador_id', $employerId);
         }
 
+        // Apply filters
+        if ($request->filled('name')) {
+            $professionalsQuery->where('name', 'like', '%' . $request->name . '%');
+        }
+        if ($request->filled('email')) {
+            $professionalsQuery->where('email', 'like', '%' . $request->email . '%');
+        }
+
         $weekInput = $request->query('week');
         if ($weekInput && str_contains($weekInput, '?')) {
             $weekInput = explode('?', $weekInput)[0];
@@ -413,12 +421,17 @@ class WorkHoursController extends Controller
             : Carbon::now()->startOfWeek(Carbon::MONDAY);
         
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
-        $today = Carbon::today();
+        // Use the end of the selected week as the "anchor" for calculations instead of real today
+        // This allows historical reports to behave consistently
+        $reportAnchorDate = $weekEnd->copy(); 
 
+        // Filter professionals who existed at the time of the report
+        // This prevents showing "0 hours / 5 absences" for employees who weren't hired yet
         $professionals = $professionalsQuery
+            ->where('created_at', '<=', $weekEnd) 
             ->orderBy('name')
             ->get()
-            ->map(function ($professional, $index) use ($weekStart, $weekEnd, $today) {
+            ->map(function ($professional, $index) use ($weekStart, $weekEnd, $reportAnchorDate) {
                 $weekHours = WorkHours::where('user_id', $professional->id)
                     ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
                     ->get();
@@ -426,11 +439,19 @@ class WorkHoursController extends Controller
                 $totalHours = $weekHours->sum('hours_worked');
                 $pendingHours = $weekHours->where('approved', false)->sum('hours_worked');
 
-                // Logic for absences: only count days up to today or week end, whichever is first
+                // Logic for absences
                 $absences = 0;
-                $daysToCheck = min(5, $today->diffInDays($weekStart) + 1);
-                if ($today->lt($weekStart)) $daysToCheck = 0;
-                if ($weekEnd->lt($today)) $daysToCheck = 5;
+                // For historical reports, check all 5 days. For current/future, limit to "today".
+                // Since we anchor to weekEnd for historical, effectively we check the whole week.
+                $isCurrentWeek = Carbon::now()->between($weekStart, $weekEnd);
+                $daysToCheck = 5;
+                
+                if ($isCurrentWeek) {
+                    $daysToCheck = min(5, Carbon::now()->diffInDays($weekStart) + 1);
+                     if (Carbon::now()->lt($weekStart)) $daysToCheck = 0;
+                } elseif ($weekStart->isFuture()) {
+                    $daysToCheck = 0;
+                }
 
                 for ($i = 0; $i < $daysToCheck; $i++) {
                     $date = $weekStart->copy()->addDays($i);
@@ -453,31 +474,34 @@ class WorkHoursController extends Controller
                     })
                     ->count();
 
-                // Monthly stats
-                $monthStart = Carbon::now()->startOfMonth();
+                // Monthly stats should be relative to the selected week's month
+                $monthStart = $weekStart->copy()->startOfMonth();
+                $monthEndDate = $reportAnchorDate->copy()->endOfMonth();
+                
                 $monthWorkHours = WorkHours::where('user_id', $professional->id)
-                    ->whereBetween('work_date', [$monthStart->format('Y-m-d'), $today->format('Y-m-d')])
+                    ->whereBetween('work_date', [$monthStart->format('Y-m-d'), $monthEndDate->format('Y-m-d')])
                     ->whereRaw('approved IS TRUE')
                     ->sum('hours_worked');
                 
                 $monthRecoveredNew = RecoveryHour::where('user_id', $professional->id)
-                    ->whereBetween('recovery_date', [$monthStart->format('Y-m-d'), $today->format('Y-m-d')])
+                    ->whereBetween('recovery_date', [$monthStart->format('Y-m-d'), $monthEndDate->format('Y-m-d')])
                     ->whereRaw('approved IS TRUE')
                     ->sum('hours_recovered');
                 
                 $monthRecoveredOld = WorkHours::where('user_id', $professional->id)
-                    ->whereBetween('work_date', [$monthStart->format('Y-m-d'), $today->format('Y-m-d')])
+                    ->whereBetween('work_date', [$monthStart->format('Y-m-d'), $monthEndDate->format('Y-m-d')])
                     ->whereRaw('recovery_approved IS TRUE')
                     ->sum('recovered_hours');
 
                 $monthHours = $monthWorkHours + $monthRecoveredNew + $monthRecoveredOld;
 
-                // Pending recoveries (New table)
+                // Pending recoveries (Scoped to Month)
+                // Only show pending recoveries that fall within the reported month window
                 $pendingRecoveries = RecoveryHour::where('user_id', $professional->id)
                     ->whereRaw('approved IS FALSE')
+                    ->whereBetween('recovery_date', [$monthStart->format('Y-m-d'), $monthEndDate->format('Y-m-d')])
                     ->get()
                     ->map(function($r) {
-                        // Map to a consistent structure for the view
                         return (object)[
                             'id' => $r->id,
                             'recovered_hours' => $r->hours_recovered,
@@ -486,10 +510,11 @@ class WorkHoursController extends Controller
                         ];
                     });
 
-                // Add legacy pending recoveries if any
+                // Add legacy pending recoveries (Scoped to Month)
                 $legacyPending = WorkHours::where('user_id', $professional->id)
                     ->where('recovered_hours', '>', 0)
                     ->whereRaw('recovery_approved IS FALSE')
+                    ->whereBetween('work_date', [$monthStart->format('Y-m-d'), $monthEndDate->format('Y-m-d')])
                     ->get()
                     ->map(function($r) {
                         return (object)[
