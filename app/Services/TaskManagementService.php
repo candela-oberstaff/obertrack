@@ -97,8 +97,14 @@ class TaskManagementService
         }
 
         if ($assignees !== null) {
+            // Ensure all IDs are integers
+            $assignees = array_map('intval', array_filter($assignees));
             $task->assignees()->sync($assignees);
         }
+
+        // Remove assignees from data before updating model (it's not a fillable field)
+        unset($data['assignees']);
+        unset($data['employee_id']);
 
         $task->update($data);
         return $task;
@@ -109,17 +115,25 @@ class TaskManagementService
      */
     public function deleteTask($taskId)
     {
-        $task = Task::findOrFail($taskId);
-        
-        // Remove pivot table entries
-        $task->assignees()->detach();
-        $task->readBy()->detach();
-        
-        // Delete related hasMany records to prevent foreign key constraint errors
-        $task->comments()->delete();
-        $task->attachments()->delete();
-        
-        return $task->delete();
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($taskId) {
+            $task = Task::findOrFail($taskId);
+            
+            // Delete associated work hours if any
+            // Check if created_by is valid first to avoid errors
+            if ($task->created_by) {
+                WorkHours::where([
+                    'user_id' => $task->created_by,
+                    'work_date' => $task->created_at->toDateString(),
+                ])->delete();
+            }
+
+            // Manually delete relations just in case DB cascade is missing/broken
+            $task->comments()->delete();
+            $task->attachments()->delete();
+            $task->assignees()->detach();
+
+            return $task->delete();
+        });
     }
 
     /**

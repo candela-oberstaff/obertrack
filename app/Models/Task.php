@@ -25,8 +25,8 @@ class Task extends Model
 
     protected $casts = [
         'completed' => 'boolean',
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'start_date' => 'datetime:Y-m-d',
+        'end_date' => 'datetime:Y-m-d',
     ];
 
     // Status Constants

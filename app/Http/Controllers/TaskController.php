@@ -39,10 +39,14 @@ class TaskController extends Controller
 
     public function update(UpdateTaskRequest $request, $id)
     {
-        try {
-            $task = Task::findOrFail($id);
-            
-            $this->authorize('update', $task);
+        $task = Task::findOrFail($id);
+        
+        if ($request->user()->cannot('update', $task)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No tienes permiso para editar esta tarea'], 403);
+            }
+            return back()->with('error', 'No tienes permiso para editar esta tarea.');
+        }
 
             $this->taskManagementService->updateTask($task, $request->validated());
             
@@ -62,20 +66,35 @@ class TaskController extends Controller
     {
         try {
             $task = Task::findOrFail($taskId);
-            
-            $this->authorize('delete', $task);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            // Idempotency: If task is already gone, consider it a success
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'La tarea ya había sido eliminada']);
+            }
+            return redirect()->back()->with('success', 'La tarea ya había sido eliminada');
+        }
+        
+        if ($request->user()->cannot('delete', $task)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar esta tarea'], 403);
+            }
+            return back()->with('error', 'No tienes permiso para eliminar esta tarea.');
+        }
 
+        try {
+            \Illuminate\Support\Facades\Log::info("Intentando eliminar tarea $taskId por usuario " . Auth::id());
             $this->taskManagementService->deleteTask($taskId);
             
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => true, 'message' => 'Tarea eliminada con éxito']);
             }
             return redirect()->back()->with('success', 'Tarea eliminada con éxito');
-        } catch (\Throwable $e) {
-            if ($request->ajax() || $request->wantsJson() || $request->isJson()) {
-                return response()->json(['success' => false, 'message' => 'Error al eliminar la tarea: ' . $e->getMessage()], 500);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Error al eliminar tarea $taskId: " . $e->getMessage());
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Error al eliminar: ' . $e->getMessage()], 500);
             }
-            return redirect()->back()->with('error', 'Error al eliminar la tarea: ' . $e->getMessage());
+            return back()->with('error', 'Error al eliminar tarea: ' . $e->getMessage());
         }
     }
 

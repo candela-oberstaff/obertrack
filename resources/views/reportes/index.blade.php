@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="py-10 bg-white min-h-screen">
+    <div class="py-10 bg-white min-h-screen" x-data="{ searchQuery: '', emailQuery: '' }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="mb-8">
                 <h1 class="font-extrabold text-3xl text-[#0D1E4C] tracking-tight mb-4">
@@ -8,9 +8,62 @@
                 <p class="text-[#22A9C8] font-bold text-base">Profesionales registrados</p>
             </div>
 
+            <!-- Filters Section -->
+            <div class="mb-8 p-1">
+                <form method="GET" action="{{ route('reportes.index') }}" 
+                      class="bg-gray-50 p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-5 items-end relative z-10">
+                    
+                    <!-- Date Filter (Server Side) -->
+                    <div class="w-full md:w-auto flex-1">
+                        <label for="week" class="block text-xs font-extrabold text-[#0D1E4C] uppercase tracking-widest mb-2 ml-1">
+                            Fecha (Semana)
+                        </label>
+                        <input type="date" id="week" name="week" 
+                               value="{{ request('week', $weekStart->format('Y-m-d')) }}" 
+                               class="w-full bg-white border-gray-200 rounded-xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-[#22A9C8] transition-all shadow-sm">
+                    </div>
+
+                    <!-- Name Filter (Client Side) -->
+                    <div class="w-full md:w-auto flex-1">
+                        <label for="name" class="block text-xs font-extrabold text-[#0D1E4C] uppercase tracking-widest mb-2 ml-1">
+                            Nombre Empleado
+                        </label>
+                        <input type="text" id="name" x-model="searchQuery" 
+                               placeholder="Filtrar por nombre..." 
+                               class="w-full bg-white border-gray-200 rounded-xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-[#22A9C8] transition-all shadow-sm">
+                    </div>
+
+                    <!-- Email Filter (Client Side) -->
+                    <div class="w-full md:w-auto flex-1">
+                        <label for="email" class="block text-xs font-extrabold text-[#0D1E4C] uppercase tracking-widest mb-2 ml-1">
+                            Correo Electrónico
+                        </label>
+                        <input type="text" id="email" x-model="emailQuery" 
+                               placeholder="Filtrar por correo..." 
+                               class="w-full bg-white border-gray-200 rounded-xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-[#22A9C8] transition-all shadow-sm">
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="w-full md:w-auto">
+                        <button type="submit" 
+                                class="w-full md:w-auto bg-[#0D1E4C] hover:bg-[#1a202c] text-white font-bold py-3 px-8 rounded-xl text-sm transition-all shadow-md active:scale-95 flex justify-center items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            Actualizar Semana
+                        </button>
+                    </div>
+                </form>
+            </div>
+
             <div id="reportes-professionals-list" class="space-y-6">
                 @forelse($professionals as $prof)
-                <div class="bg-[#F8F9FA] rounded-[1.25rem] p-5 md:p-6 shadow-sm relative transition-all hover:shadow-md flex flex-col md:flex-row items-center gap-6">
+                <div class="bg-[#F8F9FA] rounded-[1.25rem] p-5 md:p-6 shadow-sm relative transition-all hover:shadow-md flex flex-col md:flex-row items-center gap-6"
+                     data-name="{{ strtolower($prof['name']) }}"
+                     data-email="{{ strtolower($prof['professional']->email ?? '') }}"
+                     x-show="$el.dataset.name.includes(searchQuery.toLowerCase()) && $el.dataset.email.includes(emailQuery.toLowerCase())"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform scale-95"
+                     x-transition:enter-end="opacity-100 transform scale-100">
+                     
                     <!-- Index Number Section -->
                     <div class="flex-shrink-0 w-20 flex justify-center items-center">
                         <span class="text-5xl font-black text-[#1a202c] leading-none opacity-90 tracking-tighter">{{ str_pad($prof['index'], 2, '0', STR_PAD_LEFT) }}</span>
@@ -25,6 +78,8 @@
                         <div class="absolute -top-1 right-0 text-right hidden lg:block">
                             <p class="text-xs font-medium text-gray-500">Semana del {{ $weekStart->format('d/m/Y') }} al {{ $weekEnd->format('d/m/Y') }}</p>
                             <p class="text-xs font-medium text-gray-500 mt-0.5">Comentarios: {{ $prof['comment_count'] ?? 0 }}</p>
+                            <!-- Hidden email for user reference if needed, facilitates search understanding -->
+                            <p class="text-[10px] text-gray-300 mt-0.5 truncate max-w-[150px] ml-auto">{{ $prof['professional']->email ?? '' }}</p>
                         </div>
 
                         <div class="mb-4">
@@ -115,9 +170,16 @@
                 </div>
                 @empty
                 <div class="bg-[#F8F9FA] rounded-[1.5rem] p-12 text-center shadow-sm border border-gray-100">
-                    <p class="text-gray-400 font-bold text-lg uppercase tracking-widest">No hay profesionales registrados para esta semana.</p>
+                    <p class="text-gray-400 font-bold text-lg uppercase tracking-widest">No hay profesionales registrados.</p>
                 </div>
                 @endforelse
+                
+                <!-- No Results Message (Client Side) -->
+                 <div x-show="document.querySelectorAll('#reportes-professionals-list > div[data-name]').length > 0 && Array.from(document.querySelectorAll('#reportes-professionals-list > div[data-name]')).every(el => el.style.display === 'none')" 
+                      class="bg-[#F8F9FA] rounded-[1.5rem] p-12 text-center shadow-sm border border-gray-100" 
+                      style="display: none;">
+                    <p class="text-gray-400 font-bold text-lg uppercase tracking-widest">No se encontraron coincidencias.</p>
+                </div>
             </div>
         </div>
     </div>

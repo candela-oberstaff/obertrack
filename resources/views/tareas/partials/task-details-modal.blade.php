@@ -16,7 +16,7 @@
 
             <!-- Modal Panel -->
             <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col max-h-[90vh]"
+                <div class="relative overflow-hidden rounded-3xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col"
                      @click.stop>
                      
                     <!-- Close Button (Absolute Top-Right) -->
@@ -78,7 +78,7 @@
                     </div>
 
                     <!-- Body Content -->
-                    <div class="px-6 py-6 sm:px-8 overflow-y-auto flex-1">
+                    <div class="px-6 py-6 sm:px-8 overflow-y-auto pb-10" style="max-height: 65vh; overflow-y: auto;">
                         
                         <!-- TAB: DETAILS -->
                         <div x-show="currentTab === 'details'" class="space-y-6">
@@ -123,11 +123,9 @@
                                                     </span>
                                                 </template>
                                             </div>
-                                            <div class="flex -space-x-2">
+                                            <div class="flex flex-wrap gap-2 justify-end">
                                                  <template x-for="assignee in selectedTask?.assignees" :key="assignee.id">
-                                                    <img :src="assignee.avatar ? (assignee.avatar.startsWith('http') ? assignee.avatar : '/avatars/' + assignee.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(assignee.name)+'&color=FFFFFF&background=22A9C8'" 
-                                                         :title="assignee.name"
-                                                         class="w-8 h-8 rounded-full border-2 border-white bg-gray-200 object-cover">
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" x-text="assignee.name"></span>
                                                  </template>
                                             </div>
                                         </div>
@@ -160,6 +158,18 @@
                                     <div>
                                         <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block ml-1">Fecha Límite</label>
                                         <input type="date" x-model="editTaskData.end_date" class="w-full bg-gray-50 border-gray-100 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#22A9C8] transition-all">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block ml-1">Asignar a</label>
+                                    <div class="space-y-2 max-h-32 overflow-y-auto bg-gray-50 p-2 rounded-xl border border-gray-100">
+                                        @foreach($employees as $employee)
+                                            <label class="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded-lg cursor-pointer">
+                                                <input type="checkbox" value="{{ $employee->id }}" x-model="editTaskData.assignees" class="rounded text-[#22A9C8] focus:ring-[#22A9C8] border-gray-300">
+                                                <span class="text-sm text-gray-700">{{ $employee->name }}</span>
+                                            </label>
+                                        @endforeach
                                     </div>
                                 </div>
 

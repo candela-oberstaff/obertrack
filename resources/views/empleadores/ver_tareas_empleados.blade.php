@@ -63,12 +63,15 @@
         isAddingComment: false,
         commentText: '',
         isSubmitting: false,
+        isDeleting: false,
 
         // Helper to check if a task matches filters
         formatDate(dateString) {
             if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            // Handle ISO string or YYYY-MM-DD by extracting just the date part
+            const datePart = dateString.split('T')[0];
+            const [year, month, day] = datePart.split('-');
+            return `${day}/${month}/${year}`;
         },
 
         matches(taskEndRaw, taskTitle, assigneeNames) {
@@ -234,9 +237,13 @@
         },
 
         async performDelete() {
-            const { type, id } = this.deleteConfirmation;
-            this.deleteConfirmation.isOpen = false;
+            if (this.isDeleting) return;
+            this.isDeleting = true;
 
+            const { type, id } = this.deleteConfirmation;
+            // Keep the modal open while deleting to show loading state if desired, or close it. 
+            // For now, keeping logic similar but adding safety.
+            
             if (type === 'file') {
                 try {
                     const response = await fetch(`/tasks/attachments/${id}`, {
@@ -278,18 +285,34 @@
                         headers: {
                             'Content-Type': 'application/json',
                             'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
+                            'X-Requested-With': 'XMLHttpRequest'
                         }
                     });
                     if (response.ok) {
-                        // Close modal and refresh or remove from local state
+                        this.deleteConfirmation.isOpen = false;
                         this.isDetailsModalOpen = false;
-                        location.reload(); // Simplest way to ensure list is updated
+                        const currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('t', new Date().getTime());
+                        window.location.href = currentUrl.toString();
                     } else {
                         const data = await response.json();
                         alert(data.message || 'Error al eliminar tarea');
+                        this.deleteConfirmation.isOpen = false;
                     }
-                } catch (e) { alert('Error de conexión'); }
+                } catch (e) { 
+                    alert('Error de conexión'); 
+                    this.deleteConfirmation.isOpen = false;
+                } finally {
+                    this.isDeleting = false;
+                }
+            } else {
+                // For other types (file, comment), just close and reset for now
+                if (type === 'file' || type === 'comment') {
+                     // ... logic simplified above, ensure finally resets isDeleting
+                     this.isDeleting = false; 
+                     this.deleteConfirmation.isOpen = false;
+                }
             }
         },
 
@@ -301,7 +324,8 @@
                 description: this.selectedTask.description || '',
                 priority: this.selectedTask.priority,
                 start_date: (this.selectedTask.start_date || '').split('T')[0],
-                end_date: (this.selectedTask.end_date || '').split('T')[0]
+                end_date: (this.selectedTask.end_date || '').split('T')[0],
+                assignees: this.selectedTask.assignees ? this.selectedTask.assignees.map(a => a.id) : []
             };
             this.isEditingTask = true;
         },
@@ -314,22 +338,34 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify(this.editTaskData)
                 });
 
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
                 if (response.ok) {
-                    const data = await response.json();
                     this.selectedTask = data.task;
                     this.isEditingTask = false;
-                    location.reload(); // Refresh list to reflect changes in the table
+                    // Force non-cached reload explicitly
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('t', new Date().getTime());
+                    window.location.href = currentUrl.toString();
                 } else {
-                    const data = await response.json();
-                    alert(data.message || 'Error al guardar cambios');
+                    // Handle validation errors (422)
+                    if (data.errors) {
+                        const errorMessages = Object.values(data.errors).flat().join('\n');
+                        alert('Errores de validación:\n' + errorMessages);
+                    } else {
+                        alert(data.message || 'Error al guardar cambios');
+                    }
                 }
             } catch (e) {
-                console.error(e);
+                console.error('Network error:', e);
                 alert('Error de conexión');
             } finally {
                 this.isSavingTask = false;
@@ -430,18 +466,12 @@
                                     {{ \Carbon\Carbon::parse($task->end_date)->format('d/m/Y') }}
                                 </td>
                                 <td class="py-6 bg-white border-y border-[#22A9C8]">
-                                    <div class="flex justify-center -space-x-2">
-                                        @foreach($task->assignees->take(3) as $assignee)
-                                            <div class="w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 flex-shrink-0">
-                                                <img src="{{ $assignee->avatar ? (str_starts_with($assignee->avatar, 'http') ? $assignee->avatar : asset('avatars/' . $assignee->avatar)) : 'https://ui-avatars.com/api/?name='.urlencode($assignee->name).'&color=FFFFFF&background=22A9C8' }}" 
-                                                     alt="{{ $assignee->name }}" class="w-full h-full object-cover">
-                                            </div>
+                                    <div class="flex justify-center flex-wrap gap-1">
+                                        @foreach($task->assignees as $assignee)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {{ $assignee->name }}
+                                            </span>
                                         @endforeach
-                                        @if($task->assignees->count() > 3)
-                                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600 font-bold ring-2 ring-white">
-                                                +{{ $task->assignees->count() - 3 }}
-                                            </div>
-                                        @endif
                                     </div>
                                 </td>
                                 <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
@@ -536,18 +566,12 @@
                                     <div class="text-right text-red-500 font-bold">{{ \Carbon\Carbon::parse($task->end_date)->format('d/m/Y') }}</div>
                                     
                                     <div class="text-gray-600 font-medium">Asignado</div>
-                                    <div class="flex justify-end -space-x-2">
-                                        @foreach($task->assignees->take(3) as $assignee)
-                                            <div class="w-7 h-7 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 flex-shrink-0">
-                                                <img src="{{ $assignee->avatar ? (str_starts_with($assignee->avatar, 'http') ? $assignee->avatar : asset('avatars/' . $assignee->avatar)) : 'https://ui-avatars.com/api/?name='.urlencode($assignee->name).'&color=FFFFFF&background=22A9C8' }}" 
-                                                     class="w-full h-full object-cover">
-                                            </div>
+                                    <div class="flex justify-center flex-wrap gap-1 text-right">
+                                        @foreach($task->assignees as $assignee)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {{ $assignee->name }}
+                                            </span>
                                         @endforeach
-                                        @if($task->assignees->count() > 3)
-                                            <div class="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600 font-bold ring-2 ring-white">
-                                                +{{ $task->assignees->count() - 3 }}
-                                            </div>
-                                        @endif
                                     </div>
 
                                     <div class="text-gray-600 font-medium self-center">Estado</div>

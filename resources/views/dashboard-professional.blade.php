@@ -223,7 +223,7 @@
                             
                             @forelse($latestComments as $comment)
                                 <div class="bg-gray-50 rounded-lg p-3">
-                                    <p class="text-sm text-gray-800 mb-2">{{ $comment->content }}</p>
+                                <p class="text-sm text-gray-800 mb-2 break-words line-clamp-3">{{ $comment->content }}</p>
                                     <div class="flex items-center justify-between text-xs">
                                         <span class="text-gray-500">{{ $comment->created_at->format('Y.m.d') }}</span>
                                         <div class="flex items-center gap-1 text-gray-600">
