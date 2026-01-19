@@ -1,23 +1,5 @@
 <x-app-layout>
-    @php
-        // Fetch Next Deadline Task (Oldest incomplete task with a deadline)
-        $nextDeadlineTask = auth()->user()->assignedTasks()
-            ->whereRaw('tasks.completed IS FALSE')
-            ->whereNotNull('tasks.end_date')
-            ->orderBy('tasks.end_date', 'asc')
-            ->first();
-            
-        $completedTasks = 0; // Disabled as we replaced the counter
-    @endphp
-    <div class="min-h-screen bg-white py-8" 
-         x-data="dashboardController(0, {{ $completedTasks }}, {{ json_encode([
-            'id' => auth()->id(),
-            'name' => auth()->user()->name,
-            'avatar' => auth()->user()->avatar ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : asset('avatars/' . auth()->user()->avatar)) : '',
-            'tipo_usuario' => auth()->user()->tipo_usuario,
-            'is_superadmin' => auth()->user()->is_superadmin
-        ]) }})"
-         @task-status-updated.window="handleStatusUpdate($event.detail)">
+    <div class="min-h-screen bg-white py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
             {{-- Header Section --}}
@@ -28,66 +10,74 @@
                 <p class="text-gray-600 mt-1">
                     Aquí está tu resumen de actividades
                 </p>
-            </div>
+            </div> 
 
             {{-- Summary Cards --}}
-            <div id="dashboard-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div id="dashboard-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 @php
                     $debtSummary = \App\Http\Controllers\RecoveryHoursController::getDebtSummary(auth()->id());
                 @endphp
                 
-                {{-- Próxima Entrega --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm flex flex-col justify-between">
-                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Próxima entrega</p>
+                {{-- Tareas Pendientes --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
+                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas pendientes</p>
+                    @php
+                        $totalPending = auth()->user()->assignedTasks()->whereRaw('completed IS FALSE')->count();
+                    @endphp
+                    <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C]">{{ str_pad($totalPending, 2, '0', STR_PAD_LEFT) }}</p>
+                </div>
 
-                    @if($nextDeadlineTask)
-                        <div>
-                            <p class="text-lg md:text-xl font-bold text-[#0D1E4C] line-clamp-2 leading-tight" title="{{ $nextDeadlineTask->title }}">
-                                {{ $nextDeadlineTask->title }}
-                            </p>
-                            <p class="text-sm text-orange-500 font-bold mt-1">
-                                {{ \Carbon\Carbon::parse($nextDeadlineTask->end_date)->isToday() ? 'Vence hoy' : 'Vence el ' . \Carbon\Carbon::parse($nextDeadlineTask->end_date)->format('d/m') }}
-                            </p>
-                        </div>
-                    @else
-                        <div class="flex items-center text-green-500">
-                            <svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <span class="font-bold">Estás al día</span>
-                        </div>
+                {{-- Horas Registradas --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
+                    @php
+                        $currentPeriodStart = now()->startOfMonth();
+                        $currentPeriodEnd = now();
+                        $registeredHours = auth()->user()->workHours()
+                            ->whereBetween('work_date', [$currentPeriodStart, $currentPeriodEnd])
+                            ->get();
+                        $totalHours = $registeredHours->sum('hours_worked');
+                        $hasPendingApproval = $registeredHours->where('approved', false)->count() > 0;
+                    @endphp
+                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">
+                        Horas registradas
+                        <span class="text-[8px] md:text-[10px] text-gray-400 font-medium">({{ $currentPeriodStart->format('M d') }} - {{ $currentPeriodEnd->format('M d') }})</span>
+                    </p>
+                    <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C] mb-2">{{ (int)$totalHours }} h</p>
+                    @if($hasPendingApproval)
+                        <p class="text-[10px] text-red-500 font-bold italic line-clamp-1">
+                            Pendientes de aprobación
+                        </p>
                     @endif
                 </div>
 
-                {{-- Horas de tareas (Eliminado) --}}
-
-                {{-- Mi Empresa (Replaces Tareas Finalizadas) --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm flex flex-col justify-between">
-                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Mi Empresa</p>
-
-                    @if(auth()->user()->empleador)
-                        <div>
-                            <p class="text-lg md:text-xl font-bold text-[#0D1E4C] line-clamp-1" title="{{ auth()->user()->empleador->company_name ?? auth()->user()->empleador->name }}">
-                                {{ auth()->user()->empleador->company_name ?? auth()->user()->empleador->name }}
-                            </p>
-                            <div class="flex items-center gap-1 mt-1 text-gray-500">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                                <p class="text-xs truncate">{{ auth()->user()->empleador->email }}</p>
-                            </div>
+                {{-- Tareas Completadas --}}
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
+                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas finalizadas</p>
+                    @php
+                        $completedTasks = auth()->user()->assignedTasks()
+                            ->whereRaw('completed IS TRUE')
+                            ->whereYear('tasks.updated_at', now()->year)
+                            ->whereMonth('tasks.updated_at', now()->month)
+                            ->count();
+                    @endphp
+                    <div class="flex items-center gap-3">
+                        <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C]">{{ str_pad($completedTasks, 2, '0', STR_PAD_LEFT) }}</p>
+                        <div class="w-8 h-8 md:w-10 md:h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                            </svg>
                         </div>
-                    @else
-                        <div class="flex items-center text-gray-400">
-                           <span class="text-sm italic">Sin vinculación empresarial</span>
-                        </div>
-                    @endif
+                    </div>
                 </div>
 
                 {{-- Recuperación de Horas --}}
                 <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
-                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Horas de recuperación</p>
+                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Horas de Recuperación</p>
                     <div class="flex items-center justify-between">
                         <div>
                             @php $remainingDebt = $debtSummary['remaining_debt']; @endphp
                             <p class="text-4xl md:text-5xl font-extrabold {{ $remainingDebt > 0 ? 'text-red-500' : 'text-green-500' }}">
-                                {{ $remainingDebt > 0 ? '-' . number_format($remainingDebt, 1) : 'Ok' }}<span class="text-lg">h</span>
+                                {{ $remainingDebt > 0 ? '-' . number_format($remainingDebt, 1) : '0' }}<span class="text-lg">h</span>
                             </p>
                         </div>
                         <div class="text-right">
@@ -96,7 +86,7 @@
                         </div>
                     </div>
                     <div class="mt-2 text-[10px] text-gray-400 flex justify-between">
-                        <span>Adeudado: {{ number_format($debtSummary['total_debt'], 1) }}h</span>
+                        <span>Pendiente: {{ number_format($debtSummary['total_debt'], 1) }}h</span>
                         @if($debtSummary['pending_approval'] > 0)
                             <span class="text-orange-500 font-bold">+{{ number_format($debtSummary['pending_approval'], 1) }}h pnd</span>
                         @endif
@@ -110,16 +100,18 @@
                 
                 {{-- Últimas Tareas (2/3 width) --}}
                 <div class="lg:col-span-2" id="dashboard-latest-tasks">
-                    @php
-                        $currentUserData = [
-                            'id' => auth()->id(),
-                            'name' => auth()->user()->name,
-                            'avatar' => auth()->user()->avatar ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : asset('avatars/' . auth()->user()->avatar)) : '',
-                            'tipo_usuario' => auth()->user()->tipo_usuario,
-                            'is_superadmin' => auth()->user()->is_superadmin
-                        ];
-                    @endphp
-                    <div class="bg-white rounded-lg border border-gray-200">
+                    <div class="bg-white rounded-lg border border-gray-200" x-data="{ 
+                        selectedTask: null, 
+                        isModalOpen: false,
+                        openModal(task) {
+                            this.selectedTask = task;
+                            this.isModalOpen = true;
+                        },
+                        closeModal() {
+                            this.isModalOpen = false;
+                            this.selectedTask = null;
+                        }
+                    }">
                         <div class="px-6 py-4 border-b border-gray-200">
                             <h2 class="text-lg font-semibold text-gray-900">Últimas tareas</h2>
                         </div>
@@ -139,7 +131,7 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @php
                                         $latestTasks = auth()->user()->assignedTasks()
-                                            ->with(['assignees', 'comments.user', 'attachments', 'createdBy'])
+                                            ->with(['visibleTo', 'comments.user', 'attachments', 'createdBy'])
                                             ->latest('tasks.created_at')
                                             ->take(5)
                                             ->get();
@@ -147,15 +139,15 @@
                                     
                                     @forelse($latestTasks as $task)
                                         <tr class="hover:bg-gray-50 cursor-pointer transition-colors duration-150 ease-in-out border-b border-gray-50" 
-                                            @click='openDetailsModal(@json($task))'>
+                                            @click="openModal({{ json_encode($task) }})">
                                             <td class="px-4 md:px-6 py-4">
                                                 <div class="text-sm font-bold text-gray-900 line-clamp-1">{{ $task->title }}</div>
                                                 <div class="text-[10px] text-gray-400 mt-0.5 sm:hidden">{{ $task->end_date->format('d/m/Y') }}</div>
                                             </td>
                                             <td class="px-4 md:px-6 py-4 text-sm text-gray-600 whitespace-nowrap hidden sm:table-cell">{{ $task->end_date->format('d/m/Y') }}</td>
                                             <td class="px-4 md:px-6 py-4 hidden lg:table-cell">
-                                                @if($task->assignees->isNotEmpty())
-                                                    <x-user-avatar :user="$task->assignees->first()" size="8" />
+                                                @if($task->visibleTo)
+                                                    <x-user-avatar :user="$task->visibleTo" size="8" />
                                                 @endif
                                             </td>
                                             <td class="px-4 md:px-6 py-4 hidden md:table-cell">
@@ -171,9 +163,16 @@
                                                 @endif
                                             </td>
                                             <td class="px-4 md:px-6 py-4">
-                                                <div @click.stop>
-                                                    <livewire:task-status-selector :task="$task" :wire:key="'dash-task-'.$task->id" />
-                                                </div>
+                                                @if($task->completed)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-green-100 text-green-700">
+                                                        Hecho
+                                                    </span>
+                                                @else
+                                                    @php $isOverdue = $task->end_date->endOfDay()->isPast(); @endphp
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider {{ $isOverdue ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700' }}">
+                                                        {{ $isOverdue ? 'Vencida' : 'Pendiente' }}
+                                                    </span>
+                                                @endif
                                             </td>
                                             <td class="px-4 md:px-6 py-4 hidden lg:table-cell">
                                                 <div class="flex items-center gap-1 text-gray-500">
@@ -198,7 +197,158 @@
                         </div>
 
                         {{-- Task Details Modal --}}
-                        @include('tareas.partials.task-details-modal')
+                        <div x-show="isModalOpen" 
+                             class="fixed inset-0 z-50 overflow-y-auto" 
+                             style="display: none;"
+                             x-transition:enter="transition ease-out duration-300"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             x-transition:leave="transition ease-in duration-200"
+                             x-transition:leave-start="opacity-100"
+                             x-transition:leave-end="opacity-0">
+                            
+                            <!-- Backdrop -->
+                            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal()"></div>
+            
+                            <!-- Modal Panel -->
+                            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col max-h-[85vh]"
+                                     @click.stop>
+                                    
+                                    <!-- Header -->
+                                    <div class="bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-start flex-shrink-0 border-b border-gray-200">
+                                        <div>
+                                            <h3 class="text-lg font-semibold leading-6 text-gray-900" x-text="selectedTask?.title"></h3>
+                                            <p class="mt-1 text-sm text-gray-500" x-text="'Creada por: ' + (selectedTask?.created_by?.name || 'Sistema')"></p>
+                                        </div>
+                                        <button type="button" @click="closeModal()" class="text-gray-400 hover:text-gray-500">
+                                            <span class="sr-only">Cerrar</span>
+                                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+            
+                                    <!-- Body -->
+                                    <div class="px-4 py-5 sm:p-6 overflow-y-auto flex-1">
+                                        <div class="space-y-4">
+                                            
+                                            <!-- Description -->
+                                            <div>
+                                                <h4 class="text-sm font-medium text-gray-900">Descripción</h4>
+                                                <p class="mt-1 text-sm text-gray-500 whitespace-pre-line whitespace-nowrap    overflow-x-auto overflow-y-hidden   scrollbar-thin" x-text="selectedTask?.description || 'Sin descripción'"></p>
+                                            </div>
+            
+                                            <!-- Stats Grid -->
+                                            <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md">
+                                                <div>
+                                                    <span class="text-xs font-medium text-gray-500 uppercase">Prioridad</span>
+                                                    <p class="text-sm font-semibold capitalize" 
+                                                       :class="{
+                                                            'text-red-600': selectedTask?.priority === 'high' || selectedTask?.priority === 'urgent',
+                                                            'text-yellow-600': selectedTask?.priority === 'medium',
+                                                            'text-primary': selectedTask?.priority === 'low'
+                                                       }"
+                                                       x-text="selectedTask?.priority"></p>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs font-medium text-gray-500 uppercase">Fecha Límite</span>
+                                                    <p class="text-sm font-semibold text-gray-900" 
+                                                       x-text="new Date(selectedTask?.end_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })"></p>
+                                                </div>
+                                                <div>
+                                                    <span class="text-xs font-medium text-gray-500 uppercase">Estado</span>
+                                                    <template x-if="selectedTask?.completed">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            Completada
+                                                        </span>
+                                                    </template>
+                                                    <template x-if="!selectedTask?.completed">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                              :class="new Date(selectedTask?.end_date) < new Date() ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'"
+                                                              x-text="new Date(selectedTask?.end_date) < new Date() ? 'Vencida' : 'Pendiente'">
+                                                        </span>
+                                                    </template>
+                                                </div>
+                                            </div>
+            
+                                            <!-- Attachments -->
+                                            <div>
+                                                <h4 class="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+                                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                                    </svg>
+                                                    Archivos adjuntos
+                                                </h4>
+                                                
+                                                <template x-if="selectedTask?.attachments && selectedTask.attachments.length > 0">
+                                                    <ul class="divide-y divide-gray-200 border border-gray-200 rounded-md">
+                                                        <template x-for="attachment in selectedTask.attachments" :key="attachment.id">
+                                                            <li class="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                                                                <div class="w-0 flex-1 flex items-center">
+                                                                    <!-- Icon based on mime/extension (simplified generic icon) -->
+                                                                    <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fill-rule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clip-rule="evenodd" />
+                                                                    </svg>
+                                                                    <span class="ml-2 flex-1 w-0 truncate" x-text="attachment.filename"></span>
+                                                                </div>
+                                                                <div class="ml-4 flex-shrink-0">
+                                                                    <a :href="'/tasks/attachments/' + attachment.id + '/download'" 
+                                                                       class="font-medium text-primary hover:text-primary"
+                                                                       @click.stop>
+                                                                        Descargar
+                                                                    </a>
+                                                                </div>
+                                                            </li>
+                                                        </template>
+                                                    </ul>
+                                                </template>
+                                                <template x-if="!selectedTask?.attachments || selectedTask.attachments.length === 0">
+                                                    <p class="text-sm text-gray-500 italic">No hay archivos adjuntos.</p>
+                                                </template>
+                                            </div>
+
+                                            <!-- Comments -->
+                                            <div>
+                                                <h4 class="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+                                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                                    </svg>
+                                                    Comentarios
+                                                </h4>
+                                                
+                                                <template x-if="selectedTask?.comments && selectedTask.comments.length > 0">
+                                                    <ul class="divide-y divide-gray-200 border border-gray-200 rounded-md bg-gray-50">
+                                                        <template x-for="comment in selectedTask.comments" :key="comment.id">
+                                                            <li class="px-4 py-3">
+                                                                <div class="flex items-center justify-between">
+                                                                    <span class="text-xs font-semibold text-gray-900" x-text="comment.user?.name || 'Usuario'"></span>
+                                                                    <span class="text-xs text-gray-500" x-text="new Date(comment.created_at).toLocaleDateString() + ' ' + new Date(comment.created_at).toLocaleTimeString().slice(0,5)"></span>
+                                                                </div>
+                                                                <p class="mt-1 text-sm text-gray-600  whitespace-nowrap   overflow-x-auto  overflow-y-hidden scrollbar-thin" x-text="comment.content"></p>
+                                                            </li>
+                                                        </template>
+                                                    </ul>
+                                                </template>
+                                                <template x-if="!selectedTask?.comments || selectedTask.comments.length === 0">
+                                                    <p class="text-sm text-gray-500 italic">No hay comentarios.</p>
+                                                </template>
+                                            </div>
+            
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Footer -->
+                                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse flex-shrink-0 border-t border-gray-200">
+                                        <button type="button" 
+                                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                                @click="closeModal()">
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                     </div>
                 </div>
@@ -222,8 +372,8 @@
                             @endphp
                             
                             @forelse($latestComments as $comment)
-                                <div class="bg-gray-50 rounded-lg p-3">
-                                <p class="text-sm text-gray-800 mb-2 break-words line-clamp-3">{{ $comment->content }}</p>
+                                <div class="bg-gray-50 rounded-lg p-3 ">
+                                    <p class="text-sm text-gray-800 mb-2  whitespace-nowrap   overflow-x-auto  overflow-y-hidden scrollbar-thin">{{ $comment->content }}</p>
                                     <div class="flex items-center justify-between text-xs">
                                         <span class="text-gray-500">{{ $comment->created_at->format('Y.m.d') }}</span>
                                         <div class="flex items-center gap-1 text-gray-600">
@@ -250,283 +400,4 @@
 
     {{-- Footer --}}
     <x-layout.footer />
-
-    @include('tareas.partials.task-details-modal')
-
-    <script>
-        function dashboardController(initialPending, initialCompleted, currentUserData) {
-            return {
-                // Counters
-                pendingCount: initialPending,
-                completedCount: initialCompleted,
-                
-                // Modal & Task State
-                selectedTask: null, 
-                isDetailsModalOpen: false,
-                currentTab: 'details',
-                currentUser: currentUserData,
-                newCommentText: '',
-                editingCommentId: null,
-                editCommentContent: '',
-                isSubmittingComment: false,
-                isUploadingFile: false,
-                deleteConfirmation: {
-                    isOpen: false,
-                    type: null,
-                    id: null
-                },
-                isEditingTask: false,
-                isSavingTask: false,
-                editTaskData: {
-                    title: '',
-                    description: '',
-                    priority: '',
-                    end_date: ''
-                },
-                updatedTaskStates: {},
-
-                // Status Update Handler (Unified)
-                handleStatusUpdate(detail) {
-                    // detail: { taskId, status, completed, wasCompleted }
-                    
-                    // Determine the previous state (Trusted Source: Local > Server)
-                    let previousCompleted = detail.wasCompleted;
-                    if (this.updatedTaskStates[detail.taskId]) {
-                        previousCompleted = this.updatedTaskStates[detail.taskId].completed;
-                    }
-
-                    // 0. Update registry
-                    this.updatedTaskStates[detail.taskId] = {
-                        status: detail.status,
-                        completed: detail.completed
-                    };
-                    
-                    // 1. Update Counters
-                    if (!previousCompleted && detail.completed) {
-                        this.pendingCount = Math.max(0, this.pendingCount - 1);
-                        this.completedCount++;
-                    }
-                    else if (previousCompleted && !detail.completed) {
-                        this.pendingCount++;
-                        this.completedCount = Math.max(0, this.completedCount - 1);
-                    }
-
-                     // 2. Update Selected Task if open (Fixes Modal staleness)
-                    if (this.selectedTask && this.selectedTask.id == detail.taskId) {
-                        this.selectedTask.status = detail.status;
-                        this.selectedTask.completed = detail.completed;
-                    }
-                },
-
-                 // Helper to refresh data from server
-                async refreshTaskDetails() {
-                    if (!this.selectedTask?.id) return;
-                    try {
-                        const response = await fetch(`/tasks/${this.selectedTask.id}/details`);
-                        if (response.ok) {
-                            const remoteTask = await response.json();
-                            // If we have local override, re-apply it over server data to be safe
-                            // (Though server *should* be up to date if db updated)
-                            if (this.updatedTaskStates[remoteTask.id]) {
-                                remoteTask.status = this.updatedTaskStates[remoteTask.id].status;
-                                remoteTask.completed = this.updatedTaskStates[remoteTask.id].completed;
-                            }
-                            this.selectedTask = remoteTask;
-                        }
-                    } catch (error) {
-                        console.error('Error refreshing details:', error);
-                    }
-                },
-
-                async openDetailsModal(task) {
-                    // Apply local overrides immediately
-                    if (this.updatedTaskStates[task.id]) {
-                        task.status = this.updatedTaskStates[task.id].status;
-                        task.completed = this.updatedTaskStates[task.id].completed;
-                    }
-                    this.selectedTask = task;
-                    this.isDetailsModalOpen = true;
-                    this.currentTab = 'details';
-                    this.newCommentText = '';
-                    await this.refreshTaskDetails();
-                },
-
-                closeModal() {
-                    this.isDetailsModalOpen = false;
-                    this.selectedTask = null;
-                    this.currentTab = 'details';
-                },
-
-                formatDate(dateStr) {
-                    if (!dateStr) return '';
-                    const datePart = dateStr.split('T')[0];
-                    const parts = datePart.split('-');
-                    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-                },
-
-                async submitComment() {
-                    if (!this.newCommentText.trim() || this.isSubmittingComment) return;
-                    
-                    this.isSubmittingComment = true;
-                    try {
-                        const response = await fetch(`/tasks/${this.selectedTask.id}/comments`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({ 
-                                content: this.newCommentText,
-                                task_id: this.selectedTask.id
-                            })
-                        });
-                        
-                        if (response.ok) {
-                            this.newCommentText = '';
-                            await this.refreshTaskDetails();
-                        }
-                    } catch (error) {
-                        console.error('Error submitting comment:', error);
-                    } finally {
-                        this.isSubmittingComment = false;
-                    }
-                },
-
-                startEditingComment(comment) {
-                    this.editingCommentId = comment.id;
-                    this.editCommentContent = comment.content;
-                },
-
-                async updateComment(commentId) {
-                    try {
-                        const response = await fetch(`/tasks/comments/${commentId}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({ content: this.editCommentContent })
-                        });
-                        
-                        if (response.ok) {
-                            const comment = this.selectedTask.comments.find(c => c.id === commentId);
-                            if (comment) comment.content = this.editCommentContent;
-                            this.editingCommentId = null;
-                        }
-                    } catch (error) {
-                        console.error('Error updating comment:', error);
-                    }
-                },
-
-                confirmDeleteComment(commentId) {
-                    this.deleteConfirmation = { isOpen: true, type: 'comment', id: commentId };
-                },
-
-                confirmDeleteFile(fileId) {
-                    this.deleteConfirmation = { isOpen: true, type: 'file', id: fileId };
-                },
-
-                async performDelete() {
-                    const { type, id } = this.deleteConfirmation;
-                    try {
-                        let url = '';
-                        if (type === 'comment') url = `/tasks/comments/${id}`;
-                        else if (type === 'file') url = `/tasks/attachments/${id}`;
-                        else if (type === 'task') url = `/tareas/${id}`;
-
-                        const response = await fetch(url, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            }
-                        });
-                        
-                        if (response.ok) {
-                            if (type === 'task') {
-                                this.isDetailsModalOpen = false;
-                                location.reload();
-                            } else {
-                                await this.refreshTaskDetails();
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error deleting:', error);
-                    } finally {
-                        this.deleteConfirmation = { isOpen: false, type: null, id: null };
-                    }
-                },
-
-                startEditingTask() {
-                    this.editTaskData = {
-                        title: this.selectedTask.title,
-                        description: this.selectedTask.description || '',
-                        priority: this.selectedTask.priority,
-                        start_date: (this.selectedTask.start_date || '').split('T')[0],
-                        end_date: (this.selectedTask.end_date || '').split('T')[0]
-                    };
-                    this.isEditingTask = true;
-                },
-
-                async saveTask() {
-                    this.isSavingTask = true;
-                    try {
-                        const response = await fetch(`/tareas/${this.selectedTask.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify(this.editTaskData)
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            this.selectedTask = data.task;
-                            this.isEditingTask = false;
-                            location.reload();
-                        } else {
-                            const data = await response.json();
-                            alert(data.message || 'Error al guardar cambios');
-                        }
-                    } catch (e) {
-                        console.error(e);
-                        alert('Error de conexión');
-                    } finally {
-                        this.isSavingTask = false;
-                    }
-                },
-
-                confirmDeleteTask() {
-                    this.deleteConfirmation = { isOpen: true, type: 'task', id: this.selectedTask.id };
-                },
-
-                async uploadFile(file) {
-                    if (!file || this.isUploadingFile) return;
-                    
-                    this.isUploadingFile = true;
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    
-                    try {
-                        const response = await fetch(`/tasks/${this.selectedTask.id}/attachments`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: formData
-                        });
-                        
-                        if (response.ok) {
-                            await this.refreshTaskDetails();
-                        }
-                    } catch (error) {
-                        console.error('Error uploading file:', error);
-                    } finally {
-                        this.isUploadingFile = false;
-                    }
-                }
-            }
-        }
-    </script>
 </x-app-layout>

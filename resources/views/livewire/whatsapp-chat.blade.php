@@ -76,9 +76,9 @@
         <div class="flex-1 overflow-y-auto custom-scrollbar">
             @forelse($contacts as $contact)
                 <button 
-                    wire:click="selectContact({{ $contact->id }})"
+                    wire:click="selectContact('{{ $contact->id }}')"
                     @click="mobileView = true"
-                    class="w-full p-4 hover:bg-gray-50 transition-all duration-200 text-left flex items-center gap-3 border-b border-gray-50 last:border-0 {{ $selectedContactId === $contact->id ? 'bg-[#25D366]/5' : '' }}"
+                    class="w-full p-4 hover:bg-gray-50 transition-all duration-200 text-left flex items-center gap-3 border-b border-gray-50 last:border-0 {{ $selectedContactId == $contact->id ? 'bg-[#25D366]/5' : '' }}"
                 >
                     <div class="relative">
                         <x-user-avatar :user="$contact" size="12" class="ring-2 ring-white shadow-sm" />

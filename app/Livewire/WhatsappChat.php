@@ -113,19 +113,47 @@ class WhatsappChat extends Component
     public function loadContacts()
     {
         $user = Auth::user();
-        
-        // Employees only see their employer
+        $this->contacts = collect();
+
+        // 1. Add Customer Success (Virtual User object-like structure)
+        $csContact = (object)[
+            'id' => 'customer_success',
+            'name' => 'Customer Success / OberTrack',
+            'phone_number' => '+34930289966',
+            'job_title' => 'Soporte Técnico',
+            'avatar' => null
+        ];
+        $this->contacts->push($csContact);
+
         if ($user->tipo_usuario === 'empleado') {
-            $employer = User::find($user->empleador_id);
-            
-            if ($employer && $employer->phone_number) {
-                $this->contacts = collect([$employer]);
-            } else {
-                $this->contacts = collect([]);
+            // 2. Add Company
+            if ($user->empleador_id) {
+                $employer = User::find($user->empleador_id);
+                if ($employer && $employer->phone_number) {
+                    $this->contacts->push($employer);
+                }
             }
-        } else {
-            // Employers and superadmins shouldn't access this, but just in case
-            $this->contacts = collect([]);
+
+            // 3. Add other employees based on role
+            if ($user->is_manager) {
+                // Managers see all Professionals (non-managers) of the same company
+                $professionals = User::where('empleador_id', $user->empleador_id)
+                    ->where('tipo_usuario', 'empleado')
+                    ->where('is_manager', false)
+                    ->where('id', '!=', $user->id)
+                    ->whereNotNull('phone_number')
+                    ->get();
+                foreach($professionals as $p) $this->contacts->push($p);
+            } else {
+                // Professionals see all Managers of the same company
+                $managers = User::where('empleador_id', $user->empleador_id)
+                    ->where('tipo_usuario', 'empleado')
+                    ->where('is_manager', true)
+                    ->where('id', '!=', $user->id)
+                    ->whereNotNull('phone_number')
+                    ->get();
+                foreach($managers as $m) $this->contacts->push($m);
+            }
         }
     }
 
