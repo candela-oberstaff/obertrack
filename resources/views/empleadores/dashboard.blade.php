@@ -412,10 +412,15 @@
                                         @endif
 
                                         <div class="mt-3 flex items-center justify-between">
-                                            @if($recovery->approved)
+                                            @if($recovery->approved === true)
                                                 <span class="text-[9px] font-black uppercase text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 flex items-center gap-1">
                                                     <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                                     Aprobado
+                                                </span>
+                                            @elseif($recovery->approved === false)
+                                                <span class="text-[9px] font-black uppercase text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100 flex items-center gap-1">
+                                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                    Rechazado
                                                 </span>
                                             @else
                                                 <div class="flex items-center gap-2">
@@ -575,14 +580,36 @@
                                         @if(count($day['employees']) > 0)
                                             <div class="space-y-2 flex-1">
                                                 @foreach($day['employees'] as $employee)
-                                                    <div class="flex items-center gap-2" title="{{ $employee['name'] }}">
-                                                        <!-- Avatar / Initials -->
+                                                    <div class="flex flex-col items-center gap-1 mt-1" title="{{ $employee['name'] }}">
+                                                        <!-- Avatar -->
                                                         <x-user-avatar :name="$employee['name']" :avatar="$employee['avatar']" size="6" />
                                                         
-                                                        <!-- Hours -->
-                                                        <span class="text-xs text-gray-700 font-medium">
-                                                            {{ round($employee['hours']) }}h
-                                                        </span>
+                                                        <!-- Status Logic -->
+                                                        @if($employee['hours'] >= 8)
+                                                            <!-- Completed -->
+                                                            <div class="flex flex-col items-center">
+                                                                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                                <span class="text-[10px] font-bold text-gray-700">Completado</span>
+                                                            </div>
+                                                        @elseif($employee['hours'] > 0)
+                                                            <!-- Partial -->
+                                                            <div class="flex flex-col items-center">
+                                                                <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                                <span class="text-[10px] font-bold text-orange-500">Parcial</span>
+                                                                @if($employee['absence_reason'])
+                                                                    <span class="text-[8px] font-black text-red-500 uppercase mt-0.5">AUSENCIA</span>
+                                                                @endif
+                                                            </div>
+                                                        @else
+                                                            <!-- Absence / No Record -->
+                                                            <div class="flex flex-col items-center">
+                                                                @if($employee['absence_reason'])
+                                                                    <span class="text-[9px] font-black text-red-500 uppercase">AUSENCIA</span>
+                                                                @else
+                                                                    <span class="text-xs text-gray-400">-</span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                 @endforeach
                                             </div>
@@ -704,6 +731,79 @@
                                                         </div>
                                                     </template>
 
+                                                    {{-- Recovery Hours Section (AlpineJS) --}}
+                                                    <template x-if="parseFloat(emp.recovered_hours) > 0">
+                                                        <div class="mt-3 pt-3 border-t border-gray-100">
+                                                            <div class="flex items-center justify-between mb-2">
+                                                                <span class="text-[10px] font-black uppercase tracking-widest text-cyan-600">Recuperación Total</span>
+                                                                <span class="text-sm font-bold text-gray-900" x-text="parseFloat(emp.recovered_hours).toFixed(1) + 'h'"></span>
+                                                            </div>
+
+                                                            <div class="space-y-3">
+                                                                <template x-for="recovery in emp.recoveries" :key="recovery.id">
+                                                                    <div class="bg-gray-50 rounded-lg p-3">
+                                                                        <div class="flex items-center justify-between mb-2">
+                                                                            <span class="text-xs font-bold text-gray-700" x-text="parseFloat(recovery.hours).toFixed(1) + 'h'"></span>
+                                                                            
+                                                                            <!-- Approved -->
+                                                                            <template x-if="recovery.approved === true">
+                                                                                <span class="text-[9px] font-black uppercase text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 flex items-center gap-1">
+                                                                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                                                    Aprobado
+                                                                                </span>
+                                                                            </template>
+
+                                                                            <!-- Rejected -->
+                                                                            <template x-if="recovery.approved === false">
+                                                                                <span class="text-[9px] font-black uppercase text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100 flex items-center gap-1">
+                                                                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                                                    Rechazado
+                                                                                </span>
+                                                                            </template>
+
+                                                                            <!-- Pending -->
+                                                                            <template x-if="recovery.approved === null">
+                                                                                <div class="flex gap-2">
+                                                                                    <button 
+                                                                                        @click.stop="
+                                                                                            if(confirm('¿Rechazar recuperación?')) {
+                                                                                                fetch(`/recovery-hours/${recovery.id}/status`, {
+                                                                                                    method: 'POST',
+                                                                                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                                                                                    body: JSON.stringify({ approved: false })
+                                                                                                }).then(r => r.json()).then(() => window.location.reload());
+                                                                                            }
+                                                                                        "
+                                                                                        class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg transition-colors"
+                                                                                        title="Rechazar">
+                                                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                                                    </button>
+                                                                                    <button 
+                                                                                        @click.stop="
+                                                                                            if(confirm('¿Aprobar recuperación?')) {
+                                                                                                fetch(`/recovery-hours/${recovery.id}/status`, {
+                                                                                                    method: 'POST',
+                                                                                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                                                                                    body: JSON.stringify({ approved: true })
+                                                                                                }).then(r => r.json()).then(() => window.location.reload());
+                                                                                            }
+                                                                                        "
+                                                                                        class="text-green-500 hover:text-green-700 bg-green-50 hover:bg-green-100 p-1.5 rounded-lg transition-colors"
+                                                                                        title="Aprobar">
+                                                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </template>
+                                                                        </div>
+                                                                        
+                                                                        <template x-if="recovery.comment">
+                                                                            <p class="text-[10px] text-gray-600 italic border-t border-gray-200 pt-2" x-text="'&quot;' + recovery.comment + '&quot;'"></p>
+                                                                        </template>
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                    </template>
                                                     <!-- Activities Section (Parsed from user_comment) -->
                                                     <div class="mb-6">
                                                         <div class="flex items-center gap-2 mb-3 text-gray-400">

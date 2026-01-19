@@ -708,9 +708,9 @@
                                     <div class="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col gap-1 transition-all hover:border-gray-200">
                                         <div class="flex justify-between items-start">
                                             <span class="text-xs font-bold text-gray-700" x-text="new Date(recovery.recovery_date).toLocaleDateString('es-ES', {day: 'numeric', month: 'short'})"></span>
-                                            <span :class="recovery.approved ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'" 
+                                            <span :class="recovery.approved === true ? 'bg-green-100 text-green-700' : (recovery.approved === false ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')" 
                                                   class="text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase"
-                                                  x-text="recovery.approved ? 'Aprobado' : 'Pendiente'"></span>
+                                                  x-text="recovery.approved === true ? 'Aprobado' : (recovery.approved === false ? 'Rechazado' : 'Pendiente')"></span>
                                         </div>
                                         <div class="flex items-baseline gap-1">
                                             <span class="text-lg font-black text-gray-900" x-text="parseFloat(recovery.hours_recovered).toFixed(1)"></span>
