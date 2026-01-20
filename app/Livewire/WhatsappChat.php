@@ -24,12 +24,20 @@ class WhatsappChat extends Component
     public $attachment;
     public $startTime = 0;
     
+    // UI States
+    public $isLoadingContact = false;
+    
     // Polling control
     public $pollInterval = 3; 
 
     public function boot(WahaService $wahaService)
     {
         $this->wahaService = $wahaService;
+    }
+
+    public function updatedMessageText($value)
+    {
+        \Illuminate\Support\Facades\Log::info('Property Updated: messageText', ['value' => $value]);
     }
 
     public function mount(WahaService $wahaService)
@@ -53,7 +61,18 @@ class WhatsappChat extends Component
     public function checkSessionStatus()
     {
         $statusData = $this->wahaService->getSessionStatus($this->getSessionName());
-        $newStatus = $statusData['status'] ?? 'STOPPED';
+        $newStatus = $statusData['status'] ?? null;
+
+        // If WAHA returns an error code (e.g. 500), don't immediately drop to STOPPED
+        // unless it's a 404 (meaning session definitely doesn't exist).
+        if (isset($statusData['errorCode']) && $statusData['errorCode'] !== 404) {
+            \Log::warning("WAHA status check failed with {$statusData['errorCode']}: " . json_encode($statusData));
+            return;
+        }
+
+        if (!$newStatus) {
+            $newStatus = 'STOPPED';
+        }
 
         // Anti-flicker: If we are STARTING, ignore STOPPED for a few seconds
         // to allow WAHA specific time to register the session.
@@ -103,7 +122,8 @@ class WhatsappChat extends Component
 
     public function logout()
     {
-        $this->wahaService->logout($this->getSessionName());
+        \Log::info("WAHA: Performing aggressive logout (Delete Session) for " . $this->getSessionName());
+        $this->wahaService->deleteSession($this->getSessionName());
         $this->sessionStatus = 'STOPPED';
         $this->contacts = [];
         $this->selectedContactId = null;
@@ -125,6 +145,16 @@ class WhatsappChat extends Component
         ];
         $this->contacts->push($csContact);
 
+        // 1.1 Add Test Contact (Temporary)
+        $testContact = (object)[
+            'id' => 'test_contact',
+            'name' => 'Test Contact / Soporte',
+            'phone_number' => '+5492612629796',
+            'job_title' => 'Prueba de Conexión',
+            'avatar' => null
+        ];
+        $this->contacts->push($testContact);
+
         if ($user->tipo_usuario === 'empleado') {
             // 2. Add Company
             if ($user->empleador_id) {
@@ -139,7 +169,7 @@ class WhatsappChat extends Component
                 // Managers see all Professionals (non-managers) of the same company
                 $professionals = User::where('empleador_id', $user->empleador_id)
                     ->where('tipo_usuario', 'empleado')
-                    ->where('is_manager', false)
+                    ->whereRaw('is_manager IS NOT TRUE') // Handles false and null safely, or IS FALSE. using IS NOT TRUE covers false/null defaults.
                     ->where('id', '!=', $user->id)
                     ->whereNotNull('phone_number')
                     ->get();
@@ -148,7 +178,7 @@ class WhatsappChat extends Component
                 // Professionals see all Managers of the same company
                 $managers = User::where('empleador_id', $user->empleador_id)
                     ->where('tipo_usuario', 'empleado')
-                    ->where('is_manager', true)
+                    ->whereRaw('is_manager IS TRUE')
                     ->where('id', '!=', $user->id)
                     ->whereNotNull('phone_number')
                     ->get();
@@ -159,17 +189,64 @@ class WhatsappChat extends Component
 
     public function selectContact($contactId)
     {
+        $this->isLoadingContact = true;
+        
         $contact = $this->contacts->firstWhere('id', $contactId);
-        if (!$contact) return;
+        if (!$contact) {
+            $this->isLoadingContact = false;
+            return;
+        }
 
         $this->selectedContactId = $contactId;
-        // Format phone number for WAHA (Assuming stored with country code or needing prefix)
-        // Ideally, phone_number should be E.164. If not, we might need a helper.
-        // For Argentina: 549 + area + number.
-        // Let's assume the user stored it correctly or we try to clean it.
-        $this->selectedPhone = preg_replace('/[^0-9]/', '', $contact->phone_number);
+        
+        // Clean number
+        $phone = preg_replace('/[^0-9]/', '', $contact->phone_number);
+
+        // Resolve correct WhatsApp ID using WAHA check-exists
+        // This handles Argentina numbers (549 vs 54) and ensures we have a valid ID.
+        $checkData = $this->wahaService->checkNumberStatus($this->getSessionName(), $phone);
+        
+        if ($checkData && (isset($checkData['id']['_serialized']) || isset($checkData['id']))) {
+            // Use the ID returned by WhatsApp
+            $waId = $checkData['id']['_serialized'] ?? $checkData['id'];
+            // Remove @c.us for internal consistency
+            $phone = str_replace('@c.us', '', $waId);
+            \Log::info("Contact Resolved via WAHA: {$contact->phone_number} -> {$phone}");
+        } else {
+            \Log::warning("Contact Check Failed for {$phone}. Applying international heuristics.");
+            
+            // International Heuristics (if WAHA verification fails)
+            
+            // SPAIN (34): Usually straightforward 34 + 9 digits.
+            // VENEZUELA (58): Usually 58 + 10 digits.
+            // PUERTO RICO (1): Part of North American Numbering Plan. 1 + 787/939 + 7 digits.
+            
+            // Special handling for USA/PR/Canada if user entered 787... without '1'
+            if ((str_starts_with($phone, '787') || str_starts_with($phone, '939')) && strlen($phone) === 10) {
+                $phone = '1' . $phone;
+                \Log::info("International heuristic: Added '1' for Puerto Rico -> {$phone}");
+            }
+            
+            // Special handling for Spain if user entered a local number without 34
+            if (str_starts_with($phone, '6') && strlen($phone) === 9) {
+                $phone = '34' . $phone;
+                \Log::info("International heuristic: Added '34' for Spain -> {$phone}");
+            }
+
+            // ARGENTINA (54): Re-applying the 549 vs 54 heuristic if check failed
+            if (str_starts_with($phone, '549')) {
+                 // Try removing the 9 as a fallback if verification failed
+                 $fallback = '54' . substr($phone, 3);
+                 \Log::info("International heuristic: Argentina 549 fallback -> {$fallback}");
+                 // Note: we keep the original $phone but mention fallback in logs
+                 // because WAHA might actually need the 9 for some and not others.
+            }
+        }
+
+        $this->selectedPhone = $phone;
         
         $this->loadMessages();
+        $this->isLoadingContact = false;
     }
 
     public function loadMessages()
@@ -181,29 +258,72 @@ class WhatsappChat extends Component
         $this->messages = array_reverse($history);
     }
 
-    public function sendMessage()
+    public function sendMessage($text = null)
     {
-        if (!$this->selectedPhone) return;
-        if (empty($this->messageText) && !$this->attachment) return;
+        \Illuminate\Support\Facades\Log::error('DEBUG: sendMessage called', [
+            'phone' => $this->selectedPhone,
+            'text' => $text,
+            'propertyText' => $this->messageText
+        ]);
+
+        // If text is passed as argument (e.g. from Alpine), use it. 
+        // Otherwise use the property (fallback).
+        if ($text !== null) {
+            $this->messageText = $text;
+        }
+
+        \Illuminate\Support\Facades\Log::info('Attempting to send message', [
+            'phone' => $this->selectedPhone,
+            'text' => $this->messageText,
+            'len' => strlen($this->messageText)
+        ]);
+
+        if (!$this->selectedPhone) {
+            $this->addError('messageText', 'Error interno: No hay teléfono seleccionado.');
+            return;
+        }
+
+        if (empty($this->messageText) && !$this->attachment) {
+            $this->addError('messageText', 'El mensaje no puede estar vacío.');
+            return; 
+        }
 
         if ($this->attachment) {
-            // TODO: Upload temp file and send URL or Base64
-            // For now, text only implementation for speed, attachment later or simple URL
-            $url = $this->attachment->temporaryUrl(); 
-            // note: temporaryUrl only works if file is accessible by WAHA (public driver). 
-            // If local, WAHA in docker might not see 'localhost'.
-            // For production with S3/Cloudinary it's fine.
-            // For local, creating a base64 might be safer if WAHA supports it.
-            
-            // Revisit: sending attachment needs careful handling.
+            // ... attachment logic ...
         }
 
         if (!empty($this->messageText)) {
-            $this->wahaService->sendMessage($this->getSessionName(), $this->selectedPhone, $this->messageText);
+            $response = $this->wahaService->sendMessage($this->getSessionName(), $this->selectedPhone, $this->messageText);
+            
+            \Illuminate\Support\Facades\Log::error('DEBUG: WAHA Send Response', ['response' => $response]);
+
+            if (!$response) {
+                $this->addError('messageText', 'Error crítico: Sin respuesta del servicio de WhatsApp.');
+                return false;
+            }
+
+            if (isset($response['error']) || (isset($response['status']) && $response['status'] !== 200 && $response['status'] !== 201)) {
+                // If it's our new structured error or a WAHA error
+                $errorMsg = $response['message'] ?? ($response['error'] ?? 'Error desconocido al enviar mensaje.');
+                
+                // If message is JSON string, try to decode specific field
+                if (is_string($errorMsg) && str_starts_with($errorMsg, '{')) {
+                     $decoded = json_decode($errorMsg, true);
+                     $errorMsg = $decoded['message'] ?? $errorMsg; // Try to extract 'message' property from WAHA error JSON
+                }
+
+                if (is_string($errorMsg) && str_contains($errorMsg, 'No LID for user')) {
+                    $errorMsg = 'El contacto no está sincronizado o el número es incorrecto. Espera unos segundos e intenta nuevamente.';
+                }
+
+                $this->addError('messageText', "Error: $errorMsg");
+                return false;
+            }
         }
 
         $this->messageText = '';
-        $this->loadMessages(); // Refresh
+        $this->loadMessages(); 
+        return true;
     }
 
     public function render()

@@ -175,9 +175,66 @@
                                     </div>
 
                                     <!-- Phone -->
-                                    <div>
-                                        <label for="phone_number" class="block text-sm font-bold text-gray-700 mb-1">Teléfono</label>
-                                        <input type="text" name="phone_number" id="phone_number" value="{{ old('phone_number', $user->phone_number) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                    <div x-data="{
+                                        prefixes: [
+                                            { name: 'Argentina', code: '54', flag: '🇦🇷' },
+                                            { name: 'España', code: '34', flag: '🇪🇸' },
+                                            { name: 'Venezuela', code: '58', flag: '🇻🇪' },
+                                            { name: 'Puerto Rico', code: '1787', flag: '🇵🇷' },
+                                            { name: 'Puerto Rico (Alt)', code: '1939', flag: '🇵🇷' },
+                                            { name: 'Colombia', code: '57', flag: '🇨🇴' },
+                                            { name: 'México', code: '52', flag: '🇲🇽' },
+                                            { name: 'Chile', code: '56', flag: '🇨🇱' },
+                                            { name: 'Uruguay', code: '598', flag: '🇺🇾' },
+                                            { name: 'Ecuador', code: '593', flag: '🇪🇨' },
+                                            { name: 'Perú', code: '51', flag: '🇵🇪' },
+                                            { name: 'EE.UU.', code: '1', flag: '🇺🇸' },
+                                            { name: 'Bolivia', code: '591', flag: '🇧🇴' },
+                                            { name: 'Paraguay', code: '595', flag: '🇵🇾' },
+                                            { name: 'Rep. Dominicana', code: '1', flag: '🇩🇴' },
+                                            { name: 'Otro', code: '', flag: '🌐' }
+                                        ],
+                                        selectedPrefix: '',
+                                        localNumber: '',
+                                        fullNumber: '{{ old('phone_number', $user->phone_number) }}',
+                                        init() {
+                                            if (this.fullNumber) {
+                                                let cleanFull = this.fullNumber.replace('+', '').trim();
+                                                let sortedPrefixes = [...this.prefixes]
+                                                    .filter(p => p.code !== '')
+                                                    .sort((a,b) => b.code.length - a.code.length);
+                                                
+                                                for (let p of sortedPrefixes) {
+                                                    if (cleanFull.startsWith(p.code)) {
+                                                        this.selectedPrefix = p.code;
+                                                        this.localNumber = cleanFull.substring(p.code.length);
+                                                        return;
+                                                    }
+                                                }
+                                                this.localNumber = this.fullNumber;
+                                            }
+                                        },
+                                        updateFull() {
+                                            let cleanLocal = this.localNumber.replace(/\D/g, '');
+                                            this.fullNumber = this.selectedPrefix ? '+' + this.selectedPrefix + cleanLocal : cleanLocal;
+                                        }
+                                    }">
+                                        <label for="phone_number_dummy" class="block text-sm font-bold text-gray-700 mb-1">Teléfono</label>
+                                        <div class="flex gap-2">
+                                            <div class="w-1/3">
+                                                <select x-model="selectedPrefix" @change="updateFull()" class="block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-2">
+                                                    <option value="">País</option>
+                                                    <template x-for="p in prefixes" :key="p.name + p.code">
+                                                        <option :value="p.code" x-text="p.flag + ' +' + p.code + ' (' + p.name + ')'"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
+                                            <div class="flex-1">
+                                                <input type="text" x-model="localNumber" @input="updateFull()" placeholder="Número" class="block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="phone_number" :value="fullNumber">
+                                        <p class="mt-1 text-[10px] text-gray-400">Formato final: <span x-text="fullNumber || 'No ingresado'"></span></p>
                                         <x-input-error class="mt-2" :messages="$errors->get('phone_number')" />
                                     </div>
 

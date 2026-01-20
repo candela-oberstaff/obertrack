@@ -190,11 +190,66 @@
                            value="{{ old('related_contact') }}">
                     <x-input-error :messages="$errors->get('related_contact')" class="mt-2 text-xs font-bold text-brutalRed" />
                 </div>
-                <div>
+                <div x-data="{
+                    prefixes: [
+                        { name: 'Argentina', code: '54', flag: '🇦🇷' },
+                        { name: 'España', code: '34', flag: '🇪🇸' },
+                        { name: 'Venezuela', code: '58', flag: '🇻🇪' },
+                        { name: 'Puerto Rico', code: '1787', flag: '🇵🇷' },
+                        { name: 'Puerto Rico (Alt)', code: '1939', flag: '🇵🇷' },
+                        { name: 'Colombia', code: '57', flag: '🇨🇴' },
+                        { name: 'México', code: '52', flag: '🇲🇽' },
+                        { name: 'Chile', code: '56', flag: '🇨🇱' },
+                        { name: 'Uruguay', code: '598', flag: '🇺🇾' },
+                        { name: 'Ecuador', code: '593', flag: '🇪🇨' },
+                        { name: 'Perú', code: '51', flag: '🇵🇪' },
+                        { name: 'EE.UU.', code: '1', flag: '🇺🇸' },
+                        { name: 'Bolivia', code: '591', flag: '🇧🇴' },
+                        { name: 'Paraguay', code: '595', flag: '🇵🇾' },
+                        { name: 'Rep. Dominicana', code: '1', flag: '🇩🇴' },
+                        { name: 'Otro', code: '', flag: '🌐' }
+                    ],
+                    selectedPrefix: '{{ old('selected_prefix', '') }}',
+                    localNumber: '{{ old('local_number', '') }}',
+                    fullNumber: '{{ old('phone_number', '') }}',
+                    init() {
+                        if (this.fullNumber && !this.selectedPrefix) {
+                            let cleanFull = this.fullNumber.replace('+', '').trim();
+                            let sortedPrefixes = [...this.prefixes]
+                                .filter(p => p.code !== '')
+                                .sort((a,b) => b.code.length - a.code.length);
+                            for (let p of sortedPrefixes) {
+                                if (cleanFull.startsWith(p.code)) {
+                                    this.selectedPrefix = p.code;
+                                    this.localNumber = cleanFull.substring(p.code.length);
+                                    return;
+                                }
+                            }
+                        }
+                    },
+                    updateFull() {
+                        let cleanLocal = this.localNumber.replace(/\D/g, '');
+                        this.fullNumber = this.selectedPrefix ? '+' + this.selectedPrefix + cleanLocal : cleanLocal;
+                    }
+                }">
                     <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Teléfono</label>
-                    <input id="phone_number" name="phone_number" type="text" placeholder="+1 234 567 890"
-                           class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
-                           value="{{ old('phone_number') }}">
+                    <div class="flex gap-2 mb-2">
+                        <div class="w-2/5">
+                            <select x-model="selectedPrefix" @change="updateFull()" class="w-full brutal-select py-2.5 px-3 text-brandBlack text-xs">
+                                <option value="">País</option>
+                                <template x-for="p in prefixes" :key="p.name + p.code">
+                                    <option :value="p.code" x-text="p.flag + ' +' + p.code + ' (' + p.name + ')'"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="flex-1">
+                            <input type="text" x-model="localNumber" @input="updateFull()" placeholder="Número" class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400">
+                        </div>
+                    </div>
+                    <input type="hidden" name="phone_number" :value="fullNumber">
+                    <input type="hidden" name="selected_prefix" :value="selectedPrefix">
+                    <input type="hidden" name="local_number" :value="localNumber">
+                    <p class="mt-1 text-[10px] text-gray-500 ml-1">Formato: <span x-text="fullNumber || 'No ingresado'"></span></p>
                     <x-input-error :messages="$errors->get('phone_number')" class="mt-2 text-xs font-bold text-brutalRed" />
                 </div>
                 <div>

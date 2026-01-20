@@ -141,8 +141,8 @@ class WahaService
             }
             
             // If other error (e.g. 500, 422 on GET?), we assume STOPPED but log it
-            \Log::warning("WAHA getSessionStatus error {$response->status()}: {$response->body()}");
-            return ['status' => 'STOPPED', 'errorCode' => $response->status()];
+            \Log::warning("WAHA getSessionStatus error {$response->status()}: " . $response->body());
+            return ['status' => 'STOPPED', 'errorCode' => $response->status(), 'body' => $response->body()];
 
         } catch (\Exception $e) {
             return ['status' => 'STOPPED', 'error' => $e->getMessage()];
@@ -246,6 +246,13 @@ class WahaService
                 $chatId .= '@c.us';
             }
 
+            Log::info("WAHA Sending Text", [
+                'url' => "{$this->baseUrl}/api/sendText",
+                'session' => $sessionName,
+                'chatId' => $chatId,
+                'message' => $message
+            ]);
+
             $response = Http::withoutVerifying()
                 ->withHeaders($this->getHeaders())
                 ->post("{$this->baseUrl}/api/sendText", [
@@ -253,6 +260,16 @@ class WahaService
                     'chatId' => $chatId,
                     'text' => $message
                 ]);
+
+            Log::info("WAHA Send Response Raw", ['status' => $response->status(), 'body' => $response->body()]);
+
+            if ($response->failed()) {
+                return [
+                    'error' => true,
+                    'status' => $response->status(),
+                    'message' => $response->body() // Return raw body for debugging
+                ];
+            }
 
             return $response->json();
         } catch (\Exception $e) {
@@ -317,7 +334,7 @@ class WahaService
         }
     }
 
-    private function getMimeType($url)
+    public function getMimeType($url)
     {
         // Simple helper, or better use a library
         $ext = pathinfo($url, PATHINFO_EXTENSION);
@@ -330,5 +347,28 @@ class WahaService
             'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ];
         return $mimes[strtolower($ext)] ?? 'application/octet-stream';
+    }
+
+    /**
+     * Check if number exists and get correct ID
+     */
+    public function checkNumberStatus($sessionName, $phone)
+    {
+        try {
+            $response = Http::withoutVerifying()
+                ->withHeaders($this->getHeaders())
+                ->get("{$this->baseUrl}/api/contacts/check-exists", [
+                    'session' => $sessionName,
+                    'phone' => $phone
+                ]);
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+            return null;
+        } catch (\Exception $e) {
+            Log::error("WAHA checkNumberStatus error: " . $e->getMessage());
+            return null;
+        }
     }
 }
