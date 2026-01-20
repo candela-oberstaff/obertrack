@@ -48,13 +48,18 @@
                         @endif
                     </div>
                 @else
-                     <div class="flex flex-col items-center">
-                        <svg class="animate-spin h-10 w-10 text-[#25D366] mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <p class="text-sm font-medium text-gray-400">Iniciando sesión...</p>
-                        <p class="text-[10px] text-gray-300 mt-2 uppercase tracking-widest">{{ $sessionStatus }}</p>
+                     <div class="flex flex-col items-center py-10">
+                        <div class="relative mb-6">
+                            <div class="absolute inset-0 rounded-full bg-[#25D366]/20 animate-ping"></div>
+                            <svg class="relative animate-spin h-14 w-14 text-[#25D366]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">¡QR Escaneado!</h3>
+                        <p class="text-base font-semibold text-[#25D366] animate-pulse">Iniciando sesión...</p>
+                        <p class="text-xs text-gray-400 mt-4 uppercase tracking-[0.2em]">Estado: {{ $sessionStatus }}</p>
+                        <p class="text-[10px] text-gray-300 mt-1">Por favor espera un momento mientras sincronizamos tus datos.</p>
                      </div>
                 @endif
             </div>
@@ -70,8 +75,15 @@
             <!-- Header -->
             <div class="p-4 bg-white border-b border-gray-100 flex justify-between items-center">
                 <h2 class="text-xl font-bold text-gray-800">WhatsApp</h2>
-                <button wire:click="logout" class="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition-colors">
-                    Desconectar
+                <button wire:click="logout" wire:loading.attr="disabled" class="text-xs text-red-500 hover:text-red-700 font-medium px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-all min-w-[100px] flex items-center justify-center">
+                    <span wire:loading.remove wire:target="logout">Desconectar</span>
+                    <span wire:loading wire:target="logout" class="flex items-center gap-2 whitespace-nowrap">
+                        <svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Desconectando...</span>
+                    </span>
                 </button>
             </div>
 
