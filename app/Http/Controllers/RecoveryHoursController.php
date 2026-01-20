@@ -37,7 +37,7 @@ class RecoveryHoursController extends Controller
                 'recovery_date' => $today,
                 'hours_recovered' => $request->hours,
                 'activities' => $request->activities,
-                'approved' => \DB::raw('false'), // Needs employer approval
+                'approved' => null, // Pending approval (null)
             ]);
 
             // Notify employer
@@ -106,7 +106,7 @@ class RecoveryHoursController extends Controller
         }
 
         $recovery->update([
-            'approved' => $request->approved ? \DB::raw('true') : \DB::raw('false'),
+            'approved' => $request->approved ? DB::raw('true') : DB::raw('false'),
             'approved_at' => $request->approved ? now() : null
         ]);
 
@@ -130,8 +130,9 @@ class RecoveryHoursController extends Controller
         $totalRecovered = RecoveryHour::where('user_id', $userId)
             ->whereRaw('approved IS TRUE')
             ->sum('hours_recovered');
+            
         $pendingApproval = RecoveryHour::where('user_id', $userId)
-            ->whereRaw('approved IS FALSE')
+            ->whereNull('approved')
             ->sum('hours_recovered');
 
         return [

@@ -498,7 +498,7 @@ class WorkHoursController extends Controller
                 // Pending recoveries (Scoped to Month)
                 // Only show pending recoveries that fall within the reported month window
                 $pendingRecoveries = RecoveryHour::where('user_id', $professional->id)
-                    ->whereRaw('approved IS FALSE')
+                    ->whereNull('approved')
                     ->whereBetween('recovery_date', [$monthStart->format('Y-m-d'), $monthEndDate->format('Y-m-d')])
                     ->get()
                     ->map(function($r) {

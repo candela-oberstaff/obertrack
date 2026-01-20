@@ -148,7 +148,7 @@
                         // Get recovery requests
                         $recoveryRequests = \App\Models\WorkHours::whereIn('user_id', $empleados->pluck('id'))
                             ->where('recovered_hours', '>', 0)
-                            ->whereRaw('recovery_approved IS FALSE')
+                            ->whereRaw('recovery_approved IS NULL')
                             ->with('user')
                             ->get();
                         

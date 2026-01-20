@@ -19,7 +19,6 @@ class RecoveryHour extends Model
     protected $casts = [
         'recovery_date' => 'date',
         'hours_recovered' => 'decimal:2',
-        'approved' => 'boolean',
         'approved_at' => 'datetime'
     ];
 

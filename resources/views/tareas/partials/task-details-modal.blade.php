@@ -164,12 +164,16 @@
                                 <div>
                                     <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block ml-1">Asignar a</label>
                                     <div class="space-y-2 max-h-32 overflow-y-auto bg-gray-50 p-2 rounded-xl border border-gray-100">
-                                        @foreach($employees as $employee)
-                                            <label class="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded-lg cursor-pointer">
-                                                <input type="checkbox" value="{{ $employee->id }}" x-model="editTaskData.assignees" class="rounded text-[#22A9C8] focus:ring-[#22A9C8] border-gray-300">
-                                                <span class="text-sm text-gray-700">{{ $employee->name }}</span>
-                                            </label>
-                                        @endforeach
+                                        @if(isset($employees) && count($employees) > 0)
+                                            @foreach($employees as $employee)
+                                                <label class="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded-lg cursor-pointer">
+                                                    <input type="checkbox" value="{{ $employee->id }}" x-model="editTaskData.assignees" class="rounded text-[#22A9C8] focus:ring-[#22A9C8] border-gray-300">
+                                                    <span class="text-sm text-gray-700">{{ $employee->name }}</span>
+                                                </label>
+                                            @endforeach
+                                        @else
+                                            <p class="text-xs text-gray-400 italic p-2">No se pueden editar asignados.</p>
+                                        @endif
                                     </div>
                                 </div>
 
