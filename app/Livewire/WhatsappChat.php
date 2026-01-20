@@ -145,15 +145,6 @@ class WhatsappChat extends Component
         ];
         $this->contacts->push($csContact);
 
-        // 1.1 Add Test Contact (Temporary)
-        $testContact = (object)[
-            'id' => 'test_contact',
-            'name' => 'Test Contact / Soporte',
-            'phone_number' => '+5492612629796',
-            'job_title' => 'Prueba de Conexión',
-            'avatar' => null
-        ];
-        $this->contacts->push($testContact);
 
         if ($user->tipo_usuario === 'empleado') {
             // 2. Add Company
