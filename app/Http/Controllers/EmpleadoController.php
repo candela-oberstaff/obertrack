@@ -72,6 +72,7 @@ class EmpleadoController extends Controller
         $pendingTasks = $user->assignedTasks()
             ->whereRaw('tasks.completed IS FALSE')
             ->with('createdBy')
+            ->distinct()
             ->get();
 
         return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'debtSummary', 'completedTasksCount', 'pendingTasksCount', 'pendingTasks'));

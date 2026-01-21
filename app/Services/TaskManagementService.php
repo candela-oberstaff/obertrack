@@ -178,8 +178,8 @@ class TaskManagementService
 
             return [
                 'success' => true,
-                'completed' => $task->completed,
-                'message' => $task->completed ? 'Tarea marcada como completada' : 'Tarea marcada como en progreso'
+                'completed' => $newValue,
+                'message' => $newValue ? 'Tarea marcada como completada' : 'Tarea marcada como en progreso'
             ];
         } catch (\Exception $e) {
             Log::error('Error toggling task completion: ' . $e->getMessage());

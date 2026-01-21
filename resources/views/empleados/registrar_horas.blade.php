@@ -298,34 +298,7 @@
                             </div>
                         </div>
 
-                        {{-- Assigned Tasks Section --}}
-                        <div class="mb-6" x-show="pendingTasks.length > 0">
-                            <h5 class="text-gray-800 font-medium mb-3 flex items-center gap-2">
-                                <svg class="w-4 h-4 text-[#22A9C8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                </svg>
-                                Tareas asignadas
-                            </h5>
-                            <div class="space-y-2 bg-gray-50 rounded-xl p-3 border border-gray-100 max-h-40 overflow-y-auto custom-scrollbar">
-                                <template x-for="task in pendingTasks" :key="task.id">
-                                    <div class="flex items-center justify-between p-2 hover:bg-white rounded-lg transition-colors group">
-                                        <div class="flex items-center gap-3">
-                                            <div @click="toggleTask(task.id)" 
-                                                 class="w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-colors"
-                                                 :class="task.completed ? 'bg-[#22A9C8] border-[#22A9C8]' : 'bg-white border-gray-300 group-hover:border-[#22A9C8]'">
-                                                <svg x-show="task.completed" class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
-                                                    <path d="M5 13l4 4L19 7"></path>
-                                                </svg>
-                                            </div>
-                                            <div class="flex flex-col">
-                                                <span class="text-sm font-medium text-gray-700" :class="task.completed ? 'line-through text-gray-400' : ''" x-text="task.title"></span>
-                                                <span class="text-[10px] text-gray-400" x-text="'Asignada por: ' + (task.created_by ? task.created_by.name : 'Empresa')"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
+
 
                         {{-- Full Day Logic (Activities) --}}
                         <div x-show="workedFullDay" x-transition>
