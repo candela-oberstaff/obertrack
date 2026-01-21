@@ -125,7 +125,7 @@ class ManagerTaskController extends Controller
     public function addComment(Request $request, Task $task)
     {
         $request->validate([
-            'content' => 'required|string'
+            'content' => 'required|string|max:500'
         ]);
     
         $comment = new Comment([
@@ -148,7 +148,7 @@ class ManagerTaskController extends Controller
         }
     
         $request->validate([
-            'content' => 'required|string'
+            'content' => 'required|string|max:500'
         ]);
     
         $comment->update(['content' => $request->content]);

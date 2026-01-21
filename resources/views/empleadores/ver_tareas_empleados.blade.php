@@ -18,364 +18,8 @@
         ];
     @endphp
 
-    <div class="py-12 bg-gray-50 min-h-screen font-sans" x-data="{
-        currentUser: {{ json_encode($currentUserData) }},
-        startDate: '',
-        endDate: '',
-        searchQuery: '',
-        isTeamTask: true,
-        targetEmployeeId: null,
-        
-        // Modal States
-        selectedTask: null,
-        isDetailsModalOpen: false,
-        isCreateModalOpen: false,
-        currentTab: 'details', // 'details', 'comments', 'files'
-        
-        // Mobile View State
-        mobileView: '',
-        
-        // Comment/File State
-        isUploadingFile: false,
-        newCommentText: '',
-        isSubmittingComment: false,
-        editingCommentId: null,
-        editCommentContent: '',
-        
-        // Delete Confirmation State
-        deleteConfirmation: {
-            isOpen: false,
-            type: null, // 'file', 'comment', or 'task'
-            id: null
-        },
+    <div class="py-12 bg-gray-50 min-h-screen font-sans" x-data="taskTracking({{ json_encode($currentUserData) }})">
 
-        // Task Edit State
-        isEditingTask: false,
-        isSavingTask: false,
-        editTaskData: {
-            title: '',
-            description: '',
-            priority: '',
-            end_date: ''
-        },
-
-        // Comment Input State (Moved from modal)
-        isAddingComment: false,
-        commentText: '',
-        isSubmitting: false,
-        isDeleting: false,
-
-        // Helper to check if a task matches filters
-        formatDate(dateString) {
-            if (!dateString) return '';
-            // Handle ISO string or YYYY-MM-DD by extracting just the date part
-            const datePart = dateString.split('T')[0];
-            const [year, month, day] = datePart.split('-');
-            return `${day}/${month}/${year}`;
-        },
-
-        matches(taskEndRaw, taskTitle, assigneeNames) {
-            const taskDate = taskEndRaw.split('T')[0]; // Assuming ISO string or YYYY-MM-DD
-            const q = this.searchQuery.toLowerCase();
-            const title = taskTitle.toLowerCase();
-            const assignees = assigneeNames.toLowerCase();
-
-            // Search Query
-            if (this.searchQuery) {
-                if (!title.includes(q) && !assignees.includes(q)) return false;
-            }
-            
-            // Date Range
-            if (this.startDate && taskDate < this.startDate) return false;
-            if (this.endDate && taskDate > this.endDate) return false;
-            
-            return true;
-        },
-
-        openDetailsModal(task, tab = 'details') {
-            this.selectedTask = task;
-            this.currentTab = tab;
-            this.isDetailsModalOpen = true;
-            this.isCommentsModalOpen = false; // Ensure legacy is closed
-            this.isFilesModalOpen = false; // Ensure legacy is closed
-        },
-        
-        openCreateTaskModal(employeeId = null, isTeam = false) {
-            this.isTeamTask = isTeam;
-            this.targetEmployeeId = employeeId;
-            this.isCreateModalOpen = true;
-        },
-
-        // --- Comment Logic ---
-
-        async submitComment() {
-            if (!this.newCommentText.trim()) return;
-            this.isSubmittingComment = true;
-            
-            const taskId = this.selectedTask.id;
-            const content = this.newCommentText;
-            
-            // Optimistic Update
-            const tempId = 'temp_' + Date.now();
-            const optimisticComment = {
-                id: tempId,
-                content: content,
-                created_at: new Date().toISOString(),
-                user: this.currentUser,
-                task_id: taskId
-            };
-            
-            if (!this.selectedTask.comments) this.selectedTask.comments = [];
-            this.selectedTask.comments.unshift(optimisticComment);
-            this.newCommentText = ''; // Clear input
-
-            try {
-                const response = await fetch(`/empleador/tareas/${taskId}/comments`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                    },
-                    body: JSON.stringify({ content: content })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    // Replace optimistic
-                    const index = this.selectedTask.comments.findIndex(c => c.id === tempId);
-                    if (index !== -1) this.selectedTask.comments[index] = data.comment;
-                } else {
-                    // Revert
-                    this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
-                    alert('Error al enviar el comentario.');
-                }
-            } catch (error) {
-                this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
-                console.error('Error:', error);
-                alert('Error de conexión.');
-            } finally {
-                this.isSubmittingComment = false;
-            }
-        },
-
-        startEditingComment(comment) {
-            this.editingCommentId = comment.id;
-            this.editCommentContent = comment.content;
-        },
-
-        async updateComment(commentId) {
-            if (!this.editCommentContent.trim()) return;
-
-            try {
-                const response = await fetch(`/empleador/comments/${commentId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                    },
-                    body: JSON.stringify({ content: this.editCommentContent })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    const index = this.selectedTask.comments.findIndex(c => c.id === commentId);
-                    if (index !== -1) this.selectedTask.comments[index] = data.comment;
-                    this.editingCommentId = null;
-                } else {
-                    alert('Error al actualizar.');
-                }
-            } catch (error) {
-                console.error(error);
-                alert('Error de conexión');
-            }
-        },
-
-        confirmDeleteComment(id) {
-            this.deleteConfirmation = { isOpen: true, type: 'comment', id: id };
-        },
-
-        // --- File Logic ---
-
-        async uploadFile(file) {
-            if (!file) return;
-            this.isUploadingFile = true;
-
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('task_id', this.selectedTask.id); // Changed to selectedTask
-
-            try {
-                 // Use fetch instead of XMLHttpRequest for cleaner logic
-                const response = await fetch(`/empleador/tareas/${this.selectedTask.id}/files`, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                    },
-                    body: formData
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
-                    this.selectedTask.attachments.unshift(data.attachment);
-                } else {
-                    alert('Error al subir el archivo.');
-                }
-            } catch (error) {
-                console.error(error);
-                alert('Error de conexión.');
-            } finally {
-                this.isUploadingFile = false;
-            }
-        },
-
-        confirmDeleteFile(id) {
-            this.deleteConfirmation = { isOpen: true, type: 'file', id: id };
-        },
-
-        async performDelete() {
-            if (this.isDeleting) return;
-            this.isDeleting = true;
-
-            const { type, id } = this.deleteConfirmation;
-            // Keep the modal open while deleting to show loading state if desired, or close it. 
-            // For now, keeping logic similar but adding safety.
-            
-            if (type === 'file') {
-                try {
-                    const response = await fetch(`/tasks/attachments/${id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                        }
-                    });
-                    if (response.ok) {
-                        this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
-                    } else {
-                        const data = await response.json();
-                        alert(data.message || 'Error al eliminar archivo');
-                    }
-                } catch (e) { alert('Error de conexión'); }
-            } else if (type === 'comment') {
-                // Delete Comment Logic
-                try {
-                    const response = await fetch(`/empleador/comments/${id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                        }
-                    });
-                     if (response.ok) {
-                        this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
-                    } else {
-                        alert('Error al eliminar comentario');
-                    }
-                } catch (e) { alert('Error de conexión'); }
-            } else if (type === 'task') {
-                try {
-                    const response = await fetch(`/tareas/${id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-                    if (response.ok) {
-                        this.deleteConfirmation.isOpen = false;
-                        this.isDetailsModalOpen = false;
-                        const currentUrl = new URL(window.location.href);
-                        currentUrl.searchParams.set('t', new Date().getTime());
-                        window.location.href = currentUrl.toString();
-                    } else {
-                        const data = await response.json();
-                        alert(data.message || 'Error al eliminar tarea');
-                        this.deleteConfirmation.isOpen = false;
-                    }
-                } catch (e) { 
-                    alert('Error de conexión'); 
-                    this.deleteConfirmation.isOpen = false;
-                } finally {
-                    this.isDeleting = false;
-                }
-            } else {
-                // For other types (file, comment), just close and reset for now
-                if (type === 'file' || type === 'comment') {
-                     // ... logic simplified above, ensure finally resets isDeleting
-                     this.isDeleting = false; 
-                     this.deleteConfirmation.isOpen = false;
-                }
-            }
-        },
-
-        // --- Task Edit Actions ---
-
-        startEditingTask() {
-            this.editTaskData = {
-                title: this.selectedTask.title,
-                description: this.selectedTask.description || '',
-                priority: this.selectedTask.priority,
-                start_date: (this.selectedTask.start_date || '').split('T')[0],
-                end_date: (this.selectedTask.end_date || '').split('T')[0],
-                assignees: this.selectedTask.assignees ? this.selectedTask.assignees.map(a => a.id) : []
-            };
-            this.isEditingTask = true;
-        },
-
-        async saveTask() {
-            this.isSavingTask = true;
-            try {
-                const response = await fetch(`/tareas/${this.selectedTask.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify(this.editTaskData)
-                });
-
-                console.log('Response status:', response.status);
-                const data = await response.json();
-                console.log('Response data:', data);
-
-                if (response.ok) {
-                    this.selectedTask = data.task;
-                    this.isEditingTask = false;
-                    // Force non-cached reload explicitly
-                    const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set('t', new Date().getTime());
-                    window.location.href = currentUrl.toString();
-                } else {
-                    // Handle validation errors (422)
-                    if (data.errors) {
-                        const errorMessages = Object.values(data.errors).flat().join('\n');
-                        alert('Errores de validación:\n' + errorMessages);
-                    } else {
-                        alert(data.message || 'Error al guardar cambios');
-                    }
-                }
-            } catch (e) {
-                console.error('Network error:', e);
-                alert('Error de conexión');
-            } finally {
-                this.isSavingTask = false;
-            }
-        },
-
-        confirmDeleteTask() {
-            this.deleteConfirmation = { isOpen: true, type: 'task', id: this.selectedTask.id };
-        }
-    }">
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
             
@@ -457,9 +101,12 @@
                     <tbody>
                         @forelse($teamTasks as $task)
                             <tr class="group transition-colors hover:bg-gray-50" 
-                                x-show="matches('{{ $task->end_date }}', '{{ addslashes($task->title) }}', '{{ addslashes($task->assignees->pluck('name')->join(',')) }}')"
+                                data-title="{{ $task->title }}"
+                                data-date="{{ $task->end_date ? $task->end_date->format('Y-m-d') : '' }}"
+                                data-assignees="{{ $task->assignees->pluck('name')->join(',') }}"
+                                x-show="matchRow($el)"
                             >
-                                <td @click='openDetailsModal(@json($task, JSON_HEX_APOS))' class="cursor-pointer py-6 pl-6 font-medium text-gray-900 bg-white rounded-l-2xl border-l border-y border-[#22A9C8] hover:text-[#22A9C8] transition-colors">
+                                <td @click='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT))' class="cursor-pointer py-6 pl-6 font-medium text-gray-900 bg-white rounded-l-2xl border-l border-y border-[#22A9C8] hover:text-[#22A9C8] transition-colors">
                                     {{ $task->title }}
                                 </td>
                                 <td class="py-6 text-center text-red-500 font-medium bg-white border-y border-[#22A9C8]">
@@ -475,26 +122,12 @@
                                     </div>
                                 </td>
                                 <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
-                                    @php
-                                        $statusClass = match($task->status) {
-                                            'por_hacer' => 'bg-red-500 text-white',
-                                            'en_proceso' => 'bg-yellow-400 text-white',
-                                            'finalizado' => 'bg-green-400 text-white',
-                                            default => 'bg-gray-200 text-gray-800'
-                                        };
-                                        $statusLabel = match($task->status) {
-                                            'por_hacer' => 'Por hacer',
-                                            'en_proceso' => 'En proceso',
-                                            'finalizado' => 'Finalizado',
-                                            default => $task->status
-                                        };
-                                    @endphp
-                                    <span class="inline-flex items-center px-4 py-1 rounded-full text-sm font-medium {{ $statusClass }}">
-                                        {{ $statusLabel }}
-                                    </span>
+                                    <div class="flex justify-center">
+                                        <livewire:task-status-selector :task="$task" />
+                                    </div>
                                 </td>
                                 <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
-                                    <button @click.stop='openDetailsModal(@json($task, JSON_HEX_APOS), "comments")' class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
+                                    <button @click.stop='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), "comments")' class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                         </svg>
@@ -502,7 +135,7 @@
                                     </button>
                                 </td>
                                 <td class="py-6 text-center pr-6 bg-white rounded-r-2xl border-r border-y border-[#22A9C8]">
-                                    <button @click.stop='openDetailsModal(@json($task, JSON_HEX_APOS), "files")' class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
+                                    <button @click.stop='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), "files")' class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                         </svg>
@@ -557,9 +190,12 @@
                     <div class="space-y-4">
                         @foreach($teamTasks as $task)
                             <div class="bg-white rounded-2xl p-6 border border-[#22A9C8] shadow-sm flex flex-col gap-4" 
-                                 x-show="matches('{{ $task->end_date }}', '{{ addslashes($task->title) }}', '{{ addslashes($task->assignees->pluck('name')->join(',')) }}')">
+                                 data-title="{{ $task->title }}"
+                                 data-date="{{ $task->end_date ? $task->end_date->format('Y-m-d') : '' }}"
+                                 data-assignees="{{ $task->assignees->pluck('name')->join(',') }}"
+                                 x-show="matchRow($el)">
                                 
-                                <h4 @click='openDetailsModal(@json($task, JSON_HEX_APOS))' class="font-bold text-gray-900 text-lg break-words cursor-pointer hover:text-[#22A9C8] transition-colors">{{ $task->title }}</h4>
+                                <h4 @click='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT))' class="font-bold text-gray-900 text-lg break-words cursor-pointer hover:text-[#22A9C8] transition-colors">{{ $task->title }}</h4>
                                 
                                 <div class="grid grid-cols-2 gap-x-4 gap-y-4 text-sm">
                                     <div class="text-gray-600 font-medium">Fecha límite</div>
@@ -575,30 +211,20 @@
                                     </div>
 
                                     <div class="text-gray-600 font-medium self-center">Estado</div>
-                                    <div class="flex justify-end">
-                                        @php
-                                            $statusMobile = match($task->status) {
-                                                'por_hacer' => 'Por hacer',
-                                                'en_proceso' => 'En proceso',
-                                                'finalizado' => 'Finalizado',
-                                                default => $task->status
-                                            };
-                                        @endphp
-                                         <span class="inline-flex items-center px-4 py-1 rounded-full text-sm font-medium {{ $statusClass }}">
-                                            {{ $statusMobile }}
-                                        </span>
+                                    <div class="flex justify-end order-status-selector">
+                                        <livewire:task-status-selector :task="$task" />
                                     </div>
                                 </div>
                                 
                                  <div class="flex justify-between items-center pt-4 border-t border-gray-100 mt-2">
                                     <div class="flex items-center gap-4">
-                                         <button @click.stop='openDetailsModal(@json($task, JSON_HEX_APOS), "comments")' class="flex items-center gap-1 text-gray-600 hover:text-[#22A9C8] transition-colors">
+                                         <button @click.stop='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), "comments")' class="flex items-center gap-1 text-gray-600 hover:text-[#22A9C8] transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                             </svg>
                                             <span class="font-bold text-sm">{{ $task->comments->count() }}</span>
                                         </button>
-                                         <button @click.stop='openDetailsModal(@json($task, JSON_HEX_APOS), "files")' class="flex items-center gap-1 text-gray-600 hover:text-[#22A9C8] transition-colors">
+                                         <button @click.stop='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), "files")' class="flex items-center gap-1 text-gray-600 hover:text-[#22A9C8] transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                             </svg>
@@ -685,6 +311,377 @@
                 window.scrollTo(0, parseInt(scrollPosition));
                 localStorage.removeItem('scrollPosition');
             }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('taskTracking', (currentUser) => ({
+                currentUser: currentUser,
+                startDate: '',
+                endDate: '',
+                searchQuery: '',
+                isTeamTask: true,
+                targetEmployeeId: null,
+                
+                // Modal States
+                selectedTask: null,
+                isDetailsModalOpen: false,
+                isCreateModalOpen: false,
+                currentTab: 'details',
+                
+                // Mobile View State
+                mobileView: '',
+                
+                // Comment/File State
+                isUploadingFile: false,
+                newCommentText: '',
+                isSubmittingComment: false,
+                editingCommentId: null,
+                editCommentContent: '',
+                
+                // Delete Confirmation State
+                deleteConfirmation: {
+                    isOpen: false,
+                    type: null,
+                    id: null
+                },
+
+                // Task Edit State
+                isEditingTask: false,
+                isSavingTask: false,
+                editTaskData: {
+                    title: '',
+                    description: '',
+                    priority: '',
+                    end_date: ''
+                },
+
+                isAddingComment: false,
+                commentText: '',
+                isSubmitting: false,
+                isDeleting: false,
+
+                formatDate(dateString) {
+                    if (!dateString) return '';
+                    const datePart = dateString.split('T')[0];
+                    const [year, month, day] = datePart.split('-');
+                    return `${day}/${month}/${year}`;
+                },
+
+                matchRow(el) {
+                    const taskDate = el.dataset.date || '';
+                    const title = (el.dataset.title || '').toLowerCase();
+                    const assignees = (el.dataset.assignees || '').toLowerCase();
+                    const q = this.searchQuery.toLowerCase();
+
+                    if (this.searchQuery) {
+                        if (!title.includes(q) && !assignees.includes(q)) return false;
+                    }
+                    
+                    if (this.startDate && taskDate < this.startDate) return false;
+                    if (this.endDate && taskDate > this.endDate) return false;
+                    
+                    return true;
+                },
+
+                openDetailsModal(task, tab = 'details') {
+                    this.selectedTask = task;
+                    this.currentTab = tab;
+                    this.isDetailsModalOpen = true;
+                    this.isCommentsModalOpen = false;
+                    this.isFilesModalOpen = false;
+                },
+                
+                openCreateTaskModal(employeeId = null, isTeam = false) {
+                    this.isTeamTask = isTeam;
+                    this.targetEmployeeId = employeeId;
+                    this.isCreateModalOpen = true;
+                },
+
+                async submitComment() {
+                    if (!this.newCommentText.trim()) return;
+                    this.isSubmittingComment = true;
+                    
+                    const taskId = this.selectedTask.id;
+                    const content = this.newCommentText;
+                    
+                    const tempId = 'temp_' + Date.now();
+                    const optimisticComment = {
+                        id: tempId,
+                        content: content,
+                        created_at: new Date().toISOString(),
+                        user: this.currentUser,
+                        task_id: taskId
+                    };
+                    
+                    if (!this.selectedTask.comments) this.selectedTask.comments = [];
+                    this.selectedTask.comments.unshift(optimisticComment);
+                    this.newCommentText = '';
+
+                    try {
+                        const response = await fetch(`/empleador/tareas/${taskId}/comments`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({ content: content })
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            const index = this.selectedTask.comments.findIndex(c => c.id === tempId);
+                            if (index !== -1) this.selectedTask.comments[index] = data.comment;
+                        } else {
+                            this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
+                            alert('Error al enviar el comentario.');
+                        }
+                    } catch (error) {
+                        this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
+                        console.error('Error:', error);
+                        alert('Error de conexión.');
+                    } finally {
+                        this.isSubmittingComment = false;
+                    }
+                },
+
+                startEditingComment(comment) {
+                    this.editingCommentId = comment.id;
+                    this.editCommentContent = comment.content;
+                },
+
+                async updateComment(commentId) {
+                    if (!this.editCommentContent.trim()) return;
+
+                    try {
+                        const response = await fetch(`/empleador/comments/${commentId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({ content: this.editCommentContent })
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            const index = this.selectedTask.comments.findIndex(c => c.id === commentId);
+                            if (index !== -1) this.selectedTask.comments[index] = data.comment;
+                            this.editingCommentId = null;
+                        } else {
+                            alert('Error al actualizar.');
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        alert('Error de conexión');
+                    }
+                },
+
+                confirmDeleteComment(id) {
+                    this.deleteConfirmation = { isOpen: true, type: 'comment', id: id };
+                },
+
+                async uploadFile(file) {
+                    if (!file || this.isUploadingFile) return;
+                    this.isUploadingFile = true;
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('task_id', this.selectedTask.id);
+
+                    try {
+                        const response = await fetch(`/empleador/tareas/${this.selectedTask.id}/files`, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: formData
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
+                            this.selectedTask.attachments.unshift(data.attachment);
+                        } else {
+                            alert('Error al subir el archivo.');
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        alert('Error de conexión.');
+                    } finally {
+                        this.isUploadingFile = false;
+                    }
+                },
+
+                confirmDeleteFile(id) {
+                    this.deleteConfirmation = { isOpen: true, type: 'file', id: id };
+                },
+
+                async performDelete() {
+                    if (this.isDeleting) return;
+                    this.isDeleting = true;
+
+                    const { type, id } = this.deleteConfirmation;
+                    
+                    if (type === 'file') {
+                        try {
+                            const response = await fetch(`/tasks/attachments/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                }
+                            });
+                            if (response.ok) {
+                                this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
+                            } else {
+                                const data = await response.json();
+                                alert(data.message || 'Error al eliminar archivo');
+                            }
+                        } catch (e) { alert('Error de conexión'); }
+                    } else if (type === 'comment') {
+                        try {
+                            const response = await fetch(`/empleador/comments/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                }
+                            });
+                            if (response.ok) {
+                                this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
+                            } else {
+                                alert('Error al eliminar comentario');
+                            }
+                        } catch (e) { alert('Error de conexión'); }
+                    } else if (type === 'task') {
+                        try {
+                            const response = await fetch(`/tareas/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            });
+                            if (response.ok) {
+                                this.deleteConfirmation.isOpen = false;
+                                this.isDetailsModalOpen = false;
+                                const currentUrl = new URL(window.location.href);
+                                currentUrl.searchParams.set('t', new Date().getTime());
+                                window.location.href = currentUrl.toString();
+                            } else {
+                                const data = await response.json();
+                                alert(data.message || 'Error al eliminar tarea');
+                                this.deleteConfirmation.isOpen = false;
+                            }
+                        } catch (e) { 
+                            alert('Error de conexión'); 
+                            this.deleteConfirmation.isOpen = false;
+                        } finally {
+                            this.isDeleting = false;
+                        }
+                    } else {
+                        this.isDeleting = false;
+                        this.deleteConfirmation.isOpen = false;
+                    }
+                    this.isDeleting = false;
+                },
+
+                startEditingTask() {
+                    this.editTaskData = {
+                        title: this.selectedTask.title,
+                        description: this.selectedTask.description || '',
+                        priority: this.selectedTask.priority,
+                        start_date: (this.selectedTask.start_date || '').split('T')[0],
+                        end_date: (this.selectedTask.end_date || '').split('T')[0],
+                        assignees: this.selectedTask.assignees ? this.selectedTask.assignees.map(a => a.id) : []
+                    };
+                    this.isEditingTask = true;
+                },
+
+                async saveTask() {
+                    this.isSavingTask = true;
+                    try {
+                        const response = await fetch(`/tareas/${this.selectedTask.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify(this.editTaskData)
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.selectedTask = data.task;
+                            this.isEditingTask = false;
+                            const currentUrl = new URL(window.location.href);
+                            currentUrl.searchParams.set('t', new Date().getTime());
+                            window.location.href = currentUrl.toString();
+                        } else {
+                            const data = await response.json();
+                            if (data.errors) {
+                                const errorMessages = Object.values(data.errors).flat().join('\n');
+                                alert('Errores de validación:\n' + errorMessages);
+                            } else {
+                                alert(data.message || 'Error al guardar cambios');
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Network error:', e);
+                        alert('Error de conexión');
+                    } finally {
+                        this.isSavingTask = false;
+                    }
+                },
+
+                confirmDeleteTask() {
+                    this.deleteConfirmation = { isOpen: true, type: 'task', id: this.selectedTask.id };
+                },
+
+                async toggleTaskCompletion(task) {
+                    if (this.isSavingTask) return;
+                    this.isSavingTask = true;
+                    
+                    try {
+                        const response = await fetch(`/tasks/${task.id}/toggle-completion`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json'
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        if (data.success) {
+                            task.completed = data.completed;
+                            task.status = data.status;
+                            if (this.selectedTask && this.selectedTask.id === task.id) {
+                                this.selectedTask.completed = data.completed;
+                                this.selectedTask.status = data.status;
+                            }
+                        } else {
+                            alert(data.message || 'Error al actualizar el estado');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Error de conexión');
+                    } finally {
+                        this.isSavingTask = false;
+                    }
+                }
+            }));
         });
     </script>
 </x-app-layout>

@@ -38,11 +38,16 @@
     @resize.window="dropdownOpen = false"
 >
     <!-- Trigger Button -->
-    <button x-ref="button" @click="dropdownOpen = !dropdownOpen" type="button" 
+    <button x-ref="button" 
+        @if(auth()->user()->tipo_usuario !== 'empleador')
+            @click="dropdownOpen = !dropdownOpen" 
+        @endif
+        type="button" 
         class="flex items-center justify-between w-40 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white rounded-full focus:outline-none transition-all duration-300 shadow-sm
         @if($status === \App\Models\Task::STATUS_COMPLETED) bg-green-500 hover:bg-green-600
         @elseif($status === \App\Models\Task::STATUS_IN_PROGRESS) bg-yellow-500 hover:bg-yellow-600
-        @else bg-red-500 hover:bg-red-600 @endif">
+        @else bg-red-500 hover:bg-red-600 @endif
+        {{ auth()->user()->tipo_usuario === 'empleador' ? 'cursor-default' : 'cursor-pointer' }}">
         
         <span>
             @if($status === \App\Models\Task::STATUS_COMPLETED)
@@ -54,9 +59,11 @@
             @endif
         </span>
         
-        <svg class="w-3 h-3 ml-2 transition-transform duration-200" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path>
-        </svg>
+        @if(auth()->user()->tipo_usuario !== 'empleador')
+            <svg class="w-3 h-3 ml-2 transition-transform duration-200" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        @endif
     </button>
 
     <!-- Dropdown Menu (Teleported to Body) -->

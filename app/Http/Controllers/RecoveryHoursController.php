@@ -110,6 +110,26 @@ class RecoveryHoursController extends Controller
             'approved_at' => $request->approved ? now() : null
         ]);
 
+        // Notify professional
+        try {
+            $user = User::find($recovery->user_id);
+            if ($user && $user->email) {
+                $this->emailService->sendRecoveryStatusNotification(
+                    $user->email,
+                    $user->name,
+                    [
+                        'hours' => $recovery->hours_recovered,
+                        'date' => Carbon::parse($recovery->recovery_date)->format('d/m/Y'),
+                        'approved' => (bool)$request->approved,
+                        'approved_by' => auth()->user()->name ?? 'Administrador',
+                        'comment' => null // We don't have a comment field in RecoveryHour currently, but we could add it if needed
+                    ]
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('Error sending recovery approval notification: ' . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'message' => $request->approved ? 'Recuperación aprobada' : 'Recuperación rechazada'

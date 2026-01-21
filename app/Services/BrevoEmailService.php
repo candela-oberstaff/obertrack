@@ -53,6 +53,39 @@ class BrevoEmailService
     }
 
     /**
+     * Send email notification for task status update
+     */
+    public function sendTaskStatusNotification($recipientEmail, $recipientName, $taskData)
+    {
+        try {
+            $statusLabel = $taskData['status_label'] ?? 'Actualizado';
+            $sendSmtpEmail = new SendSmtpEmail([
+                'subject' => '🔄 Estado de tarea actualizado: ' . $taskData['title'] . ' (' . $statusLabel . ')',
+                'sender' => ['name' => $this->senderName, 'email' => $this->senderEmail],
+                'to' => [['email' => $recipientEmail, 'name' => $recipientName]],
+                'htmlContent' => $this->renderTaskStatusEmail($taskData),
+            ]);
+
+            $result = $this->apiInstance->sendTransacEmail($sendSmtpEmail);
+
+            Log::info('Brevo: Task status notification sent', [
+                'recipient' => $recipientEmail,
+                'task_id' => $taskData['id'] ?? null,
+                'message_id' => $result->getMessageId()
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Brevo: Failed to send task status notification', [
+                'recipient' => $recipientEmail,
+                'error' => $e->getMessage()
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
      * Send email notification for a new task assignment
      */
     public function sendNewTaskNotification($recipientEmail, $recipientName, $taskData)
@@ -190,6 +223,84 @@ class BrevoEmailService
     }
 
     /**
+     * Send email notification for work hours approval
+     */
+    public function sendWorkHoursApprovedNotification($recipientEmail, $recipientName, $approvalData)
+    {
+        try {
+            $sendSmtpEmail = new SendSmtpEmail([
+                'subject' => '✅ Horas registradas aprobadas',
+                'sender' => ['name' => $this->senderName, 'email' => $this->senderEmail],
+                'to' => [['email' => $recipientEmail, 'name' => $recipientName]],
+                'htmlContent' => $this->renderWorkHoursApprovedEmail($approvalData),
+            ]);
+
+            $result = $this->apiInstance->sendTransacEmail($sendSmtpEmail);
+
+            Log::info('Brevo: Work hours approval notification sent', [
+                'recipient' => $recipientEmail,
+                'message_id' => $result->getMessageId()
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Brevo: Failed to send work hours approval notification', [
+                'recipient' => $recipientEmail,
+                'error' => $e->getMessage()
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
+     * Send email notification for recovery hours status update
+     */
+    public function sendRecoveryStatusNotification($recipientEmail, $recipientName, $recoveryData)
+    {
+        try {
+            $status = $recoveryData['approved'] ? 'Aprobada' : 'Rechazada';
+            $sendSmtpEmail = new SendSmtpEmail([
+                'subject' => '🔄 Estado de recuperación: ' . $status,
+                'sender' => ['name' => $this->senderName, 'email' => $this->senderEmail],
+                'to' => [['email' => $recipientEmail, 'name' => $recipientName]],
+                'htmlContent' => $this->renderRecoveryStatusEmail($recoveryData),
+            ]);
+
+            $result = $this->apiInstance->sendTransacEmail($sendSmtpEmail);
+
+            Log::info('Brevo: Recovery status notification sent', [
+                'recipient' => $recipientEmail,
+                'message_id' => $result->getMessageId()
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Brevo: Failed to send recovery status notification', [
+                'recipient' => $recipientEmail,
+                'error' => $e->getMessage()
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
+     * Render HTML email for task status update
+     */
+    private function renderTaskStatusEmail($taskData)
+    {
+        return view('emails.task-status-updated', [
+            'taskTitle' => $taskData['title'],
+            'statusLabel' => $taskData['status_label'] ?? 'Actualizado',
+            'previousStatus' => $taskData['previous_status_label'] ?? 'Desconocido',
+            'updatedBy' => $taskData['updated_by'] ?? 'Profesional',
+            'completed' => $taskData['completed'] ?? false,
+            'taskUrl' => route('empleador.tareas.index')
+        ])->render();
+    }
+
+    /**
      * Render HTML email for new task assignment
      */
     private function renderNewTaskEmail($taskData)
@@ -238,6 +349,35 @@ class BrevoEmailService
             'pendingHours' => $pendingHoursData['pending_hours'] ?? [],
             'totalHours' => $pendingHoursData['total_hours'] ?? 0,
             'approvalUrl' => route('empleador.dashboard')
+        ])->render();
+    }
+
+    /**
+     * Render HTML email for work hours approval
+     */
+    private function renderWorkHoursApprovedEmail($approvalData)
+    {
+        return view('emails.hours-approved', [
+            'type' => $approvalData['type'] ?? 'Semana', // Semana, Mes, Días
+            'period' => $approvalData['period'] ?? '',
+            'comment' => $approvalData['comment'] ?? null,
+            'approvedBy' => $approvalData['approved_by'] ?? 'Administrador',
+            'dashboardUrl' => route('empleado.registrar-horas')
+        ])->render();
+    }
+
+    /**
+     * Render HTML email for recovery hours status update
+     */
+    private function renderRecoveryStatusEmail($recoveryData)
+    {
+        return view('emails.recovery-status', [
+            'hours' => $recoveryData['hours'],
+            'date' => $recoveryData['date'],
+            'approved' => $recoveryData['approved'],
+            'comment' => $recoveryData['comment'] ?? null,
+            'approvedBy' => $recoveryData['approved_by'] ?? 'Administrador',
+            'dashboardUrl' => route('empleado.registrar-horas')
         ])->render();
     }
 

@@ -308,6 +308,26 @@ class WorkHoursController extends Controller
 
         $workHour->update(['recovery_approved' => DB::raw('TRUE')]);
 
+        // Notify professional
+        try {
+            $professional = User::find($workHour->user_id);
+            if ($professional && $professional->email) {
+                $this->emailService->sendRecoveryStatusNotification(
+                    $professional->email,
+                    $professional->name,
+                    [
+                        'hours' => $workHour->recovered_hours,
+                        'date' => Carbon::parse($workHour->work_date)->format('d/m/Y'),
+                        'approved' => true,
+                        'approved_by' => auth()->user()->name ?? 'Administrador',
+                        'comment' => $workHour->approval_comment
+                    ]
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('Error sending legacy recovery approval notification: ' . $e->getMessage());
+        }
+
         return response()->json(['success' => true, 'message' => 'Recuperación aprobada correctamente.']);
     }
 
@@ -729,14 +749,35 @@ class WorkHoursController extends Controller
             })
             ->get();
 
+        // Calculate recovery stats for the week
+        $recoveredNew = \App\Models\RecoveryHour::where('user_id', $user->id)
+            ->whereBetween('recovery_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
+            ->where('approved', true)
+            ->sum('hours_recovered');
+            
+        $recoveredLegacy = WorkHours::where('user_id', $user->id)
+            ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
+            ->where('recovery_approved', true)
+            ->sum('recovered_hours');
+            
+        $recoveredWeekly = $recoveredNew + $recoveredLegacy;
+
+        // Overall pending balance (total debt - total recovered)
+        $totalDebt = WorkHours::where('user_id', $user->id)->sum('absence_hours');
+        $totalRecNew = \App\Models\RecoveryHour::where('user_id', $user->id)->where('approved', true)->sum('hours_recovered');
+        $totalRecLegacy = WorkHours::where('user_id', $user->id)->where('recovery_approved', true)->sum('recovered_hours');
+        $pendingBalance = max(0, $totalDebt - ($totalRecNew + $totalRecLegacy));
+
         // Generate PDF
-    $pdf = Pdf::loadView('reportes.pdf.weekly', [
-        'professional' => $user,
-        'weekStart' => $weekStart,
-        'weekEnd' => $weekEnd,
-        'totalHours' => $totalHours,
-        'weeklyAverage' => $weeklyAverage,
-        'completedTasks' => $completedTasks,
+        $pdf = Pdf::loadView('reportes.pdf.weekly', [
+            'professional' => $user,
+            'weekStart' => $weekStart,
+            'weekEnd' => $weekEnd,
+            'totalHours' => $totalHours,
+            'recoveredHours' => $recoveredWeekly,
+            'pendingBalance' => $pendingBalance,
+            'weeklyAverage' => $weeklyAverage,
+            'completedTasks' => $completedTasks,
         'inProgressTasks' => $inProgressTasks,
         'overdueTasks' => $overdueTasks,
         'absences' => $absences,
@@ -861,10 +902,31 @@ class WorkHoursController extends Controller
             $currentDate->addWeek();
         }
 
+        // Calculate recovery stats for the month
+        $recoveredNew = \App\Models\RecoveryHour::where('user_id', $user->id)
+            ->whereBetween('recovery_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+            ->where('approved', true)
+            ->sum('hours_recovered');
+            
+        $recoveredLegacy = WorkHours::where('user_id', $user->id)
+            ->whereBetween('work_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+            ->where('recovery_approved', true)
+            ->sum('recovered_hours');
+            
+        $recoveredMonthly = $recoveredNew + $recoveredLegacy;
+
+        // Overall pending balance (total debt - total recovered)
+        $totalDebt = WorkHours::where('user_id', $user->id)->sum('absence_hours');
+        $totalRecNew = \App\Models\RecoveryHour::where('user_id', $user->id)->where('approved', true)->sum('hours_recovered');
+        $totalRecLegacy = WorkHours::where('user_id', $user->id)->where('recovery_approved', true)->sum('recovered_hours');
+        $pendingBalance = max(0, $totalDebt - ($totalRecNew + $totalRecLegacy));
+
         $pdf = Pdf::loadView('reportes.pdf.monthly', [
             'professional' => $user,
             'monthDate' => $startOfMonth,
             'totalApprovedHours' => $totalApprovedHours,
+            'recoveredHours' => $recoveredMonthly,
+            'pendingBalance' => $pendingBalance,
             'absences' => $absences,
             'monthDate' => $startOfMonth,
             'totalApprovedHours' => $totalApprovedHours,

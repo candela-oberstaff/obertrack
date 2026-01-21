@@ -349,7 +349,7 @@
                             <div x-show="descriptionMode === 'list'">
                                 <div class="bg-gray-50 rounded-lg p-2 flex items-center mb-4 border border-gray-100 focus-within:ring-1 focus-within:ring-[#22A9C8]">
                                     <input type="text" x-model="newActivity" @keydown.enter.prevent="addActivity()" 
-                                           placeholder="Escribe aquí la actividad realizada" 
+                                           placeholder="Escribe aquí la actividad realizada" maxlength="255" 
                                            class="bg-transparent border-none focus:ring-0 w-full text-gray-600 text-sm placeholder-gray-400 italic">
                                     <button @click="addActivity()" class="p-1 text-[#22A9C8] hover:bg-gray-100 rounded-full">
                                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
@@ -373,7 +373,7 @@
                             <div x-show="descriptionMode === 'text'">
                                 <textarea x-model="userComment" rows="4" 
                                           class="w-full bg-gray-50 border-gray-200 rounded-xl focus:ring-[#22A9C8] focus:border-[#22A9C8] text-sm text-gray-700"
-                                          placeholder="Escribe aquí el resumen de tu jornada..."></textarea>
+                                          placeholder="Escribe aquí el resumen de tu jornada..." maxlength="1000"></textarea>
                             </div>
                         </div>
 
@@ -426,7 +426,7 @@
                                              x-model="otherReasonText"
                                              rows="2"
                                              class="shadow-sm focus:ring-[#22A9C8] focus:border-[#22A9C8] block w-full sm:text-sm border-gray-300 rounded-xl" 
-                                             placeholder="Especificar motivo..."></textarea>
+                                             placeholder="Especificar motivo..." maxlength="255"></textarea>
                              </div>
                         </div>
 
@@ -746,7 +746,7 @@
                         <div x-show="recoveryDescriptionMode === 'list'">
                             <div class="bg-gray-50 rounded-lg p-2 flex items-center mb-4 border border-gray-100 focus-within:ring-1 focus-within:ring-[#22A9C8]">
                                 <input type="text" x-model="newRecoveryActivity" @keydown.enter.prevent="addRecoveryActivity()" 
-                                       placeholder="Escribe aquí la actividad" 
+                                       placeholder="Escribe aquí la actividad" maxlength="255" 
                                        class="bg-transparent border-none focus:ring-0 w-full text-gray-600 text-sm placeholder-gray-400 italic">
                                 <button @click="addRecoveryActivity()" class="p-1 text-[#22A9C8] hover:bg-gray-100 rounded-full">
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
@@ -770,7 +770,7 @@
                         <div x-show="recoveryDescriptionMode === 'text'">
                             <textarea x-model="recoveryUserComment" rows="3" 
                                       class="w-full bg-gray-50 border-gray-200 rounded-xl focus:ring-[#22A9C8] focus:border-[#22A9C8] text-sm text-gray-700"
-                                      placeholder="Escribe aquí el resumen..."></textarea>
+                                      placeholder="Escribe aquí el resumen..." maxlength="1000"></textarea>
                         </div>
 
                         {{-- Authorization message removed, professional now sends request --}}

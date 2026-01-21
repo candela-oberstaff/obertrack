@@ -47,6 +47,7 @@ class TaskController extends Controller
             }
             return back()->with('error', 'No tienes permiso para editar esta tarea.');
         }
+        try {
 
             $this->taskManagementService->updateTask($task, $request->validated());
             
@@ -100,6 +101,10 @@ class TaskController extends Controller
 
     public function toggleCompletion(Request $request, $taskId)
     {
+        if ($request->user()->tipo_usuario === 'empleador') {
+            return response()->json(['success' => false, 'message' => 'Solo los profesionales pueden cambiar el estado de las tareas.'], 403);
+        }
+
         try {
             $result = $this->taskManagementService->toggleCompletion($taskId);
             return response()->json($result);
@@ -173,6 +178,11 @@ class TaskController extends Controller
 
     public function toggleEmployerTaskCompletion(Request $request, $taskId)
     {
+        // Enforce restriction: Employers cannot change status
+        if ($request->user()->tipo_usuario === 'empleador') {
+            return response()->json(['success' => false, 'message' => 'Solo los profesionales pueden cambiar el estado de las tareas.'], 403);
+        }
+
         $task = Task::findOrFail($taskId);
         
         // Verificar si el usuario autenticado es el empleador de esta tarea

@@ -7,322 +7,22 @@
         </div>
     </x-slot>
 
-    <div class="py-8 bg-white min-h-screen" x-data="{
-        currentUser: {{ json_encode([
-            'id' => auth()->id(),
-            'name' => auth()->user()->name,
-            'avatar' => auth()->user()->avatar ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : asset('storage/' . auth()->user()->avatar)) : '',
-            'initials' => substr(auth()->user()->name, 0, 1),
-            // Permissions check for upload/delete
-            'tipo_usuario' => auth()->user()->tipo_usuario,
-            'is_superadmin' => auth()->user()->is_superadmin
-        ]) }},
-        
-        // Counters
-        pendingCount: {{ $pendingTasksCount }},
-        completedCount: {{ $completedTasksCount }},
-        
-        startDate: '',
-        endDate: '',
-        searchQuery: '',
-        
-        // Modal State
-        selectedTask: null,
-        isDetailsModalOpen: false,
-        currentTab: 'details',
-        
-        // Edit Task State
-        isEditingTask: false,
-        isSavingTask: false,
-        editTaskData: {
-            id: null,
-            title: '',
-            description: '',
-            priority: 'low',
-            end_date: ''
-        },
-        
-        // UI State
-        isUploadingFile: false,
-        newCommentText: '',
-        isSubmittingComment: false,
-        editingCommentId: null,
-        editCommentContent: '',
-        
-        // Delete Confirmation State
-        deleteConfirmation: {
-            isOpen: false,
-            type: null, // 'file', 'comment', or 'task'
-            id: null
-        },
-        
-        updatedTaskStates: {}, // Registry for local overrides
+    @php
+        $employeeTaskData = [
+            'currentUser' => [
+                'id' => auth()->id(),
+                'name' => auth()->user()->name,
+                'avatar' => auth()->user()->avatar ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : asset('storage/' . auth()->user()->avatar)) : '',
+                'initials' => substr(auth()->user()->name, 0, 1),
+                'tipo_usuario' => auth()->user()->tipo_usuario,
+                'is_superadmin' => auth()->user()->is_superadmin
+            ],
+            'pendingCount' => $pendingTasksCount,
+            'completedCount' => $completedTasksCount
+        ];
+    @endphp
 
-        matches(task) {
-            const taskDate = task.date;
-            const taskTitle = task.title.toLowerCase();
-            const q = this.searchQuery.toLowerCase();
-
-            if (this.searchQuery && !taskTitle.includes(q)) return false;
-            if (!this.startDate && !this.endDate) return true;
-            if (this.startDate && taskDate < this.startDate) return false;
-            if (this.endDate && taskDate > this.endDate) return false;
-            return true;
-        },
-        
-        openDetailsModal(task, tab = 'details') {
-            // Apply local overrides if they exist (fixes stale data from server-rendered onclick)
-            if (this.updatedTaskStates[task.id]) {
-                task.status = this.updatedTaskStates[task.id].status;
-                task.completed = this.updatedTaskStates[task.id].completed;
-            }
-            this.selectedTask = task;
-            this.currentTab = tab;
-            this.isDetailsModalOpen = true;
-            this.isEditingTask = false;
-        },
-        
-        startEditingTask() {
-            if (!this.selectedTask) return;
-            this.editTaskData = {
-                id: this.selectedTask.id,
-                title: this.selectedTask.title,
-                description: this.selectedTask.description,
-                priority: this.selectedTask.priority,
-                end_date: this.selectedTask.end_date ? this.selectedTask.end_date.split('T')[0] : ''
-            };
-            this.isEditingTask = true;
-        },
-
-        async saveTask() {
-            // Placeholder: Implement actual API call for task update here
-            this.isSavingTask = true;
-            await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
-            
-            // Optimistic update
-            this.selectedTask.title = this.editTaskData.title;
-            this.selectedTask.description = this.editTaskData.description;
-            this.selectedTask.priority = this.editTaskData.priority;
-            this.selectedTask.end_date = this.editTaskData.end_date;
-            
-            this.isSavingTask = false;
-            this.isEditingTask = false;
-        },
-        
-        confirmDeleteTask() {
-           // Reuse the same confirmation modal if possible, or simple alert for now
-           if(confirm('¿Eliminar esta tarea?')) {
-               // Implement delete logic
-           }
-        },
-        
-        formatDate(dateStr) {
-            if (!dateStr) return '';
-            const datePart = dateStr.split('T')[0];
-            const parts = datePart.split('-');
-            return `${parts[2]}/${parts[1]}/${parts[0]}`;
-        },
-
-        // --- Comment Logic ---
-
-        async submitComment() {
-            if (!this.newCommentText.trim()) return;
-            this.isSubmittingComment = true;
-            
-            const taskId = this.selectedTask.id;
-            const content = this.newCommentText;
-            
-            const tempId = 'temp_' + Date.now();
-            const optimisticComment = {
-                id: tempId,
-                content: content,
-                created_at: new Date().toISOString(),
-                user: this.currentUser,
-                task_id: taskId
-            };
-            
-            if (!this.selectedTask.comments) this.selectedTask.comments = [];
-            this.selectedTask.comments.unshift(optimisticComment);
-            this.newCommentText = ''; 
-
-            try {
-                // Route: POST /empleados/tareas/{task}/comment
-                const response = await fetch(`/empleados/tareas/${taskId}/comment`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                    },
-                    body: JSON.stringify({ content: content })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    const index = this.selectedTask.comments.findIndex(c => c.id === tempId);
-                    if (index !== -1) this.selectedTask.comments[index] = data.comment;
-                } else {
-                    this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
-                    alert('Error al enviar el comentario.');
-                }
-            } catch (error) {
-                this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
-                console.error('Error:', error);
-                alert('Error de conexión.');
-            } finally {
-                this.isSubmittingComment = false;
-            }
-        },
-
-        startEditingComment(comment) {
-            this.editingCommentId = comment.id;
-            this.editCommentContent = comment.content;
-        },
-
-        async updateComment(commentId) {
-            if (!this.editCommentContent.trim()) return;
-
-            try {
-                // Route: PUT /empleados/tareas/comment/{comment}
-                const response = await fetch(`/empleados/tareas/comment/${commentId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                    },
-                    body: JSON.stringify({ content: this.editCommentContent })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    const index = this.selectedTask.comments.findIndex(c => c.id === commentId);
-                    if (index !== -1) this.selectedTask.comments[index] = data.comment;
-                    this.editingCommentId = null;
-                } else {
-                    alert('Error al actualizar.');
-                }
-            } catch (error) {
-                console.error(error);
-                alert('Error de conexión');
-            }
-        },
-
-        confirmDeleteComment(id) {
-            this.deleteConfirmation = { isOpen: true, type: 'comment', id: id };
-        },
-
-        // --- File Logic ---
-
-        async uploadFile(file) {
-            if (!file) return;
-            this.isUploadingFile = true;
-
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            try {
-                 // Route: POST /empleados/tareas/{task}/files
-                const response = await fetch(`/empleados/tareas/${this.selectedTask.id}/files`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                    },
-                    body: formData
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
-                    this.selectedTask.attachments.unshift(data.attachment);
-                } else {
-                    const data = await response.json();
-                    alert(data.message || 'Error al subir el archivo.');
-                }
-            } catch (error) {
-                console.error(error);
-                alert('Error de conexión.');
-            } finally {
-                this.isUploadingFile = false;
-            }
-        },
-
-        confirmDeleteFile(id) {
-            this.deleteConfirmation = { isOpen: true, type: 'file', id: id };
-        },
-
-        async performDelete() {
-            const { type, id } = this.deleteConfirmation;
-            this.deleteConfirmation.isOpen = false;
-
-            if (type === 'file') {
-                try {
-                    // Generic Route: DELETE /tasks/attachments/{attachment}
-                    const response = await fetch(`/tasks/attachments/${id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                        }
-                    });
-                    if (response.ok) {
-                        this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
-                    } else {
-                        const data = await response.json();
-                        alert(data.message || 'Error al eliminar archivo');
-                    }
-                } catch (e) { alert('Error de conexión'); }
-            } else if (type === 'comment') {
-                try {
-                    // Route: DELETE /empleados/tareas/comment/{comment}
-                    const response = await fetch(`/empleados/tareas/comment/${id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                        }
-                    });
-                     if (response.ok) {
-                        this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
-                    } else {
-                        alert('Error al eliminar comentario');
-                    }
-                } catch (e) { alert('Error de conexión'); }
-            }
-        },
-        
-        handleStatusUpdate(detail) {
-            // detail: { taskId, status, completed, wasCompleted }
-            
-            // Determine the previous state (Trusted Source: Local > Server)
-            let previousCompleted = detail.wasCompleted;
-            if (this.updatedTaskStates[detail.taskId]) {
-                previousCompleted = this.updatedTaskStates[detail.taskId].completed;
-            }
-
-            // 0. Update registry for future references
-            this.updatedTaskStates[detail.taskId] = {
-                status: detail.status,
-                completed: detail.completed
-            };
-            
-            // 1. Update Selected Task (if open) - use == for safe int/string comparison
-            if (this.selectedTask && this.selectedTask.id == detail.taskId) {
-                this.selectedTask.status = detail.status;
-                this.selectedTask.completed = detail.completed;
-            }
-            
-            // 2. Update Counters (Using derived previousCompleted)
-            // If it WASN'T completed and NOW IS completed -> Pending--, Completed++
-            if (!previousCompleted && detail.completed) {
-                this.pendingCount = Math.max(0, this.pendingCount - 1);
-                this.completedCount++;
-            }
-            // If it WAS completed and NOW IS NOT completed -> Pending++, Completed--
-            else if (previousCompleted && !detail.completed) {
-                this.pendingCount++;
-                this.completedCount = Math.max(0, this.completedCount - 1);
-            }
-        }
-    }"
+    <div class="py-8 bg-white min-h-screen" x-data="employeeTaskTracking({{ json_encode($employeeTaskData) }})"
     @task-status-updated.window="handleStatusUpdate($event.detail)"
     >
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
@@ -459,4 +159,256 @@
     @include('tareas.partials.task-details-modal')
     </div>
 
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('employeeTaskTracking', (config) => ({
+                currentUser: config.currentUser,
+                pendingCount: config.pendingCount,
+                completedCount: config.completedCount,
+                startDate: '',
+                endDate: '',
+                searchQuery: '',
+                selectedTask: null,
+                isDetailsModalOpen: false,
+                currentTab: 'details',
+                isEditingTask: false,
+                isSavingTask: false,
+                editTaskData: {
+                    id: null,
+                    title: '',
+                    description: '',
+                    priority: 'low',
+                    end_date: ''
+                },
+                isUploadingFile: false,
+                newCommentText: '',
+                isSubmittingComment: false,
+                editingCommentId: null,
+                editCommentContent: '',
+                deleteConfirmation: {
+                    isOpen: false,
+                    type: null,
+                    id: null
+                },
+                updatedTaskStates: {},
+
+                matches(task) {
+                    const taskDate = task.date;
+                    const taskTitle = task.title.toLowerCase();
+                    const q = this.searchQuery.toLowerCase();
+                    if (this.searchQuery && !taskTitle.includes(q)) return false;
+                    if (!this.startDate && !this.endDate) return true;
+                    if (this.startDate && taskDate < this.startDate) return false;
+                    if (this.endDate && taskDate > this.endDate) return false;
+                    return true;
+                },
+
+                openDetailsModal(task, tab = 'details') {
+                    if (this.updatedTaskStates[task.id]) {
+                        task.status = this.updatedTaskStates[task.id].status;
+                        task.completed = this.updatedTaskStates[task.id].completed;
+                    }
+                    this.selectedTask = task;
+                    this.currentTab = tab;
+                    this.isDetailsModalOpen = true;
+                    this.isEditingTask = false;
+                },
+
+                startEditingTask() {
+                    if (!this.selectedTask) return;
+                    this.editTaskData = {
+                        id: this.selectedTask.id,
+                        title: this.selectedTask.title,
+                        description: this.selectedTask.description,
+                        priority: this.selectedTask.priority,
+                        end_date: this.selectedTask.end_date ? this.selectedTask.end_date.split('T')[0] : ''
+                    };
+                    this.isEditingTask = true;
+                },
+
+                async saveTask() {
+                    this.isSavingTask = true;
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    this.selectedTask.title = this.editTaskData.title;
+                    this.selectedTask.description = this.editTaskData.description;
+                    this.selectedTask.priority = this.editTaskData.priority;
+                    this.selectedTask.end_date = this.editTaskData.end_date;
+                    this.isSavingTask = false;
+                    this.isEditingTask = false;
+                },
+
+                formatDate(dateStr) {
+                    if (!dateStr) return '';
+                    const parts = dateStr.split('T')[0].split('-');
+                    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                },
+
+                async submitComment() {
+                    if (!this.newCommentText.trim()) return;
+                    this.isSubmittingComment = true;
+                    const taskId = this.selectedTask.id;
+                    const content = this.newCommentText;
+                    const tempId = 'temp_' + Date.now();
+                    const optimisticComment = {
+                        id: tempId,
+                        content: content,
+                        created_at: new Date().toISOString(),
+                        user: this.currentUser,
+                        task_id: taskId
+                    };
+                    if (!this.selectedTask.comments) this.selectedTask.comments = [];
+                    this.selectedTask.comments.unshift(optimisticComment);
+                    this.newCommentText = '';
+                    try {
+                        const response = await fetch(`/empleados/tareas/${taskId}/comment`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({ content: content })
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            const index = this.selectedTask.comments.findIndex(c => c.id === tempId);
+                            if (index !== -1) this.selectedTask.comments[index] = data.comment;
+                        } else {
+                            this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
+                            alert('Error al enviar el comentario.');
+                        }
+                    } catch (error) {
+                        this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
+                        alert('Error de conexión.');
+                    } finally {
+                        this.isSubmittingComment = false;
+                    }
+                },
+
+                startEditingComment(comment) {
+                    this.editingCommentId = comment.id;
+                    this.editCommentContent = comment.content;
+                },
+
+                async updateComment(commentId) {
+                    if (!this.editCommentContent.trim()) return;
+                    try {
+                        const response = await fetch(`/empleados/tareas/comment/${commentId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({ content: this.editCommentContent })
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            const index = this.selectedTask.comments.findIndex(c => c.id === commentId);
+                            if (index !== -1) this.selectedTask.comments[index] = data.comment;
+                            this.editingCommentId = null;
+                        } else {
+                            alert('Error al actualizar.');
+                        }
+                    } catch (error) {
+                        alert('Error de conexión');
+                    }
+                },
+
+                confirmDeleteComment(id) {
+                    this.deleteConfirmation = { isOpen: true, type: 'comment', id: id };
+                },
+
+                async uploadFile(file) {
+                    if (!file || this.isUploadingFile) return;
+                    this.isUploadingFile = true;
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    try {
+                        const response = await fetch(`/empleados/tareas/${this.selectedTask.id}/files`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: formData
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
+                            this.selectedTask.attachments.unshift(data.attachment);
+                        } else {
+                            const data = await response.json();
+                            alert(data.message || 'Error al subir el archivo.');
+                        }
+                    } catch (error) {
+                        alert('Error de conexión.');
+                    } finally {
+                        this.isUploadingFile = false;
+                    }
+                },
+
+                confirmDeleteFile(id) {
+                    this.deleteConfirmation = { isOpen: true, type: 'file', id: id };
+                },
+
+                async performDelete() {
+                    const { type, id } = this.deleteConfirmation;
+                    this.deleteConfirmation.isOpen = false;
+                    if (type === 'file') {
+                        try {
+                            const response = await fetch(`/tasks/attachments/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                }
+                            });
+                            if (response.ok) {
+                                this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
+                            } else {
+                                const data = await response.json();
+                                alert(data.message || 'Error al eliminar archivo');
+                            }
+                        } catch (e) { alert('Error de conexión'); }
+                    } else if (type === 'comment') {
+                        try {
+                            const response = await fetch(`/empleados/tareas/comment/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                }
+                            });
+                            if (response.ok) {
+                                this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
+                            } else {
+                                alert('Error al eliminar comentario');
+                            }
+                        } catch (e) { alert('Error de conexión'); }
+                    }
+                },
+
+                handleStatusUpdate(detail) {
+                    let previousCompleted = detail.wasCompleted;
+                    if (this.updatedTaskStates[detail.taskId]) {
+                        previousCompleted = this.updatedTaskStates[detail.taskId].completed;
+                    }
+                    this.updatedTaskStates[detail.taskId] = {
+                        status: detail.status,
+                        completed: detail.completed
+                    };
+                    if (this.selectedTask && this.selectedTask.id == detail.taskId) {
+                        this.selectedTask.status = detail.status;
+                        this.selectedTask.completed = detail.completed;
+                    }
+                    if (!previousCompleted && detail.completed) {
+                        this.pendingCount = Math.max(0, this.pendingCount - 1);
+                        this.completedCount++;
+                    } else if (previousCompleted && !detail.completed) {
+                        this.pendingCount++;
+                        this.completedCount = Math.max(0, this.completedCount - 1);
+                    }
+                }
+            }));
+        });
+    </script>
 </x-app-layout>

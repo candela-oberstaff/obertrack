@@ -28,6 +28,16 @@
                         </svg>
                     </a>
                     <span class="text-sm">Semana del {{ $weekStart->format('Y-m-d') }} al {{ $weekEnd->format('Y-m-d') }}</span>
+                    <div class="relative flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
+                        <input type="date" 
+                               value="{{ $weekStart->format('Y-m-d') }}"
+                               onchange="window.location.href = '{{ route('reportes.show', ['user' => $professional->id]) }}?week=' + this.value"
+                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                               title="Seleccionar fecha para ir a esa semana">
+                        <svg class="w-5 h-5 text-[#22A9C8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
                     <a href="{{ route('reportes.show', ['user' => $professional->id, 'week' => $weekStart->copy()->addWeek()->format('Y-m-d')]) }}" class="hover:opacity-75">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/>

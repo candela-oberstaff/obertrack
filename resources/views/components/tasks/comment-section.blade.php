@@ -6,7 +6,7 @@
                     <div class="space-y-1">
                         <p>
                             <span class="font-medium text-gray-900">{{ $comment->user->name }}:</span>
-                            <span id="commentContent-{{ $comment->id }}" class="text-gray-700">{{ $comment->content }}</span>
+                            <span id="commentContent-{{ $comment->id }}" class="text-gray-700 break-words whitespace-pre-line">{{ $comment->content }}</span>
                         </p>
                         <p class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</p>
                     </div>
@@ -30,7 +30,7 @@
     </div>
     <form onsubmit="addTaskComment(event, {{ $task->id }})" class="mt-2">
         @csrf
-        <textarea id="newComment-{{ $task->id }}" rows="2" class="w-full px-3 py-2 text-sm border rounded-md resize-none focus:ring-primary focus:border-primary" placeholder="Añadir un comentario..."></textarea>
+        <textarea id="newComment-{{ $task->id }}" rows="2" maxlength="500" class="w-full px-3 py-2 text-sm border rounded-md resize-none focus:ring-primary focus:border-primary" placeholder="Añadir un comentario..."></textarea>
         <button type="submit" class="mt-2 w-full px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
             Comentar
         </button>

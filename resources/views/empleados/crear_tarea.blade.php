@@ -25,11 +25,11 @@
                                 @csrf
                                 <div>
                                     <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Título</label>
-                                    <input type="text" id="title" name="title" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" value="{{ old('title') }}">
+                                    <input type="text" id="title" name="title" required maxlength="255" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm" value="{{ old('title') }}">
                                 </div>
                                 <div>
                                     <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</label>
-                                    <textarea id="description" name="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">{{ old('description') }}</textarea>
+                                    <textarea id="description" name="description" rows="3" maxlength="1000" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm">{{ old('description') }}</textarea>
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>

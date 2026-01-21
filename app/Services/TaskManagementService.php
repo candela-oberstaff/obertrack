@@ -106,7 +106,17 @@ class TaskManagementService
         unset($data['assignees']);
         unset($data['employee_id']);
 
+        // Detect status or completion changes for notification
+        $oldStatus = $task->status;
+        $oldCompleted = $task->completed;
+
         $task->update($data);
+
+        // Notify if status or completion changed
+        if (($task->status !== $oldStatus || $task->completed !== $oldCompleted) && Auth::user()->tipo_usuario === 'empleado') {
+            $this->notifyClientOfStatusChange($task, $oldStatus);
+        }
+
         return $task;
     }
 
@@ -148,9 +158,10 @@ class TaskManagementService
             
             Log::info('Current task data: ' . json_encode($task->toArray()));
 
-            $newStatus = !$task->completed;
+            $oldStatus = $task->status;
+            $newValue = !$task->completed;
             $result = $task->update([
-                'completed' => $newStatus ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false')
+                'completed' => $newValue ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false')
             ]);
 
             Log::info('Update result: ' . ($result ? 'true' : 'false'));
@@ -158,6 +169,11 @@ class TaskManagementService
 
             if (!$result) {
                 throw new \Exception('Failed to update task');
+            }
+
+            // Notify if changed by an employee
+            if (Auth::user()->tipo_usuario === 'empleado') {
+                $this->notifyClientOfStatusChange($task, $oldStatus);
             }
 
             return [
@@ -170,6 +186,55 @@ class TaskManagementService
             Log::error($e->getTraceAsString());
             
             throw $e;
+        }
+    }
+
+    /**
+     * Notify the client (employer) when an employee updates a task status
+     */
+    public function notifyClientOfStatusChange(Task $task, $oldStatus)
+    {
+        $user = Auth::user();
+        
+        // 1. Determine the recipient (Client/Employer)
+        // Usually the employer of the person who updated it
+        $recipient = $user->empleador;
+        
+        if (!$recipient || !$recipient->email) {
+             // Fallback to task creator if they are an employer
+             $creator = $task->createdBy;
+             if ($creator && $creator->tipo_usuario === 'empleador') {
+                 $recipient = $creator;
+             }
+        }
+
+        if ($recipient && $recipient->email) {
+            try {
+                $statusLabels = [
+                    Task::STATUS_TODO => 'Por hacer',
+                    Task::STATUS_IN_PROGRESS => 'En proceso',
+                    Task::STATUS_COMPLETED => 'Finalizado',
+                ];
+
+                $brevoService = app(\App\Services\BrevoEmailService::class);
+                $brevoService->sendTaskStatusNotification(
+                    $recipient->email,
+                    $recipient->name,
+                    [
+                        'id' => $task->id,
+                        'title' => $task->title,
+                        'status_label' => $statusLabels[$task->status] ?? ($task->completed ? 'Finalizado' : 'En proceso'),
+                        'previous_status_label' => $statusLabels[$oldStatus] ?? 'Anterior',
+                        'updated_by' => $user->name,
+                        'completed' => $task->completed
+                    ]
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to send task status update notification', [
+                    'task_id' => $task->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
         }
     }
 

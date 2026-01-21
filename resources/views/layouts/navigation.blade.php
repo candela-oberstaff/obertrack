@@ -32,7 +32,7 @@
                 @elseif(auth()->user()->is_manager)
                     <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         <span class="flex items-center gap-2">
-                            Mis tareas
+                            Mis horas
                             <span class="px-2 py-0.5 bg-primary text-white text-xs rounded-full">Manager</span>
                         </span>
                     </a>
@@ -40,7 +40,10 @@
                         Monitoreo
                     </a>
                     <a href="{{ route('empleadores.tareas-asignadas') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleadores.tareas-asignadas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
-                        Tareas
+                        Asignar tareas
+                    </a>
+                    <a href="{{ route('empleados.tasks.index') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleados.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                        Mis tareas
                     </a>
 
 
@@ -284,11 +287,19 @@
                     <x-responsive-nav-link :href="route('empleador.dashboard')" :active="request()->routeIs('empleador.dashboard')">
                         Monitoreo
                     </x-responsive-nav-link>
-                @endif
 
-                <x-responsive-nav-link :href="route('empleadores.tareas-asignadas')" :active="request()->routeIs('empleadores.tareas-asignadas')">
-                    Tareas asignadas
-                </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('empleadores.tareas-asignadas')" :active="request()->routeIs('empleadores.tareas-asignadas')">
+                        Asignar tareas
+                    </x-responsive-nav-link>
+
+                    <x-responsive-nav-link :href="route('empleados.tasks.index')" :active="request()->routeIs('empleados.tasks.index')">
+                        Mis tareas
+                    </x-responsive-nav-link>
+                @else
+                    <x-responsive-nav-link :href="route('empleadores.tareas-asignadas')" :active="request()->routeIs('empleadores.tareas-asignadas')">
+                        Tareas asignadas
+                    </x-responsive-nav-link>
+                @endif
                 
 
             @endif

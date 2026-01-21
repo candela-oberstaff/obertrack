@@ -54,7 +54,7 @@ class EmployeeTaskController extends Controller
         }
 
         $request->validate([
-            'content' => 'required|string'
+            'content' => 'required|string|max:500'
         ]);
 
         $comment = new Comment([
@@ -77,7 +77,7 @@ class EmployeeTaskController extends Controller
         }
 
         $request->validate([
-            'content' => 'required|string'
+            'content' => 'required|string|max:500'
         ]);
 
         $comment->update(['content' => $request->content]);
@@ -108,13 +108,9 @@ class EmployeeTaskController extends Controller
             abort(403);
         }
 
-        $newValue = !$task->completed;
-        $task->update(['completed' => $newValue ? \Illuminate\Support\Facades\DB::raw('true') : \Illuminate\Support\Facades\DB::raw('false')]);
+        $result = app(\App\Services\TaskManagementService::class)->toggleCompletion($task->id);
 
-        return response()->json([
-            'success' => true,
-            'completed' => $task->completed
-        ]);
+        return response()->json($result);
     }
 
     public function uploadFile(Request $request, Task $task)

@@ -18,10 +18,10 @@ class EmployerTaskController extends Controller
         private \App\Services\TaskCommentService $taskCommentService
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
-        $teamTasks = $this->taskManagementService->getCompanyTasks($user)->values();
+        $teamTasks = $this->taskManagementService->getCompanyTasks($user, $request->all())->values();
 
         // 2. Employees (needed for modals and dropdowns)
         $ownerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
@@ -45,7 +45,7 @@ class EmployerTaskController extends Controller
     {
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:1000',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'priority' => 'required|in:low,medium,high,urgent',
@@ -74,7 +74,7 @@ class EmployerTaskController extends Controller
 
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:1000',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'priority' => 'required|in:low,medium,high,urgent',
@@ -111,7 +111,7 @@ class EmployerTaskController extends Controller
     public function addComment(Request $request, $taskId)
     {
         $validatedData = $request->validate([
-            'content' => 'required|string',
+            'content' => 'required|string|max:500',
         ]);
 
         $comment = $this->taskCommentService->addComment($taskId, $validatedData['content']);
@@ -137,7 +137,7 @@ class EmployerTaskController extends Controller
     public function updateComment(Request $request, $taskId, $commentId)
     {
         $validatedData = $request->validate([
-            'content' => 'required|string',
+            'content' => 'required|string|max:500',
         ]);
 
         $comment = $this->taskCommentService->updateComment($commentId, $validatedData['content']);

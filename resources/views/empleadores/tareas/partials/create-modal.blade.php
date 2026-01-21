@@ -52,7 +52,7 @@
                 <!-- Row 1: Title & Priority -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                        <input type="text" name="title" required placeholder="Título de la tarea" class="w-full bg-gray-50 border-none rounded-lg py-3 px-4 text-sm text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-[#22A9C8] focus:bg-white transition-colors">
+                        <input type="text" name="title" required maxlength="255" placeholder="Título de la tarea" class="w-full bg-gray-50 border-none rounded-lg py-3 px-4 text-sm text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-[#22A9C8] focus:bg-white transition-colors">
                     </div>
                     <div>
                         <select name="priority" required class="w-full bg-gray-50 border-none rounded-lg py-3 px-4 text-sm text-gray-700 focus:ring-2 focus:ring-[#22A9C8] focus:bg-white transition-colors">
@@ -104,7 +104,7 @@
 
                 <!-- Description -->
                 <div class="mb-8">
-                    <textarea name="description" rows="4" placeholder="Añade una descripción de la asignación" class="w-full bg-gray-50 border-none rounded-lg py-3 px-4 text-sm text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-[#22A9C8] focus:bg-white transition-colors resize-none"></textarea>
+                    <textarea name="description" rows="4" maxlength="1000" placeholder="Añade una descripción de la asignación" class="w-full bg-gray-50 border-none rounded-lg py-3 px-4 text-sm text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-[#22A9C8] focus:bg-white transition-colors resize-none"></textarea>
                 </div>
 
                 <!-- Submit Button -->

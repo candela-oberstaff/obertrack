@@ -24,7 +24,15 @@ class TaskStatusSelector extends Component
             return;
         }
 
+        // Restrict employers from changing status
+        $user = auth()->user();
+        if ($user && $user->tipo_usuario === 'empleador') {
+            $this->dispatch('notify', message: 'Solo los profesionales pueden actualizar el estado de las tareas.');
+            return;
+        }
+
         $wasCompleted = $this->task->completed;
+        $oldStatusSlug = $this->task->status;
         $this->status = $newStatus;
         
         $isNowCompleted = $newStatus === Task::STATUS_COMPLETED;
@@ -60,6 +68,16 @@ class TaskStatusSelector extends Component
             completed: $isNowCompleted,
             wasCompleted: $wasCompleted
         );
+
+        // Notify client (Employer) if changed by an employee
+        $user = auth()->user();
+        if ($user && $user->tipo_usuario === 'empleado') {
+            try {
+                app(\App\Services\TaskManagementService::class)->notifyClientOfStatusChange($this->task, $oldStatusSlug); 
+            } catch (\Exception $e) {
+                \Log::error("Failed to notify client from TaskStatusSelector: " . $e->getMessage());
+            }
+        }
     }
 
     public function toggleDropdown()

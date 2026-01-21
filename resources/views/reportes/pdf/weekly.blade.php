@@ -39,24 +39,38 @@
         <div class="meta-item"><span class="label">Empresa:</span> {{ Auth::user()->name }}</div>
     </div>
 
-    <table class="stats-grid">
+    <table class="stats-grid" style="width: 100%; border-collapse: collapse;">
         <tr>
-            <td width="33%" style="border: none; padding: 0 5px 0 0;">
+            <td width="25%" style="border: none; padding: 0 5px 10px 0;">
                 <div class="stat-box">
-                    <span class="stat-label">Total Horas de Tareas</span>
-                    <span class="stat-value">{{ $totalHours }}</span>
+                    <div class="stat-label">Total Horas</div>
+                    <div class="stat-value">{{ $totalHours }}</div>
                 </div>
             </td>
-            <td width="33%" style="border: none; padding: 0 5px;">
+            <td width="25%" style="border: none; padding: 0 5px 10px 5px;">
                 <div class="stat-box">
-                    <span class="stat-label">Ausencias</span>
-                    <span class="stat-value">{{ $absences }}</span>
+                    <div class="stat-label">Recuperadas</div>
+                    <div class="stat-value">{{ $recoveredHours }}</div>
                 </div>
             </td>
-            <td width="33%" style="border: none; padding: 0 0 0 5px;">
+            <td width="25%" style="border: none; padding: 0 5px 10px 5px;">
                 <div class="stat-box">
-                    <span class="stat-label">Tareas Incompletas</span>
-                    <span class="stat-value">{{ $overdueTasks->count() }}</span>
+                    <div class="stat-label">Ausencias</div>
+                    <div class="stat-value">{{ $absences }}</div>
+                </div>
+            </td>
+            <td width="25%" style="border: none; padding: 0 0 10px 5px;">
+                <div class="stat-box">
+                    <div class="stat-label">Tareas Inc.</div>
+                    <div class="stat-value">{{ $overdueTasks->count() }}</div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4" style="border: none; padding: 10px 0 0 0;">
+                <div class="stat-box" style="background-color: #fef2f2; border-color: #fecaca;">
+                    <span class="stat-label" style="color: #991b1b;">Horas de recuperación pendientes (TOTAL)</span>
+                    <span class="stat-value" style="color: #b91c1c;">{{ $pendingBalance }} horas</span>
                 </div>
             </td>
         </tr>

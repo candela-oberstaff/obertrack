@@ -75,11 +75,11 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="col-span-2">
                                     <label for="title{{ $tarea->id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Título</label>
-                                    <input type="text" id="title{{ $tarea->id }}" name="title" value="{{ $tarea->title }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                    <input type="text" id="title{{ $tarea->id }}" name="title" value="{{ $tarea->title }}" required maxlength="255" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                                 </div>
                                 <div class="col-span-2">
                                     <label for="description{{ $tarea->id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</label>
-                                    <textarea id="description{{ $tarea->id }}" name="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">{{ $tarea->description }}</textarea>
+                                    <textarea id="description{{ $tarea->id }}" name="description" rows="3" maxlength="1000" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">{{ $tarea->description }}</textarea>
                                 </div>
                                 <div>
                                     <label for="start_date{{ $tarea->id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha de inicio</label>
@@ -117,7 +117,7 @@
                                                 <span class="font-medium text-indigo-600 dark:text-indigo-400">{{ $comment->user->name }}</span>
                                                 <span class="text-gray-500 text-xs ml-2">{{ $comment->created_at->diffForHumans() }}</span>
                                             </p>
-                                            <p id="commentContent-{{ $comment->id }}" class="mt-1">{{ $comment->content }}</p>
+                                            <p id="commentContent-{{ $comment->id }}" class="mt-1 break-words whitespace-pre-line">{{ $comment->content }}</p>
                                             @if($comment->user_id == auth()->id())
                                                 <div class="mt-2 flex space-x-2">
                                                     <button onclick="editEmployerComment({{ $comment->id }})" class="text-primary hover:text-primary-hover dark:text-blue-400 dark:hover:text-blue-300 text-xs transition duration-150 ease-in-out">
@@ -135,7 +135,7 @@
                             <form onsubmit="addEmployerTaskComment(event, {{ $tarea->id }})" class="mt-4">
                                 @csrf
                                 <div class="flex items-start space-x-4">
-                                    <textarea id="newComment-{{ $tarea->id }}" rows="3" class="flex-grow p-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary resize-none dark:bg-gray-600 dark:border-gray-500 dark:text-white" placeholder="Añadir un comentario..."></textarea>
+                                    <textarea id="newComment-{{ $tarea->id }}" rows="3" maxlength="500" class="flex-grow p-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary resize-none dark:bg-gray-600 dark:border-gray-500 dark:text-white" placeholder="Añadir un comentario..."></textarea>
                                     <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition duration-300 ease-in-out transform hover:scale-105">
                                         <i class="fas fa-paper-plane mr-2"></i>Comentar
                                     </button>

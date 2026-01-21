@@ -29,30 +29,42 @@
 
     <table class="stats-grid" style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
         <tr>
-            <td width="50%" style="border: none; padding: 0 5px 10px 0;">
+            <td width="33.33%" style="border: none; padding: 0 5px 10px 0;">
                 <div class="stat-box">
-                    <span class="stat-label">Total Horas Aprobadas</span>
+                    <span class="stat-label">Total Aprobadas</span>
                     <span class="stat-value">{{ $totalApprovedHours }}</span>
                 </div>
             </td>
-            <td width="50%" style="border: none; padding: 0 0 10px 5px;">
+            <td width="33.33%" style="border: none; padding: 0 5px 10px 5px;">
                 <div class="stat-box">
-                    <span class="stat-label">Semanas Registradas</span>
+                    <span class="stat-label">Recuperadas (Mes)</span>
+                    <span class="stat-value">{{ $recoveredHours }}</span>
+                </div>
+            </td>
+            <td width="33.33%" style="border: none; padding: 0 0 10px 5px;">
+                <div class="stat-box">
+                    <span class="stat-label">Semanas</span>
                     <span class="stat-value">{{ count($weeksData) }}</span>
                 </div>
             </td>
         </tr>
         <tr>
-            <td width="50%" style="border: none; padding: 10px 5px 0 0;">
+            <td width="33.33%" style="border: none; padding: 10px 5px 0 0;">
                 <div class="stat-box">
                     <span class="stat-label">Ausencias (Mes)</span>
                     <span class="stat-value">{{ $absences }}</span>
                 </div>
             </td>
-            <td width="50%" style="border: none; padding: 10px 0 0 5px;">
+            <td width="33.33%" style="border: none; padding: 10px 5px 0 5px;">
                 <div class="stat-box">
-                    <span class="stat-label">Tareas Incompletas</span>
+                    <span class="stat-label">Tareas Inc.</span>
                     <span class="stat-value">{{ $overdueTasks->count() }}</span>
+                </div>
+            </td>
+            <td width="33.33%" style="border: none; padding: 10px 0 0 5px;">
+                <div class="stat-box" style="background-color: #fef2f2; border-color: #fecaca;">
+                    <span class="stat-label" style="color: #991b1b;">Horas Pendientes</span>
+                    <span class="stat-value" style="color: #b91c1c;">{{ $pendingBalance }} h</span>
                 </div>
             </td>
         </tr>

@@ -31,7 +31,7 @@
                     <div class="bg-gray-50 flex-shrink-0 border-b border-gray-100">
                         <div class="px-6 py-4 sm:px-8 flex justify-between items-start">
                             <div class="flex-1">
-                                 <h3 class="text-xl font-bold leading-6 text-[#0D1E4C]" x-text="selectedTask?.title" x-show="!isEditingTask"></h3>
+                                 <h3 class="text-xl font-bold leading-6 text-[#0D1E4C] break-words" x-text="selectedTask?.title" x-show="!isEditingTask"></h3>
                                  <p class="mt-1 text-sm text-gray-500" x-show="!isEditingTask" x-text="'Creada por: ' + (selectedTask?.createdBy?.name || selectedTask?.created_by?.name || 'Sistema')"></p>
                                  <h3 class="text-xl font-bold leading-6 text-[#0D1E4C]" x-show="isEditingTask">Editando tarea</h3>
                             </div>
@@ -110,18 +110,26 @@
                                         <p class="text-sm font-bold text-red-500" x-text="formatDate(selectedTask?.end_date)"></p>
                                     </div>
                                     <div class="bg-gray-50 p-4 rounded-2xl col-span-2">
-                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Estado / Asignados</span>
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Estado</span>
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Asignados</span>
+                                        </div>
                                         <div class="flex items-center justify-between">
                                             <div class="flex items-center gap-2">
-                                                <template x-if="selectedTask?.completed">
-                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 uppercase tracking-wider">Completada</span>
-                                                </template>
-                                                <template x-if="!selectedTask?.completed">
-                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                                                          :class="new Date(selectedTask?.end_date) < new Date() ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'"
-                                                          x-text="new Date(selectedTask?.end_date) < new Date() ? 'Vencida' : 'Pendiente'">
-                                                    </span>
-                                                </template>
+                                                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors select-none"
+                                                        :class="{
+                                                            'bg-green-100 text-green-700 border-green-200': selectedTask?.completed,
+                                                            'bg-red-100 text-red-700 border-red-200': !selectedTask?.completed && new Date(selectedTask?.end_date) < new Date(),
+                                                            'bg-yellow-100 text-yellow-700 border-yellow-200': !selectedTask?.completed && new Date(selectedTask?.end_date) >= new Date()
+                                                        }"
+                                                        >
+                                                    
+                                                    <template x-if="selectedTask?.completed">
+                                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
+                                                    </template>
+                                                    
+                                                    <span x-text="selectedTask?.completed ? 'Completada' : (new Date(selectedTask?.end_date) < new Date() ? 'Vencida' : 'Pendiente')"></span>
+                                                </div>
                                             </div>
                                             <div class="flex flex-wrap gap-2 justify-end">
                                                  <template x-for="assignee in selectedTask?.assignees" :key="assignee.id">
@@ -137,12 +145,12 @@
                             <div x-show="isEditingTask" class="space-y-6" x-cloak>
                                 <div>
                                     <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block ml-1">Título</label>
-                                    <input type="text" x-model="editTaskData.title" class="w-full bg-gray-50 border-gray-100 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#22A9C8] transition-all">
+                                    <input type="text" x-model="editTaskData.title" maxlength="255" class="w-full bg-gray-50 border-gray-100 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#22A9C8] transition-all">
                                 </div>
 
                                 <div>
                                     <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block ml-1">Descripción</label>
-                                    <textarea x-model="editTaskData.description" rows="4" class="w-full bg-gray-50 border-gray-100 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#22A9C8] transition-all resize-none"></textarea>
+                                    <textarea x-model="editTaskData.description" maxlength="1000" rows="4" class="w-full bg-gray-50 border-gray-100 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#22A9C8] transition-all resize-none"></textarea>
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-4">
@@ -213,7 +221,7 @@
                                             <!-- Edit Mode -->
                                             <template x-if="editingCommentId === comment.id">
                                                 <div class="mt-2">
-                                                    <textarea x-model="editCommentContent" class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#22A9C8] focus:border-[#22A9C8]" rows="2"></textarea>
+                                                    <textarea x-model="editCommentContent" maxlength="500" class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#22A9C8] focus:border-[#22A9C8]" rows="2"></textarea>
                                                     <div class="flex justify-end gap-2 mt-2">
                                                         <button @click="editingCommentId = null" class="text-xs text-gray-500 hover:text-gray-700">Cancelar</button>
                                                         <button @click="updateComment(comment.id)" class="text-xs bg-[#22A9C8] text-white px-3 py-1 rounded-full hover:bg-[#1B8BA6]">Guardar</button>
@@ -253,6 +261,7 @@
                                         <textarea x-model="newCommentText" 
                                                   placeholder="Escribe un comentario..." 
                                                   class="w-full text-sm border-gray-200 rounded-xl focus:ring-[#22A9C8] focus:border-[#22A9C8] resize-none py-3"
+                                                  maxlength="500"
                                                   rows="2"></textarea>
                                         <div class="flex justify-end mt-2">
                                             <button @click="submitComment()" 
