@@ -337,8 +337,8 @@
                                         <tr class="bg-gray-50/20">
                                             <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400">Profesional</th>
                                             <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Deuda Total</th>
-                                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Recuperado</th>
-                                            <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-right">Horas pendientes</th>
+                                            <th class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-center">Recuperadas</th>
+                                            <th class="px-8 py-4 text-[10px] font-black uppercase tracking-wider text-gray-400 text-right">Horas por recuperar</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-50">
@@ -797,7 +797,7 @@
                                                                         </div>
                                                                         
                                                                         <template x-if="recovery.comment">
-                                                                            <p class="text-[10px] text-gray-600 italic border-t border-gray-200 pt-2" x-text="'&quot;' + recovery.comment + '&quot;'"></p>
+                                                                            <p class="text-[10px] text-gray-600 italic border-t border-gray-200 pt-2 break-all overflow-wrap-anywhere" x-text="'&quot;' + recovery.comment + '&quot;'"></p>
                                                                         </template>
                                                                     </div>
                                                                 </template>
@@ -819,7 +819,7 @@
                                                                             <template x-for="activity in parsed.activities">
                                                                                 <li class="flex items-start gap-3">
                                                                                     <span class="w-1.5 h-1.5 rounded-full bg-[#22A9C8] mt-1.5 flex-shrink-0"></span>
-                                                                                    <span class="text-sm text-gray-700 font-medium" x-text="activity"></span>
+                                                                                    <span class="text-sm text-gray-700 font-medium break-all overflow-wrap-anywhere" x-text="activity"></span>
                                                                                 </li>
                                                                             </template>
                                                                         </ul>
@@ -827,7 +827,7 @@
                                                                     <template x-if="parsed.summary">
                                                                         <div :class="parsed.activities.length > 0 ? 'mt-4 pt-4 border-t border-gray-100' : ''">
                                                                             <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Resumen adicional</p>
-                                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line break-words" x-text="parsed.summary"></p>
+                                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line break-all overflow-wrap-anywhere" x-text="parsed.summary"></p>
                                                                         </div>
                                                                     </template>
                                                                 </div>
