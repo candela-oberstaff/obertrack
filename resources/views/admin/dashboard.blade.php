@@ -13,21 +13,49 @@
             
             <!-- Overall Stats -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 md:p-6 border-l-4 border-blue-500">
+                <div class="bg-white overflow-visible shadow-sm sm:rounded-lg p-4 md:p-6 border-l-4 border-blue-500 relative group cursor-help">
                     <div class="text-[10px] md:text-sm font-medium text-gray-500 uppercase tracking-wider">Total Profesionales</div>
                     <div class="text-xl md:text-2xl font-bold">{{ $stats['total_professionals'] }}</div>
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                bg-gray-900 text-white text-[10px] rounded-lg
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                        Número total de profesionales registrados
+                    </div>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 md:p-6 border-l-4 border-indigo-500">
+                <div class="bg-white overflow-visible shadow-sm sm:rounded-lg p-4 md:p-6 border-l-4 border-indigo-500 relative group cursor-help">
                     <div class="text-[10px] md:text-sm font-medium text-gray-500 uppercase tracking-wider">Total Empresas</div>
                     <div class="text-xl md:text-2xl font-bold">{{ $stats['total_companies'] }}</div>
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                bg-gray-900 text-white text-[10px] rounded-lg
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                        Número total de empresas registradas
+                    </div>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 md:p-6 border-l-4 border-yellow-500">
+                <div class="bg-white overflow-visible shadow-sm sm:rounded-lg p-4 md:p-6 border-l-4 border-yellow-500 relative group cursor-help">
                     <div class="text-[10px] md:text-sm font-medium text-gray-500 uppercase tracking-wider">Alertas Amarillas</div>
                     <div class="text-xl md:text-2xl font-bold">{{ $stats['yellow_alerts'] }}</div>
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                bg-gray-900 text-white text-[10px] rounded-lg
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                        Número de profesionales con inactividad de 1 día
+                    </div>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 md:p-6 border-l-4 border-red-500">
+                <div class="bg-white overflow-visible shadow-sm sm:rounded-lg p-4 md:p-6 border-l-4 border-red-500 relative group cursor-help">
                     <div class="text-[10px] md:text-sm font-medium text-gray-500 uppercase tracking-wider">Alertas Rojas</div>
                     <div class="text-xl md:text-2xl font-bold">{{ $stats['red_alerts'] }}</div>
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                bg-gray-900 text-white text-[10px] rounded-lg
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                        Número de profesionales con inactividad de 2 o más días
+                    </div>
                 </div>
             </div>
 
@@ -102,6 +130,24 @@
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                         </div>
                         Comunicación Masiva
+                        <span class="relative group inline-flex items-center ml-1 cursor-help">
+    <span class=" rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z"/>
+        </svg>
+    </span>
+
+    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                px-3 py-2 bg-gray-900 text-white text-[10px]
+                rounded-lg opacity-0 group-hover:opacity-100
+                transition-opacity duration-200
+                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+       Envía correos segmentados a profesionales o empresas según su estado o selección específica 
+    </div>
+</span>
                     </div>
                     <div class="p-8">
                         <!-- Quill Styles -->

@@ -232,7 +232,26 @@
             <!-- Header -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div class="flex items-center gap-4">
-                     <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1E293B]">Monitoreo de horas</h2>
+                     <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1E293B]">Monitoreo de horas
+                          <span class="relative group inline-flex items-center ml-1 cursor-help">
+    <span class=" rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z"/>
+        </svg>
+    </span>
+
+    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                px-3 py-2 bg-gray-900 text-white text-[10px]
+                rounded-lg opacity-0 group-hover:opacity-100
+                transition-opacity duration-200
+                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+         Vista general del registro, aprobación y control de horas trabajadas
+    </div>
+</span>
+                     </h2>
                 </div>
             </div>
 
@@ -318,7 +337,26 @@
 
             <!-- Recovery Overview Section (Informativo Detallado) -->
             <div class="mb-12">
-                <h3 class="text-[#22A9C8] font-medium text-base mb-6">Detalle de Recuperación y Deudas</h3>
+                <h3 class="text-[#22A9C8] font-medium text-base mb-6">Detalle de Recuperación y Deudas
+                     <span class="relative group inline-flex items-center ml-1 cursor-help">
+    <span class=" rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z"/>
+        </svg>
+    </span>
+
+    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                px-3 py-2 bg-gray-900 text-white text-[10px]
+                rounded-lg opacity-0 group-hover:opacity-100
+                transition-opacity duration-200
+                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+         Desglose del estado de recuperación de horas por cada profesional
+    </div>
+</span>
+                </h3>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <!-- Left: Debt Summary (2/3) -->
@@ -461,7 +499,26 @@
 
             <!-- Daily View Section -->
             <div class="mb-8">
-                <h3 class="text-lg font-bold text-gray-900 mb-6">Vistazo diario</h3>
+                <h3 class="text-lg font-bold text-gray-900 mb-6">Vistazo diario
+                     <span class="relative group inline-flex items-center ml-1 cursor-help">
+    <span class=" rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z"/>
+        </svg>
+    </span>
+
+    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                px-3 py-2 bg-gray-900 text-white text-[10px]
+                rounded-lg opacity-0 group-hover:opacity-100
+                transition-opacity duration-200
+                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+         Calendario para revisar y aprobar horas registradas y pendientes
+    </div>
+</span>
+                </h3>
                 
                 <!-- Month Navigation -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">

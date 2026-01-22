@@ -3,6 +3,24 @@
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Plantillas de Email') }}
+                <span class="relative group inline-flex items-center ml-1 cursor-help">
+    <span class=" rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z"/>
+        </svg>
+    </span>
+
+    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                px-3 py-2 bg-gray-900 text-white text-[10px]
+                rounded-lg opacity-0 group-hover:opacity-100
+                transition-opacity duration-200
+                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+         Gestiona formatos predefinidos para tus comunicaciones masivas
+    </div>
+</span>
             </h2>
             <a href="{{ route('admin.email-templates.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">
                 Nueva Plantilla

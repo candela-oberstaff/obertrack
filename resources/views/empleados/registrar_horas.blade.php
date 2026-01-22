@@ -34,7 +34,26 @@
             <div class="sticky top-0 z-30 bg-white/95 backdrop-blur shadow-sm border-b border-gray-100 py-4 mb-8 -mx-4 px-8 sm:mx-0 sm:px-0 sm:rounded-b-xl transition-all duration-300">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Notificar tareas</h1>
+                        <h1 class="text-2xl font-bold text-gray-900">Notificar tareas
+                              <span class="relative group inline-flex items-center ml-1 cursor-help">
+    <span class=" rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z"/>
+        </svg>
+    </span>
+
+    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                px-3 py-2 bg-gray-900 text-white text-[10px]
+                rounded-lg opacity-0 group-hover:opacity-100
+                transition-opacity duration-200
+                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+         Envía notificaciones y actualizaciones sobre tareas
+    </div>
+</span>
+                        </h1>
                         <p class="text-primary font-medium text-xs">Total de tareas notificadas hasta el momento</p>
                     </div>
                     {{-- Mini Stats --}}
@@ -117,7 +136,26 @@
             {{-- Calendar Section --}}
             <div class="mx-4 sm:mx-0">
                 <div class="flex justify-between items-end mb-4">
-                     <h3 class="text-lg font-bold text-gray-800">Vistazo diario</h3>
+                     <h3 class="text-lg font-bold text-gray-800">Vistazo diario
+                          <span class="relative group inline-flex items-center ml-1 cursor-help">
+    <span class=" rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z"/>
+        </svg>
+    </span>
+
+    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                px-3 py-2 bg-gray-900 text-white text-[10px]
+                rounded-lg opacity-0 group-hover:opacity-100
+                transition-opacity duration-200
+                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+         Calendario para ver tareas, horas registradas y ausencias
+    </div>
+</span>
+                     </h3>
                      <div class="flex items-center bg-gray-100 rounded-lg p-1">
                         <a href="{{ route('empleado.registrar-horas', ['month' => $currentMonth->copy()->subMonth()->format('Y-m-d')]) }}" class="p-1 hover:bg-white rounded text-gray-500 hover:text-primary transition shadow-sm">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>

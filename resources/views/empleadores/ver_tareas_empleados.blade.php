@@ -3,6 +3,24 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 max-w-7xl mx-auto px-4 sm:px-0">
              <h2 class="text-2xl sm:text-3xl font-extrabold text-[#0D1E4C] leading-tight">
                 {{ __('Seguimiento de tareas') }}
+                  <span class="relative group inline-flex items-center ml-1 cursor-help">
+    <span class=" rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z"/>
+        </svg>
+    </span>
+
+    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                px-3 py-2 bg-gray-900 text-white text-[10px]
+                rounded-lg opacity-0 group-hover:opacity-100
+                transition-opacity duration-200
+                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+         Monitoreo y control de tareas asignadas al equipo
+    </div>
+</span>
             </h2>
         </div>
     </x-slot>

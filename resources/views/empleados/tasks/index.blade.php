@@ -3,6 +3,24 @@
         <div class="flex justify-between items-center max-w-7xl mx-auto px-4 sm:px-0">
              <h2 class="font-bold text-2xl md:text-3xl text-gray-800 dark:text-gray-800 leading-tight">
                 {{ __('Seguimiento de tareas') }}
+                 <span class="relative group inline-flex items-center ml-1 cursor-help">
+    <span class=" rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z"/>
+        </svg>
+    </span>
+
+    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                px-3 py-2 bg-gray-900 text-white text-[10px]
+                rounded-lg opacity-0 group-hover:opacity-100
+                transition-opacity duration-200
+                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+         Visualiza y gestiona tus tareas asignadas
+    </div>
+</span>
             </h2>
         </div>
     </x-slot>
@@ -30,7 +48,26 @@
 
             {{-- Vistazo General Cards --}}
             <section class="px-2 sm:px-0">
-                <h3 class="text-primary font-medium text-base md:text-lg mb-4">Vistazo general</h3>
+                <h3 class="text-primary font-medium text-base md:text-lg mb-4">Vistazo general
+                     <span class="relative group inline-flex items-center ml-1 cursor-help">
+    <span class=" rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z"/>
+        </svg>
+    </span>
+
+    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                px-3 py-2 bg-gray-900 text-white text-[10px]
+                rounded-lg opacity-0 group-hover:opacity-100
+                transition-opacity duration-200
+                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+         Resumen de tus tareas pendientes y completadas
+    </div>
+</span>
+                </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                     {{-- Pending Tasks Card --}}
                     <div class="bg-gray-100 rounded-3xl p-6 md:p-8 flex justify-between items-center shadow-none">
@@ -61,7 +98,26 @@
 
             {{-- Team Assignments Table --}}
             <section class="px-2 sm:px-0">
-                <h3 class="text-primary font-medium text-base md:text-lg mb-4">Mis asignaciones</h3>
+                <h3 class="text-primary font-medium text-base md:text-lg mb-4">Mis asignaciones
+                     <span class="relative group inline-flex items-center ml-1 cursor-help">
+    <span class=" rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 transition">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-4 h-4"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M12 21a9 9 0 100-18 9 9 0 000 18z"/>
+        </svg>
+    </span>
+
+    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                px-3 py-2 bg-gray-900 text-white text-[10px]
+                rounded-lg opacity-0 group-hover:opacity-100
+                transition-opacity duration-200
+                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+         Listado detallado de todas tus tareas
+    </div>
+</span>
+                </h3>
                 
                 {{-- Date Filters --}}
                 <div class="flex flex-col sm:flex-row items-center gap-4 mb-6">
