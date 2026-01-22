@@ -1,9 +1,9 @@
 @props(['unreadCount' => 0, 'recentTasks' => []])
 
-<div x-data="{ open: false }" class="relative">
+<div x-data="{ notificationOpen: false }" class="relative">
     <!-- Notification Bell Button -->
     <button 
-        @click="open = !open" 
+        @click="notificationOpen = !notificationOpen" 
         class="relative p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
         :class="{ 'animate-wiggle': {{ $unreadCount > 0 ? 'true' : 'false' }} }"
     >
@@ -20,16 +20,17 @@
 
     <!-- Notification Dropdown -->
     <div 
-        x-show="open" 
-        @click.away="open = false"
+        x-show="notificationOpen" 
+        @click.away="notificationOpen = false"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 transform scale-95"
         x-transition:enter-end="opacity-100 transform scale-100"
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100 transform scale-100"
         x-transition:leave-end="opacity-0 transform scale-95"
-        class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 overflow-hidden border border-gray-100"
+        x-cloak
         style="display: none;"
+        class="fixed sm:absolute left-0 right-0 sm:left-auto sm:right-0 top-16 sm:top-auto mt-0 sm:mt-2 w-full sm:w-80 max-w-sm mx-auto sm:mx-0 bg-white rounded-lg shadow-xl z-[9999] overflow-hidden border border-gray-100 px-4 sm:px-0"
     >
         <!-- Header -->
         <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-gray-100">

@@ -4,8 +4,6 @@ import 'intro.js/minified/introjs.min.css';
 
 window.introJs = introJs;
 
-import Alpine from 'alpinejs';
+// Alpine.js is automatically included by Livewire v3
+// No need to import it separately to avoid "multiple instances" error
 
-window.Alpine = Alpine;
-
-Alpine.start();

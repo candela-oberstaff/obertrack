@@ -140,7 +140,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="p-6 text-center text-gray-500">No tienes asignaciones en equipo.</td>
+                                        <td colspan="6" class="p-6 text-center text-gray-500">No tienes tareas nuevas.</td>
                                     </tr>
                                 @endforelse
                                 <!-- Empty state when filtered -->

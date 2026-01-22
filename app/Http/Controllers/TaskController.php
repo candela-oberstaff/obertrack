@@ -47,12 +47,16 @@ class TaskController extends Controller
             }
             return back()->with('error', 'No tienes permiso para editar esta tarea.');
         }
-        try {
 
+        try {
             $this->taskManagementService->updateTask($task, $request->validated());
             
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => true, 'message' => 'Tarea actualizada exitosamente.', 'task' => $task->fresh(['comments.user', 'attachments.uploader', 'assignees', 'createdBy'])]);
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Tarea actualizada exitosamente.', 
+                    'task' => $task->fresh(['comments.user', 'attachments.uploader', 'assignees', 'createdBy'])
+                ]);
             }
             return back()->with('success', 'Tarea actualizada exitosamente.');
         } catch (\Throwable $e) {
@@ -63,6 +67,7 @@ class TaskController extends Controller
         }
     }
 
+    // Syntax fix verification
     public function destroy(Request $request, $taskId)
     {
         try {

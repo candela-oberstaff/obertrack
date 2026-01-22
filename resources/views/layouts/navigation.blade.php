@@ -336,7 +336,9 @@
                 @endif
 
 
-            @if(auth()->user()->tipo_usuario === 'empleado')
+
+
+            @if(auth()->user()->tipo_usuario === 'empleado' && !auth()->user()->is_manager)
                 <x-responsive-nav-link :href="route('whatsapp.chat')" :active="request()->routeIs('whatsapp.chat')">
                     <div class="flex items-center gap-3">
                         <svg class="w-5 h-5 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24">
