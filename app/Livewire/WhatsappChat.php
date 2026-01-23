@@ -23,6 +23,7 @@ class WhatsappChat extends Component
     public $messageText = '';
     public $attachment;
     public $startTime = 0;
+    public $qrScanned = false;
     
     // UI States
     public $isLoadingContact = false;
@@ -85,14 +86,33 @@ class WhatsappChat extends Component
         $this->sessionStatus = $newStatus;
 
         if ($this->sessionStatus === 'SCAN_QR_CODE') {
-            $this->qrCodeBase64 = $this->wahaService->getQrCode($this->getSessionName());
+            $newQr = $this->wahaService->getQrCode($this->getSessionName());
+            if ($newQr) {
+                $this->qrCodeBase64 = $newQr;
+                $this->qrScanned = false;
+            } else {
+                // If status is SCAN_QR_CODE but we have no QR, it might be scanned
+                // or just loading. If we had a QR before, then it's scanned.
+                if ($this->qrCodeBase64) {
+                    $this->qrCodeBase64 = null;
+                    $this->qrScanned = true;
+                    \Log::info("WAHA: QR Code disappeared while in SCAN_QR_CODE status. Marking as scanned.");
+                }
+            }
         } elseif ($this->sessionStatus === 'WORKING') {
             // Clear QR code to trigger UI update
             $this->qrCodeBase64 = null;
+            $this->qrScanned = false;
             $this->loadContacts();
-        } else {
-            // Clear QR for any other status
+        } elseif ($this->sessionStatus === 'AUTHENTICATING') {
+            // QR was scanned, now authenticating
             $this->qrCodeBase64 = null;
+            $this->qrScanned = true;
+            \Log::info("WAHA: Status is AUTHENTICATING. Marking as scanned.");
+        } else {
+            // Clear QR for any other status (STOPPED, STARTING, FAILED)
+            $this->qrCodeBase64 = null;
+            $this->qrScanned = false;
         }
     }
 
@@ -125,6 +145,8 @@ class WhatsappChat extends Component
         \Log::info("WAHA: Performing aggressive logout (Delete Session) for " . $this->getSessionName());
         $this->wahaService->deleteSession($this->getSessionName());
         $this->sessionStatus = 'STOPPED';
+        $this->qrCodeBase64 = null;
+        $this->qrScanned = false;
         $this->contacts = [];
         $this->selectedContactId = null;
         $this->messages = [];
@@ -180,6 +202,14 @@ class WhatsappChat extends Component
 
     public function selectContact($contactId)
     {
+        // Refresh session status before doing anything
+        $this->checkSessionStatus();
+        
+        if ($this->sessionStatus !== 'WORKING') {
+            $this->addError('session', 'La sesión de WhatsApp no está activa. Por favor, escanea el código QR de nuevo.');
+            return;
+        }
+
         $this->isLoadingContact = true;
         
         $contact = $this->contacts->firstWhere('id', $contactId);
@@ -194,10 +224,41 @@ class WhatsappChat extends Component
         $phone = preg_replace('/[^0-9]/', '', $contact->phone_number);
 
         // Resolve correct WhatsApp ID using WAHA check-exists
-        // This handles Argentina numbers (549 vs 54) and ensures we have a valid ID.
+        // Preliminary check
         $checkData = $this->wahaService->checkNumberStatus($this->getSessionName(), $phone);
+        $isValid = $checkData && (isset($checkData['id']['_serialized']) || isset($checkData['id']));
         
-        if ($checkData && (isset($checkData['id']['_serialized']) || isset($checkData['id']))) {
+        // --- Argentina (54) Special Logic: Double Check ---
+        if (!$isValid && str_starts_with($phone, '54')) {
+            \Log::info("WAHA: Attempting Argentina-specific variant for {$phone}");
+            
+            if (str_starts_with($phone, '549')) {
+                // If it already had 9, try without it
+                $variant = '54' . substr($phone, 3);
+            } else {
+                // If it didn't have 9, try with it (mobile prefix)
+                $variant = '549' . substr($phone, 2);
+            }
+            
+            \Log::info("WAHA: Trying variant -> {$variant}");
+            $variantData = $this->wahaService->checkNumberStatus($this->getSessionName(), $variant);
+            $isVariantValid = $variantData && (isset($variantData['id']['_serialized']) || isset($variantData['id']));
+            
+            if ($isVariantValid) {
+                \Log::info("WAHA: Argentina variant SUCCEEDED -> {$variant}");
+                $phone = $variant;
+                $checkData = $variantData;
+                $isValid = true;
+            } else {
+                \Log::warning("WAHA: Argentina variant ALSO FAILED -> {$variant}. Using standard mobile format (549) as guesswork fallback.");
+                // If both fail but it's Argentina and we have 12 digits, the 9 is almost certainly missing.
+                if (strlen($phone) === 12 && !str_starts_with($phone, '549')) {
+                    $phone = '549' . substr($phone, 2);
+                }
+            }
+        }
+
+        if ($isValid) {
             // Use the ID returned by WhatsApp
             $waId = $checkData['id']['_serialized'] ?? $checkData['id'];
             // Remove @c.us for internal consistency
@@ -207,10 +268,6 @@ class WhatsappChat extends Component
             \Log::warning("Contact Check Failed for {$phone}. Applying international heuristics.");
             
             // International Heuristics (if WAHA verification fails)
-            
-            // SPAIN (34): Usually straightforward 34 + 9 digits.
-            // VENEZUELA (58): Usually 58 + 10 digits.
-            // PUERTO RICO (1): Part of North American Numbering Plan. 1 + 787/939 + 7 digits.
             
             // Special handling for USA/PR/Canada if user entered 787... without '1'
             if ((str_starts_with($phone, '787') || str_starts_with($phone, '939')) && strlen($phone) === 10) {
@@ -222,15 +279,6 @@ class WhatsappChat extends Component
             if (str_starts_with($phone, '6') && strlen($phone) === 9) {
                 $phone = '34' . $phone;
                 \Log::info("International heuristic: Added '34' for Spain -> {$phone}");
-            }
-
-            // ARGENTINA (54): Re-applying the 549 vs 54 heuristic if check failed
-            if (str_starts_with($phone, '549')) {
-                 // Try removing the 9 as a fallback if verification failed
-                 $fallback = '54' . substr($phone, 3);
-                 \Log::info("International heuristic: Argentina 549 fallback -> {$fallback}");
-                 // Note: we keep the original $phone but mention fallback in logs
-                 // because WAHA might actually need the 9 for some and not others.
             }
         }
 

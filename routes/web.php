@@ -88,6 +88,18 @@ Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->grou
 // Chat Route
 Route::middleware(['auth'])->get('/chat/{userId?}', Chat::class)->name('chat');
 Route::middleware(['auth'])->get('/whatsapp', \App\Livewire\WhatsappChat::class)->name('whatsapp.chat');
+Route::middleware(['auth'])->get('/whatsapp/session-status', function(\Illuminate\Http\Request $request) {
+    $waha = app(\App\Services\WahaService::class);
+    $statusData = $waha->getSessionStatus('default');
+    $status = $statusData['status'] ?? 'STOPPED';
+    
+    $qr = null;
+    if ($request->query('with_qr') && $status === 'SCAN_QR_CODE') {
+        $qr = $waha->getQrCode('default');
+    }
+    
+    return response()->json(['status' => $status, 'qr' => $qr]);
+})->name('whatsapp.session-status');
 
 
 // Contacto Route

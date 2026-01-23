@@ -79,7 +79,7 @@
                                 </div>
                                 <div class="col-span-2">
                                     <label for="description{{ $tarea->id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</label>
-                                    <textarea id="description{{ $tarea->id }}" name="description" rows="3" maxlength="1000" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">{{ $tarea->description }}</textarea>
+                                    <textarea id="description{{ $tarea->id }}" name="description" rows="3" maxlength="2000" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">{{ $tarea->description }}</textarea>
                                 </div>
                                 <div>
                                     <label for="start_date{{ $tarea->id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha de inicio</label>

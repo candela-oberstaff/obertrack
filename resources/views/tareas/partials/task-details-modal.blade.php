@@ -150,7 +150,7 @@
 
                                 <div>
                                     <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block ml-1">Descripción</label>
-                                    <textarea x-model="editTaskData.description" maxlength="1000" rows="4" class="w-full bg-gray-50 border-gray-100 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#22A9C8] transition-all resize-none"></textarea>
+                                    <textarea x-model="editTaskData.description" maxlength="2000" rows="4" class="w-full bg-gray-50 border-gray-100 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#22A9C8] transition-all resize-none"></textarea>
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-4">

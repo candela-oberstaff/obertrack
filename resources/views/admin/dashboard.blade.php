@@ -107,7 +107,7 @@
                                                     </svg>
                                                 </a>
                                             @endif
-                                            <a href="mailto:{{ $p['user']->email }}" class="p-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors" title="Email">
+                                            <a href="javascript:void(0)" onclick="prepareIndividualEmail('{{ $p['user']->id }}')" class="p-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors" title="Enviar Email">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                                 </svg>
@@ -122,7 +122,7 @@
             </div>
 
             <!-- Mass Communication & Stats -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" id="mass-communication-section">
                 <!-- Mass Communication Form (Left) -->
                 <div class="lg:col-span-2 bg-white overflow-hidden shadow-sm sm:rounded-3xl border border-gray-100">
                     <div class="p-8 text-gray-900 font-extrabold text-xl border-b border-gray-50 flex items-center gap-3">
@@ -354,6 +354,31 @@
                 // Auto-load template if needed
                 if (document.getElementById('templateSelector').value) {
                     document.getElementById('templateSelector').dispatchEvent(new Event('change'));
+                }
+
+                // Prepare individual email from table icon
+                function prepareIndividualEmail(userId) {
+                    const segmentSelect = document.querySelector('select[name="segment"]');
+                    const professionalSelect = document.getElementById('individual_professional_select');
+                    
+                    // 1. Change segment behavior
+                    segmentSelect.value = 'individual_professional';
+                    segmentSelect.dispatchEvent(new Event('change'));
+                    
+                    // 2. Select the specific user (wait a bit for the select to be enabled/visible)
+                    setTimeout(() => {
+                        professionalSelect.value = userId;
+                    }, 50);
+                    
+                    // 3. Smooth scroll with offset
+                    const section = document.getElementById('mass-communication-section');
+                    const yOffset = -20; 
+                    const y = section.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({top: y, behavior: 'smooth'});
+                    
+                    // Optional: highlight visual cue
+                    section.classList.add('ring-4', 'ring-blue-100', 'transition-all', 'duration-1000');
+                    setTimeout(() => section.classList.remove('ring-4', 'ring-blue-100'), 2000);
                 }
             </script>
 

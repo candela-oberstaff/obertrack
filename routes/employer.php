@@ -103,6 +103,15 @@ Route::middleware(['auth'])->prefix('empleador')->name('empleador.')->group(func
 
     Route::post('/mass-email', [DashboardController::class, 'sendMassEmail'])
         ->name('mass-email');
+
+    Route::post('/mass-whatsapp', [DashboardController::class, 'sendMassWhatsapp'])
+        ->name('mass-whatsapp');
+
+    Route::get('/whatsapp/status', [DashboardController::class, 'getWhatsappStatus'])
+        ->name('whatsapp.status');
+
+    Route::post('/whatsapp/start', [DashboardController::class, 'startWhatsappSession'])
+        ->name('whatsapp.start');
 });
 
 

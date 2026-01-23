@@ -81,9 +81,11 @@
                                 <x-dropdown-link :href="route('chat')">
                                     {{ __('Chat') }}
                                 </x-dropdown-link>
+                                @if(!auth()->user()->is_superadmin)
                                 <x-dropdown-link :href="route('empleador.emails.create')">
                                     {{ __('Mensajes Masivos') }}
                                 </x-dropdown-link>
+                                @endif
                                 
                                 @if(auth()->user()->is_manager)
                                     <x-dropdown-link :href="route('whatsapp.chat')">
@@ -313,9 +315,11 @@
                         <x-responsive-nav-link :href="route('chat')" :active="request()->routeIs('chat')">
                             {{ __('Chat') }}
                         </x-responsive-nav-link>
+                        @if(!auth()->user()->is_superadmin)
                         <x-responsive-nav-link :href="route('empleador.emails.create')" :active="request()->routeIs('empleador.emails.create')">
                             {{ __('Mensajes Masivos') }}
                         </x-responsive-nav-link>
+                        @endif
 
                         @if(auth()->user()->is_manager)
                             <x-responsive-nav-link :href="route('whatsapp.chat')" :active="request()->routeIs('whatsapp.chat')">

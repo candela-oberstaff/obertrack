@@ -467,6 +467,78 @@ class DashboardController extends Controller
         return redirect()->back()->with('success', "Se han enviado {$successCount} correos correctamente {$targetLabel}.");
     }
 
+    public function sendMassWhatsapp(Request $request, \App\Services\WahaService $waha)
+    {
+        $request->validate([
+            'message' => 'required|string',
+            'recipient_id' => 'nullable|exists:users,id',
+        ]);
+
+        $user = auth()->user();
+        $companyName = $user->company_name ?? $user->name;
+        $sessionName = $waha->getSessionName($user->id);
+
+        if ($request->recipient_id) {
+            $employees = \App\Models\User::where('id', $request->recipient_id)
+                ->where('empleador_id', $user->id)
+                ->get();
+            $targetLabel = "al profesional seleccionado";
+        } else {
+            $employees = $this->employeeDataService->getEmployeesForUser($user);
+            $targetLabel = "a tu equipo de profesionales";
+        }
+
+        // Filter employees with phone number
+        $employees = $employees->filter(fn($e) => !empty($e->phone_number));
+
+        if ($employees->isEmpty()) {
+            return redirect()->back()->with('error', 'No se encontraron destinatarios con número de teléfono registrado.');
+        }
+
+        $count = 0;
+        $delayIncrement = 60; // 1 minute as suggested
+
+        foreach ($employees as $employee) {
+            \App\Jobs\SendMassWhatsappJob::dispatch($employee->id, $request->message, $companyName, $sessionName)
+                ->delay(now()->addSeconds($count * $delayIncrement));
+            $count++;
+        }
+
+        return redirect()->back()->with('success', "Se han encolado {$count} mensajes de WhatsApp correctamente. El envío se realizará de forma progresiva (1 mensaje por minuto) para proteger la cuenta.");
+    }
+
+    public function getWhatsappStatus(\App\Services\WahaService $waha)
+    {
+        $user = auth()->user();
+        $sessionName = $waha->getSessionName($user->id);
+        
+        $statusData = $waha->getSessionStatus($sessionName);
+        $status = $statusData['status'] ?? 'STOPPED';
+        
+        $qr = null;
+        if ($status === 'SCAN_QR_CODE') {
+            $qr = $waha->getQrCode($sessionName);
+        }
+        
+        return response()->json([
+            'status' => $status,
+            'qr' => $qr
+        ]);
+    }
+
+    public function startWhatsappSession(Request $request, \App\Services\WahaService $waha)
+    {
+        $user = auth()->user();
+        $sessionName = $waha->getSessionName($user->id);
+        $force = $request->boolean('force', false);
+        
+        \Log::info("DashboardController: startWhatsappSession for [{$sessionName}] (force: " . ($force ? 'true' : 'false') . ")");
+        $result = $waha->startSession($sessionName, $force);
+        \Log::info("DashboardController: startWhatsappSession result", ['result' => $result]);
+        
+        return response()->json($result);
+    }
+
     public function dailyDetail($date)
     {
         $user = auth()->user();

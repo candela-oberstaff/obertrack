@@ -1,16 +1,64 @@
 <div class="flex h-[calc(100vh-4rem)] bg-white overflow-hidden relative" 
      x-data="{ 
         mobileView: false,
+        localStatus: @entangle('sessionStatus'),
+        apiStatus: '{{ $sessionStatus }}',
+        apiQr: @js($qrCodeBase64),
+        lastQr: @js($qrCodeBase64),
+        isScanned: @js($qrScanned),
         scrollToBottom() {
             const container = document.getElementById('wa-messages-container');
             if (container) container.scrollTop = container.scrollHeight;
+        },
+        async checkStatus() {
+            if (this.isChecking) return;
+            this.isChecking = true;
+            try {
+                let url = '{{ route('whatsapp.session-status') }}';
+                let shouldFetchQr = (this.apiStatus === 'SCAN_QR_CODE' && (!this.apiQr || (Date.now() - (this.lastQrTime || 0)) > 10000));
+                if (shouldFetchQr) url += '?with_qr=1';
+
+                let res = await fetch(url);
+                if (!res.ok) throw new Error('Net Error');
+                let data = await res.json();
+                
+                if (data.status === 'AUTHENTICATING' || data.status === 'WORKING' || 
+                   (this.apiStatus === 'SCAN_QR_CODE' && data.status === 'SCAN_QR_CODE' && !data.qr && this.apiQr)) {
+                    this.isScanned = true;
+                }
+                
+                if (data.qr) {
+                    this.apiQr = data.qr;
+                    this.lastQrTime = Date.now();
+                    this.isScanned = false;
+                }
+                
+                if (data.status !== this.apiStatus) {
+                    this.apiStatus = data.status;
+                    // Only trigger wire call if status changed to/from WORKING or other major states
+                    $wire.checkSessionStatus();
+                }
+            } catch (e) {
+                console.warn('WA:', e.message);
+            } finally {
+                this.isChecking = false;
+            }
+        },
+        async apiLoop() {
+            await this.checkStatus();
+            // Faster polling for QR/Connecting (1s), slower for WORKING (5s)
+            let interval = (this.apiStatus === 'WORKING') ? 5000 : 1000;
+            setTimeout(() => this.apiLoop(), interval);
         }
     }"
-    x-init="$watch('$wire.messages', () => { setTimeout(scrollToBottom, 100); })"
+    x-init="
+        $watch('$wire.messages', () => { setTimeout(scrollToBottom, 100); });
+        apiLoop();
+    "
 >
     <!-- STATE: CONNECT / QR -->
     @if($sessionStatus !== 'WORKING')
-        <div class="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gray-50" wire:poll.2s="checkSessionStatus">
+        <div class="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gray-50">
             <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
                 <div class="w-20 h-20 bg-[#25D366]/10 rounded-full flex items-center justify-center mx-auto mb-6 text-[#25D366]">
                     <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.374-5.03c0-5.445 4.429-9.876 9.88-9.876 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.444-4.432 9.874-9.877 9.874m0-19.896C6.276 1.889 2.058 6.136 2.058 11.64c0 1.74.453 3.407 1.31 4.887l-1.398 5.107 5.253-1.378c1.423.774 3.032 1.183 4.673 1.183h.005c5.351 0 9.697-4.329 9.697-9.673 0-2.583-1.008-5.013-2.837-6.842C17.07 3.064 14.64 2.06 12.05 2.06z"/></svg>
@@ -25,29 +73,58 @@
                     </div>
                 @enderror
 
-                @if($sessionStatus === 'STOPPED')
+                <div x-show="apiStatus === 'STOPPED'">
                     <button wire:click="startSession" wire:loading.attr="disabled" class="w-full py-3 px-6 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                         <span wire:loading.remove wire:target="startSession">Generar Código QR</span>
                         <span wire:loading wire:target="startSession" class="loading loading-spinner loading-sm"></span>
                     </button>
-                @elseif($sessionStatus === 'SCAN_QR_CODE')
+                </div>
+
+                <div x-show="apiStatus === 'SCAN_QR_CODE'">
                     <div class="flex flex-col items-center animate-in fade-in zoom-in">
-                        @if($qrCodeBase64)
-                            <div class="bg-white p-2 rounded-xl border border-gray-200 shadow-sm mb-4">
-                                <img src="{{ $qrCodeBase64 }}" class="w-48 h-48 object-contain" alt="Scan QR Code">
+                        <!-- Scanned State -->
+                        <div x-show="isScanned" class="flex flex-col items-center py-4">
+                            <div class="relative mb-6">
+                                <div class="absolute inset-0 rounded-full bg-[#25D366]/20 animate-ping"></div>
+                                <svg class="relative animate-spin h-14 w-14 text-[#25D366]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">¡QR Escaneado!</h3>
+                            <p class="text-base font-semibold text-[#25D366] animate-pulse">Iniciando sesión...</p>
+                            <p class="text-xs text-gray-400 mt-4 uppercase tracking-[0.2em]">Sincronizando chats</p>
+                        </div>
+
+                        <!-- QR Image State -->
+                        <div x-show="!isScanned && apiQr" class="flex flex-col items-center">
+                            <div class="bg-white p-2 rounded-xl border border-gray-200 shadow-sm mb-4 flex justify-center items-center">
+                                <img :src="apiQr" class="w-48 h-48 object-contain" alt="Scan QR Code">
                             </div>
                             <p class="text-xs text-center text-gray-400 max-w-xs">Abre WhatsApp en tu teléfono, ve a Dispositivos Vinculados y escanea este código.</p>
-                        @else
-                            <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
-                                <p class="text-sm text-yellow-800">⚠️ Esperando código QR...</p>
-                                <p class="text-xs text-yellow-600 mt-1">Estado: {{ $sessionStatus }}</p>
+                        </div>
+
+                        <!-- Generating State -->
+                        <div x-show="!isScanned && !apiQr">
+                            <div class="p-10 flex flex-col items-center">
+                                <div class="loading loading-spinner loading-lg text-[#25D366] mb-4"></div>
+                                <p class="text-sm text-gray-800">Generando código QR...</p>
+                                <p class="text-xs text-gray-400 mt-1 italic">Este proceso puede tardar unos segundos</p>
                             </div>
-                            <button wire:click="checkSessionStatus" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
-                                Recargar QR
-                            </button>
-                        @endif
+                        </div>
                     </div>
-                @else
+                </div>
+
+                <div x-show="apiStatus === 'STARTING'">
+                    <div class="flex flex-col items-center py-10">
+                        <div class="loading loading-spinner loading-lg text-[#25D366] mb-6"></div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Iniciando Servicio</h3>
+                        <p class="text-sm text-gray-500">Estamos preparando la conexión con WhatsApp.</p>
+                        <p class="text-xs text-gray-400 mt-4 uppercase tracking-[0.2em]">Estado: <span x-text="apiStatus"></span></p>
+                    </div>
+                </div>
+
+                <div x-show="apiStatus !== 'STOPPED' && apiStatus !== 'SCAN_QR_CODE' && apiStatus !== 'STARTING'">
                      <div class="flex flex-col items-center py-10">
                         <div class="relative mb-6">
                             <div class="absolute inset-0 rounded-full bg-[#25D366]/20 animate-ping"></div>
@@ -56,12 +133,12 @@
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-2">¡QR Escaneado!</h3>
-                        <p class="text-base font-semibold text-[#25D366] animate-pulse">Iniciando sesión...</p>
-                        <p class="text-xs text-gray-400 mt-4 uppercase tracking-[0.2em]">Estado: {{ $sessionStatus }}</p>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Conectando...</h3>
+                        <p class="text-base font-semibold text-[#25D366] animate-pulse">Cargando módulos...</p>
+                        <p class="text-xs text-gray-400 mt-4 uppercase tracking-[0.2em]">Estado: <span x-text="apiStatus"></span></p>
                         <p class="text-[10px] text-gray-300 mt-1">Por favor espera un momento mientras sincronizamos tus datos.</p>
                      </div>
-                @endif
+                </div>
             </div>
         </div>
 

@@ -45,7 +45,7 @@ class EmployerTaskController extends Controller
     {
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
+            'description' => 'nullable|string|max:2000',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'priority' => 'required|in:low,medium,high,urgent',
@@ -74,7 +74,7 @@ class EmployerTaskController extends Controller
 
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
+            'description' => 'nullable|string|max:2000',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'priority' => 'required|in:low,medium,high,urgent',

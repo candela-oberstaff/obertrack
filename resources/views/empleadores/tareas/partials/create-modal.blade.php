@@ -104,7 +104,7 @@
 
                 <!-- Description -->
                 <div class="mb-8">
-                    <textarea name="description" rows="4" maxlength="1000" placeholder="Añade una descripción de la asignación" class="w-full bg-gray-50 border-none rounded-lg py-3 px-4 text-sm text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-[#22A9C8] focus:bg-white transition-colors resize-none"></textarea>
+                    <textarea name="description" rows="4" maxlength="2000" placeholder="Añade una descripción de la asignación" class="w-full bg-gray-50 border-none rounded-lg py-3 px-4 text-sm text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-[#22A9C8] focus:bg-white transition-colors resize-none"></textarea>
                 </div>
 
                 <!-- Submit Button -->

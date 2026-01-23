@@ -30,54 +30,40 @@ class WahaService
         return $headers;
     }
 
-    /**
-     * Get the session name for a user.
-     * We use a predictable naming convention: session_{userId}
-     */
     public function getSessionName($userId)
     {
-        return "session_{$userId}";
+        // WAHA Core only supports 'default' session name. 
+        // We force 'default' unless they upgrade to Plus.
+        return 'default';
     }
 
     /**
      * Start a new session for the user
      */
-    public function startSession($sessionName)
+    public function startSession($sessionName, $force = false)
     {
         try {
-            // 1. Check if session already exists
+            Log::info("WAHA: startSession called for [{$sessionName}] (force: " . ($force ? 'true' : 'false') . ")");
+            
+            // 1. Check current status
             $statusData = $this->getSessionStatus($sessionName);
-            $currentStatus = $statusData['status'] ?? null;
+            $currentStatus = $statusData['status'] ?? 'STOPPED';
 
-            if ($currentStatus && $currentStatus !== 'STOPPED' && !isset($statusData['errorCode'])) {
-                // Session exists and is distinct from STOPPED (e.g. WORKING, STARTING, SCAN_QR_CODE)
-                Log::info("WAHA Session {$sessionName} already exists and is {$currentStatus}. Reusing.");
+            Log::info("WAHA: Status before start for [{$sessionName}] is [{$currentStatus}]");
+
+            // If force is requested, or if it's stuck in a non-working state, delete first
+            if ($force || in_array($currentStatus, ['STOPPED', 'FAILED', 'STARTING'])) {
+                 Log::info("WAHA: Cleaning up session [{$sessionName}] before (re)start.");
+                 $this->deleteSession($sessionName);
+                 sleep(2);
+            } elseif ($currentStatus !== 'SCAN_QR_CODE' && $currentStatus !== 'WORKING') {
+                // If it's something else like AUTHENTICATING, we might want to wait, 
+                // but let's be safe and just return current status if it's not "dead"
                 return $statusData;
             }
 
-            // 2. If STOPPED, try to start it explicitly (instead of recreate)
-            // Some WAHA versions need explicit start if it persists but is stopped.
-            // But usually POST /sessions handles this if we don't send config? 
-            // Let's try to delete ONLY if we got a weird error or if we really want fresh.
-            // Actually, to be safe and fast:
-            // If it's STOPPED or 404, we try to create (POST /sessions). 
-            // If POST fails with 422, it means it exists, so we try POST /sessions/{name}/start?
-            // No, standard WAHA flow: POST /api/sessions creates and starts.
-            
-            // If 404 (does not exist), we create.
-            // If STOPPED (exists), we might need to delete first OR check if POST /sessions overwrites.
-            // WAHA usually throws 422 if exists.
-            
-            if ($currentStatus === 'STOPPED' && !isset($statusData['errorCode'])) {
-                 // Try to delete to force fresh config, BUT do it quickly without wait loop?
-                 // Or better: try to START it first.
-                 // Assuming we don't have a specific 'start' endpoint implemented here yet?
-                 // Let's try to delete but WITHOUT the long wait loop, just one shot.
-                 $this->deleteSession($sessionName);
-                 sleep(1); // minimal wait
-            }
-
             // 3. Create new session
+            Log::info("WAHA: Creating session [{$sessionName}]");
             $response = Http::withoutVerifying()
                 ->withHeaders($this->getHeaders())
                 ->post("{$this->baseUrl}/api/sessions", [
@@ -89,17 +75,18 @@ class WahaService
                 ]);
 
             if ($response->failed()) {
+                Log::error("WAHA: POST /sessions [{$sessionName}] FAILED ({$response->status()})", ['body' => $response->body()]);
+                
                 if ($response->status() === 422) {
-                    // It exists. 
-                     Log::info("WAHA Session Create 422. Assuming it exists. Checking status again.");
                      return $this->getSessionStatus($sessionName);
                 }
                 return ['error' => "Error WAHA ({$response->status()}): " . $response->body()];
             }
 
+            Log::info("WAHA: Session [{$sessionName}] creation request sent successfully.");
             return $response->json();
         } catch (\Exception $e) {
-            Log::error("WAHA startSession error: " . $e->getMessage());
+            Log::error("WAHA startSession Exception: " . $e->getMessage());
             return ['error' => $e->getMessage()];
         }
     }
@@ -129,6 +116,7 @@ class WahaService
         try {
             $response = Http::withoutVerifying()
                 ->withHeaders($this->getHeaders())
+                ->timeout(2)
                 ->get("{$this->baseUrl}/api/sessions/{$sessionName}");
 
             if ($response->successful()) {
