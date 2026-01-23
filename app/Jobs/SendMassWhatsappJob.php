@@ -47,10 +47,19 @@ class SendMassWhatsappJob implements ShouldQueue
         $formattedMessage = "*{$this->companyName}*\n\n" . $this->message;
 
         $chatId = $user->phone_number;
-        // Basic cleaning (remove + and ensure it doesn't have @c.us for service call)
-        $chatId = str_replace(['+', ' '], '', $chatId);
+        // Robust cleaning using WahaService helper
+        $chatId = $waha->formatArgentinaNumber($chatId);
 
         Log::info("Executing SendMassWhatsappJob for user {$user->name} ({$chatId}) using session {$this->sessionName}");
+
+        // Log current session status for debugging
+        $statusData = $waha->getSessionStatus($this->sessionName);
+        Log::info("SendMassWhatsappJob: Current session status for [{$this->sessionName}] is [{$statusData['status']}]");
+
+        if (($statusData['status'] ?? 'STOPPED') !== 'WORKING') {
+            Log::error("SendMassWhatsappJob FAILED: Session [{$this->sessionName}] is not WORKING (Status: " . ($statusData['status'] ?? 'N/A') . "). Message to {$user->name} aborted.");
+            return;
+        }
 
         $result = $waha->sendMessage($this->sessionName, $chatId, $formattedMessage);
 

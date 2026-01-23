@@ -496,11 +496,18 @@ class DashboardController extends Controller
         }
 
         $count = 0;
-        $delayIncrement = 60; // 1 minute as suggested
+        $delayIncrement = 15; // Reduced from 60 to 15 seconds for responsiveness
 
         foreach ($employees as $employee) {
+            $delay = $count * $delayIncrement;
             \App\Jobs\SendMassWhatsappJob::dispatch($employee->id, $request->message, $companyName, $sessionName)
-                ->delay(now()->addSeconds($count * $delayIncrement));
+                ->delay(now()->addSeconds($delay));
+            
+            \Log::info("DashboardController: Dispatched mass WhatsApp job for {$employee->name}", [
+                'delay_seconds' => $delay,
+                'session' => $sessionName
+            ]);
+            
             $count++;
         }
 

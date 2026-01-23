@@ -507,12 +507,19 @@ class BrevoEmailService
             }
 
             $this->apiInstance->sendTransacEmail($sendSmtpEmail);
+            
+            Log::info('Brevo: Mass communication sent successfully', [
+                'recipient' => $toEmail,
+                'subject' => $subject
+            ]);
+            
             return true;
         } catch (\Exception $e) {
             Log::error('Brevo: Mass communication failed', [
                 'recipient' => $toEmail,
                 'subject' => $subject,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => substr($e->getTraceAsString(), 0, 500)
             ]);
             return false;
         }

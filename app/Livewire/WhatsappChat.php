@@ -225,6 +225,7 @@ class WhatsappChat extends Component
 
         // Resolve correct WhatsApp ID using WAHA check-exists
         // Preliminary check
+        $phone = $this->wahaService->formatArgentinaNumber($phone);
         $checkData = $this->wahaService->checkNumberStatus($this->getSessionName(), $phone);
         $isValid = $checkData && (isset($checkData['id']['_serialized']) || isset($checkData['id']));
         
@@ -232,11 +233,10 @@ class WhatsappChat extends Component
         if (!$isValid && str_starts_with($phone, '54')) {
             \Log::info("WAHA: Attempting Argentina-specific variant for {$phone}");
             
+            // Try the opposite variant (with or without 9) if the helper's first guess failed
             if (str_starts_with($phone, '549')) {
-                // If it already had 9, try without it
                 $variant = '54' . substr($phone, 3);
             } else {
-                // If it didn't have 9, try with it (mobile prefix)
                 $variant = '549' . substr($phone, 2);
             }
             
@@ -249,12 +249,6 @@ class WhatsappChat extends Component
                 $phone = $variant;
                 $checkData = $variantData;
                 $isValid = true;
-            } else {
-                \Log::warning("WAHA: Argentina variant ALSO FAILED -> {$variant}. Using standard mobile format (549) as guesswork fallback.");
-                // If both fail but it's Argentina and we have 12 digits, the 9 is almost certainly missing.
-                if (strlen($phone) === 12 && !str_starts_with($phone, '549')) {
-                    $phone = '549' . substr($phone, 2);
-                }
             }
         }
 

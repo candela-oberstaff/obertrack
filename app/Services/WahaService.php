@@ -338,11 +338,37 @@ class WahaService
     }
 
     /**
+     * Helper to format numbers, especially handling Argentina (54) mobile prefix (9)
+     */
+    public function formatArgentinaNumber($phone)
+    {
+        // Remove any non-numeric characters
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+
+        // Argentina logic: if it starts with 54 and has 12 digits, it might be missing the '9' or have it correctly.
+        // Actually, internal logic usually prefers the version that WAHA validates.
+        // But for a generic helper, we ensure it's at least numeric.
+        
+        if (str_starts_with($phone, '54')) {
+            // Case: 54 + 10 digits (missing 9) -> 54 + 9 + 10 digits
+            if (strlen($phone) === 12 && !str_starts_with($phone, '549')) {
+                $phone = '549' . substr($phone, 2);
+            }
+            // Case: 54 + 9 + 10 digits (correct for mobile) -> leave as is
+            // Case: 54 + 11 digits (already has 9)
+        }
+
+        return $phone;
+    }
+
+    /**
      * Check if number exists and get correct ID
      */
     public function checkNumberStatus($sessionName, $phone)
     {
         try {
+            $phone = $this->formatArgentinaNumber($phone);
+
             $response = Http::withoutVerifying()
                 ->withHeaders($this->getHeaders())
                 ->get("{$this->baseUrl}/api/contacts/check-exists", [

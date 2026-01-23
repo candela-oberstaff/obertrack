@@ -6,6 +6,9 @@
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">
                     ¡Hola, <span class="text-primary">{{ auth()->user()->name }}</span>!
+                    @if(auth()->user()->is_manager)
+                        <span class="ml-2 px-3 py-1 bg-primary text-white text-xs rounded-full inline-flex items-center align-middle">Manager</span>
+                    @endif
                 </h1>
                 <p class="text-gray-600 mt-1">
                     Aquí está tu resumen de actividades

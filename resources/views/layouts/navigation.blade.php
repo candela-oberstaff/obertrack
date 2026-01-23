@@ -31,10 +31,7 @@
 
                 @elseif(auth()->user()->is_manager)
                     <a href="{{ route('empleado.registrar-horas') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleado.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
-                        <span class="flex items-center gap-2">
-                            Mis horas
-                            <span class="px-2 py-0.5 bg-primary text-white text-xs rounded-full">Manager</span>
-                        </span>
+                        Mis horas
                     </a>
                     <a href="{{ route('empleador.dashboard') }}" class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empleador.dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Monitoreo
