@@ -752,20 +752,20 @@ class WorkHoursController extends Controller
         // Calculate recovery stats for the week
         $recoveredNew = \App\Models\RecoveryHour::where('user_id', $user->id)
             ->whereBetween('recovery_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
-            ->where('approved', true)
+            ->whereRaw('approved IS TRUE')
             ->sum('hours_recovered');
             
         $recoveredLegacy = WorkHours::where('user_id', $user->id)
             ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
-            ->where('recovery_approved', true)
+            ->whereRaw('recovery_approved IS TRUE')
             ->sum('recovered_hours');
             
         $recoveredWeekly = $recoveredNew + $recoveredLegacy;
 
         // Overall pending balance (total debt - total recovered)
         $totalDebt = WorkHours::where('user_id', $user->id)->sum('absence_hours');
-        $totalRecNew = \App\Models\RecoveryHour::where('user_id', $user->id)->where('approved', true)->sum('hours_recovered');
-        $totalRecLegacy = WorkHours::where('user_id', $user->id)->where('recovery_approved', true)->sum('recovered_hours');
+        $totalRecNew = \App\Models\RecoveryHour::where('user_id', $user->id)->whereRaw('approved IS TRUE')->sum('hours_recovered');
+        $totalRecLegacy = WorkHours::where('user_id', $user->id)->whereRaw('recovery_approved IS TRUE')->sum('recovered_hours');
         $pendingBalance = max(0, $totalDebt - ($totalRecNew + $totalRecLegacy));
 
         // Generate PDF
@@ -905,20 +905,20 @@ class WorkHoursController extends Controller
         // Calculate recovery stats for the month
         $recoveredNew = \App\Models\RecoveryHour::where('user_id', $user->id)
             ->whereBetween('recovery_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
-            ->where('approved', true)
+            ->whereRaw('approved IS TRUE')
             ->sum('hours_recovered');
             
         $recoveredLegacy = WorkHours::where('user_id', $user->id)
             ->whereBetween('work_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
-            ->where('recovery_approved', true)
+            ->whereRaw('recovery_approved IS TRUE')
             ->sum('recovered_hours');
             
         $recoveredMonthly = $recoveredNew + $recoveredLegacy;
 
         // Overall pending balance (total debt - total recovered)
         $totalDebt = WorkHours::where('user_id', $user->id)->sum('absence_hours');
-        $totalRecNew = \App\Models\RecoveryHour::where('user_id', $user->id)->where('approved', true)->sum('hours_recovered');
-        $totalRecLegacy = WorkHours::where('user_id', $user->id)->where('recovery_approved', true)->sum('recovered_hours');
+        $totalRecNew = \App\Models\RecoveryHour::where('user_id', $user->id)->whereRaw('approved IS TRUE')->sum('hours_recovered');
+        $totalRecLegacy = WorkHours::where('user_id', $user->id)->whereRaw('recovery_approved IS TRUE')->sum('recovered_hours');
         $pendingBalance = max(0, $totalDebt - ($totalRecNew + $totalRecLegacy));
 
         $pdf = Pdf::loadView('reportes.pdf.monthly', [
