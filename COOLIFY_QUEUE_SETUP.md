@@ -1,33 +1,12 @@
-# Queue Worker Setup para Coolify
+# Queue Worker en Coolify v4 (Beta)
 
-## Configuración en Coolify
+## Método 1: Docker Compose Override (Recomendado)
 
-Coolify permite ejecutar múltiples procesos en un mismo proyecto usando un archivo `Procfile` o configurando servicios adicionales.
+Coolify v4 permite usar un `docker-compose.override.yml` o configurar comandos personalizados.
 
-### Opción 1: Usando Procfile (Recomendado)
+### Paso 1: Crear script de inicio
 
-Crea un archivo `Procfile` en la raíz del proyecto:
-
-```
-web: php artisan serve --host=0.0.0.0 --port=8000
-worker: php artisan queue:work --sleep=3 --tries=3 --timeout=90
-```
-
-**Nota**: Si usas Nginx/Apache en lugar de `php artisan serve`, ajusta la línea `web` según tu configuración.
-
-### Opción 2: Servicio Adicional en Coolify
-
-1. Ve a tu proyecto en Coolify
-2. Click en **"Add a new service"** o **"Storages & Services"**
-3. Agrega un nuevo servicio con:
-   - **Name**: `queue-worker`
-   - **Command**: `php artisan queue:work --sleep=3 --tries=3 --timeout=90`
-   - **Working Directory**: Misma que tu aplicación principal
-   - **Environment**: Mismas variables de entorno
-
-### Opción 3: Script de Inicio Personalizado
-
-Si Coolify usa un script de inicio, modifícalo para incluir:
+Crea `start.sh` en la raíz del proyecto:
 
 ```bash
 #!/bin/bash
@@ -35,78 +14,159 @@ Si Coolify usa un script de inicio, modifícalo para incluir:
 # Inicia el queue worker en segundo plano
 php artisan queue:work --sleep=3 --tries=3 --timeout=90 &
 
-# Inicia tu aplicación web (ajusta según tu setup)
-php artisan serve --host=0.0.0.0 --port=8000
+# Guarda el PID del worker
+echo $! > /tmp/queue-worker.pid
+
+# Inicia PHP-FPM o tu servidor web principal
+php-fpm
+```
+
+Dale permisos de ejecución:
+```bash
+chmod +x start.sh
+```
+
+### Paso 2: Modificar Dockerfile
+
+Si tienes un `Dockerfile`, modifica el `CMD` o `ENTRYPOINT`:
+
+```dockerfile
+# Al final del Dockerfile
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
+CMD ["/start.sh"]
+```
+
+Si NO tienes Dockerfile, Coolify usa uno por defecto. En ese caso, usa el Método 2.
+
+## Método 2: Supervisord (Más Robusto)
+
+### Paso 1: Crear configuración de Supervisord
+
+Crea `supervisord.conf` en la raíz:
+
+```ini
+[supervisord]
+nodaemon=true
+user=root
+
+[program:php-fpm]
+command=php-fpm
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+
+[program:queue-worker]
+command=php artisan queue:work --sleep=3 --tries=3 --timeout=90
+directory=/var/www/html
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+```
+
+### Paso 2: Modificar Dockerfile
+
+```dockerfile
+FROM php:8.2-fpm
+
+# Instalar supervisor
+RUN apt-get update && apt-get install -y supervisor
+
+# Copiar configuración
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# ... resto de tu Dockerfile ...
+
+# Usar supervisord como comando principal
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+```
+
+## Método 3: Configuración en Coolify UI (Sin archivos)
+
+En Coolify v4 beta:
+
+1. Ve a tu aplicación
+2. Click en **"Configuration"** o **"Settings"**
+3. Busca **"Pre Start Command"** o **"Post Deployment Command"**
+4. Agrega:
+   ```bash
+   php artisan queue:work --sleep=3 --tries=3 --timeout=90 &
+   ```
+
+**Nota**: Este método puede no ser persistente entre reinicios.
+
+## Método 4: Usar systemd dentro del contenedor
+
+Crea `queue-worker.service`:
+
+```ini
+[Unit]
+Description=Obertrack Queue Worker
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/html
+ExecStart=/usr/local/bin/php artisan queue:work --sleep=3 --tries=3 --timeout=90
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+En el Dockerfile:
+```dockerfile
+COPY queue-worker.service /etc/systemd/system/
+RUN systemctl enable queue-worker
 ```
 
 ## Verificación
 
-### Logs en Coolify
-Los logs del worker aparecerán en la sección de logs de Coolify. Busca líneas como:
-```
-[2026-01-26 12:00:00] Processing: App\Jobs\SendMassWhatsappJob
-[2026-01-26 12:00:05] Processed:  App\Jobs\SendMassWhatsappJob
-```
-
-### Comandos útiles desde Coolify SSH
-
-Conéctate por SSH a tu contenedor y ejecuta:
-
+### Ver logs del worker:
 ```bash
-# Ver jobs pendientes
-php artisan queue:monitor
+# SSH a tu contenedor en Coolify
+docker exec -it <container-name> bash
 
-# Ver jobs fallidos
-php artisan queue:failed
+# Ver procesos
+ps aux | grep queue:work
 
-# Reintentar jobs fallidos
-php artisan queue:retry all
+# Ver logs en tiempo real
+tail -f storage/logs/laravel.log
 ```
 
-## Reiniciar el Worker
+### Probar manualmente:
+```bash
+# Dentro del contenedor
+php artisan queue:work --once
+```
 
-Después de hacer cambios en el código:
+## Recomendación para Coolify v4
 
-1. En Coolify, haz un **Redeploy** del proyecto
-2. O ejecuta desde SSH: `php artisan queue:restart`
+**Usa el Método 2 (Supervisord)** porque:
+- ✅ Reinicia automáticamente el worker si falla
+- ✅ Gestiona múltiples procesos de forma robusta
+- ✅ Los logs aparecen en Coolify
+- ✅ Compatible con la mayoría de setups de Laravel
 
 ## Troubleshooting
 
-### El worker no aparece en los logs
-- Verifica que el `Procfile` esté en la raíz del proyecto
-- Asegúrate de que Coolify detectó el `Procfile` (revisa los logs de deployment)
-- Intenta la Opción 2 (servicio adicional) si el Procfile no funciona
+### El worker no inicia
+1. Revisa los logs de deployment en Coolify
+2. SSH al contenedor y ejecuta manualmente: `php artisan queue:work --once`
+3. Verifica permisos: `chown -R www-data:www-data storage`
 
-### Jobs no se procesan
-- Verifica que `QUEUE_CONNECTION=database` esté en las variables de entorno
-- Revisa los logs del worker en Coolify
-- Ejecuta `php artisan queue:work --once` manualmente para ver errores
-
-### El worker se detiene
+### Worker se detiene
+- Usa Supervisord (Método 2) para auto-reinicio
 - Aumenta el timeout: `--timeout=300`
-- Revisa los logs de errores en `storage/logs/laravel.log`
-- Verifica que la base de datos esté accesible
 
-## Variables de Entorno Necesarias
-
-Asegúrate de tener configuradas en Coolify:
-
-```env
-QUEUE_CONNECTION=database
-WAHA_BASE_URL=http://tu-waha-url:3000
-WAHA_API_KEY=tu-api-key
-```
-
-## Monitoreo
-
-Para monitorear el estado del queue worker en producción, puedes:
-
-1. **Horizon** (opcional): Instala Laravel Horizon para una UI visual
-   ```bash
-   composer require laravel/horizon
-   php artisan horizon:install
-   ```
-
-2. **Logs**: Revisa regularmente `storage/logs/laravel.log`
-
-3. **Alertas**: Configura notificaciones en Coolify para cuando el worker falle
+### No ves logs
+- Asegúrate de que stdout/stderr van a `/dev/stdout` y `/dev/stderr`
+- Revisa `storage/logs/laravel.log` directamente
