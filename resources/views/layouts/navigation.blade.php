@@ -59,12 +59,12 @@
                     </a>
                 @endif
 
-                {{-- Communications Dropdown for Employers/Managers --}}
-                @if(auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager)
+                {{-- Communications Dropdown for Employers/Managers/Superadmins --}}
+                @if(auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager || auth()->user()->is_superadmin)
                     <div class="hidden sm:flex sm:items-center sm:ms-2">
                         <x-dropdown align="right" width="48">
                             <x-slot name="trigger">
-                                <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-full text-gray-500 hover:text-gray-900 focus:outline-none transition ease-in-out duration-150 {{ request()->routeIs('chat') || request()->routeIs('empleador.emails.*') ? 'bg-white border-gray-300 text-gray-900 shadow-sm' : '' }}">
+                                <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-full text-gray-500 hover:text-gray-900 focus:outline-none transition ease-in-out duration-150 {{ request()->routeIs('chat') || request()->routeIs('empleador.emails.*') || request()->routeIs('admin.mass-email.*') ? 'bg-white border-gray-300 text-gray-900 shadow-sm' : '' }}">
                                     <div>Comunicaciones</div>
                                     <div class="ms-1">
                                         <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -78,10 +78,15 @@
                                 <x-dropdown-link :href="route('chat')">
                                     {{ __('Chat') }}
                                 </x-dropdown-link>
-                                @if(!auth()->user()->is_superadmin)
-                                <x-dropdown-link :href="route('empleador.emails.create')">
-                                    {{ __('Mensajes Masivos') }}
-                                </x-dropdown-link>
+                                
+                                @if(auth()->user()->is_superadmin)
+                                    <x-dropdown-link :href="route('admin.mass-email.show')">
+                                        {{ __('Mensajes Masivos') }}
+                                    </x-dropdown-link>
+                                @elseif(auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager)
+                                    <x-dropdown-link :href="route('empleador.emails.create')">
+                                        {{ __('Mensajes Masivos') }}
+                                    </x-dropdown-link>
                                 @endif
                                 
                                 @if(auth()->user()->is_manager)
@@ -303,8 +308,8 @@
 
             @endif
             
-                {{-- Communications Links for Employers/Managers --}}
-                @if(auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager)
+                {{-- Communications Links for Employers/Managers/Superadmins --}}
+                @if(auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager || auth()->user()->is_superadmin)
                     <div class="border-t border-gray-100 mt-2 pt-2">
                         <div class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                             Comunicaciones
@@ -312,10 +317,15 @@
                         <x-responsive-nav-link :href="route('chat')" :active="request()->routeIs('chat')">
                             {{ __('Chat') }}
                         </x-responsive-nav-link>
-                        @if(!auth()->user()->is_superadmin)
-                        <x-responsive-nav-link :href="route('empleador.emails.create')" :active="request()->routeIs('empleador.emails.create')">
-                            {{ __('Mensajes Masivos') }}
-                        </x-responsive-nav-link>
+                        
+                        @if(auth()->user()->is_superadmin)
+                            <x-responsive-nav-link :href="route('admin.mass-email.show')" :active="request()->routeIs('admin.mass-email.show')">
+                                {{ __('Mensajes Masivos') }}
+                            </x-responsive-nav-link>
+                        @elseif(auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager)
+                            <x-responsive-nav-link :href="route('empleador.emails.create')" :active="request()->routeIs('empleador.emails.create')">
+                                {{ __('Mensajes Masivos') }}
+                            </x-responsive-nav-link>
                         @endif
 
                         @if(auth()->user()->is_manager)
@@ -330,7 +340,7 @@
                         @endif
                     </div>
                 @else
-                    {{-- Standard Chat Link for Employees/Admins --}}
+                    {{-- Standard Chat Link for Employees --}}
                     <x-responsive-nav-link :href="route('chat')" :active="request()->routeIs('chat')">
                         {{ __('Chat') }}
                     </x-responsive-nav-link>

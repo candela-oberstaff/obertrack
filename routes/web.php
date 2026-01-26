@@ -70,7 +70,11 @@ Route::middleware(['auth'])->get('/dashboard', function () {
 // Admin / Analyst Routes
 Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/mass-email', [\App\Http\Controllers\AdminDashboardController::class, 'showMassEmail'])->name('mass-email.show');
     Route::post('/mass-email', [\App\Http\Controllers\AdminDashboardController::class, 'sendMassEmail'])->name('mass-email');
+    Route::post('/mass-whatsapp', [\App\Http\Controllers\AdminDashboardController::class, 'sendMassWhatsapp'])->name('mass-whatsapp');
+    Route::get('/whatsapp/status', [\App\Http\Controllers\AdminDashboardController::class, 'getWhatsappStatus'])->name('whatsapp.status');
+    Route::post('/whatsapp/start', [\App\Http\Controllers\AdminDashboardController::class, 'startWhatsappSession'])->name('whatsapp.start');
     Route::get('/companies', [\App\Http\Controllers\AdminDashboardController::class, 'companies'])->name('companies');
     Route::get('/professionals', [\App\Http\Controllers\AdminDashboardController::class, 'professionals'])->name('professionals');
     Route::post('/assign-professional', [\App\Http\Controllers\AdminDashboardController::class, 'assignProfessional'])->name('assign-professional');

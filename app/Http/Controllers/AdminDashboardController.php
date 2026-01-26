@@ -5,13 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\WorkHours;
 use App\Services\ProfessionalActivityService;
+use App\Services\WahaService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class AdminDashboardController extends Controller
 {
     public function __construct(
-        private ProfessionalActivityService $activityService
+        private ProfessionalActivityService $activityService,
+        private WahaService $waha
     ) {}
 
     public function index()
@@ -25,6 +27,12 @@ class AdminDashboardController extends Controller
             'red_alerts' => $professionals->where('status', 'red')->count(),
         ];
 
+        return view('admin.dashboard', compact('professionals', 'stats'));
+    }
+
+    public function showMassEmail()
+    {
+        $professionals = $this->activityService->getProfessionalsStatus();
         $allProfessionals = User::where('tipo_usuario', 'empleado')->orderBy('name')->get();
         $allCompanies = User::where('tipo_usuario', 'empleador')->orderBy('name')->get();
 
@@ -41,7 +49,7 @@ class AdminDashboardController extends Controller
             'recent_logs' => $emailLogs->sortByDesc('created_at')->take(5)
         ];
 
-        return view('admin.dashboard', compact('professionals', 'stats', 'allProfessionals', 'allCompanies', 'emailStats'));
+        return view('admin.mass-email', compact('professionals', 'allProfessionals', 'allCompanies', 'emailStats'));
     }
 
     public function sendMassEmail(Request $request, \App\Services\BrevoEmailService $emailService)
@@ -105,6 +113,93 @@ class AdminDashboardController extends Controller
         }
 
         return back()->with('status', "Comunicación enviada a {$count} destinatarios con éxito.");
+    }
+
+    public function sendMassWhatsapp(Request $request)
+    {
+        $request->validate([
+            'segment' => 'required|in:all_professionals,all_companies,red_alerts,yellow_alerts,individual_professional,individual_company',
+            'message' => 'required|string',
+            'individual_id' => 'required_if:segment,individual_professional,individual_company|nullable|exists:users,id',
+        ]);
+
+        $users = collect();
+
+        switch ($request->segment) {
+            case 'all_professionals':
+                $users = User::where('tipo_usuario', 'empleado')->get();
+                break;
+            case 'all_companies':
+                $users = User::where('tipo_usuario', 'empleador')->get();
+                break;
+            case 'red_alerts':
+                $professionals = $this->activityService->getProfessionalsStatus();
+                $users = $professionals->where('status', 'red')->pluck('user');
+                break;
+            case 'yellow_alerts':
+                $professionals = $this->activityService->getProfessionalsStatus();
+                $users = $professionals->where('status', 'yellow')->pluck('user');
+                break;
+            case 'individual_professional':
+            case 'individual_company':
+                if ($request->individual_id) {
+                    $users = User::where('id', $request->individual_id)->get();
+                }
+                break;
+        }
+
+        // Filter users with phone number
+        $users = $users->filter(fn($u) => !empty($u->phone_number));
+
+        if ($users->isEmpty()) {
+            return redirect()->back()->with('error', 'No se encontraron destinatarios con número de teléfono registrado.');
+        }
+
+        $user = auth()->user();
+        $companyName = "Obertrack"; // Superadmin uses app name
+        $sessionName = $this->waha->getSessionName($user->id);
+
+        $count = 0;
+        $delayIncrement = 60; // 1 minute delay for safety
+
+        foreach ($users as $recipient) {
+            $delay = $count * $delayIncrement;
+            \App\Jobs\SendMassWhatsappJob::dispatch($recipient->id, $request->message, $companyName, $sessionName)
+                ->delay(now()->addSeconds($delay));
+            $count++;
+        }
+
+        return back()->with('status', "Se han encolado {$count} mensajes de WhatsApp con éxito. El envío se realizará de forma progresiva (1 mensaje por minuto).");
+    }
+
+    public function getWhatsappStatus()
+    {
+        $user = auth()->user();
+        $sessionName = $this->waha->getSessionName($user->id);
+        
+        $statusData = $this->waha->getSessionStatus($sessionName);
+        $status = $statusData['status'] ?? 'STOPPED';
+        
+        $qr = null;
+        if ($status === 'SCAN_QR_CODE') {
+            $qr = $this->waha->getQrCode($sessionName);
+        }
+        
+        return response()->json([
+            'status' => $status,
+            'qr' => $qr
+        ]);
+    }
+
+    public function startWhatsappSession(Request $request)
+    {
+        $user = auth()->user();
+        $sessionName = $this->waha->getSessionName($user->id);
+        $force = $request->boolean('force', false);
+        
+        $result = $this->waha->startSession($sessionName, $force);
+        
+        return response()->json($result);
     }
 
     public function companies()
