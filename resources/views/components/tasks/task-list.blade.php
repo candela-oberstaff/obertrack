@@ -55,7 +55,7 @@
                             <button onclick="showEmployerEditFields({{ $tarea->id }})" class="px-3 py-1.5 rounded text-sm font-medium transition duration-300 ease-in-out bg-primary hover:bg-primary text-white">
                                 <i class="fas fa-edit mr-1"></i>Editar
                             </button>
-                            <form action="{{ route('tareas.destroy', $tarea->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de querer eliminar esta tarea?');" class="inline-block">
+                            <form action="{{ route('tareas.destroy', $tarea->id) }}" method="POST" onsubmit="return confirmFormSubmit(event, '¿Estás seguro de querer eliminar esta tarea?');" class="inline-block">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="px-3 py-1.5 rounded text-sm font-medium transition duration-300 ease-in-out bg-red-500 hover:bg-red-600 text-white">

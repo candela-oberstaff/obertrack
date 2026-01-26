@@ -71,7 +71,7 @@ function toggleEmployerTaskCompletion(taskId) {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire('Error', 'No se pudo actualizar el estado de la tarea', 'error');
                     } else {
-                        alert('Error al actualizar el estado de la tarea');
+                        showError('Error al actualizar el estado de la tarea');
                     }
                 }
             })
@@ -80,7 +80,7 @@ function toggleEmployerTaskCompletion(taskId) {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire('Error', 'Ocurrió un error al procesar la solicitud', 'error');
                 } else {
-                    alert('Error al procesar la solicitud');
+                    showError('Error al procesar la solicitud');
                 }
             });
     }
@@ -111,7 +111,7 @@ function addEmployerTaskComment(event, taskId) {
             if (typeof Swal !== 'undefined') {
                 Swal.fire('Error', 'Por favor, escribe un comentario antes de enviarlo.', 'warning');
             } else {
-                alert('Por favor, escribe un comentario antes de enviarlo.');
+                showWarning('Por favor, escribe un comentario antes de enviarlo.');
             }
             return;
         }
@@ -141,7 +141,7 @@ function addEmployerTaskComment(event, taskId) {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire('Error', 'No se pudo agregar el comentario', 'error');
                 } else {
-                    alert('Error al agregar el comentario');
+                    showError('Error al agregar el comentario');
                 }
             });
     }
@@ -154,8 +154,14 @@ function editEmployerComment(commentId) {
 }
 
 function deleteEmployerComment(commentId, taskId) {
-    if (!confirm('¿Estás seguro de querer eliminar este comentario?')) return;
+    showConfirm('¿Eliminar comentario?', '¿Estás seguro de querer eliminar este comentario?', 'Eliminar').then((isConfirmed) => {
+        if (isConfirmed) {
+            performDeleteComment(commentId, taskId);
+        }
+    });
+}
 
+function performDeleteComment(commentId, taskId) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     fetch(`/empleador/tareas/${taskId}/comments/${commentId}`, {
@@ -180,11 +186,21 @@ function deleteEmployerComment(commentId, taskId) {
                     let count = parseInt(countSpan.innerText);
                     countSpan.innerText = Math.max(0, count - 1);
                 }
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Eliminado',
+                        text: 'El comentario ha sido eliminado.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                }
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al eliminar el comentario');
+            showError('Error al eliminar el comentario');
         });
 }
 

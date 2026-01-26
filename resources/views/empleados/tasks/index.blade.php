@@ -331,11 +331,11 @@
                             if (index !== -1) this.selectedTask.comments[index] = data.comment;
                         } else {
                             this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
-                            alert('Error al enviar el comentario.');
+                            showError('Error al enviar el comentario.');
                         }
                     } catch (error) {
                         this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
-                        alert('Error de conexión.');
+                        showError('Error de conexión.');
                     } finally {
                         this.isSubmittingComment = false;
                     }
@@ -363,10 +363,10 @@
                             if (index !== -1) this.selectedTask.comments[index] = data.comment;
                             this.editingCommentId = null;
                         } else {
-                            alert('Error al actualizar.');
+                            showError('Error al actualizar.');
                         }
                     } catch (error) {
-                        alert('Error de conexión');
+                        showError('Error de conexión');
                     }
                 },
 
@@ -393,10 +393,10 @@
                             this.selectedTask.attachments.unshift(data.attachment);
                         } else {
                             const data = await response.json();
-                            alert(data.message || 'Error al subir el archivo.');
+                            showError(data.message || 'Error al subir el archivo.');
                         }
                     } catch (error) {
-                        alert('Error de conexión.');
+                        showError('Error de conexión.');
                     } finally {
                         this.isUploadingFile = false;
                     }
@@ -422,9 +422,9 @@
                                 this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
                             } else {
                                 const data = await response.json();
-                                alert(data.message || 'Error al eliminar archivo');
+                                showError(data.message || 'Error al eliminar archivo');
                             }
-                        } catch (e) { alert('Error de conexión'); }
+                        } catch (e) { showError('Error de conexión'); }
                     } else if (type === 'comment') {
                         try {
                             const response = await fetch(`/empleados/tareas/comment/${id}`, {
@@ -437,9 +437,9 @@
                             if (response.ok) {
                                 this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
                             } else {
-                                alert('Error al eliminar comentario');
+                                showError('Error al eliminar comentario');
                             }
-                        } catch (e) { alert('Error de conexión'); }
+                        } catch (e) { showError('Error de conexión'); }
                     }
                 },
 

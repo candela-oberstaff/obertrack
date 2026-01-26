@@ -123,12 +123,12 @@
                     } else if (data.message) {
                         errorMessage += ' ' + data.message;
                     }
-                    alert(errorMessage);
+                    showError(errorMessage);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Hubo un error al actualizar la tarea. Por favor, inténtalo de nuevo.');
+                showError('Hubo un error al actualizar la tarea. Por favor, inténtalo de nuevo.');
             });
         });
     });

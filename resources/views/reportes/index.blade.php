@@ -129,7 +129,7 @@
                                                             ? route('recovery.update-status', $recovery->id) 
                                                             : route('work-hours.approve-recovery', $recovery->id);
                                                     @endphp
-                                                    <button @click="if(confirm('¿Aprobar ' + '{{ $recovery->recovered_hours }}' + 'h para el ' + '{{ \Carbon\Carbon::parse($recovery->work_date)->format('d/m') }}' + '?')) {
+                                                    <button @click="showConfirm('Confirmar aprobación', '¿Aprobar ' + '{{ $recovery->recovered_hours }}' + 'h para el ' + '{{ \Carbon\Carbon::parse($recovery->work_date)->format('d/m') }}' + '?', 'Aprobar').then((isConfirmed) => { if(isConfirmed) {
                                                                 isApproving = true;
                                                                 fetch('{{ $approvalUrl }}', {
                                                                     method: 'POST',
@@ -143,7 +143,7 @@
                                                                     @endif
                                                                 }).then(r => r.json()).then(data => {
                                                                     if(data.success) window.location.reload();
-                                                                    else alert(data.message);
+                                                                    else showError(data.message);
                                                                 }).finally(() => isApproving = false);
                                                             }"
                                                             :disabled="isApproving"

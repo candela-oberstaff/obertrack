@@ -287,7 +287,7 @@
         function approveWithComment() {
             const comment = document.getElementById('approvalComment').value;
             if (!comment.trim()) {
-                alert('Por favor, ingrese un comentario.');
+                showWarning('Por favor, ingrese un comentario.');
                 return;
             }
 
@@ -310,12 +310,12 @@
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert('Error al aprobar las horas');
+                    showError('Error al aprobar las horas');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error de conexión');
+                showError('Error de conexión');
             });
         }
 
@@ -454,12 +454,12 @@
                             if (index !== -1) this.selectedTask.comments[index] = data.comment;
                         } else {
                             this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
-                            alert('Error al enviar el comentario.');
+                            showError('Error al enviar el comentario.');
                         }
                     } catch (error) {
                         this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
                         console.error('Error:', error);
-                        alert('Error de conexión.');
+                        showError('Error de conexión.');
                     } finally {
                         this.isSubmittingComment = false;
                     }
@@ -490,11 +490,11 @@
                             if (index !== -1) this.selectedTask.comments[index] = data.comment;
                             this.editingCommentId = null;
                         } else {
-                            alert('Error al actualizar.');
+                            showError('Error al actualizar.');
                         }
                     } catch (error) {
                         console.error(error);
-                        alert('Error de conexión');
+                        showError('Error de conexión');
                     }
                 },
 
@@ -525,11 +525,11 @@
                             if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
                             this.selectedTask.attachments.unshift(data.attachment);
                         } else {
-                            alert('Error al subir el archivo.');
+                            showError('Error al subir el archivo.');
                         }
                     } catch (error) {
                         console.error(error);
-                        alert('Error de conexión.');
+                        showError('Error de conexión.');
                     } finally {
                         this.isUploadingFile = false;
                     }
@@ -559,9 +559,9 @@
                                 this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
                             } else {
                                 const data = await response.json();
-                                alert(data.message || 'Error al eliminar archivo');
+                                showError(data.message || 'Error al eliminar archivo');
                             }
-                        } catch (e) { alert('Error de conexión'); }
+                        } catch (e) { showError('Error de conexión'); }
                     } else if (type === 'comment') {
                         try {
                             const response = await fetch(`/empleador/comments/${id}`, {
@@ -575,9 +575,9 @@
                             if (response.ok) {
                                 this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
                             } else {
-                                alert('Error al eliminar comentario');
+                                showError('Error al eliminar comentario');
                             }
-                        } catch (e) { alert('Error de conexión'); }
+                        } catch (e) { showError('Error de conexión'); }
                     } else if (type === 'task') {
                         try {
                             const response = await fetch(`/tareas/${id}`, {
@@ -597,11 +597,11 @@
                                 window.location.href = currentUrl.toString();
                             } else {
                                 const data = await response.json();
-                                alert(data.message || 'Error al eliminar tarea');
+                                showError(data.message || 'Error al eliminar tarea');
                                 this.deleteConfirmation.isOpen = false;
                             }
                         } catch (e) { 
-                            alert('Error de conexión'); 
+                            showError('Error de conexión');  
                             this.deleteConfirmation.isOpen = false;
                         } finally {
                             this.isDeleting = false;
@@ -650,14 +650,14 @@
                             const data = await response.json();
                             if (data.errors) {
                                 const errorMessages = Object.values(data.errors).flat().join('\n');
-                                alert('Errores de validación:\n' + errorMessages);
+                                showWarning('Errores de validación:\n' + errorMessages);
                             } else {
-                                alert(data.message || 'Error al guardar cambios');
+                                showError(data.message || 'Error al guardar cambios');
                             }
                         }
                     } catch (e) {
                         console.error('Network error:', e);
-                        alert('Error de conexión');
+                        showError('Error de conexión');
                     } finally {
                         this.isSavingTask = false;
                     }
@@ -690,11 +690,11 @@
                                 this.selectedTask.status = data.status;
                             }
                         } else {
-                            alert(data.message || 'Error al actualizar el estado');
+                            showError(data.message || 'Error al actualizar el estado');
                         }
                     } catch (e) {
                         console.error(e);
-                        alert('Error de conexión');
+                        showError('Error de conexión');
                     } finally {
                         this.isSavingTask = false;
                     }

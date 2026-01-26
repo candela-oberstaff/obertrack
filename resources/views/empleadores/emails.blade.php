@@ -359,7 +359,7 @@
                 document.getElementById('massEmailForm').addEventListener('submit', function(e) {
                     let htmlContent = quill.root.innerHTML;
                     if (quill.getText().trim().length === 0 && htmlContent.indexOf('<img') === -1) {
-                         alert('Por favor escribe un mensaje.');
+                         showWarning('Por favor escribe un mensaje.');
                          e.preventDefault();
                          return;
                     }

@@ -58,7 +58,7 @@
                                         @if($p['user']->empleador)
                                             <div class="flex flex-col">
                                                 <span class="text-sm font-bold text-gray-700">{{ $p['user']->empleador->company_name ?? $p['user']->empleador->name }}</span>
-                                                <form action="{{ route('admin.unlink-professional', $p['user']->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de desvincular este profesional?')">
+                                                <form action="{{ route('admin.unlink-professional', $p['user']->id) }}" method="POST" onsubmit="return confirmFormSubmit(event, '¿Estás seguro de desvincular este profesional?')">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="text-[10px] text-red-400 hover:text-red-500 font-bold uppercase tracking-wider mt-1">Desvincular</button>

@@ -73,7 +73,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <a href="{{ route('admin.dashboard', ['template_id' => $template->id]) }}" class="text-green-600 hover:text-green-900 mr-4 font-bold">Usar</a>
                                             <a href="{{ route('admin.email-templates.edit', $template->id) }}" class="text-indigo-600 hover:text-indigo-900 mr-4">Editar</a>
-                                            <form action="{{ route('admin.email-templates.destroy', $template->id) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Estás seguro de querer eliminar esta plantilla?');">
+                                            <form action="{{ route('admin.email-templates.destroy', $template->id) }}" method="POST" class="inline-block" onsubmit="return confirmFormSubmit(event, '¿Estás seguro de querer eliminar esta plantilla?');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-red-600 hover:text-red-900">Eliminar</button>

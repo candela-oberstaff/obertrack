@@ -42,11 +42,11 @@
                                     window.location.reload();
                                 }, 2000);
                             } else {
-                                alert(data.message || 'Error al aprobar la semana');
+                                showError(data.message || 'Error al aprobar la semana');
                             }
                         } catch (error) {
                             console.error(error);
-                            alert('Error de conexión al intentar aprobar');
+                            showError('Error de conexión al intentar aprobar');
                         } finally {
                             this.isApprovingWeek = false;
                         }
@@ -169,11 +169,11 @@
                                 emp.comment = emp.new_comment;
                                 window.location.reload(); 
                             } else {
-                                alert(data.message || 'Error al aprobar las horas');
+                                showError(data.message || 'Error al aprobar las horas');
                             }
                         } catch (error) {
                             console.error('Error:', error);
-                            alert('Error de conexión al intentar aprobar');
+                            showError('Error de conexión al intentar aprobar');
                         } finally {
                             this.isApproving = false;
                         }
@@ -201,14 +201,34 @@
                                 emp.just_saved = true;
                                 setTimeout(() => emp.just_saved = false, 3000);
                             } else {
-                                alert(data.message || 'Error al actualizar el comentario');
+                                showError(data.message || 'Error al actualizar el comentario');
                             }
                         } catch (error) {
                             console.error('Error:', error);
-                            alert('Error de conexión');
+                            showError('Error de conexión');
                         } finally {
                             this.isApproving = false;
                         }
+                    },
+                    
+                    confirmRecoveryAction(id, action) {
+                        const title = action === 'approve' ? '¿Aprobar recuperación?' : '¿Rechazar recuperación?';
+                        const msg = action === 'approve' ? 'Se aprobarán las horas recuperadas.' : 'Se rechazarán las horas recuperadas.';
+                        const btnText = action === 'approve' ? 'Aprobar' : 'Rechazar';
+                        
+                        showConfirm(title, msg, btnText).then((isConfirmed) => {
+                            if (isConfirmed) {
+                                this.processRecovery(id, action === 'approve');
+                            }
+                        });
+                    },
+
+                    processRecovery(id, approved) {
+                         fetch(`/recovery-hours/${id}/status`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                            body: JSON.stringify({ approved: approved })
+                        }).then(r => r.json()).then(() => window.location.reload());
                     },
                     // removed openRecoveryModal
                     // removed approveRecovery
@@ -463,24 +483,10 @@
                                             @else
                                                 <div class="flex items-center gap-2">
                                                      <button 
-                                                        @click="if(confirm('¿Aprobar recuperación?')) {
-                                                            isApproving = true;
-                                                            fetch('{{ route('recovery.update-status', $recovery->id) }}', {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                                                                body: JSON.stringify({ approved: true })
-                                                            }).then(r => r.json()).then(() => window.location.reload()).finally(() => isApproving = false);
-                                                        }"
+                                                        @click="confirmRecoveryAction(recovery.id, 'approve')"
                                                         class="px-2.5 py-1 bg-green-500 text-white text-[9px] font-black rounded-lg hover:bg-green-600 transition-all shadow-sm uppercase">Aprobar</button>
                                                      <button 
-                                                        @click="if(confirm('¿Rechazar recuperación?')) {
-                                                            isApproving = true;
-                                                            fetch('{{ route('recovery.update-status', $recovery->id) }}', {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                                                                body: JSON.stringify({ approved: false })
-                                                            }).then(r => r.json()).then(() => window.location.reload()).finally(() => isApproving = false);
-                                                        }"
+                                                        @click="confirmRecoveryAction(recovery.id, 'reject')"
                                                         class="px-2.5 py-1 bg-white text-red-500 text-[9px] font-black rounded-lg border border-red-100 hover:bg-red-50 transition-all uppercase">Rechazar</button>
                                                 </div>
                                             @endif
@@ -798,7 +804,7 @@
 
                                                             <div class="space-y-3">
                                                                 <template x-for="recovery in emp.recoveries" :key="recovery.id">
-                                                                    <div class="bg-gray-50 rounded-lg p-3">
+                                                                    <div class="bg-gray-50 rounded-lg p-3 w-full max-w-full">
                                                                         <div class="flex items-center justify-between mb-2">
                                                                             <span class="text-xs font-bold text-gray-700" x-text="parseFloat(recovery.hours).toFixed(1) + 'h'"></span>
                                                                             
@@ -823,13 +829,7 @@
                                                                                 <div class="flex gap-2">
                                                                                     <button 
                                                                                         @click.stop="
-                                                                                            if(confirm('¿Rechazar recuperación?')) {
-                                                                                                fetch(`/recovery-hours/${recovery.id}/status`, {
-                                                                                                    method: 'POST',
-                                                                                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                                                                                                    body: JSON.stringify({ approved: false })
-                                                                                                }).then(r => r.json()).then(() => window.location.reload());
-                                                                                            }
+                                                                                                confirmRecoveryAction(recovery.id, 'reject');
                                                                                         "
                                                                                         class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg transition-colors"
                                                                                         title="Rechazar">
@@ -837,13 +837,7 @@
                                                                                     </button>
                                                                                     <button 
                                                                                         @click.stop="
-                                                                                            if(confirm('¿Aprobar recuperación?')) {
-                                                                                                fetch(`/recovery-hours/${recovery.id}/status`, {
-                                                                                                    method: 'POST',
-                                                                                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                                                                                                    body: JSON.stringify({ approved: true })
-                                                                                                }).then(r => r.json()).then(() => window.location.reload());
-                                                                                            }
+                                                                                                confirmRecoveryAction(recovery.id, 'approve');
                                                                                         "
                                                                                         class="text-green-500 hover:text-green-700 bg-green-50 hover:bg-green-100 p-1.5 rounded-lg transition-colors"
                                                                                         title="Aprobar">
@@ -854,7 +848,7 @@
                                                                         </div>
                                                                         
                                                                         <template x-if="recovery.comment">
-                                                                            <p class="text-[10px] text-gray-600 italic border-t border-gray-200 pt-2 break-all overflow-wrap-anywhere" x-text="'&quot;' + recovery.comment + '&quot;'"></p>
+                                                                            <p class="text-[10px] text-gray-600 italic border-t border-gray-200 pt-2 break-all whitespace-normal w-full max-w-full" x-text="'&quot;' + recovery.comment + '&quot;'"></p>
                                                                         </template>
                                                                     </div>
                                                                 </template>
@@ -874,17 +868,17 @@
                                                                     <template x-if="parsed.activities.length > 0">
                                                                         <ul class="space-y-3 mb-4">
                                                                             <template x-for="activity in parsed.activities">
-                                                                                <li class="flex items-start gap-3">
+                                                                                 <li class="flex items-start gap-3 w-full">
                                                                                     <span class="w-1.5 h-1.5 rounded-full bg-[#22A9C8] mt-1.5 flex-shrink-0"></span>
-                                                                                    <span class="text-sm text-gray-700 font-medium break-all overflow-wrap-anywhere" x-text="activity"></span>
-                                                                                </li>
+                                                                                    <div class="text-sm text-gray-700 font-medium break-all whitespace-normal flex-1 min-w-0" x-text="activity"></div>
+                                                                                 </li>
                                                                             </template>
                                                                         </ul>
                                                                     </template>
                                                                     <template x-if="parsed.summary">
                                                                         <div :class="parsed.activities.length > 0 ? 'mt-4 pt-4 border-t border-gray-100' : ''">
                                                                             <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Resumen adicional</p>
-                                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line break-all overflow-wrap-anywhere" x-text="parsed.summary"></p>
+                                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line break-all w-full max-w-full" x-text="parsed.summary"></p>
                                                                         </div>
                                                                     </template>
                                                                 </div>

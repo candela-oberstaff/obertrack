@@ -179,7 +179,7 @@
                                                                     <form action="{{ route('recovery.update-status', $recovery->id) }}" method="POST" class="inline">
                                                                         @csrf
                                                                         <input type="hidden" name="approved" value="0">
-                                                                        <button type="submit" onclick="return confirm('¿Rechazar esta solicitud?')" class="bg-white border border-red-100 text-red-600 px-4 py-2 rounded-lg text-xs font-black uppercase hover:bg-red-50 transition-all">Rechazar</button>
+                                                                        <button type="submit" onclick="return confirmFormSubmit(event, '¿Rechazar esta solicitud?')" class="bg-white border border-red-100 text-red-600 px-4 py-2 rounded-lg text-xs font-black uppercase hover:bg-red-50 transition-all">Rechazar</button>
                                                                     </form>
                                                                     <form action="{{ route('recovery.update-status', $recovery->id) }}" method="POST" class="inline">
                                                                         @csrf

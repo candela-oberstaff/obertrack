@@ -114,11 +114,11 @@
                          quill.insertEmbed(range.index, 'image', data.url);
                     } else {
                         console.error('Upload failed');
-                        alert('Error al subir la imagen');
+                        showError('Error al subir la imagen');
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('Error en la conexión');
+                    showError('Error en la conexión');
                 }
             };
         }

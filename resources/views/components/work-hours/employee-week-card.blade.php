@@ -54,12 +54,12 @@
                 // For now, reload is safest but we could also update the local state
                 location.reload();
             } else {
-                alert('Error al aprobar las horas');
+                showError('Error al aprobar las horas');
                 this.loading = false;
             }
         } catch (error) {
             console.error(error);
-            alert('Error de conexión');
+            showError('Error de conexión');
             this.loading = false;
         }
     }

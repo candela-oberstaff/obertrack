@@ -891,7 +891,7 @@
                       })
                       .catch(error => {
                           console.error('Error toggling task:', error);
-                          alert('Error al actualizar el estado de la tarea');
+                          showError('Error al actualizar el estado de la tarea');
                       });
                   },
                  
@@ -1026,12 +1026,12 @@
 
                  saveHours() {
                      if (!this.workedFullDay) {
-                         alert('Por favor selecciona si trabajaste jornada completa.');
+                          showWarning('Por favor selecciona si trabajaste jornada completa.');
                          return;
                      }
 
                      if (this.workedFullDay === 'no' && !this.absenceReason) {
-                         alert('Por favor selecciona un motivo de ausencia.');
+                          showWarning('Por favor selecciona un motivo de ausencia.');
                          return;
                      }
 
@@ -1091,13 +1091,13 @@
                          if (data.success) {
                              window.location.reload(); 
                          } else {
-                             alert(data.message || 'Error al guardar.');
+                             showError(data.message || 'Error al guardar.');
                          }
                      })
                      .catch(error => {
                          this.isSaving = false;
                          console.error('Error:', error);
-                         alert(error.message || 'Error de conexión.');
+                          showError(error.message || 'Error de conexión.');
                      });
                  },
 
@@ -1128,7 +1128,7 @@
 
                  saveRecoveryHours() {
                      if (this.recoveryHours <= 0) {
-                         alert('Las horas a recuperar deben ser mayores a 0.');
+                          showWarning('Las horas a recuperar deben ser mayores a 0.');
                          return;
                      }
 
@@ -1162,12 +1162,12 @@
                          if (data.success) {
                              window.location.reload(); 
                          } else {
-                             alert(data.message || 'Error al guardar.');
+                             showError(data.message || 'Error al guardar.');
                          }
                      })
                      .catch(error => {
                          this.isSaving = false;
-                         alert('Error de conexión.');
+                          showError('Error de conexión.');
                      });
                  }
              }));

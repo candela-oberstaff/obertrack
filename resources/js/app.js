@@ -1,6 +1,7 @@
 import './bootstrap';
 import introJs from 'intro.js';
 import 'intro.js/minified/introjs.min.css';
+import './alerts'; // Custom alert system
 
 window.introJs = introJs;
 

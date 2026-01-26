@@ -255,23 +255,25 @@
                         // Delete comment
                         commentsContainer.addEventListener('click', function(e) {
                 if (e.target.classList.contains('delete-comment')) {
-                    if (confirm('¿Estás seguro de que quieres eliminar este comentario?')) {
-                        const commentId = e.target.dataset.commentId;
+                    showConfirm('¿Eliminar comentario?', '¿Estás seguro de que quieres eliminar este comentario?', 'Eliminar').then((isConfirmed) => {
+                        if (isConfirmed) {
+                            const commentId = e.target.dataset.commentId;
 
-                        fetch(`/empleados/tareas/comment/${commentId}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                document.getElementById(`comment-${commentId}`).remove();
-                            }
-                        });
-                    }
+                            fetch(`/empleados/tareas/comment/${commentId}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    document.getElementById(`comment-${commentId}`).remove();
+                                }
+                            });
+                        }
+                    });
                 }
             });
 
