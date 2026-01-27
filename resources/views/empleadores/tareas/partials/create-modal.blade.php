@@ -31,11 +31,7 @@
         class="bg-white rounded-3xl overflow-hidden shadow-xl transform transition-all w-full max-w-2xl max-h-[90vh] flex flex-col"
     >
         <!-- Header -->
-        <div class="px-6 py-4 flex items-center gap-2 border-b border-gray-100 shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input type="text" placeholder="Buscar tareas" class="w-full border-none focus:ring-0 text-sm text-gray-600 placeholder-gray-400">
+        <div class="px-6 py-4 flex items-center justify-end border-b border-gray-100 shrink-0">
             <button @click="isCreateModalOpen = false" class="text-gray-400 hover:text-gray-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

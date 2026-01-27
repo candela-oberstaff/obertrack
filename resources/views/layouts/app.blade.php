@@ -109,17 +109,17 @@
                         steps.push({
                             element: document.querySelector('#dashboard-stats-cards'),
                             title: 'Resumen de Actividades',
-                            intro: 'Aquí podés ver tus tareas pendientes, horas registradas y tareas completadas del mes.'
+                            intro: 'Aquí puedes ver tus tareas pendientes, horas registradas y tareas completadas del mes.'
                         });
                         steps.push({
                             element: document.querySelector('#dashboard-latest-tasks'),
                             title: 'Últimas Tareas',
-                            intro: 'Esta tabla muestra tus tareas más recientes. Hacé click en cualquier fila para ver los detalles completos.'
+                            intro: 'Esta tabla muestra tus tareas más recientes. Haz clic en cualquier fila para ver los detalles completos.'
                         });
                         steps.push({
                             element: document.querySelector('#dashboard-latest-comments'),
                             title: 'Últimos Comentarios',
-                            intro: 'Acá aparecen los comentarios más recientes en tus tareas.'
+                            intro: 'Aquí aparecen los comentarios más recientes en tus tareas.'
                         });
                     } else if (route.includes('/empleador/dashboard')) {
                         // Employer Dashboard
@@ -131,19 +131,19 @@
                         steps.push({
                             element: document.querySelector('#employer-calendar'),
                             title: 'Calendario Interactivo',
-                            intro: 'Hacé click en cualquier día para ver las horas registradas por tu equipo.'
+                            intro: 'Haz clic en cualquier día para ver las horas registradas por tu equipo.'
                         });
                     } else if (route.includes('/empleador/tareas')) {
                         // Employer Tasks
                         steps.push({
                             element: document.querySelector('#team-tasks-section'),
                             title: 'Asignaciones en Equipo',
-                            intro: 'Aquí podés gestionar las tareas asignadas a todo el equipo.'
+                            intro: 'Aquí puedes gestionar las tareas asignadas a todo el equipo.'
                         });
                         steps.push({
                             element: document.querySelector('#create-team-task-btn'),
                             title: 'Crear Tarea de Equipo',
-                            intro: 'Hacé click aquí para crear una nueva tarea para todo el equipo.'
+                            intro: 'Haz clic aquí para crear una nueva tarea para todo el equipo.'
                         });
                         steps.push({
                             element: document.querySelector('#individual-tasks-section'),
@@ -155,7 +155,7 @@
                         steps.push({
                             element: document.querySelector('#reportes-professionals-list'),
                             title: 'Lista de Profesionales',
-                            intro: 'Aquí podés ver todos los profesionales registrados con sus estadísticas semanales.'
+                            intro: 'Aquí puedes ver todos los profesionales registrados con sus estadísticas semanales.'
                         });
                         const firstCard = document.querySelector('.reportes-professional-card');
                         if (firstCard) {
@@ -170,7 +170,7 @@
                             steps.push({
                                 element: reportButton,
                                 title: 'Ver Reporte Completo',
-                                intro: 'Hacé click en "Ver reporte completo" para ver el detalle de horas y descargar PDFs.'
+                                intro: 'Haz clic en "Ver reporte completo" para ver el detalle de horas y descargar PDFs.'
                             });
                         }
                     } else if (route.includes('/chat')) {
@@ -185,7 +185,7 @@
                             steps.push({
                                 element: searchBar,
                                 title: 'Buscar Contactos',
-                                intro: 'Usá esta barra para buscar rápidamente un contacto específico.'
+                                intro: 'Usa esta barra para buscar rápidamente un contacto específico.'
                             });
                         }
                         const contactsList = document.querySelector('#chat-contacts-list');
@@ -193,7 +193,7 @@
                             steps.push({
                                 element: contactsList,
                                 title: 'Seleccionar Contacto',
-                                intro: 'Hacé click en cualquier contacto para abrir la conversación.'
+                                intro: 'Haz clic en cualquier contacto para abrir la conversación.'
                             });
                         }
                         const messagesArea = document.querySelector('#chat-messages-area');
@@ -209,7 +209,7 @@
                             steps.push({
                                 element: messageInput,
                                 title: 'Enviar Mensajes',
-                                intro: 'Escribí tu mensaje aquí y podés adjuntar archivos usando el ícono de clip.'
+                                intro: 'Escribe tu mensaje aquí y puedes adjuntar archivos usando el ícono de clip.'
                             });
                         }
                     } else if (route.includes('/empleado/registrar-horas')) {
@@ -217,14 +217,14 @@
                         steps.push({
                             element: document.querySelector('#registrar-horas-summary'),
                             title: 'Resumen de Horas',
-                            intro: 'Aquí podés ver el total de horas registradas del mes y tu progreso hacia las 160 horas objetivo.'
+                            intro: 'Aquí puedes ver el total de horas registradas del mes y tu progreso hacia las 160 horas objetivo.'
                         });
                         const monthNav = document.querySelector('#registrar-horas-month-nav');
                         if (monthNav) {
                             steps.push({
                                 element: monthNav,
                                 title: 'Navegación de Meses',
-                                intro: 'Usá las flechas para moverte entre diferentes meses y ver tu historial.'
+                                intro: 'Usa las flechas para moverte entre diferentes meses y ver tu historial.'
                             });
                         }
                         const calendar = document.querySelector('#registrar-horas-calendar');
@@ -232,7 +232,7 @@
                             steps.push({
                                 element: calendar,
                                 title: 'Calendario de Registro',
-                                intro: 'Hacé click en "Registrar tareas" en cada día para agregar tus tareas realizadas.'
+                                intro: 'Haz clic en "Registrar tareas" en cada día para agregar tus tareas realizadas.'
                             });
                         }
                     } else if (route.includes('/profile')) {
@@ -240,14 +240,14 @@
                         steps.push({
                             element: document.querySelector('#profile-personal-info'),
                             title: 'Información Personal',
-                            intro: 'Aquí podés ver y editar tu información personal como nombre y empresa.'
+                            intro: 'Aquí puedes ver y editar tu información personal como nombre y empresa.'
                         });
                         const accountConfig = document.querySelector('#profile-account-config');
                         if (accountConfig) {
                             steps.push({
                                 element: accountConfig,
                                 title: 'Configuración de Cuenta',
-                                intro: 'Gestioná tu correo electrónico y contraseña desde esta sección.'
+                                intro: 'Gestiona tu correo electrónico y contraseña desde esta sección.'
                             });
                         }
                         const professionalsList = document.querySelector('#profile-professionals-list');
@@ -255,7 +255,7 @@
                             steps.push({
                                 element: professionalsList,
                                 title: 'Profesionales Registrados',
-                                intro: 'Como empleador, podés ver, promover y gestionar a todos tus profesionales desde aquí.'
+                                intro: 'Como empleador, puedes ver, promover y gestionar a todos tus profesionales desde aquí.'
                             });
                         }
                         const dangerZone = document.querySelector('#profile-danger-zone');
@@ -263,7 +263,7 @@
                             steps.push({
                                 element: dangerZone,
                                 title: 'Zona Peligrosa',
-                                intro: 'Desde aquí podés eliminar permanentemente tu cuenta. Esta acción no se puede deshacer.'
+                                intro: 'Desde aquí puedes eliminar permanentemente tu cuenta. Esta acción no se puede deshacer.'
                             });
                         }
                     }
@@ -273,7 +273,7 @@
                         steps.push({
                             element: document.querySelector('nav'),
                             title: 'Navegación',
-                            intro: 'Usá este menú para moverte entre Dashboard, Tareas y Chat.'
+                            intro: 'Usa este menú para moverte entre Dashboard, Tareas y Chat.'
                         });
                     }
 
@@ -283,7 +283,7 @@
                         steps.push({
                             element: chatNotif,
                             title: 'Chat',
-                            intro: 'Comunicate con tu equipo en tiempo real desde aquí.'
+                            intro: 'Comunícate con tu equipo en tiempo real desde aquí.'
                         });
                     }
 
@@ -293,7 +293,7 @@
                         steps.push({
                             element: profileDropdown,
                             title: 'Perfil',
-                            intro: 'Acá podés gestionar tu cuenta, reiniciar este tour, y cerrar sesión.'
+                            intro: 'Aquí puedes gestionar tu cuenta, reiniciar este tour, y cerrar sesión.'
                         });
                     }
 

@@ -1,7 +1,6 @@
 @props(['pendingCount' => 0, 'pendingWeeks' => []])
 
 <div x-data="{ employerNotificationOpen: false }" class="relative">
-    <!-- Notification Bell Button -->
     <button 
         @click="employerNotificationOpen = !employerNotificationOpen" 
         class="relative p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
@@ -18,7 +17,6 @@
         @endif
     </button>
 
-    <!-- Notification Dropdown -->
     <div 
         x-show="employerNotificationOpen" 
         @click.away="employerNotificationOpen = false"
@@ -32,12 +30,10 @@
         style="display: none;"
         class="fixed sm:absolute left-0 right-0 sm:left-auto sm:right-0 top-16 sm:top-auto mt-0 sm:mt-2 w-full sm:w-96 max-w-md mx-auto sm:mx-0 bg-white rounded-lg shadow-xl z-[9999] overflow-hidden border border-gray-100 px-4 sm:px-0"
     >
-        <!-- Header -->
         <div class="bg-white px-4 py-3 border-b border-gray-100">
             <h3 class="text-gray-900 font-bold text-sm">Horas Pendientes de Aprobación</h3>
         </div>
 
-        <!-- Notifications List -->
         <div class="max-h-96 overflow-y-auto">
             @forelse($pendingWeeks as $week)
                 <div class="px-4 py-3 hover:bg-gray-50 border-b border-gray-100 transition-colors">
@@ -82,8 +78,8 @@
                                     </p>
                                     @foreach($week['recovery_requests'] as $recovery)
                                         @php
-                                            $hours = isset($recovery->hours_recovered) ? $recovery->hours_recovered : $recovery->recovered_hours;
-                                            $date = isset($recovery->recovery_date) ? $recovery->recovery_date : $recovery->work_date;
+                                            $hours = $recovery->hours_recovered ?? $recovery->recovered_hours;
+                                            $date = $recovery->recovery_date ?? $recovery->work_date;
                                         @endphp
                                         <div class="flex items-center justify-between text-xs">
                                             <span class="text-gray-700 font-medium">
@@ -109,7 +105,6 @@
             @endforelse
         </div>
 
-        <!-- Footer -->
         @if(count($pendingWeeks) > 0)
             <div class="bg-gray-50 px-4 py-2 border-t border-gray-100">
                 <a href="{{ route('empleador.dashboard') }}" class="text-sm text-orange-600 hover:text-orange-800 font-medium">

@@ -234,23 +234,13 @@ class TaskController extends Controller
     public function downloadAttachment(\App\Models\TaskAttachment $attachment)
     {
         $task = $attachment->task;
-        
-        // Check if user has access to this task
-    $user = auth()->user();
-    
-    $isEmployerOfTask = $user->tipo_usuario === 'empleador' && (
-        $task->assignees()->where('empleador_id', $user->id)->exists() ||
-        ($task->createdBy && $task->createdBy->empleador_id === $user->id)
-    );
+        $user = auth()->user();
 
-    $canAccess = $user->id === $task->created_by ||
-                 $task->assignees->contains($user->id) ||
-                 $user->is_superadmin ||
-                 $isEmployerOfTask;
-    
-    if (!$canAccess) {
-        abort(403, 'No tienes permiso para descargar este archivo.');
-    }    
+        // Use the 'view' policy to determine access
+        // This unifies logic: if you can view the task, you can download its attachments
+        if ($user->cannot('view', $task)) {
+             abort(403, 'No tienes permiso para descargar este archivo.');
+        }
 
         $path = $attachment->stored_filename;
         
@@ -307,7 +297,10 @@ class TaskController extends Controller
             'uploaded_by' => request()->user()->id,
         ]);
 
-        return response()->json($attachment->load('uploader'));
+        return response()->json([
+            'success' => true,
+            'attachment' => $attachment->load('uploader')
+        ]);
     }
 
     public function deleteAttachment(\App\Models\TaskAttachment $attachment)
@@ -315,8 +308,12 @@ class TaskController extends Controller
         $task = $attachment->task;
         $user = Auth::user();
 
-        // Only the uploader can delete the attachment
-        if ($attachment->uploaded_by !== $user->id) {
+        // Allow deletion if user is uploader OR task creator (employer/manager)
+        $canDelete = $attachment->uploaded_by === $user->id || 
+                     $task->created_by === $user->id || 
+                     ($user->tipo_usuario === 'empleador' && $task->assignees()->where('empleador_id', $user->id)->exists());
+
+        if (!$canDelete) {
             return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar este archivo.'], 403);
         }
 

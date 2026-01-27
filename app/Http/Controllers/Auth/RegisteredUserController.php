@@ -23,7 +23,7 @@ class RegisteredUserController extends Controller
     {
         // return view('auth.register');
         $empleadores = User::where('tipo_usuario', 'empleador')
-                      ->pluck('name', 'id'); // Cambia 'name' a 'id' para el segundo argumento de pluck
+                      ->pluck('company_name', 'id');
         return view('auth.register', compact('empleadores'));
     }
 

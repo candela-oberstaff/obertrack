@@ -36,7 +36,21 @@ class TaskPolicy
     // }
     public function view(User $user, Task $task)
     {
-        return $user->id === $task->created_by || $task->assignees->contains($user->id) || $user->isEmpleadorOrSuperAdmin();
+        // 1. Super Admin sees all
+        if ($user->is_superadmin) return true;
+
+        // 2. Assigned users always see it
+        if ($task->assignees->contains($user->id)) return true;
+
+        // 3. Company Scope Check
+        // Allow if user belongs to the same company as the task creator
+        $taskOwner = $task->createdBy;
+        if (!$taskOwner) return false;
+
+        $taskCompanyId = $taskOwner->tipo_usuario === 'empleador' ? $taskOwner->id : $taskOwner->empleador_id;
+        $userCompanyId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
+
+        return $taskCompanyId === $userCompanyId;
     }
 
     /**

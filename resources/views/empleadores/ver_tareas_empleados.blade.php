@@ -85,7 +85,7 @@
                     
                     <!-- Search Box -->
                     <div class="relative w-full sm:w-64">
-                        <input type="text" x-model="searchQuery" placeholder="Buscar por tarea o profesional..." 
+                        <input type="text" x-model="searchQuery" placeholder="Buscar por tarea/profesional" 
                                class="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-[#22A9C8] focus:border-[#22A9C8] text-sm shadow-sm transition-all">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

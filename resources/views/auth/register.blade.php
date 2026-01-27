@@ -102,6 +102,12 @@
             box-shadow: 6px 6px 0px 0px #22A9C8 !important;
             transform: translate(-2px, -2px);
         }
+
+        .brutal-select option {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body class="min-h-screen graphic-grid flex items-center justify-center py-8 px-4">
@@ -201,11 +207,11 @@
                 <div>
                     <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Teléfono</label>
                     <div class="flex gap-2">
-                        <div class="w-2/5">
-                            <select x-model="selectedPrefix" @change="updateFull()" class="w-full brutal-select py-2.5 px-3 text-brandBlack text-xs">
+                        <div class="w-1/2">
+                            <select x-model="selectedPrefix" @change="updateFull()" class="w-full brutal-select py-2.5 px-3 text-brandBlack text-xs pr-8">
                                 <option value="">País</option>
                                 <template x-for="p in prefixes" :key="p.name + p.code">
-                                    <option :value="p.code" x-text="p.flag + ' +' + p.code + ' (' + p.name + ')'"></option>
+                                    <option :value="p.code" x-text="p.flag + ' +' + p.code"></option>
                                 </template>
                             </select>
                         </div>

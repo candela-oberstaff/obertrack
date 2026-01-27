@@ -20,9 +20,6 @@ class SendMassWhatsappJob implements ShouldQueue
     protected $companyName;
     protected $sessionName;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct($userId, $message, $companyName, $sessionName = 'default')
     {
         $this->userId = $userId;
@@ -31,9 +28,6 @@ class SendMassWhatsappJob implements ShouldQueue
         $this->sessionName = $sessionName;
     }
 
-    /**
-     * Execute the job.
-     */
     public function handle(WahaService $waha)
     {
         $user = User::find($this->userId);
@@ -43,16 +37,11 @@ class SendMassWhatsappJob implements ShouldQueue
             return;
         }
 
-        // WhatsApp formatting (Bold company name)
         $formattedMessage = "*{$this->companyName}*\n\n" . $this->message;
-
-        $chatId = $user->phone_number;
-        // Robust cleaning using WahaService helper
-        $chatId = $waha->formatArgentinaNumber($chatId);
+        $chatId = $waha->formatArgentinaNumber($user->phone_number);
 
         Log::info("Executing SendMassWhatsappJob for user {$user->name} ({$chatId}) using session {$this->sessionName}");
 
-        // Log current session status for debugging
         $statusData = $waha->getSessionStatus($this->sessionName);
         Log::info("SendMassWhatsappJob: Current session status for [{$this->sessionName}] is [{$statusData['status']}]");
 
@@ -65,9 +54,6 @@ class SendMassWhatsappJob implements ShouldQueue
 
         if (isset($result['error']) && $result['error']) {
             Log::error("SendMassWhatsappJob failed for user {$user->name}: " . json_encode($result));
-            
-            // Optionally: throw exception to trigger job retry
-            // throw new \Exception("WhatsApp delivery failed: " . json_encode($result));
         } else {
             Log::info("SendMassWhatsappJob success for user {$user->name}");
         }

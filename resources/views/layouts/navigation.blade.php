@@ -100,14 +100,10 @@
                 @endif
 
 
-                {{-- Cache buster: Force recompile --}}
-
                 <livewire:chat-notification />
-
 
             </div>
 
-            <!-- WhatsApp Icon (Right Side) -->
             @if(auth()->user()->tipo_usuario === 'empleado' && !auth()->user()->is_manager)
             <a href="{{ route('whatsapp.chat') }}" class="inline-flex items-center px-2 py-2 rounded-full transition duration-150 ease-in-out hover:bg-gray-100 {{ request()->routeIs('whatsapp.chat') ? '' : 'text-[#25D366]' }}" title="WhatsApp">
                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -116,92 +112,26 @@
             </a>
             @endif
 
-            <!-- Notification Bell for Employers (Pending Work Hours) -->
             @if(auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager)
+                @inject('notificationService', 'App\Services\NotificationService')
                 @php
-                    $empleados = auth()->user()->tipo_usuario === 'empleador' 
-                        ? \App\Models\User::where('empleador_id', auth()->id())->get()
-                        : \App\Models\User::where('empleador_id', auth()->user()->empleador_id)->get();
-                    
-                    $pendingWeeks = [];
-                    
-                    // Check ALL pending hours (not just by week)
-                    $totalPendingHours = \App\Models\WorkHours::whereIn('user_id', $empleados->pluck('id'))
-                        ->whereRaw('approved IS FALSE')
-                        ->exists();
-                    
-                    // Check for pending recoveries
-                    $totalPendingRecoveries = \App\Models\WorkHours::whereIn('user_id', $empleados->pluck('id'))
-                        ->where('recovered_hours', '>', 0)
-                        ->whereRaw('recovery_approved IS FALSE')
-                        ->exists();
-                    
-                    if (($totalPendingHours || $totalPendingRecoveries) && $empleados->count() > 0) {
-                        // Get detailed breakdown by employee
-                        $workHoursSummary = [];
-                        foreach ($empleados as $empleado) {
-                            $pendingHours = \App\Models\WorkHours::where('user_id', $empleado->id)
-                                ->whereRaw('approved IS FALSE')
-                                ->sum('hours_worked');
-                            
-                            if ($pendingHours > 0) {
-                                $workHoursSummary[$empleado->id] = [
-                                    'name' => $empleado->name,
-                                    'pending_hours' => $pendingHours,
-                                ];
-                            }
-                        }
-                        
-                        // Get recovery requests
-                        $recoveryRequests = \App\Models\WorkHours::whereIn('user_id', $empleados->pluck('id'))
-                            ->where('recovered_hours', '>', 0)
-                            ->whereRaw('recovery_approved IS NULL')
-                            ->with('user')
-                            ->get();
-                        
-                        if (!empty($workHoursSummary) || $recoveryRequests->count() > 0) {
-                            $pendingWeeks[] = [
-                                'start' => \Illuminate\Support\Carbon::now()->subWeek(),
-                                'end' => \Illuminate\Support\Carbon::now(),
-                                'summary' => $workHoursSummary,
-                                'recovery_requests' => $recoveryRequests
-                            ];
-                        }
-                    }
-                    
-                    // Count both pending hours and recovery requests
-                    $pendingCount = 0;
-                    foreach ($pendingWeeks as $week) {
-                        // Only count employees who actually have pending hours in this week
-                        $pendingCount += collect($week['summary'])->filter(fn($emp) => $emp['pending_hours'] > 0)->count();
-                        
-                        // Add recovery requests if present
-                        if (isset($week['recovery_requests'])) {
-                            $pendingCount += $week['recovery_requests']->count();
-                        }
-                    }
+                    $notifications = $notificationService->getPendingHoursForEmployer(auth()->user());
                 @endphp
-                <x-notifications.employer-bell :pendingCount="$pendingCount" :pendingWeeks="$pendingWeeks" />
+                <x-notifications.employer-bell 
+                    :pendingCount="$notifications['pending_count']" 
+                    :pendingWeeks="$notifications['pending_weeks']" 
+                />
             @endif
 
-            <!-- Notification Bell (for employees) -->
             @if(auth()->user()->tipo_usuario === 'empleado')
+                @inject('notificationService', 'App\Services\NotificationService')
                 @php
-                    $recentTasks = \App\Models\Task::whereHas('assignees', function($q) {
-                            $q->where('user_id', auth()->id());
-                        })
-                        ->whereRaw('completed IS FALSE')
-                        ->where('created_at', '>=', now()->subDays(7))
-                        ->whereDoesntHave('readBy', function ($query) {
-                            $query->where('user_id', auth()->id());
-                        })
-                        ->with('createdBy')
-                        ->orderBy('created_at', 'desc')
-                        ->limit(5)
-                        ->get();
-                    $unreadCount = $recentTasks->count();
+                    $taskNotifications = $notificationService->getRecentTasksForEmployee(auth()->user());
                 @endphp
-                <x-notifications.bell :unreadCount="$unreadCount" :recentTasks="$recentTasks" />
+                <x-notifications.bell 
+                    :unreadCount="$taskNotifications['unread_count']" 
+                    :recentTasks="$taskNotifications['recent_tasks']" 
+                />
             @endif
 
             <!-- User Menu -->
