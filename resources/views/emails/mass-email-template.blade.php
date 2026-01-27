@@ -15,7 +15,7 @@
 
         <!-- Content -->
         <div style="padding: 40px 40px; color: #333333; font-size: 16px;">
-            {!! $content !!}
+            {!! html_entity_decode($content) !!}
         </div>
 
         <!-- Footer -->

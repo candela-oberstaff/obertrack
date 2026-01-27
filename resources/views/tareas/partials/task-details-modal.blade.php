@@ -202,14 +202,14 @@
                                 <template x-for="comment in selectedTask?.comments" :key="comment.id">
                                     <div class="flex gap-3 group">
                                         <div class="flex-shrink-0">
-                                            <img :src="comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : '/avatars/' + comment.user.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(comment.user?.name || 'U')+'&color=FFFFFF&background=22A9C8'" 
+                                            <img :src="comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : '/avatars/' + comment.user.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(comment.user_name || comment.user?.name || 'U')+'&color=FFFFFF&background=22A9C8'" 
                                                  class="w-8 h-8 rounded-full bg-gray-200">
                                         </div>
                                         <div class="flex-1 bg-gray-50 rounded-2xl rounded-tl-none p-3 relative hover:bg-gray-100 transition-colors">
                                             
                                             <!-- Header -->
                                             <div class="flex justify-between items-start mb-1">
-                                                <span class="text-xs font-bold text-[#0D1E4C]" x-text="comment.user?.name || 'Usuario'"></span>
+                                                <span class="text-xs font-bold text-[#0D1E4C]" x-text="comment.user_name || comment.user?.name || 'Usuario'"></span>
                                                 <span class="text-[10px] text-gray-400" x-text="new Date(comment.created_at).toLocaleDateString() + ' ' + new Date(comment.created_at).toLocaleTimeString().slice(0,5)"></span>
                                             </div>
                                             
@@ -230,7 +230,7 @@
                                             </template>
 
                                             <!-- Actions (Only for owner) -->
-                                            <template x-if="currentUser.id == comment.user.id && editingCommentId != comment.id">
+                                            <template x-if="currentUser.id == comment.user_id && editingCommentId != comment.id">
                                                 <div class="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                                                     <button @click="startEditingComment(comment)" class="text-gray-400 hover:text-[#22A9C8]" title="Editar">
                                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
@@ -253,9 +253,8 @@
                             <!-- Add Comment Form -->
                             <div class="bg-white border-t border-gray-100 pt-4 -mx-6 px-6 sm:-mx-8 sm:px-8 mt-auto sticky bottom-0">
                                 <div class="flex gap-3">
-                                    <div class="flex-shrink-0 pt-1">
-                                        <img :src="currentUser.avatar ? (currentUser.avatar.startsWith('http') ? currentUser.avatar : '/avatars/' + currentUser.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(currentUser.name)+'&color=FFFFFF&background=22A9C8'" 
-                                                 class="w-8 h-8 rounded-full bg-gray-200">
+                                    <div class="flex-shrink-0 pt-1 hidden">
+                                        <!-- Avatar removed by user request -->
                                     </div>
                                     <div class="flex-1">
                                         <textarea x-model="newCommentText" 

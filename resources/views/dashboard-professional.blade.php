@@ -103,18 +103,15 @@
                 
                 {{-- Últimas Tareas (2/3 width) --}}
                 <div class="lg:col-span-2" id="dashboard-latest-tasks">
-                    <div class="bg-white rounded-lg border border-gray-200" x-data="{ 
-                        selectedTask: null, 
-                        isModalOpen: false,
-                        openModal(task) {
-                            this.selectedTask = task;
-                            this.isModalOpen = true;
-                        },
-                        closeModal() {
-                            this.isModalOpen = false;
-                            this.selectedTask = null;
-                        }
-                    }">
+                    @php
+                        $currentUserData = [
+                            'id' => auth()->id(),
+                            'name' => auth()->user()->name,
+                            'avatar' => auth()->user()->avatar, // Helper logic is in the template/JS
+                            'tipo_usuario' => auth()->user()->tipo_usuario
+                        ];
+                    @endphp
+                    <div class="bg-white rounded-lg border border-gray-200" x-data="taskModalLogic({{ json_encode($currentUserData) }})">
                         <div class="px-6 py-4 border-b border-gray-200">
                             <h2 class="text-lg font-semibold text-gray-900">Últimas tareas</h2>
                         </div>
@@ -134,15 +131,88 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @php
                                         $latestTasks = auth()->user()->assignedTasks()
-                                            ->with(['visibleTo', 'comments.user', 'attachments', 'createdBy'])
+                                            ->with(['comments.user', 'attachments.uploader', 'createdBy'])
                                             ->latest('tasks.created_at')
                                             ->take(5)
-                                            ->get();
+                                            ->get()
+                                            ->map(function($task) {
+                                                // Create a dedicated array for the modal JSON to avoid messing with the model object
+                                                $taskArray = $task->toArray();
+                                                
+                                                // Aggressively load users to ensure data availability
+                                                $task->loadMissing(['comments.user', 'attachments.uploader']);
+
+                                                // Map Comments with forced user name resolution
+                                                $taskArray['comments'] = collect($task->comments)->map(function($comment) {
+                                                    $userName = null;
+                                                    $userAvatar = null;
+                                                    
+                                                    // 1. Try loaded relation
+                                                    if ($comment->user) {
+                                                        $userName = $comment->user->name;
+                                                        $userAvatar = $comment->user->avatar;
+                                                    } 
+                                                    // 2. Try auth user fallback
+                                                    else if ($comment->user_id && $comment->user_id == auth()->id()) {
+                                                        $userName = auth()->user()->name;
+                                                        $userAvatar = auth()->user()->avatar;
+                                                    }
+                                                    // 3. Direct DB query
+                                                    else if ($comment->user_id) {
+                                                        try {
+                                                            $dbUser = \App\Models\User::withoutGlobalScopes()->find($comment->user_id);
+                                                            if ($dbUser) {
+                                                                $userName = $dbUser->name;
+                                                                $userAvatar = $dbUser->avatar;
+                                                            }
+                                                        } catch (\Exception $e) { /* ignore */ }
+                                                    }
+                                                    
+                                                    // 4. Final Fallback (Debug info included implicitly if needed, but keeping clean for now)
+                                                    if (!$userName) {
+                                                        $userName = $comment->user_id ? 'Usuario ' . $comment->user_id : 'Usuario Anónimo';
+                                                    }
+
+                                                    $cArray = $comment->toArray();
+                                                    $cArray['user_name'] = $userName;
+                                                    $cArray['user_avatar'] = $userAvatar;
+                                                    $cArray['user_id'] = $comment->user_id;
+
+                                                    // Explicitly construct user object to satisfy template optional chaining checks
+                                                    $cArray['user'] = [
+                                                        'id' => $comment->user_id,
+                                                        'name' => $userName,
+                                                        'avatar' => $userAvatar
+                                                    ];
+                                                    
+                                                    return $cArray;
+                                                })->all();
+                                                
+                                                // Map Attachments
+                                                $taskArray['attachments'] = collect($task->attachments)->map(function($attachment) {
+                                                    $uploaderName = 'Desconocido';
+                                                    if ($attachment->uploader) {
+                                                        $uploaderName = $attachment->uploader->name;
+                                                    } else {
+                                                        $dbUser = \App\Models\User::withoutGlobalScopes()->find($attachment->uploaded_by);
+                                                        if ($dbUser) $uploaderName = $dbUser->name;
+                                                    }
+                                                    
+                                                    $aArray = $attachment->toArray();
+                                                    $aArray['uploader_name'] = $uploaderName;
+                                                    
+                                                    return $aArray;
+                                                })->all();
+
+                                                // Attach formatted JSON as a property to the object
+                                                $task->modal_json = json_encode($taskArray);
+                                                return $task;
+                                            });
                                     @endphp
                                     
                                     @forelse($latestTasks as $task)
                                         <tr class="hover:bg-gray-50 cursor-pointer transition-colors duration-150 ease-in-out border-b border-gray-50" 
-                                            @click="openModal({{ json_encode($task) }})">
+                                            @click="openModal({{ $task->modal_json // Use pre-calculated JSON }})">
                                             <td class="px-4 md:px-6 py-4">
                                                 <div class="text-sm font-bold text-gray-900 line-clamp-1">{{ $task->title }}</div>
                                                 <div class="text-[10px] text-gray-400 mt-0.5 sm:hidden">{{ $task->end_date->format('d/m/Y') }}</div>
@@ -199,159 +269,11 @@
                             </table>
                         </div>
 
-                        {{-- Task Details Modal --}}
-                        <div x-show="isModalOpen" 
-                             class="fixed inset-0 z-50 overflow-y-auto" 
-                             style="display: none;"
-                             x-transition:enter="transition ease-out duration-300"
-                             x-transition:enter-start="opacity-0"
-                             x-transition:enter-end="opacity-100"
-                             x-transition:leave="transition ease-in duration-200"
-                             x-transition:leave-start="opacity-100"
-                             x-transition:leave-end="opacity-0">
-                            
-                            <!-- Backdrop -->
-                            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal()"></div>
-            
-                            <!-- Modal Panel -->
-                            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col max-h-[85vh]"
-                                     @click.stop>
-                                    
-                                    <!-- Header -->
-                                    <div class="bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-start flex-shrink-0 border-b border-gray-200">
-                                        <div>
-                                            <h3 class="text-lg font-semibold leading-6 text-gray-900" x-text="selectedTask?.title"></h3>
-                                            <p class="mt-1 text-sm text-gray-500" x-text="'Creada por: ' + (selectedTask?.created_by?.name || 'Sistema')"></p>
-                                        </div>
-                                        <button type="button" @click="closeModal()" class="text-gray-400 hover:text-gray-500">
-                                            <span class="sr-only">Cerrar</span>
-                                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
-            
-                                    <!-- Body -->
-                                    <div class="px-4 py-5 sm:p-6 overflow-y-auto flex-1">
-                                        <div class="space-y-4">
-                                            
-                                            <!-- Description -->
-                                            <div>
-                                                <h4 class="text-sm font-medium text-gray-900">Descripción</h4>
-                                                <p class="mt-1 text-sm text-gray-500 whitespace-pre-line whitespace-nowrap    overflow-x-auto overflow-y-hidden   scrollbar-thin" x-text="selectedTask?.description || 'Sin descripción'"></p>
-                                            </div>
-            
-                                            <!-- Stats Grid -->
-                                            <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md">
-                                                <div>
-                                                    <span class="text-xs font-medium text-gray-500 uppercase">Prioridad</span>
-                                                    <p class="text-sm font-semibold capitalize" 
-                                                       :class="{
-                                                            'text-red-600': selectedTask?.priority === 'high' || selectedTask?.priority === 'urgent',
-                                                            'text-yellow-600': selectedTask?.priority === 'medium',
-                                                            'text-primary': selectedTask?.priority === 'low'
-                                                       }"
-                                                       x-text="selectedTask?.priority"></p>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs font-medium text-gray-500 uppercase">Fecha Límite</span>
-                                                    <p class="text-sm font-semibold text-gray-900" 
-                                                       x-text="new Date(selectedTask?.end_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })"></p>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs font-medium text-gray-500 uppercase">Estado</span>
-                                                    <template x-if="selectedTask?.completed">
-                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                            Completada
-                                                        </span>
-                                                    </template>
-                                                    <template x-if="!selectedTask?.completed">
-                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                                                              :class="new Date(selectedTask?.end_date) < new Date() ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'"
-                                                              x-text="new Date(selectedTask?.end_date) < new Date() ? 'Vencida' : 'Pendiente'">
-                                                        </span>
-                                                    </template>
-                                                </div>
-                                            </div>
-            
-                                            <!-- Attachments -->
-                                            <div>
-                                                <h4 class="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
-                                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
-                                                    </svg>
-                                                    Archivos adjuntos
-                                                </h4>
-                                                
-                                                <template x-if="selectedTask?.attachments && selectedTask.attachments.length > 0">
-                                                    <ul class="divide-y divide-gray-200 border border-gray-200 rounded-md">
-                                                        <template x-for="attachment in selectedTask.attachments" :key="attachment.id">
-                                                            <li class="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                                                                <div class="w-0 flex-1 flex items-center">
-                                                                    <!-- Icon based on mime/extension (simplified generic icon) -->
-                                                                    <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                                                        <path fill-rule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clip-rule="evenodd" />
-                                                                    </svg>
-                                                                    <span class="ml-2 flex-1 w-0 truncate" x-text="attachment.filename"></span>
-                                                                </div>
-                                                                <div class="ml-4 flex-shrink-0">
-                                                                    <a :href="'/tasks/attachments/' + attachment.id + '/download'" 
-                                                                       class="font-medium text-primary hover:text-primary"
-                                                                       @click.stop>
-                                                                        Descargar
-                                                                    </a>
-                                                                </div>
-                                                            </li>
-                                                        </template>
-                                                    </ul>
-                                                </template>
-                                                <template x-if="!selectedTask?.attachments || selectedTask.attachments.length === 0">
-                                                    <p class="text-sm text-gray-500 italic">No hay archivos adjuntos.</p>
-                                                </template>
-                                            </div>
-
-                                            <!-- Comments -->
-                                            <div>
-                                                <h4 class="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
-                                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
-                                                    </svg>
-                                                    Comentarios
-                                                </h4>
-                                                
-                                                <template x-if="selectedTask?.comments && selectedTask.comments.length > 0">
-                                                    <ul class="divide-y divide-gray-200 border border-gray-200 rounded-md bg-gray-50">
-                                                        <template x-for="comment in selectedTask.comments" :key="comment.id">
-                                                            <li class="px-4 py-3">
-                                                                <div class="flex items-center justify-between">
-                                                                    <span class="text-xs font-semibold text-gray-900" x-text="comment.user?.name || 'Usuario'"></span>
-                                                                    <span class="text-xs text-gray-500" x-text="new Date(comment.created_at).toLocaleDateString() + ' ' + new Date(comment.created_at).toLocaleTimeString().slice(0,5)"></span>
-                                                                </div>
-                                                                <p class="mt-1 text-sm text-gray-600  whitespace-nowrap   overflow-x-auto  overflow-y-hidden scrollbar-thin" x-text="comment.content"></p>
-                                                            </li>
-                                                        </template>
-                                                    </ul>
-                                                </template>
-                                                <template x-if="!selectedTask?.comments || selectedTask.comments.length === 0">
-                                                    <p class="text-sm text-gray-500 italic">No hay comentarios.</p>
-                                                </template>
-                                            </div>
-            
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Footer -->
-                                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse flex-shrink-0 border-t border-gray-200">
-                                        <button type="button" 
-                                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                                                @click="closeModal()">
-                                            Cerrar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        {{-- Task Details Modal (Standardized Partial) --}}
+                        @include('tareas.partials.task-details-modal', [
+                            'employees' => [], // Not needed for view-only or can be passed if editing is allowed
+                            'currentUser' => auth()->user()
+                        ])
 
                     </div>
                 </div>
@@ -403,4 +325,6 @@
 
     {{-- Footer --}}
     <x-layout.footer />
+    
+    @include('tareas.partials.task-details-scripts')
 </x-app-layout>
