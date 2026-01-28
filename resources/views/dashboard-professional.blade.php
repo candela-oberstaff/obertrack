@@ -211,8 +211,9 @@
                                     @endphp
                                     
                                     @forelse($latestTasks as $task)
+                                        {{-- Use pre-calculated JSON --}}
                                         <tr class="hover:bg-gray-50 cursor-pointer transition-colors duration-150 ease-in-out border-b border-gray-50" 
-                                            @click="openModal({{ $task->modal_json // Use pre-calculated JSON }})">
+                                            @click="openModal({{ $task->modal_json }})">
                                             <td class="px-4 md:px-6 py-4">
                                                 <div class="text-sm font-bold text-gray-900 line-clamp-1">{{ $task->title }}</div>
                                                 <div class="text-[10px] text-gray-400 mt-0.5 sm:hidden">{{ $task->end_date->format('d/m/Y') }}</div>
@@ -255,8 +256,6 @@
                                                     <span class="text-xs font-bold">{{ $task->comments->count() }}</span>
                                                 </div>
                                             </td>
-                                        </tr>
-
                                         </tr>
                                     @empty
                                         <tr>
