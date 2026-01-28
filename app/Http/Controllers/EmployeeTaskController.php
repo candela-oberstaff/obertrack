@@ -14,9 +14,50 @@ class EmployeeTaskController extends Controller
         $user = Auth::user();
         // Fetch only tasks for the current month based on end_date
         $allTasks = $user->assignedTasks()
-                         ->with(['assignees', 'createdBy', 'comments', 'attachments'])
+                         ->with(['assignees', 'createdBy', 'comments.user', 'attachments.uploader'])
                          ->orderBy('end_date', 'desc')
-                         ->get();
+                         ->get()
+                         ->map(function($task) {
+                             // Preprocess comments to ensure user names are available
+                             $task->comments->transform(function($comment) {
+                                 $userName = null;
+                                 $userAvatar = null;
+                                 
+                                 // 1. Try loaded relation
+                                 if ($comment->user) {
+                                     $userName = $comment->user->name;
+                                     $userAvatar = $comment->user->avatar;
+                                 } 
+                                 // 2. Try auth user fallback
+                                 else if ($comment->user_id && $comment->user_id == auth()->id()) {
+                                     $userName = auth()->user()->name;
+                                     $userAvatar = auth()->user()->avatar;
+                                 }
+                                 // 3. Direct DB query
+                                 else if ($comment->user_id) {
+                                     try {
+                                         $dbUser = \App\Models\User::withoutGlobalScopes()->find($comment->user_id);
+                                         if ($dbUser) {
+                                             $userName = $dbUser->name;
+                                             $userAvatar = $dbUser->avatar;
+                                         }
+                                     } catch (\Exception $e) { /* ignore */ }
+                                 }
+                                 
+                                 // 4. Final Fallback
+                                 if (!$userName) {
+                                     $userName = $comment->user_id ? 'Usuario ' . $comment->user_id : 'Usuario Anónimo';
+                                 }
+
+                                 // Add user_name attribute for template access
+                                 $comment->user_name = $userName;
+                                 $comment->user_avatar = $userAvatar;
+                                 
+                                 return $comment;
+                             });
+                             
+                             return $task;
+                         });
 
         $teamTasks = $allTasks;
 

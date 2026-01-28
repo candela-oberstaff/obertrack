@@ -9,42 +9,78 @@
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 
     <div class="py-12 bg-gray-50 min-h-screen">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             
-            <div class="mb-6">
-                 <a href="{{ route('admin.email-templates.index') }}" class="text-blue-600 hover:underline">&larr; Volver a la lista</a>
+            <!-- Admin Navigation Hub -->
+            @include('admin.partials.nav')
+
+            <!-- Breadcrumbs / Back button -->
+            <div class="mb-8 flex items-center justify-between">
+                <a href="{{ route('admin.email-templates.index') }}" 
+                   class="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-[#22A9C8] hover:opacity-70 transition-all">
+                    <i class="bi bi-arrow-left mr-2 bg-[#22A9C8]/10 p-2 rounded-lg"></i>
+                    Volver a la lista
+                </a>
+                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest">
+                    {{ isset($template) ? 'Paso 2: Edición de contenido' : 'Paso 2: Nueva Configuración' }}
+                </h3>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
+            <div class="bg-white rounded-[2rem] shadow-sm overflow-hidden border border-gray-100">
+                <div class="p-6 md:p-10 border-b border-gray-50 bg-[#F8F9FA]/50">
+                    <h3 class="text-xl md:text-2xl font-black text-[#0D1E4C] leading-tight">
+                        {{ isset($template) ? 'Editar Plantilla Existente' : 'Crear Nueva Plantilla' }}
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-2 uppercase tracking-wide font-bold">Personaliza el asunto y el cuerpo del mensaje masivo</p>
+                </div>
+
+                <div class="p-6 md:p-10">
                     <form action="{{ isset($template) ? route('admin.email-templates.update', $template->id) : route('admin.email-templates.store') }}" method="POST" id="templateForm">
                         @csrf
                         @if(isset($template))
                             @method('PUT')
                         @endif
 
-                        <div class="mb-4">
-                            <label for="title" class="block text-sm font-medium text-gray-700">Título de la Plantilla (Identificador interno)</label>
-                            <input type="text" name="title" id="title" value="{{ old('title', $template->title ?? '') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                            <div class="space-y-2">
+                                <label for="title" class="block text-[10px] font-black uppercase tracking-widest text-gray-400">Título Interno</label>
+                                <div class="relative group">
+                                    <input type="text" name="title" id="title" value="{{ old('title', $template->title ?? '') }}" required 
+                                           class="block w-full rounded-xl border-gray-100 bg-gray-50/50 p-4 text-sm font-bold text-gray-700 focus:border-[#22A9C8] focus:ring-0 transition-all placeholder:text-gray-300 shadow-inner"
+                                           placeholder="Ej: Recordatorio de Horas Pendientes">
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label for="subject" class="block text-[10px] font-black uppercase tracking-widest text-gray-400">Asunto del Email</label>
+                                <div class="relative group">
+                                    <input type="text" name="subject" id="subject" value="{{ old('subject', $template->subject ?? '') }}" required 
+                                           class="block w-full rounded-xl border-gray-100 bg-gray-50/50 p-4 text-sm font-bold text-gray-700 focus:border-[#22A9C8] focus:ring-0 transition-all placeholder:text-gray-300 shadow-inner"
+                                           placeholder="Ej: Acción Requerida: Reporte de la Semana">
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label for="subject" class="block text-sm font-medium text-gray-700">Asunto del Email</label>
-                            <input type="text" name="subject" id="subject" value="{{ old('subject', $template->subject ?? '') }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                        </div>
-
-                        <div class="mb-6">
-                            <label for="editor" class="block text-sm font-medium text-gray-700 mb-2">Cuerpo del Mensaje</label>
+                        <div class="mb-10">
+                            <label for="editor" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                                Cuerpo del Mensaje
+                                <span class="bg-gray-100 text-gray-400 px-2 py-0.5 rounded text-[8px] font-bold">EDITOR ENRIQUECIDO</span>
+                            </label>
                             <!-- Quill Editor Container -->
-                            <div id="editor-container" style="height: 400px;">
-                                {!! old('body', $template->body ?? '') !!}
+                            <div class="rounded-2xl border border-gray-100 overflow-hidden shadow-inner">
+                                <div id="editor-container" style="height: 500px; border: none;" class="bg-white">
+                                    {!! old('body', $template->body ?? '') !!}
+                                </div>
                             </div>
                             <input type="hidden" name="body" id="body">
                         </div>
 
-                        <div class="flex justify-end">
-                            <button type="button" id="submitBtn" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition">
-                                {{ isset($template) ? 'Actualizar Plantilla' : 'Guardar Plantilla' }}
+                        <div class="flex flex-col sm:flex-row justify-end items-center gap-4">
+                            <a href="{{ route('admin.email-templates.index') }}" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-red-500 transition-all order-2 sm:order-1">Cancelar</a>
+                            <button type="button" id="submitBtn" 
+                                    class="w-full sm:w-auto inline-flex items-center justify-center px-10 py-4 bg-[#0D1E4C] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl hover:bg-[#22A9C8] transition-all shadow-xl active:scale-95 order-1 sm:order-2">
+                                <i class="bi bi-cloud-arrow-up-fill mr-3 text-base"></i>
+                                {{ isset($template) ? 'Actualizar Plantilla' : 'Guardar y Finalizar' }}
                             </button>
                         </div>
                     </form>

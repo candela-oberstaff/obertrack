@@ -86,11 +86,38 @@
                                     </td>
                                     <td class="px-4 py-4">
                                         @if($p['status'] === 'red')
-                                            <span class="px-2.5 py-1 rounded-full bg-red-100 text-red-800 font-bold text-xs uppercase">ROJO (2+ días)</span>
+                                            <span class="relative group inline-block cursor-help">
+                                                <span class="px-2.5 py-1 rounded-full bg-red-100 text-red-800 font-bold text-xs uppercase text-nowrap">ROJO (2+ días)</span>
+                                                <!-- Tooltip -->
+                                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                                            bg-gray-900 text-white text-[10px] rounded-lg
+                                                            opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                                            whitespace-nowrap z-50 pointer-events-none shadow-xl border border-gray-700">
+                                                    Más de 48 horas sin actividad
+                                                </div>
+                                            </span>
                                         @elseif($p['status'] === 'yellow')
-                                            <span class="px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-800 font-bold text-xs uppercase">AMARILLO (1 día)</span>
+                                            <span class="relative group inline-block cursor-help">
+                                                <span class="px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-800 font-bold text-xs uppercase text-nowrap">AMARILLO (1 día)</span>
+                                                <!-- Tooltip -->
+                                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                                            bg-gray-900 text-white text-[10px] rounded-lg
+                                                            opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                                            whitespace-nowrap z-50 pointer-events-none shadow-xl border border-gray-700">
+                                                    24 horas sin registrar actividad
+                                                </div>
+                                            </span>
                                         @else
-                                            <span class="px-2.5 py-1 rounded-full bg-green-100 text-green-800 font-bold text-xs uppercase">Activo</span>
+                                            <span class="relative group inline-block cursor-help">
+                                                <span class="px-2.5 py-1 rounded-full bg-green-100 text-green-800 font-bold text-xs uppercase text-nowrap">Activo</span>
+                                                <!-- Tooltip -->
+                                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                                            bg-gray-900 text-white text-[10px] rounded-lg
+                                                            opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                                            whitespace-nowrap z-50 pointer-events-none shadow-xl border border-gray-700">
+                                                    Registró actividad recientemente
+                                                </div>
+                                            </span>
                                         @endif
                                     </td>
                                     <td class="px-4 py-4">

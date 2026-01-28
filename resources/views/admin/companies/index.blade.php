@@ -45,12 +45,28 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-8 py-5 text-gray-600 font-medium">
+                                    <td class="px-8 py-5 text-gray-600 font-medium relative group cursor-help">
                                         {{ $company->related_contact ?? 'N/A' }}
+                                        <!-- Tooltip -->
+                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                                    bg-gray-900 text-white text-[10px] rounded-lg
+                                                    opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                                    whitespace-nowrap z-50 pointer-events-none shadow-xl border border-gray-700">
+                                            Persona de contacto principal en la empresa
+                                        </div>
                                     </td>
                                     <td class="px-4 md:px-8 py-5">
-                                        <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full font-bold text-xs">
-                                            {{ $company->empleados_count }} profesionales
+                                        <span class="relative group inline-block cursor-help">
+                                            <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full font-bold text-xs">
+                                                {{ $company->empleados_count }} profesionales
+                                            </span>
+                                            <!-- Tooltip -->
+                                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                                        bg-gray-900 text-white text-[10px] rounded-lg
+                                                        opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                                        whitespace-nowrap z-50 pointer-events-none shadow-xl border border-gray-700">
+                                                Cantidad de profesionales vinculados a esta empresa
+                                            </div>
                                         </span>
                                     </td>
                                     <td class="px-4 md:px-8 py-5 hidden sm:table-cell text-gray-600">

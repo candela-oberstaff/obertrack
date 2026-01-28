@@ -441,60 +441,110 @@
                     <!-- Right: Quick Actions / Recent Requests (1/3) -->
                     <div class="lg:col-span-1">
                         <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden h-full flex flex-col">
-                            <div class="bg-gray-50/50 px-8 py-6 border-b border-gray-100">
-                                <h3 class="text-lg font-black text-gray-800">Solicitudes Recientes</h3>
+                            <div class="bg-gradient-to-br from-[#22A9C8]/5 to-transparent px-6 py-5 border-b border-gray-100">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-[#22A9C8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                                    </svg>
+                                    <h3 class="text-lg font-black text-gray-800">Solicitudes Recientes</h3>
+                                </div>
+                                <p class="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1 ml-7">Pendientes de revisión</p>
                             </div>
                             
-                            <div class="flex-1 overflow-y-auto no-scrollbar max-h-[450px]">
+                            <div class="flex-1 overflow-y-auto no-scrollbar max-h-[720px]">
                                 @forelse($recoveryHistory as $recovery)
-                                    <div class="px-6 py-5 border-b border-gray-50 last:border-0 hover:bg-gray-50/30 transition-colors">
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-gray-50 border border-gray-100">
-                                                    <img src="{{ $recovery->user->avatar ? (str_starts_with($recovery->user->avatar, 'http') ? $recovery->user->avatar : '/avatars/' . $recovery->user->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($recovery->user->name) . '&color=FFFFFF&background=22A9C8' }}" class="w-full h-full object-cover">
+                                    <div class="px-5 py-4 border-b border-gray-50 last:border-0 hover:bg-gradient-to-r hover:from-gray-50/50 hover:to-transparent transition-all group">
+                                        <!-- Header: User Info & Hours -->
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                                                <div class="relative flex-shrink-0">
+                                                    <div class="w-10 h-10 rounded-xl overflow-hidden shadow-sm ring-2 ring-white group-hover:ring-[#22A9C8]/20 transition-all">
+                                                        <img src="{{ $recovery->user->avatar ? (str_starts_with($recovery->user->avatar, 'http') ? $recovery->user->avatar : '/avatars/' . $recovery->user->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($recovery->user->name) . '&color=FFFFFF&background=22A9C8' }}" class="w-full h-full object-cover">
+                                                    </div>
+                                                    <!-- Status Indicator Dot -->
+                                                    @if($recovery->approved === null)
+                                                        <span class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-orange-400 rounded-full border-2 border-white animate-pulse"></span>
+                                                    @endif
                                                 </div>
-                                                <div>
-                                                    <p class="text-xs font-bold text-gray-700 line-clamp-1">{{ $recovery->user->name }}</p>
-                                                    <p class="text-[9px] text-gray-400 font-black tracking-widest uppercase">{{ $recovery->recovery_date->format('d/m/Y') }}</p>
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-sm font-bold text-gray-800 truncate">{{ $recovery->user->name }}</p>
+                                                    <div class="flex items-center gap-2 mt-0.5">
+                                                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                                        </svg>
+                                                        <p class="text-[10px] text-gray-400 font-semibold">{{ $recovery->recovery_date->format('d/m/Y') }}</p>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="text-right">
-                                                <span class="text-xs font-black text-[#22A9C8]">{{ number_format($recovery->hours_recovered, 1) }}h</span>
+                                            
+                                            <!-- Hours Badge -->
+                                            <div class="flex-shrink-0 ml-2">
+                                                <div class="bg-gradient-to-br from-[#22A9C8] to-[#1B8BA6] text-white px-3 py-1.5 rounded-xl shadow-sm">
+                                                    <span class="text-sm font-black">{{ number_format($recovery->hours_recovered, 1) }}</span>
+                                                    <span class="text-[10px] font-bold opacity-90">h</span>
+                                                </div>
                                             </div>
                                         </div>
                                         
+                                        <!-- Activities Description -->
                                         @if($recovery->activities)
-                                            <div class="mt-3 bg-gray-50/50 rounded-lg p-2.5 border border-gray-50">
-                                                <p class="text-[10px] text-gray-500 italic line-clamp-2">"{{ $recovery->activities }}"</p>
+                                            <div class="mb-3 bg-gray-50/80 rounded-xl p-3 border border-gray-100/50">
+                                                <div class="flex items-start gap-2">
+                                                    <svg class="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                    </svg>
+                                                    <p class="text-[11px] text-gray-600 leading-relaxed line-clamp-2">"{{ $recovery->activities }}"</p>
+                                                </div>
                                             </div>
                                         @endif
 
-                                        <div class="mt-3 flex items-center justify-between">
+                                        <!-- Status / Actions -->
+                                        <div class="flex items-center justify-between">
                                             @if($recovery->approved === true)
-                                                <span class="text-[9px] font-black uppercase text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 flex items-center gap-1">
-                                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                                    Aprobado
-                                                </span>
+                                                <div class="flex items-center gap-1.5 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100 flex-1">
+                                                    <svg class="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                    <span class="text-[10px] font-black uppercase text-green-700 tracking-wide">Aprobado</span>
+                                                </div>
                                             @elseif($recovery->approved === false)
-                                                <span class="text-[9px] font-black uppercase text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100 flex items-center gap-1">
-                                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                    Rechazado
-                                                </span>
+                                                <div class="flex items-center gap-1.5 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 flex-1">
+                                                    <svg class="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                    <span class="text-[10px] font-black uppercase text-red-700 tracking-wide">Rechazado</span>
+                                                </div>
                                             @else
-                                                <div class="flex items-center gap-2">
-                                                     <button 
-                                                        @click="confirmRecoveryAction(recovery.id, 'approve')"
-                                                        class="px-2.5 py-1 bg-green-500 text-white text-[9px] font-black rounded-lg hover:bg-green-600 transition-all shadow-sm uppercase">Aprobar</button>
-                                                     <button 
-                                                        @click="confirmRecoveryAction(recovery.id, 'reject')"
-                                                        class="px-2.5 py-1 bg-white text-red-500 text-[9px] font-black rounded-lg border border-red-100 hover:bg-red-50 transition-all uppercase">Rechazar</button>
+                                                <div class="flex items-center gap-2 w-full">
+                                                    <button 
+                                                        @click="confirmRecoveryAction({{ $recovery->id }}, 'reject')"
+                                                        class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white text-red-600 text-[10px] font-black rounded-lg border-2 border-red-100 hover:bg-red-50 hover:border-red-200 transition-all shadow-sm uppercase tracking-wide group/btn">
+                                                        <svg class="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                                        </svg>
+                                                        Rechazar
+                                                    </button>
+                                                    <button 
+                                                        @click="confirmRecoveryAction({{ $recovery->id }}, 'approve')"
+                                                        class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-[10px] font-black rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg uppercase tracking-wide group/btn">
+                                                        <svg class="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                                        </svg>
+                                                        Aprobar
+                                                    </button>
                                                 </div>
                                             @endif
                                         </div>
                                     </div>
                                 @empty
-                                    <div class="px-8 py-12 text-center">
-                                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Sin solicitudes<br>pendientes</p>
+                                    <div class="px-8 py-16 text-center">
+                                        <div class="w-16 h-16 mx-auto mb-4 bg-gray-50 rounded-2xl flex items-center justify-center">
+                                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                        <p class="text-sm font-bold text-gray-400 uppercase tracking-wider leading-relaxed">Sin solicitudes<br>pendientes</p>
+                                        <p class="text-[10px] text-gray-300 mt-2">Todas las recuperaciones están procesadas</p>
                                     </div>
                                 @endforelse
                             </div>
@@ -521,7 +571,7 @@
                 rounded-lg opacity-0 group-hover:opacity-100
                 transition-opacity duration-200
                 whitespace-nowrap z-50 pointer-events-none shadow-xl">
-         Calendario para revisar y aprobar horas registradas y pendientes
+         Calendario para revisión y aprobación de ausencias y horas de trabajo de los profesionales
     </div>
 </span>
                 </h3>

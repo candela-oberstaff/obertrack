@@ -22,16 +22,24 @@
                 @endphp
                 
                 {{-- Tareas Pendientes --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm relative group cursor-help">
                     <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas pendientes</p>
                     @php
                         $totalPending = auth()->user()->assignedTasks()->whereRaw('completed IS FALSE')->count();
                     @endphp
                     <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C]">{{ str_pad($totalPending, 2, '0', STR_PAD_LEFT) }}</p>
+
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                bg-gray-900 text-white text-[10px] rounded-lg
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                        Tareas que aún no han sido marcadas como completadas
+                    </div>
                 </div>
 
                 {{-- Horas Registradas --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm relative group cursor-help">
                     @php
                         $currentPeriodStart = now()->startOfMonth();
                         $currentPeriodEnd = now();
@@ -51,10 +59,18 @@
                             Pendientes de aprobación
                         </p>
                     @endif
+
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                bg-gray-900 text-white text-[10px] rounded-lg
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                        Total de horas trabajadas en el mes actual
+                    </div>
                 </div>
 
                 {{-- Tareas Completadas --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm relative group cursor-help">
                     <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas finalizadas</p>
                     @php
                         $completedTasks = auth()->user()->assignedTasks()
@@ -71,10 +87,18 @@
                             </svg>
                         </div>
                     </div>
+
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                bg-gray-900 text-white text-[10px] rounded-lg
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                        Tareas completadas durante este mes
+                    </div>
                 </div>
 
                 {{-- Recuperación de Horas --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm relative group cursor-help">
                     <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Horas de Recuperación</p>
                     <div class="flex items-center justify-between">
                         <div>
@@ -93,6 +117,14 @@
                         @if($debtSummary['pending_approval'] > 0)
                             <span class="text-orange-500 font-bold">+{{ number_format($debtSummary['pending_approval'], 1) }}h pnd</span>
                         @endif
+                    </div>
+
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                bg-gray-900 text-white text-[10px] rounded-lg
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                        Balance total de horas que debes recuperar (ausencias previas)
                     </div>
                 </div>
 

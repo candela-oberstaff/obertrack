@@ -28,8 +28,11 @@ use App\Livewire\Chat;
 |--------------------------------------------------------------------------
 */
 
-// GET / - Welcome page
+// GET / - Welcome page (redirects to dashboard if authenticated)
 Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect()->route(Auth::user()->getDashboardRoute());
+    }
     return view('welcome');
 });
 

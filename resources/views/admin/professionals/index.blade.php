@@ -44,42 +44,89 @@
                         <tbody class="divide-y divide-gray-100">
                             @foreach($professionals as $p)
                                 <tr class="hover:bg-gray-50/50 transition-colors">
-                                    <td class="px-4 md:px-8 py-5">
-                                        <div class="flex items-center gap-3">
-                                            <x-user-avatar :user="$p['user']" size="8" class="md:w-10 md:h-10" />
+                                    <td class="px-4 md:px-8 py-7 hover:bg-gray-50/80 transition-colors">
+                                        <div class="flex items-center gap-4">
+                                            <x-user-avatar :user="$p['user']" size="10" class="md:w-12 md:h-12 shadow-sm border border-gray-100" />
                                             <div>
-                                                <div class="font-bold text-gray-900 text-sm">{{ $p['user']->name }}</div>
-                                                <div class="text-[10px] text-gray-400 md:hidden">{{ $p['status'] === 'red' ? 'Inactivo' : ($p['status'] === 'yellow' ? 'Alerta' : 'Activo') }}</div>
-                                                <div class="text-[10px] text-gray-400 hidden md:block">{{ $p['user']->email }}</div>
+                                                <div class="font-bold text-gray-900 text-base leading-tight">{{ $p['user']->name }}</div>
+                                                <div class="text-[10px] text-gray-400 md:hidden mt-0.5">{{ $p['status'] === 'red' ? 'Inactivo' : ($p['status'] === 'yellow' ? 'Alerta' : 'Activo') }}</div>
+                                                <div class="text-[11px] text-gray-500 hidden md:block mt-0.5">{{ $p['user']->email }}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-4 md:px-8 py-5 hidden lg:table-cell">
+                                    <td class="px-4 md:px-8 py-7 hidden lg:table-cell">
                                         @if($p['user']->empleador)
                                             <div class="flex flex-col">
-                                                <span class="text-sm font-bold text-gray-700">{{ $p['user']->empleador->company_name ?? $p['user']->empleador->name }}</span>
+                                                <span class="text-sm font-bold text-gray-800">{{ $p['user']->empleador->company_name ?? $p['user']->empleador->name }}</span>
                                                 <form action="{{ route('admin.unlink-professional', $p['user']->id) }}" method="POST" onsubmit="return confirmFormSubmit(event, '¿Estás seguro de desvincular este profesional?')">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="text-[10px] text-red-400 hover:text-red-500 font-bold uppercase tracking-wider mt-1">Desvincular</button>
+                                                    <button type="submit" class="text-[10px] text-red-500 hover:text-red-700 font-bold uppercase tracking-wider mt-1.5 transition-colors">Desvincular</button>
                                                 </form>
                                             </div>
                                         @else
-                                            <span class="text-xs font-bold text-gray-300 uppercase italic">Sin empresa</span>
+                                            <span class="text-[11px] font-bold text-gray-300 uppercase italic tracking-widest">Sin empresa</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 md:px-8 py-5 hidden sm:table-cell">
-                                        <div class="flex flex-col gap-1">
+                                    <td class="px-4 md:px-8 py-7 hidden sm:table-cell">
+                                        <div class="flex flex-col gap-2.5">
                                             @if($p['status'] === 'red')
-                                                <span class="w-fit px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-bold text-[10px] uppercase">Inactivo (2+ días)</span>
+                                                <div class="flex items-center gap-2 relative group cursor-help">
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-red-50 text-red-700 border border-red-100 font-extrabold text-[10px] uppercase tracking-wide">
+                                                        <i class="bi bi-exclamation-octagon-fill mr-1"></i>
+                                                        Inactivo (2+ días)
+                                                    </span>
+                                                    <!-- Tooltip -->
+                                                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                                                bg-gray-900 text-white text-[10px] rounded-lg
+                                                                opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                                                whitespace-nowrap z-50 pointer-events-none shadow-xl border border-gray-700">
+                                                        Profesional con más de 48 horas sin registros
+                                                    </div>
+                                                </div>
                                             @elseif($p['status'] === 'yellow')
-                                                <span class="w-fit px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 font-bold text-[10px] uppercase">Alerta (1 día)</span>
+                                                <div class="flex items-center gap-2 relative group cursor-help">
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-100 font-extrabold text-[10px] uppercase tracking-wide">
+                                                        <i class="bi bi-clock-history mr-1"></i>
+                                                        Alerta (1 día)
+                                                    </span>
+                                                    <!-- Tooltip -->
+                                                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                                                bg-gray-900 text-white text-[10px] rounded-lg
+                                                                opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                                                whitespace-nowrap z-50 pointer-events-none shadow-xl border border-gray-700">
+                                                        Profesional con 24 horas sin registrar actividad
+                                                    </div>
+                                                </div>
                                             @else
-                                                <span class="w-fit px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-bold text-[10px] uppercase">Activo</span>
+                                                <div class="flex items-center gap-2 relative group cursor-help">
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100 font-extrabold text-[10px] uppercase tracking-wide">
+                                                        <i class="bi bi-check-circle-fill mr-1"></i>
+                                                        Activo
+                                                    </span>
+                                                    <!-- Tooltip -->
+                                                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                                                bg-gray-900 text-white text-[10px] rounded-lg
+                                                                opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                                                whitespace-nowrap z-50 pointer-events-none shadow-xl border border-gray-700">
+                                                        Profesional al día con sus registros
+                                                    </div>
+                                                </div>
                                             @endif
-                                            <span class="text-[10px] text-gray-400 font-medium italic">
-                                                Visto el: {{ $p['last_registration'] ? \Carbon\Carbon::parse($p['last_registration'])->format('d/m/Y') : 'Nunca' }}
-                                            </span>
+                                            
+                                            <div class="flex items-center gap-1.5 text-gray-400 relative group cursor-help">
+                                                <i class="bi bi-calendar3 text-[10px]"></i>
+                                                <span class="text-[10px] font-bold uppercase tracking-tighter">
+                                                    Visto: <span class="text-gray-500">{{ $p['last_registration'] ? \Carbon\Carbon::parse($p['last_registration'])->format('d/m/Y') : 'Nunca' }}</span>
+                                                </span>
+                                                <!-- Tooltip -->
+                                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                                                            bg-gray-900 text-white text-[10px] rounded-lg
+                                                            opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                                            whitespace-nowrap z-50 pointer-events-none shadow-xl border border-gray-700">
+                                                    Última fecha en la que el usuario registró horas o ausencias
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
                                     <td class="px-4 md:px-8 py-5 hidden md:table-cell">
@@ -101,8 +148,8 @@
                                             </button>
                                         </form>
                                     </td>
-                                    <td class="px-4 md:px-8 py-5 text-right">
-                                        <a href="{{ route('admin.professionals.show-details', $p['user']->id) }}" class="inline-flex items-center gap-2 px-3 md:px-4 py-2 border-2 border-[#22A9C8] text-[#22A9C8] rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider hover:bg-[#22A9C8] hover:text-white transition-all">
+                                    <td class="px-4 md:px-8 py-7 text-right">
+                                        <a href="{{ route('admin.professionals.show-details', $p['user']->id) }}" class="inline-flex items-center gap-2 px-4 py-2 border-2 border-[#22A9C8] text-[#22A9C8] rounded-full text-[9px] md:text-[11px] font-bold uppercase tracking-tight whitespace-nowrap hover:bg-[#22A9C8] hover:text-white transition-all shadow-sm">
                                             <span class="hidden md:inline">Ver Historial y Reporte</span>
                                             <span class="md:hidden">Historial</span>
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

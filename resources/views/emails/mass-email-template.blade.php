@@ -1,28 +1,21 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $subject ?? 'Comunicación de Obertrack' }}</title>
-</head>
-<body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; line-height: 1.6;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-        <!-- Header -->
-        <div style="background-color: #ffffff; padding: 20px 40px; text-align: center; border-bottom: 3px solid #f0f0f0;">
-             <!-- Logo -->
-             <img src="{{ asset('images/logo.png') }}" alt="Obertrack" style="max-height: 50px;">
-        </div>
+@extends('emails.layout')
 
-        <!-- Content -->
-        <div style="padding: 40px 40px; color: #333333; font-size: 16px;">
-            {!! html_entity_decode($content) !!}
-        </div>
+@section('title', $subject ?? 'Comunicación de Obertrack')
 
-        <!-- Footer -->
-        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; font-size: 12px; color: #888888; border-top: 1px solid #eeeeee;">
-            <p style="margin: 0 0 10px;">&copy; {{ date('Y') }} Obertrack. Todos los derechos reservados.</p>
-            <p style="margin: 0;">Has recibido este correo porque estás registrado en la plataforma Obertrack.</p>
-        </div>
+@section('content')
+<div style="font-family: 'Montserrat', sans-serif;">
+    <h2 class="title" style="color: #1a202c; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: -0.025em; border-bottom: 2px solid #22A9C8; display: inline-block; padding-bottom: 8px; margin-bottom: 30px;">
+        {{ $subject }}
+    </h2>
+    
+    <div style="color: #4a5568; font-size: 16px; line-height: 1.8;">
+        {!! $content !!}
     </div>
-</body>
-</html>
+
+    <div style="margin-top: 40px; padding-top: 25px; border-top: 1px solid #e2e8f0; text-align: center;">
+        <p style="font-size: 13px; color: #718096; font-weight: 500;">
+            Enviado desde el panel de administración de <strong>Obertrack</strong>.
+        </p>
+    </div>
+</div>
+@endsection

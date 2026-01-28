@@ -441,23 +441,36 @@ class BrevoEmailService
     }
 
     /**
-     * Generic method to send an email via Brevo
+     * Generic method to send an email via Brevo with automatic inline image support
      */
     public function sendEmail(string $toEmail, string $toName, string $subject, string $htmlContent, ?array $attachment = null): bool
     {
         try {
+            $inlineImages = [];
+            $processedHtml = $this->processInlineImages($htmlContent, $inlineImages);
+
             $emailData = [
                 'subject' => $subject,
                 'sender' => ['name' => $this->senderName, 'email' => $this->senderEmail],
                 'to' => [['email' => $toEmail, 'name' => $toName]],
-                'htmlContent' => $htmlContent,
+                'htmlContent' => $processedHtml,
             ];
 
+            $attachments = [];
             if ($attachment) {
-                $emailData['attachment'] = [[
+                $attachments[] = [
                     'content' => base64_encode($attachment['content']),
                     'name' => $attachment['name']
-                ]];
+                ];
+            }
+
+            // Add processed inline images
+            foreach ($inlineImages as $img) {
+                $attachments[] = $img;
+            }
+
+            if (!empty($attachments)) {
+                $emailData['attachment'] = $attachments;
             }
 
             $sendSmtpEmail = new SendSmtpEmail($emailData);
@@ -475,36 +488,48 @@ class BrevoEmailService
     }
 
     /**
-     * Send mass communication email with attachments
+     * Send mass communication email with attachments and inline images
      */
     public function sendMassCommunication(string $toEmail, string $toName, string $subject, string $htmlMessage, string $companyName, array $attachments = []): bool
     {
         try {
+            $inlineImages = [];
+            $processedHtml = $this->processInlineImages($htmlMessage, $inlineImages);
+
             $htmlContent = view('emails.mass-communication', [
                 'subject' => $subject,
-                'htmlMessage' => $htmlMessage,
+                'htmlMessage' => $processedHtml,
                 'companyName' => $companyName,
-                'attachments' => $attachments // Just for the view, Brevo handles the actual attachments separately
+                'attachments' => $attachments
             ])->render();
 
-            $sendSmtpEmail = new SendSmtpEmail([
+            $emailData = [
                 'subject' => $subject,
                 'sender' => ['name' => $companyName . ' (via Obertrack)', 'email' => $this->senderEmail],
                 'to' => [['email' => $toEmail, 'name' => $toName]],
                 'htmlContent' => $htmlContent,
-            ]);
+            ];
 
-            // Add attachments if present
-            if (!empty($attachments)) {
-                $brevoAttachments = [];
-                foreach ($attachments as $file) {
-                    $brevoAttachments[] = [
-                        'content' => base64_encode(file_get_contents($file['path'])),
-                        'name' => $file['name']
-                    ];
-                }
-                $sendSmtpEmail['attachment'] = $brevoAttachments;
+            $brevoAttachments = [];
+            
+            // Add user-provided attachments
+            foreach ($attachments as $file) {
+                $brevoAttachments[] = [
+                    'content' => base64_encode(file_get_contents($file['path'])),
+                    'name' => $file['name']
+                ];
             }
+
+            // Add processed inline images
+            foreach ($inlineImages as $img) {
+                $brevoAttachments[] = $img;
+            }
+
+            if (!empty($brevoAttachments)) {
+                $emailData['attachment'] = $brevoAttachments;
+            }
+
+            $sendSmtpEmail = new SendSmtpEmail($emailData);
 
             $this->apiInstance->sendTransacEmail($sendSmtpEmail);
             
@@ -518,11 +543,47 @@ class BrevoEmailService
             Log::error('Brevo: Mass communication failed', [
                 'recipient' => $toEmail,
                 'subject' => $subject,
-                'error' => $e->getMessage(),
-                'trace' => substr($e->getTraceAsString(), 0, 500)
+                'error' => $e->getMessage()
             ]);
             return false;
         }
+    }
+
+    /**
+     * Process HTML to find images and prepare them for CID embedding
+     */
+    private function processInlineImages(string $html, array &$inlineImages): string
+    {
+        // Find all images with local paths or storage URLs
+        return preg_replace_callback('/<img[^>]+src=["\']([^"\']+)["\'][^>]*>/i', function($matches) use (&$inlineImages) {
+            $src = $matches[1];
+            $fullTag = $matches[0];
+            
+            // Check if it's a storage URL
+            $isStorage = str_contains($src, '/storage/') || str_contains($src, 'storage/');
+            
+            if ($isStorage) {
+                // Extract relative path from storage URL
+                $storagePos = strpos($src, 'storage/');
+                $relativePath = substr($src, $storagePos + 8);
+                $fullPath = storage_path('app/public/' . $relativePath);
+                
+                if (file_exists($fullPath)) {
+                    $fileName = basename($fullPath);
+                    $cid = 'img_' . md5($fileName);
+                    
+                    $inlineImages[] = [
+                        'content' => base64_encode(file_get_contents($fullPath)),
+                        'name' => $fileName,
+                        'contentId' => $cid
+                    ];
+                    
+                    return str_replace($src, 'cid:' . $cid, $fullTag);
+                }
+            }
+            
+            return $fullTag;
+        }, $html);
     }
 
     /**

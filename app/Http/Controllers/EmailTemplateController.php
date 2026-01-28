@@ -61,7 +61,7 @@ class EmailTemplateController extends Controller
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             $path = $file->store('items/email-images', 'public'); // Store in public disk
-            $url = '/storage/' . $path;
+            $url = asset('storage/' . $path);
             
             return response()->json(['url' => $url]);
         }
