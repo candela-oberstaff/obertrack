@@ -32,10 +32,10 @@ class AppServiceProvider extends ServiceProvider
         // Force HTTPS and correct root URL in production (for apps behind proxies like Coolify)
         if (config('app.env') === 'production') {
             \Illuminate\Support\Facades\URL::forceScheme('https');
-            \Illuminate\Support\Facades\URL::forceRootUrl('https://obertrack.com');
-            
+            \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
+            // \Illuminate\Support\Facades\URL::forceRootUrl('https://obertrack.com');
             // Explicitly set the Google redirect URI to use HTTPS to avoid redirect_uri_mismatch
-            config(['services.google.redirect' => 'https://obertrack.com/auth/google/callback']);
+            config(['services.google.redirect' => config('app.url') . '/auth/google/callback']);
         }
     }
 

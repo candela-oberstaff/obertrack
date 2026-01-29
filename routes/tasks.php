@@ -23,6 +23,10 @@ Route::middleware(['auth'])->group(function () {
     // PUT /tareas/{taskId} - Update a task
     Route::put('/tareas/{taskId}', [TaskController::class, 'update'])
         ->name('tareas.update');
+
+    // PATCH /tareas/{taskId}/status - Update task status (Kanban Drag & Drop)
+    Route::patch('/tareas/{taskId}/status', [TaskController::class, 'updateStatus'])
+        ->name('tareas.update-status');
     
     // DELETE /tareas/{taskId} - Delete a task
     Route::delete('/tareas/{taskId}', [TaskController::class, 'destroy'])
@@ -48,6 +52,10 @@ Route::middleware(['auth'])->group(function () {
     // Task Details
     Route::get('/tasks/{task}/details', [TaskController::class, 'getDetails'])
         ->name('tasks.details');
+
+    // GET /tasks/{task} - Show specific task (JSON or View)
+    Route::get('/tasks/{task}', [TaskController::class, 'show'])
+        ->name('tasks.show');
 
     // Comments Management
     // GET /tasks/{taskId}/comments - Get all comments for a task

@@ -37,23 +37,18 @@ class TaskStatusSelector extends Component
         
         $isNowCompleted = $newStatus === Task::STATUS_COMPLETED;
         
-        // Nuclear option: Direct DB update with explicit RAW boolean literals.
-        // This bypasses Laravel's PDO integer binding which fails on Postgres strict booleans.
+        // Use Eloquent for safe, consistent updates (avoids strict boolean/integer mismatch on Postgres if handled correctly via casting)
         try {
-            \Illuminate\Support\Facades\DB::table('tasks')
-                ->where('id', $this->task->id)
-                ->update([
-                    'status' => $newStatus,
-                    'completed' => \Illuminate\Support\Facades\DB::raw($isNowCompleted ? 'true' : 'false'),
-                    'updated_at' => \Carbon\Carbon::now()
-                ]);
+            $this->task->status = $newStatus;
+            $this->task->completed = $isNowCompleted;
+            $this->task->save();
         } catch (\Exception $e) {
             \Log::error("Task update failed: " . $e->getMessage());
             $this->dispatch('notify', message: 'Error de base de datos: ' . $e->getMessage());
             return;
         }
         
-        // Refresh model to reflect the DB change we just made
+        // Refresh model to reflect any DB-side changes (though we just set them)
         $this->task->refresh();
         
         // Force local state sync just in case

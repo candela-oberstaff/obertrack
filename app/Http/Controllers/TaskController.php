@@ -67,6 +67,50 @@ class TaskController extends Controller
         }
     }
 
+    public function updateStatus(Request $request, $id)
+    {
+        try {
+            $task = Task::findOrFail($id);
+            
+            // Log for debugging
+            \Illuminate\Support\Facades\Log::info("UpdateStatus called for Task {$id}", [
+                'user' => Auth::id(),
+                'input' => $request->all(),
+            ]);
+
+            $request->validate([
+                'status' => 'required|in:por_hacer,en_proceso,finalizado'
+            ]);
+
+            $newStatus = $request->input('status');
+            $oldStatus = $task->status;
+            
+            if ($newStatus === $oldStatus) {
+                return response()->json(['success' => true, 'message' => 'El estado no ha cambiado']);
+            }
+
+            $task->status = $newStatus;
+            $task->completed = ($newStatus === 'finalizado');
+            $task->save();
+
+            // Notify if changed by an employee
+            if (Auth::user()->tipo_usuario === 'empleado') {
+                $this->taskManagementService->notifyClientOfStatusChange($task, $oldStatus);
+            }
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Estado actualizado correctamente',
+                'task' => $task->fresh(['comments.user', 'attachments.uploader', 'assignees', 'createdBy'])
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Datos inválidos: ' . $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Error updating status for task {$id}: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error del servidor: ' . $e->getMessage()], 500);
+        }
+    }
+
     // Syntax fix verification
     public function destroy(Request $request, $taskId)
     {
@@ -271,8 +315,24 @@ class TaskController extends Controller
 
     public function getDetails($taskId)
     {
-        $task = Task::with(['comments.user', 'attachments.uploader', 'assignees', 'createdBy'])->findOrFail($taskId);
+        $task = Task::with(['comments' => function($query) {
+            $query->orderBy('created_at', 'desc');
+        }, 'comments.user', 'attachments.uploader', 'assignees', 'createdBy'])->findOrFail($taskId);
         return response()->json($task);
+    }
+
+    public function show($id)
+    {
+        $task = Task::with(['comments' => function($query) {
+            $query->orderBy('created_at', 'desc');
+        }, 'comments.user', 'attachments.uploader', 'assignees', 'createdBy'])->findOrFail($id);
+        
+        if (request()->wantsJson()) {
+            return response()->json(['task' => $task]);
+        }
+        
+        // Return view if not JSON (future proofing)
+        return view('tareas.show', compact('task'));
     }
 
     public function uploadAttachment(Request $request, $taskId)

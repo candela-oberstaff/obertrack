@@ -1,362 +1,317 @@
-{{-- Task Details Modal (Unified) --}}
-<template x-teleport="body">
-    <div>
+{{-- Task Details Modal (Any.do Style) --}}
+<div>
         <div x-show="isDetailsModalOpen" 
-             class="fixed inset-0 z-[9999] overflow-y-auto" 
+             class="fixed inset-0 z-[9999] overflow-hidden" 
              style="display: none;"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0">
+             x-transition:leave-end="opacity-0"
+             @keydown.escape.window="if(isDetailsModalOpen) closeModal()">
             
             <!-- Backdrop -->
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="isDetailsModalOpen = false"></div>
+            <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" @click="closeModal()"></div>
 
             <!-- Modal Panel -->
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative overflow-hidden rounded-3xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col"
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative w-full max-w-6xl h-[85vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
                      @click.stop>
                      
-                    <!-- Close Button (Absolute Top-Right) -->
-                    <button type="button" @click="isDetailsModalOpen = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-500 transition-colors z-10 p-2 bg-gray-50 rounded-full hover:bg-gray-100">
-                        <span class="sr-only">Cerrar</span>
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                    
-                    <!-- Header & Tabs -->
-                    <div class="bg-gray-50 flex-shrink-0 border-b border-gray-100">
-                        <div class="px-6 py-4 sm:px-8 flex justify-between items-start">
-                            <div class="flex-1">
-                                 <h3 class="text-xl font-bold leading-6 text-[#0D1E4C] break-words" x-text="selectedTask?.title" x-show="!isEditingTask"></h3>
-                                 <p class="mt-1 text-sm text-gray-500" x-show="!isEditingTask" x-text="'Creada por: ' + (selectedTask?.createdBy?.name || selectedTask?.created_by?.name || 'Sistema')"></p>
-                                 <h3 class="text-xl font-bold leading-6 text-[#0D1E4C]" x-show="isEditingTask">Editando tarea</h3>
+                    <!-- LEFT COLUMN: Task Details (65%) -->
+                    <div class="flex-1 flex flex-col overflow-y-auto bg-white relative">
+                        
+                        <!-- Header Actions -->
+                        <div class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-8 py-6 flex justify-between items-start">
+                            <div class="flex items-center gap-3">
+                                <!-- Mark Complete Circle -->
+                                <button @click="toggleTaskCompletion(selectedTask.id)" 
+                                        class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200"
+                                        :class="selectedTask?.completed ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-500'">
+                                    <svg x-show="selectedTask?.completed" class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </button>
+                                
+                                <span class="text-xs font-semibold tracking-wider text-gray-500 uppercase" x-text="selectedTask?.project?.name || 'Tareas'"></span>
                             </div>
-                            <div class="flex items-center gap-3 ml-4">
-                                <!-- Author Actions -->
+
+                            <div class="flex items-center gap-2">
+                                <!-- Edit/Delete Actions (Only for authorized users) -->
                                 <template x-if="selectedTask && (currentUser.id == selectedTask.created_by || currentUser.tipo_usuario == 'empleador' || currentUser.is_superadmin) && !isEditingTask">
-                                    <div class="flex items-center gap-2">
-                                        <button @click="startEditingTask()" class="text-gray-400 hover:text-[#22A9C8] transition-colors p-1" title="Editar tarea">
-                                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                            </svg>
+                                    <div class="flex items-center gap-1">
+                                        <button @click="startEditingTask()" class="p-2 text-gray-400 hover:text-[#22A9C8] hover:bg-gray-100 rounded-full transition-colors" title="Editar">
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                         </button>
-                                        <button @click="confirmDeleteTask()" class="text-gray-400 hover:text-red-500 transition-colors p-1" title="Eliminar tarea">
-                                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
+                                        <button @click="confirmDeleteTask()" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" title="Eliminar">
+                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                         </button>
                                     </div>
                                 </template>
-                            <button type="button" @click="isDetailsModalOpen = false" class="hidden"> <!-- Placeholder to keep structure or just remove -->
-                            </button>
+                            </div>
                         </div>
-                        
-                        <!-- Tabs Navigation -->
-                        <div class="px-6 sm:px-8 flex space-x-6 border-t border-gray-100 mt-2">
-                            <button @click="currentTab = 'details'" 
-                                    class="py-3 text-sm font-bold border-b-2 transition-colors duration-200"
-                                    :class="currentTab === 'details' ? 'border-[#22A9C8] text-[#22A9C8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
-                                Detalles
-                            </button>
-                            <button @click="currentTab = 'comments'" 
-                                    class="py-3 text-sm font-bold border-b-2 transition-colors duration-200 flex items-center gap-2"
-                                    :class="currentTab === 'comments' ? 'border-[#22A9C8] text-[#22A9C8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
-                                Comentarios
-                                <span class="bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs" x-text="selectedTask?.comments?.length || 0"></span>
-                            </button>
-                            <button @click="currentTab = 'files'" 
-                                    class="py-3 text-sm font-bold border-b-2 transition-colors duration-200 flex items-center gap-2"
-                                    :class="currentTab === 'files' ? 'border-[#22A9C8] text-[#22A9C8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
-                                Archivos
-                                <span class="bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs" x-text="selectedTask?.attachments?.length || 0"></span>
-                            </button>
-                        </div>
-                    </div>
 
-                    <!-- Body Content -->
-                    <div class="px-6 py-6 sm:px-8 overflow-y-auto pb-10" style="max-height: 65vh; overflow-y: auto;">
-                        
-                        <!-- TAB: DETAILS -->
-                        <div x-show="currentTab === 'details'" class="space-y-6">
+                        <!-- Main Content -->
+                        <div class="px-8 pb-10 space-y-8">
                             
-                            <!-- VIEW MODE -->
-                            <div x-show="!isEditingTask" class="space-y-6">
-                                <!-- Description -->
-                                <div>
-                                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Descripción</h4>
-                                    <div class="bg-gray-50 rounded-2xl p-4">
-                                        <p class="text-sm text-gray-600 whitespace-pre-line break-words" x-text="selectedTask?.description || 'Sin descripción'"></p>
-                                    </div>
+                            <!-- Task Title -->
+                            <div x-show="!isEditingTask">
+                                <h1 class="text-3xl font-bold text-gray-900 leading-tight" x-text="selectedTask?.title"></h1>
+                            </div>
+                            <!-- Edit Title -->
+                            <div x-show="isEditingTask">
+                                <input type="text" x-model="editTaskData.title" class="text-3xl font-bold text-gray-900 leading-tight w-full border-0 border-b-2 border-gray-200 focus:border-[#22A9C8] focus:ring-0 px-0 py-2 bg-transparent placeholder-gray-300" placeholder="Task Title">
+                            </div>
+
+                            <!-- Meta Data Row -->
+                            <div class="flex flex-wrap items-center gap-4">
+                                <!-- Assignees -->
+                                <div class="flex items-center -space-x-2">
+                                    <template x-for="assignee in selectedTask?.assignees" :key="assignee.id">
+                                        <div class="relative z-0 hover:z-10 group cursor-help">
+                                            <img :src="assignee.avatar ? (assignee.avatar.startsWith('http') ? assignee.avatar : '/avatars/' + assignee.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(assignee.name)+'&color=FFFFFF&background=22A9C8'" 
+                                                 class="w-8 h-8 rounded-full border-2 border-white shadow-sm"
+                                                 :title="assignee.name">
+                                        </div>
+                                    </template>
+                                    <button x-show="isEditingTask" class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-[#22A9C8] hover:border-[#22A9C8] bg-white transition-colors" title="Add Assignee (Use edit mode below)">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                    </button>
                                 </div>
 
-                                <!-- Stats Grid -->
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div class="bg-gray-50 p-4 rounded-2xl">
-                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Prioridad</span>
-                                        <p class="text-sm font-bold capitalize" 
-                                           :class="{
-                                                'text-red-500': selectedTask?.priority === 'high' || selectedTask?.priority === 'urgent',
-                                                'text-yellow-500': selectedTask?.priority === 'medium',
-                                                'text-[#22A9C8]': selectedTask?.priority === 'low'
-                                           }"
-                                           x-text="selectedTask?.priority === 'low' ? 'Baja' : (selectedTask?.priority === 'medium' ? 'Media' : (selectedTask?.priority === 'high' ? 'Alta' : 'Urgente'))"></p>
-                                    </div>
-                                    <div class="bg-gray-50 p-4 rounded-2xl">
-                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Fecha Límite</span>
-                                        <p class="text-sm font-bold text-red-500" x-text="formatDate(selectedTask?.end_date)"></p>
-                                    </div>
-                                    <div class="bg-gray-50 p-4 rounded-2xl col-span-2">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Estado</span>
-                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Asignados</span>
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-2">
-                                                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors select-none"
-                                                        :class="{
-                                                            'bg-green-100 text-green-700 border-green-200': selectedTask?.completed,
-                                                            'bg-red-100 text-red-700 border-red-200': !selectedTask?.completed && new Date(selectedTask?.end_date) < new Date(),
-                                                            'bg-yellow-100 text-yellow-700 border-yellow-200': !selectedTask?.completed && new Date(selectedTask?.end_date) >= new Date()
-                                                        }"
-                                                        >
-                                                    
-                                                    <template x-if="selectedTask?.completed">
-                                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
-                                                    </template>
-                                                    
-                                                    <span x-text="selectedTask?.completed ? 'Completada' : (new Date(selectedTask?.end_date) < new Date() ? 'Vencida' : 'Pendiente')"></span>
-                                                </div>
-                                            </div>
-                                            <div class="flex flex-wrap gap-2 justify-end">
-                                                 <template x-for="assignee in selectedTask?.assignees" :key="assignee.id">
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" x-text="assignee.name"></span>
-                                                 </template>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <!-- Due Date Pipeline -->
+                                <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-200 text-sm font-medium text-gray-600">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                    <span x-text="selectedTask?.end_date ? formatDate(selectedTask.end_date) : 'Sin fecha'"></span>
+                                </div>
+
+                                <!-- Priority Tag -->
+                                <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-200 text-sm font-medium capitalize"
+                                     :class="{
+                                        'text-red-500 bg-red-50 border-red-100': selectedTask?.priority === 'high' || selectedTask?.priority === 'urgent',
+                                        'text-yellow-600 bg-yellow-50 border-yellow-100': selectedTask?.priority === 'medium',
+                                        'text-blue-500 bg-blue-50 border-blue-100': selectedTask?.priority === 'low'
+                                     }">
+                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-8a2 2 0 012-2h14a2 2 0 012 2v8l-6-5-6 5z" /></svg>
+                                     <span x-text="selectedTask?.priority || 'Normal'"></span>
                                 </div>
                             </div>
 
-                            <!-- EDIT MODE -->
-                            <div x-show="isEditingTask" class="space-y-6" x-cloak>
-                                <div>
-                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block ml-1">Título</label>
-                                    <input type="text" x-model="editTaskData.title" maxlength="255" class="w-full bg-gray-50 border-gray-100 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#22A9C8] transition-all">
+                            <!-- Description -->
+                            <div class="space-y-3">
+                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Descripción</h4>
+                                <div x-show="!isEditingTask" class="text-gray-700 leading-relaxed text-sm whitespace-pre-line">
+                                    <p x-text="selectedTask?.description || 'Añade una descripción...'"></p>
                                 </div>
-
-                                <div>
-                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block ml-1">Descripción</label>
-                                    <textarea x-model="editTaskData.description" maxlength="2000" rows="4" class="w-full bg-gray-50 border-gray-100 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#22A9C8] transition-all resize-none"></textarea>
+                                <div x-show="isEditingTask">
+                                    <textarea x-model="editTaskData.description" rows="6" class="w-full bg-gray-50 border-gray-200 rounded-xl py-3 px-4 text-sm focus:ring-[#22A9C8] focus:border-[#22A9C8] transition-all resize-none" placeholder="Task description..."></textarea>
                                 </div>
+                            </div>
 
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block ml-1">Prioridad</label>
-                                        <select x-model="editTaskData.priority" class="w-full bg-gray-50 border-gray-100 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#22A9C8] transition-all">
-                                            <option value="low">Baja</option>
-                                            <option value="medium">Media</option>
-                                            <option value="high">Alta</option>
-                                            <option value="urgent">Urgente</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block ml-1">Fecha Límite</label>
-                                        <input type="date" x-model="editTaskData.end_date" class="w-full bg-gray-50 border-gray-100 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-[#22A9C8] transition-all">
-                                    </div>
-                                </div>
-
+                            <!-- Additional Edit Fields (Hidden unless editing) -->
+                            <div x-show="isEditingTask" class="grid grid-cols-2 gap-6 bg-gray-50 p-6 rounded-2xl border border-gray-100">
                                 <div>
-                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block ml-1">Asignar a</label>
-                                    <div class="space-y-2 max-h-32 overflow-y-auto bg-gray-50 p-2 rounded-xl border border-gray-100">
+                                    <label class="text-xs font-semibold text-gray-500 mb-2 block">Fecha Límite</label>
+                                    <input type="date" x-model="editTaskData.end_date" class="w-full rounded-lg border-gray-200 text-sm focus:border-[#22A9C8] focus:ring-[#22A9C8]">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold text-gray-500 mb-2 block">Prioridad</label>
+                                    <select x-model="editTaskData.priority" class="w-full rounded-lg border-gray-200 text-sm focus:border-[#22A9C8] focus:ring-[#22A9C8]">
+                                        <option value="low">Baja</option>
+                                        <option value="medium">Media</option>
+                                        <option value="high">Alta</option>
+                                        <option value="urgent">Urgente</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-xs font-semibold text-gray-500 mb-2 block">Asignados</label>
+                                    <div class="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                                         @if(isset($employees) && count($employees) > 0)
                                             @foreach($employees as $employee)
-                                                <label class="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded-lg cursor-pointer">
-                                                    <input type="checkbox" value="{{ $employee->id }}" x-model="editTaskData.assignees" class="rounded text-[#22A9C8] focus:ring-[#22A9C8] border-gray-300">
-                                                    <span class="text-sm text-gray-700">{{ $employee->name }}</span>
+                                                <label class="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-[#22A9C8] transition-colors">
+                                                    <input type="checkbox" value="{{ $employee->id }}" x-model="editTaskData.assignees" class="rounded text-[#22A9C8] focus:ring-[#22A9C8]">
+                                                    <span class="text-sm font-medium text-gray-700">{{ $employee->name }}</span>
                                                 </label>
                                             @endforeach
                                         @else
-                                            <p class="text-xs text-gray-400 italic p-2">No se pueden editar asignados.</p>
+                                            <span class="text-sm text-gray-400">No employees found.</span>
                                         @endif
                                     </div>
                                 </div>
-
-                                <div class="flex justify-end gap-3 pt-4">
-                                    <button @click="isEditingTask = false" class="px-6 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors">Cancelar</button>
-                                    <button @click="saveTask()" class="bg-[#22A9C8] hover:bg-[#1B8BA6] text-white text-sm font-bold py-2 px-8 rounded-full transition-colors shadow-md disabled:opacity-50" :disabled="isSavingTask">
-                                        <span x-show="!isSavingTask">Guardar Cambios</span>
-                                        <span x-show="isSavingTask">Guardando...</span>
+                                <div class="col-span-2 flex justify-end gap-3 pt-2">
+                                    <button @click="isEditingTask = false" class="px-5 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
+                                    <button @click="saveTask()" 
+                                            :disabled="isSavingTask"
+                                            class="px-6 py-2 text-sm font-bold text-white bg-[#22A9C8] hover:bg-[#1B8BA6] rounded-lg shadow-sm transition-colors flex items-center gap-2"
+                                            :class="{'opacity-50 cursor-not-allowed': isSavingTask}">
+                                        <span x-show="isSavingTask" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                                        <span x-text="isSavingTask ? 'Guardando...' : 'Guardar Cambios'"></span>
                                     </button>
                                 </div>
                             </div>
+
+                            <!-- Attachments Section -->
+                            <div class="pt-6 border-t border-gray-100">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                        Archivos
+                                    </h4>
+                                    <!-- Upload Button -->
+                                    <label class="cursor-pointer text-[#22A9C8] hover:text-[#1B8BA6] text-sm font-bold flex items-center gap-1 transition-colors">
+                                        <input type="file" @change="uploadFile($event.target.files[0])" class="hidden" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
+                                        <svg x-show="!isUploadingFile" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                                        <svg x-show="isUploadingFile" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        <span>Añadir archivo</span>
+                                    </label>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                     <template x-for="attachment in selectedTask?.attachments" :key="attachment.id">
+                                        <div class="relative group bg-gray-50 rounded-xl border border-gray-100 overflow-hidden hover:border-gray-300 transition-all">
+                                            <!-- Preview -->
+                                            <div class="h-24 bg-gray-100 flex items-center justify-center relative">
+                                                <template x-if="['jpg','jpeg','png','gif','webp'].includes(attachment.filename.split('.').pop().toLowerCase())">
+                                                    <img :src="'/tasks/attachments/' + attachment.id + '/download'" class="w-full h-full object-cover">
+                                                </template>
+                                                <template x-if="!['jpg','jpeg','png','gif','webp'].includes(attachment.filename.split('.').pop().toLowerCase())">
+                                                    <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                </template>
+                                                
+                                                <!-- Overlay Actions -->
+                                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                    <a :href="'/tasks/attachments/' + attachment.id + '/download'" class="p-1.5 bg-white text-gray-700 rounded-lg hover:text-[#22A9C8]" title="Descargar" @click.stop>
+                                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                    </a>
+                                                    <button @click="deleteFile(attachment.id)" class="p-1.5 bg-white text-red-500 rounded-lg hover:bg-red-50" title="Eliminar">
+                                                        <template x-if="deletingFileId === attachment.id">
+                                                            <span class="animate-spin h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full block"></span>
+                                                        </template>
+                                                        <template x-if="deletingFileId !== attachment.id">
+                                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                        </template>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="px-3 py-2">
+                                                <p class="text-xs font-bold text-gray-700 truncate" x-text="attachment.filename"></p>
+                                                <p class="text-[10px] text-gray-400" x-text="(attachment.size / 1024).toFixed(1) + ' KB'"></p>
+                                            </div>
+                                        </div>
+                                     </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Activity & Chat (35%) -->
+                    <div class="w-full md:w-[380px] bg-gray-50 flex flex-col border-l border-gray-100">
+                        <!-- Header -->
+                        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white md:bg-gray-50">
+                            <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wide">Actividad</h3>
+                            <button type="button" @click="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
                         </div>
 
-                        <!-- TAB: COMMENTS -->
-                        <div x-show="currentTab === 'comments'" class="space-y-6">
-                            <!-- Comment List -->
-                             <div class="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
-                                <template x-for="comment in selectedTask?.comments" :key="comment.id">
-                                    <div class="flex gap-3 group">
-                                        <div class="flex-shrink-0">
-                                            <img :src="comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : '/avatars/' + comment.user.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(comment.user_name || comment.user?.name || 'U')+'&color=FFFFFF&background=22A9C8'" 
-                                                 class="w-8 h-8 rounded-full bg-gray-200">
-                                        </div>
-                                        <div class="flex-1 bg-gray-50 rounded-2xl rounded-tl-none p-3 relative hover:bg-gray-100 transition-colors">
-                                            
-                                            <!-- Header -->
-                                            <div class="flex justify-between items-start mb-1">
-                                                <span class="text-xs font-bold text-[#0D1E4C]" x-text="comment.user_name || comment.user?.name || 'Usuario'"></span>
-                                                <span class="text-[10px] text-gray-400" x-text="new Date(comment.created_at).toLocaleDateString() + ' ' + new Date(comment.created_at).toLocaleTimeString().slice(0,5)"></span>
+                        <!-- Chat List -->
+                        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                            <!-- Empty State -->
+                             <template x-if="!selectedTask?.comments || selectedTask.comments.length === 0">
+                                <div class="h-full flex flex-col items-center justify-center text-center opacity-50 pb-10">
+                                    <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-3">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                    </div>
+                                    <p class="text-sm font-medium text-gray-500">No hay comentarios aún</p>
+                                    <p class="text-xs text-gray-400">Inicia la conversación</p>
+                                </div>
+                            </template>
+
+                            <template x-for="comment in selectedTask?.comments" :key="comment.id">
+                                <div class="flex gap-3 group">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <img :src="comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : '/avatars/' + comment.user.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(comment.user_name || comment.user?.name || 'U')+'&color=FFFFFF&background=22A9C8'" 
+                                             class="w-8 h-8 rounded-full bg-gray-200 border border-gray-200">
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="bg-white rounded-2xl rounded-tl-none p-3 shadow-sm border border-gray-100 relative group-hover:border-gray-200 transition-all">
+                                            <div class="flex justify-between items-start mb-1 gap-2">
+                                                <span class="text-xs font-bold text-gray-900" x-text="comment.user_name || comment.user?.name || 'Usuario'"></span>
+                                                <span class="text-[10px] text-gray-400 whitespace-nowrap" x-text="new Date(comment.created_at).toLocaleDateString() + ' ' + new Date(comment.created_at).toLocaleTimeString().slice(0,5)"></span>
                                             </div>
                                             
-                                            <!-- Content -->
                                             <template x-if="editingCommentId !== comment.id">
-                                                <p class="text-sm text-gray-700 whitespace-pre-wrap leading-snug break-words" x-text="comment.content"></p>
+                                                <p class="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed" x-text="comment.content"></p>
                                             </template>
 
                                             <!-- Edit Mode -->
                                             <template x-if="editingCommentId === comment.id">
                                                 <div class="mt-2">
-                                                    <textarea x-model="editCommentContent" maxlength="500" class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#22A9C8] focus:border-[#22A9C8]" rows="2"></textarea>
+                                                    <textarea x-model="editCommentContent" maxlength="500" class="w-full text-sm border-gray-200 rounded-lg focus:ring-[#22A9C8] focus:border-[#22A9C8]" rows="2"></textarea>
                                                     <div class="flex justify-end gap-2 mt-2">
-                                                        <button @click="editingCommentId = null" class="text-xs text-gray-500 hover:text-gray-700">Cancelar</button>
-                                                        <button @click="updateComment(comment.id)" class="text-xs bg-[#22A9C8] text-white px-3 py-1 rounded-full hover:bg-[#1B8BA6]">Guardar</button>
+                                                        <button @click="editingCommentId = null" class="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+                                                            <button @click="updateComment(comment.id)" 
+                                                                    :disabled="updatingCommentId === comment.id"
+                                                                    class="text-xs bg-[#22A9C8] text-white px-3 py-1 rounded-full flex items-center gap-1 disabled:opacity-50 transition-all min-w-[80px] justify-center">
+                                                                <template x-if="updatingCommentId === comment.id">
+                                                                    <div class="flex items-center gap-1">
+                                                                        <span class="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
+                                                                        <span>Guardando...</span>
+                                                                    </div>
+                                                                </template>
+                                                                <template x-if="updatingCommentId !== comment.id">
+                                                                    <span>Guardar</span>
+                                                                </template>
+                                                            </button>
                                                     </div>
                                                 </div>
                                             </template>
-
-                                            <!-- Actions (Only for owner) -->
-                                            <template x-if="currentUser.id == comment.user_id && editingCommentId != comment.id">
-                                                <div class="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                                    <button @click="startEditingComment(comment)" class="text-gray-400 hover:text-[#22A9C8]" title="Editar">
-                                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                                                    </button>
-                                                    <button @click="confirmDeleteComment(comment.id)" class="text-gray-400 hover:text-red-500" title="Eliminar">
-                                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                    </button>
-                                                </div>
-                                            </template>
                                         </div>
-                                    </div>
-                                </template>
-                                <template x-if="!selectedTask?.comments || selectedTask.comments.length === 0">
-                                    <div class="text-center py-8">
-                                        <p class="text-gray-400 text-sm italic">No hay comentarios aún.</p>
-                                    </div>
-                                </template>
-                            </div>
-
-                            <!-- Add Comment Form -->
-                            <div class="bg-white border-t border-gray-100 pt-4 -mx-6 px-6 sm:-mx-8 sm:px-8 mt-auto sticky bottom-0">
-                                <div class="flex gap-3">
-                                    <div class="flex-shrink-0 pt-1 hidden">
-                                        <!-- Avatar removed by user request -->
-                                    </div>
-                                    <div class="flex-1">
-                                        <textarea x-model="newCommentText" 
-                                                  placeholder="Escribe un comentario..." 
-                                                  class="w-full text-sm border-gray-200 rounded-xl focus:ring-[#22A9C8] focus:border-[#22A9C8] resize-none py-3"
-                                                  maxlength="500"
-                                                  rows="2"></textarea>
-                                        <div class="flex justify-end mt-2">
-                                            <button @click="submitComment()" 
-                                                    class="bg-[#22A9C8] hover:bg-[#1B8BA6] text-white text-xs font-bold py-2 px-6 rounded-full transition-colors disabled:opacity-50"
-                                                    :disabled="!newCommentText.trim() || isSubmittingComment">
-                                                <span x-show="!isSubmittingComment">Enviar</span>
-                                                <span x-show="isSubmittingComment">Enviando...</span>
+                                        
+                                        <!-- Actions -->
+                                        <div class="flex gap-2 mt-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" x-show="currentUser.id == comment.user_id && editingCommentId != comment.id">
+                                            <button @click="startEditingComment(comment)" class="text-[10px] text-gray-400 hover:text-[#22A9C8] font-medium" :disabled="deletingCommentId === comment.id">Editar</button>
+                                            <button @click="deleteComment(comment.id)" class="text-[10px] text-gray-400 hover:text-red-500 font-medium flex items-center gap-1" :disabled="deletingCommentId === comment.id">
+                                                <template x-if="deletingCommentId === comment.id">
+                                                    <span>Eliminando...</span>
+                                                </template>
+                                                <template x-if="deletingCommentId !== comment.id">
+                                                    <span>Eliminar</span>
+                                                </template>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </template>
                         </div>
 
-                        <!-- TAB: FILES -->
-                        <div x-show="currentTab === 'files'" class="space-y-6">
-                            <!-- Upload Area -->
-                            <div class="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center hover:border-[#22A9C8] hover:bg-blue-50 transition-colors cursor-pointer relative group">
-                                <input type="file" @change="uploadFile($event.target.files[0])" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
-                                <div x-show="!isUploadingFile">
-                                    <svg class="mx-auto h-10 w-10 text-gray-400 group-hover:text-[#22A9C8] transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <!-- Chat Input -->
+                        <div class="p-4 bg-white border-t border-gray-200">
+                            <div class="relative">
+                                <textarea x-model="newCommentText" 
+                                          placeholder="Escribe un comentario o @menciona..." 
+                                          class="w-full text-sm bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#22A9C8] focus:border-transparent resize-none py-3 pl-4 pr-12 transition-all"
+                                          rows="1"
+                                          @keydown.enter.prevent="if(!$event.shiftKey) submitComment()"
+                                          style="min-height: 48px;"></textarea>
+                                <button @click="submitComment()" 
+                                        class="absolute right-2 top-2 p-1.5 text-[#22A9C8] hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:grayscale"
+                                        :disabled="!newCommentText.trim() || isSubmittingComment">
+                                    <svg class="w-5 h-5 transform rotate-90" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
                                     </svg>
-                                    <p class="mt-2 text-sm text-gray-600 font-medium">Click para subir archivo</p>
-                                    <p class="mt-1 text-xs text-gray-400">PNG, JPG, PDF up to 10MB</p>
-                                </div>
-                                <div x-show="isUploadingFile" class="text-[#22A9C8]">
-                                    <svg class="animate-spin mx-auto h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <p class="mt-2 text-sm font-medium">Subiendo...</p>
-                                </div>
+                                </button>
                             </div>
-
-                            <!-- File List -->
-                            <div class="space-y-3">
-                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Archivos adjuntos</h4>
-                                <template x-for="attachment in selectedTask?.attachments" :key="attachment.id">
-                                    <div class="flex items-center p-3 bg-gray-50 rounded-xl group hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200">
-                                        
-                                        <!-- Icon -->
-                                        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-white flex items-center justify-center text-gray-400 shadow-sm overflow-hidden">
-                                            <!-- Image Preview if applicable -->
-                                            <template x-if="['jpg','jpeg','png','gif','webp'].includes(attachment.filename.split('.').pop().toLowerCase())">
-                                                <img :src="'/tasks/attachments/' + attachment.id + '/download'" class="w-full h-full object-cover">
-                                            </template>
-                                            <!-- Default Icon -->
-                                            <template x-if="!['jpg','jpeg','png','gif','webp'].includes(attachment.filename.split('.').pop().toLowerCase())">
-                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                            </template>
-                                        </div>
-
-                                        <!-- Info -->
-                                        <div class="ml-3 flex-1 min-w-0">
-                                            <p class="text-sm font-bold text-gray-700 truncate" x-text="attachment.filename"></p>
-                                            <div class="flex text-[10px] text-gray-400 gap-2">
-                                                <span x-text="new Date(attachment.created_at).toLocaleDateString()"></span>
-                                                <span class="text-gray-300">|</span>
-                                                <span x-text="attachment.size ? (attachment.size / 1024).toFixed(1) + ' KB' : 'Size N/A'"></span>
-                                            </div>
-                                        </div>
-
-                                        <!-- Actions -->
-                                        <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <a :href="'/tasks/attachments/' + attachment.id + '/download'" 
-                                               class="p-1.5 text-gray-400 hover:text-[#22A9C8] transition-colors rounded-lg hover:bg-white" 
-                                               title="Descargar" @click.stop>
-                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                            </a>
-                                            
-                                            <!-- Delete (Uploader OR Task Owner OR Employer) -->
-                                            <template x-if="currentUser.id == attachment.uploaded_by || currentUser.id == selectedTask.created_by || currentUser.tipo_usuario == 'empleador' || currentUser.is_superadmin">
-                                                <button @click="confirmDeleteFile(attachment.id)" 
-                                                        class="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-white"
-                                                        title="Eliminar">
-                                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                </button>
-                                            </template>
-                                        </div>
-                                    </div>
-                                </template>
-                                <template x-if="!selectedTask?.attachments || selectedTask.attachments.length === 0">
-                                    <div class="text-center py-8">
-                                        <p class="text-gray-400 text-sm italic">No hay archivos adjuntos.</p>
-                                    </div>
-                                </template>
-                            </div>
+                            <p class="text-[10px] text-gray-400 mt-2 text-center" x-show="newCommentText.length > 0">Presiona Enter para enviar</p>
                         </div>
-
                     </div>
+
                 </div>
             </div>
         </div>
 
-        <!-- Confirmation Modal Overlay (Global) -->
+        <!-- Confirmation Modal Overlay (Same as before) -->
         <div x-show="deleteConfirmation.isOpen" 
              style="display: none;"
              class="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm"
@@ -368,10 +323,20 @@
                 <h3 class="text-lg font-bold text-gray-900 mb-2">¿Estás seguro?</h3>
                 <p class="text-sm text-gray-500 mb-6">Esta acción no se puede deshacer. El elemento será eliminado permanentemente.</p>
                 <div class="flex gap-3 justify-center">
-                    <button @click="deleteConfirmation.isOpen = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
-                    <button @click="performDelete()" class="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors">Eliminar</button>
+                    <button @click="deleteConfirmation.isOpen = false" :disabled="isDeleting" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50">Cancelar</button>
+                    <button @click="performDelete()" :disabled="isDeleting" class="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 min-w-[100px] justify-center">
+                        <template x-if="isDeleting">
+                            <span class="flex items-center gap-2">
+                                <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                Eliminando...
+                            </span>
+                        </template>
+                        <template x-if="!isDeleting">
+                            <span>Eliminar</span>
+                        </template>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-</template>
+</div>

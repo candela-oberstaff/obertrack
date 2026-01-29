@@ -103,75 +103,114 @@
                 </div>
             </div>
 
-            <!-- Table View (Desktop) -->
-            <div class="bg-white rounded-3xl p-8 border border-[#22A9C8] shadow-sm overflow-x-auto hidden md:block">
-                <table class="w-full min-w-[800px] border-separate border-spacing-y-4">
-                    <thead>
-                        <tr class="text-left text-sm font-bold text-gray-900 border-b border-gray-100">
-                            <th class="pb-2 pl-6 w-1/4">Título</th>
-                            <th class="pb-2 text-center">Fecha límite</th>
-                            <th class="pb-2 text-center">Asignado</th>
-                            <th class="pb-2 text-center">Estado</th>
-                            <th class="pb-2 text-center">Comentarios</th>
-                            <th class="pb-2 text-center pr-6">Archivos</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($teamTasks as $task)
-                            <tr class="group transition-colors hover:bg-gray-50" 
-                                data-title="{{ $task->title }}"
-                                data-date="{{ $task->end_date ? $task->end_date->format('Y-m-d') : '' }}"
-                                data-assignees="{{ $task->assignees->pluck('name')->join(',') }}"
-                                x-show="matchRow($el)"
-                            >
-                                <td @click='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT))' class="cursor-pointer py-6 pl-6 font-medium text-gray-900 bg-white rounded-l-2xl border-l border-y border-[#22A9C8] hover:text-[#22A9C8] transition-colors">
-                                    {{ $task->title }}
-                                </td>
-                                <td class="py-6 text-center text-red-500 font-medium bg-white border-y border-[#22A9C8]">
-                                    {{ \Carbon\Carbon::parse($task->end_date)->format('d/m/Y') }}
-                                </td>
-                                <td class="py-6 bg-white border-y border-[#22A9C8]">
-                                    <div class="flex justify-center flex-wrap gap-1">
-                                        @foreach($task->assignees as $assignee)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                {{ $assignee->name }}
-                                            </span>
-                                        @endforeach
+            <!-- Kanban View (Desktop) -->
+            <div class="hidden md:grid grid-cols-3 gap-6 items-start">
+                
+                @foreach([
+                    ['id' => 'por_hacer', 'label' => 'Por hacer', 'color' => 'bg-gray-200', 'text' => 'text-gray-700'],
+                    ['id' => 'en_proceso', 'label' => 'En proceso', 'color' => 'bg-blue-100', 'text' => 'text-[#22A9C8]'],
+                    ['id' => 'finalizado', 'label' => 'Finalizado', 'color' => 'bg-green-100', 'text' => 'text-green-700']
+                ] as $column)
+                    <div class="flex flex-col gap-4 h-full" 
+                         @dragover.prevent="dragOverColumnId = '{{ $column['id'] }}'" 
+                         @dragleave="dragOverColumnId = null"
+                         @drop="handleDrop($event, '{{ $column['id'] }}')">
+                        
+                        <!-- Column Header -->
+                        <div class="flex items-center justify-between mb-2 px-2 select-none group-hover:text-[#22A9C8] transition-colors">
+                            <h3 class="font-bold text-gray-700 text-lg">{{ $column['label'] }}</h3>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold {{ $column['color'] }} {{ $column['text'] }}">
+                                {{ $teamTasks->where('status', $column['id'])->count() }}
+                            </span>
+                        </div>
+
+                        <!-- Tasks Column -->
+                        <div class="space-y-3 min-h-[200px] h-full rounded-2xl transition-all duration-200 border-2 border-transparent" 
+                             :class="{
+                                'bg-gray-50/50 border-dashed border-gray-300': draggedTaskId,
+                                '!bg-blue-50/80 !border-blue-300 ring-2 ring-blue-100': dragOverColumnId === '{{ $column['id'] }}'
+                             }">
+                            @forelse($teamTasks->where('status', $column['id']) as $task)
+                                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-grab active:cursor-grabbing group relative"
+                                     draggable="true"
+                                     @dragstart="dragStart($event, {{ $task->id }})"
+                                     @dragend="dragEnd($event)"
+                                     id="task-card-{{ $task->id }}"
+                                     data-title="{{ $task->title }}"
+                                     data-date="{{ $task->end_date ? $task->end_date->format('Y-m-d') : '' }}"
+                                     data-assignees="{{ $task->assignees->pluck('name')->join(',') }}"
+                                     x-show="matchRow($el)"
+                                     @click='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT))'>
+                                    
+                                    <!-- Card Header -->
+                                    <div class="flex justify-between items-start mb-3">
+                                        <h4 class="font-bold text-gray-800 leading-snug line-clamp-2 pr-6">{{ $task->title }}</h4>
+                                        
+                                        <!-- Keep priority or edit, sticking to clean layout -->
+                                        @if($task->priority === 'high')
+                                            <span class="w-2 h-2 rounded-full bg-red-400 absolute top-5 right-5" title="Prioridad Alta"></span>
+                                        @elseif($task->priority === 'medium')
+                                            <span class="w-2 h-2 rounded-full bg-yellow-400 absolute top-5 right-5" title="Prioridad Media"></span>
+                                        @endif
                                     </div>
-                                </td>
-                                <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
-                                    <div class="flex justify-center">
-                                        <livewire:task-status-selector :task="$task" />
+
+                                    <!-- Date & Assignees -->
+                                    <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-4">
+                                        @if($task->end_date)
+                                            <div class="flex items-center gap-1 {{ $task->end_date->isPast() && $task->status !== 'finalizado' ? 'text-red-500 font-bold' : '' }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                <span>{{ $task->end_date->format('d M') }}</span>
+                                            </div>
+                                        @endif
+                                        
+                                        <div class="flex -space-x-2">
+                                            @foreach($task->assignees->take(3) as $assignee)
+                                                <div class="w-6 h-6 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[10px] uppercase font-bold text-gray-600" title="{{ $assignee->name }}">
+                                                    {{ substr($assignee->name, 0, 1) }}
+                                                </div>
+                                            @endforeach
+                                            @if($task->assignees->count() > 3)
+                                                <div class="w-6 h-6 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-[9px] font-bold text-gray-500">
+                                                    +{{ $task->assignees->count() - 3 }}
+                                                </div>
+                                            @endif
+                                        </div>
                                     </div>
-                                </td>
-                                <td class="py-6 text-center bg-white border-y border-[#22A9C8]">
-                                    <button @click.stop='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), "comments")' class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                        </svg>
-                                        <span class="text-sm font-medium">{{ $task->comments->count() }}</span>
-                                    </button>
-                                </td>
-                                <td class="py-6 text-center pr-6 bg-white rounded-r-2xl border-r border-y border-[#22A9C8]">
-                                    <button @click.stop='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), "files")' class="inline-flex items-center text-gray-600 hover:text-[#22A9C8] transition-colors gap-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                        </svg>
-                                        <span class="text-sm font-medium">{{ $task->attachments->count() }}</span>
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="py-8 text-center text-gray-500">No hay tareas asignadas.</td>
-                            </tr>
-                        @endforelse
-                        <!-- Empty state when filtered -->
-                        <tr x-show="!$el.parentNode.querySelectorAll('tr[x-show]:not([style*=\'display: none\'])').length" style="display: none;">
-                            <td colspan="7" class="p-6 text-center text-gray-500 italic">No se encontraron tareas con estos filtros.</td>
-                        </tr>
-                    </tbody>
-                </table>
+
+                                    <!-- Footer Actions -->
+                                    <div class="flex items-center justify-between pt-3 border-t border-gray-50">
+                                        <!-- Status Selector (Wrapped to prevent propagation) -->
+                                        <div @click.stop class="transform scale-90 origin-left">
+                                            <livewire:task-status-selector :task="$task" :wire:key="'kanban-'.$task->id" />
+                                        </div>
+
+                                        <div class="flex items-center gap-3">
+                                            <button @click.stop='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), "comments")' class="flex items-center gap-1 text-gray-400 hover:text-[#22A9C8] transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                                </svg>
+                                                <span class="text-xs font-medium">{{ $task->comments->count() }}</span>
+                                            </button>
+                                            
+                                            <button @click.stop='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), "files")' class="flex items-center gap-1 text-gray-400 hover:text-[#22A9C8] transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                                </svg>
+                                                <span class="text-xs font-medium">{{ $task->attachments->count() }}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-center py-10 opacity-50 bg-white/50 rounded-2xl border border-dashed border-gray-200">
+                                    <p class="text-sm text-gray-400 italic">Vacío</p>
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                @endforeach
             </div>
 
             <!-- Mobile View -->
@@ -348,6 +387,9 @@
                 isCreateModalOpen: false,
                 currentTab: 'details',
                 
+                // State tracking
+                hasChanges: false,
+                
                 // Mobile View State
                 mobileView: '',
                 
@@ -356,7 +398,85 @@
                 newCommentText: '',
                 isSubmittingComment: false,
                 editingCommentId: null,
+                updatingCommentId: null, // Track specific comment being saved
+                deletingCommentId: null,
+                deletingFileId: null,
                 editCommentContent: '',
+                
+                // Drag and Drop State
+                draggedTaskId: null,
+                dragOverColumnId: null,
+
+                dragStart(event, taskId) {
+                    this.draggedTaskId = taskId;
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', taskId);
+                    event.dataTransfer.setData('application/json', JSON.stringify({ taskId: taskId }));
+                    
+                    // Add a slight delay to visual change so we don't hide the element being dragged immediately
+                    requestAnimationFrame(() => {
+                        event.target.classList.add('opacity-50', 'scale-95', 'rotate-1');
+                    });
+                },
+
+                dragEnd(event) {
+                    this.draggedTaskId = null;
+                    this.dragOverColumnId = null;
+                    event.target.classList.remove('opacity-50', 'scale-95', 'rotate-1');
+                },
+
+                async handleDrop(event, newStatus) {
+                    const taskId = this.draggedTaskId;
+                    this.dragOverColumnId = null;
+                    this.draggedTaskId = null; // Clear state
+                    
+                    if (!taskId) return;
+                    
+                    const card = document.getElementById(`task-card-${taskId}`);
+                    if (card) card.classList.remove('opacity-50', 'scale-95', 'rotate-1');
+
+                    // Optimistic UI update
+                    if (card) {
+                        const columnContainer = event.currentTarget.querySelector('.space-y-3');
+                        if (columnContainer) {
+                            columnContainer.appendChild(card);
+                        }
+                    }
+
+                    await this.updateTaskStatusV2(taskId, newStatus);
+                },
+
+                async updateTaskStatusV2(taskId, newStatus) {
+                   try {
+                        const response = await fetch(`/tareas/${taskId}/status`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                        
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                             setTimeout(() => {
+                                const currentUrl = new URL(window.location.href);
+                                currentUrl.searchParams.set('t', new Date().getTime());
+                                window.location.href = currentUrl.toString();
+                             }, 500); 
+                        } else {
+                            showError(data.message || 'Error al actualizar estado');
+                            setTimeout(() => location.reload(), 1500); 
+                        }
+                   } catch (e) {
+                       console.error(e);
+                       showError('Error de conexión con el servidor');
+                       setTimeout(() => location.reload(), 1500); 
+                   }
+                },
                 
                 // Delete Confirmation State
                 deleteConfirmation: {
@@ -403,12 +523,55 @@
                     return true;
                 },
 
+                closeModal() {
+                    this.isDetailsModalOpen = false;
+                    this.selectedTask = null;
+                    if (this.hasChanges) {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 50);
+                    }
+                },
+
                 openDetailsModal(task, tab = 'details') {
                     this.selectedTask = task;
                     this.currentTab = tab;
                     this.isDetailsModalOpen = true;
+                    this.hasChanges = false; // Reset on open
                     this.isCommentsModalOpen = false;
                     this.isFilesModalOpen = false;
+                    
+                    // Fetch fresh data immediately
+                    this.fetchTaskDetails(task.id);
+                },
+
+                async fetchTaskDetails(id) {
+                    try {
+                        const response = await fetch(`/tasks/${id}/details?t=${new Date().getTime()}`, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            // Verify we are still looking at the same task
+                            if (this.selectedTask && this.selectedTask.id === id) {
+                                // Merge fresh comments and attachments
+                                this.selectedTask = { 
+                                    ...this.selectedTask, 
+                                    comments: data.comments, 
+                                    attachments: data.attachments,
+                                    // Also update status/completion if it changed externally
+                                    completed: data.completed,
+                                    status: data.status
+                                };
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error fetching task details:', error);
+                    }
                 },
                 
                 openCreateTaskModal(employeeId = null, isTeam = false) {
@@ -452,6 +615,7 @@
                             const data = await response.json();
                             const index = this.selectedTask.comments.findIndex(c => c.id === tempId);
                             if (index !== -1) this.selectedTask.comments[index] = data.comment;
+                            this.hasChanges = true;
                         } else {
                             this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
                             showError('Error al enviar el comentario.');
@@ -472,6 +636,7 @@
 
                 async updateComment(commentId) {
                     if (!this.editCommentContent.trim()) return;
+                    this.updatingCommentId = commentId;
 
                     try {
                         const response = await fetch(`/empleador/comments/${commentId}`, {
@@ -489,17 +654,43 @@
                             const index = this.selectedTask.comments.findIndex(c => c.id === commentId);
                             if (index !== -1) this.selectedTask.comments[index] = data.comment;
                             this.editingCommentId = null;
+                            this.hasChanges = true;
                         } else {
                             showError('Error al actualizar.');
                         }
                     } catch (error) {
                         console.error(error);
                         showError('Error de conexión');
+                    } finally {
+                        this.updatingCommentId = null;
                     }
                 },
 
-                confirmDeleteComment(id) {
-                    this.deleteConfirmation = { isOpen: true, type: 'comment', id: id };
+                async deleteComment(id) {
+                    if (!confirm('¿Estás seguro de eliminar este comentario?')) return;
+                    this.deletingCommentId = id;
+
+                    try {
+                        const response = await fetch(`/empleador/comments/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        });
+
+                        if (response.ok) {
+                            this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
+                            this.hasChanges = true;
+                        } else {
+                            showError('Error al eliminar comentario');
+                        }
+                    } catch (e) {
+                        showError('Error de conexión');
+                    } finally {
+                        this.deletingCommentId = null;
+                    }
                 },
 
                 async uploadFile(file) {
@@ -524,6 +715,7 @@
                             const data = await response.json();
                             if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
                             this.selectedTask.attachments.unshift(data.attachment);
+                            this.hasChanges = true;
                         } else {
                             showError('Error al subir el archivo.');
                         }
@@ -535,8 +727,32 @@
                     }
                 },
 
-                confirmDeleteFile(id) {
-                    this.deleteConfirmation = { isOpen: true, type: 'file', id: id };
+                async deleteFile(id) {
+                    if (!confirm('¿Estás seguro de eliminar este archivo?')) return;
+                    this.deletingFileId = id;
+
+                    try {
+                        const response = await fetch(`/tasks/attachments/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        });
+
+                        if (response.ok) {
+                            this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
+                            this.hasChanges = true;
+                        } else {
+                            const data = await response.json();
+                            showError(data.message || 'Error al eliminar archivo');
+                        }
+                    } catch (e) {
+                         showError('Error de conexión');
+                    } finally {
+                        this.deletingFileId = null;
+                    }
                 },
 
                 async performDelete() {
@@ -545,40 +761,7 @@
 
                     const { type, id } = this.deleteConfirmation;
                     
-                    if (type === 'file') {
-                        try {
-                            const response = await fetch(`/tasks/attachments/${id}`, {
-                                method: 'DELETE',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                                }
-                            });
-                            if (response.ok) {
-                                this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
-                            } else {
-                                const data = await response.json();
-                                showError(data.message || 'Error al eliminar archivo');
-                            }
-                        } catch (e) { showError('Error de conexión'); }
-                    } else if (type === 'comment') {
-                        try {
-                            const response = await fetch(`/empleador/comments/${id}`, {
-                                method: 'DELETE',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                                }
-                            });
-                            if (response.ok) {
-                                this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
-                            } else {
-                                showError('Error al eliminar comentario');
-                            }
-                        } catch (e) { showError('Error de conexión'); }
-                    } else if (type === 'task') {
+                    if (type === 'task') {
                         try {
                             const response = await fetch(`/tareas/${id}`, {
                                 method: 'DELETE',
@@ -610,7 +793,6 @@
                         this.isDeleting = false;
                         this.deleteConfirmation.isOpen = false;
                     }
-                    this.isDeleting = false;
                 },
 
                 startEditingTask() {

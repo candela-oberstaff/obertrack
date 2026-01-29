@@ -131,10 +131,10 @@
             </div>
 
             {{-- Main Content Grid --}}
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 gap-6">
                 
-                {{-- Últimas Tareas (2/3 width) --}}
-                <div class="lg:col-span-2" id="dashboard-latest-tasks">
+                {{-- Últimas Tareas (Full width) --}}
+                <div class="" id="dashboard-latest-tasks">
                     @php
                         $currentUserData = [
                             'id' => auth()->id(),
@@ -309,8 +309,8 @@
                     </div>
                 </div>
 
-                {{-- Últimos Comentarios (1/3 width) --}}
-                <div class="lg:col-span-1" id="dashboard-latest-comments">
+                {{-- Últimos Comentarios (Full width) --}}
+                <div class="" id="dashboard-latest-comments">
                     <div class="bg-white rounded-lg border border-gray-200">
                         <div class="px-6 py-4 border-b border-gray-200">
                             <h2 class="text-lg font-semibold text-gray-900">Últimos comentarios</h2>
@@ -329,7 +329,7 @@
                             
                             @forelse($latestComments as $comment)
                                 <div class="bg-gray-50 rounded-lg p-3 ">
-                                    <p class="text-sm text-gray-800 mb-2  whitespace-nowrap   overflow-x-auto  overflow-y-hidden scrollbar-thin">{{ $comment->content }}</p>
+                                    <p class="text-sm text-gray-800 mb-2 break-words line-clamp-3">{{ $comment->content }}</p>
                                     <div class="flex items-center justify-between text-xs">
                                         <span class="text-gray-500">{{ $comment->created_at->format('Y.m.d') }}</span>
                                         <div class="flex items-center gap-1 text-gray-600">

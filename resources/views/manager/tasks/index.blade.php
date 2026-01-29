@@ -76,38 +76,144 @@
                 </div>
             </div>
 
-            <template x-for="tarea in filteredTasks" :key="tarea.id">
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6 transition duration-300 ease-in-out hover:shadow-lg cursor-pointer" 
-                     @click='openDetailsModal(tarea)'>
-                    <div class="p-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200" x-text="tarea.title"></h3>
-                            <div class="flex items-center space-x-3">
-                                <button @click.stop="toggleTaskCompletion(tarea)" 
-                                        class="flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm"
-                                        :class="tarea.completed ? 'bg-green-100 text-green-700 border-green-200 hover:bg-white' : 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-green-50 hover:text-green-600 hover:border-green-200'">
-                                    <template x-if="tarea.completed">
-                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
-                                    </template>
-                                    <span x-text="tarea.completed ? 'Completado' : 'Pendiente'"></span>
-                                </button>
+            <!-- Kanban View (Desktop) -->
+            <div class="hidden md:grid grid-cols-3 gap-6 items-start">
+                
+                @foreach([
+                    ['id' => 'por_hacer', 'label' => 'Por hacer', 'color' => 'bg-gray-200', 'text' => 'text-gray-700'],
+                    ['id' => 'en_proceso', 'label' => 'En proceso', 'color' => 'bg-blue-100', 'text' => 'text-[#22A9C8]'],
+                    ['id' => 'finalizado', 'label' => 'Finalizado', 'color' => 'bg-green-100', 'text' => 'text-green-700']
+                ] as $column)
+                    <div class="flex flex-col gap-4 h-full" 
+                         @dragover.prevent="dragOverColumnId = '{{ $column['id'] }}'" 
+                         @dragleave="dragOverColumnId = null"
+                         @drop="handleDrop($event, '{{ $column['id'] }}')">
+                        
+                        <!-- Column Header -->
+                        <div class="flex items-center justify-between mb-2 px-2 select-none group-hover:text-[#22A9C8] transition-colors">
+                            <h3 class="font-bold text-gray-700 text-lg">{{ $column['label'] }}</h3>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold {{ $column['color'] }} {{ $column['text'] }}">
+                                {{ $managerTaskData['tasks']->where('status', $column['id'])->count() }}
+                            </span>
+                        </div>
 
-                                <button class="text-primary hover:text-blue-800 focus:outline-none flex items-center group" @click.stop='openDetailsModal(tarea)'>
-                                    <span class="mr-2 text-sm font-medium group-hover:underline">Detalles</span>
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                </button>
+                        <!-- Tasks Column -->
+                        <div class="space-y-3 min-h-[200px] h-full rounded-2xl transition-all duration-200 border-2 border-transparent" 
+                             :class="{
+                                'bg-gray-50/50 border-dashed border-gray-300': draggedTaskId,
+                                '!bg-blue-50/80 !border-blue-300 ring-2 ring-blue-100': dragOverColumnId === '{{ $column['id'] }}'
+                             }">
+                            @forelse($managerTaskData['tasks']->where('status', $column['id']) as $task)
+                                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-grab active:cursor-grabbing group relative"
+                                     draggable="true"
+                                     @dragstart="dragStart($event, {{ $task->id }})"
+                                     @dragend="dragEnd($event)"
+                                     id="task-card-{{ $task->id }}"
+                                     data-title="{{ $task->title }}"
+                                     data-date="{{ $task->end_date ? $task->end_date->format('Y-m-d') : '' }}"
+                                     data-assignees="{{ $task->assignees->pluck('name')->join(',') }}"
+                                     x-show="matchRow($el)"
+                                     @click='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT))'>
+                                    
+                                    <!-- Card Header -->
+                                    <div class="flex justify-between items-start mb-3">
+                                        <h4 class="font-bold text-gray-800 leading-snug line-clamp-2 pr-6">{{ $task->title }}</h4>
+                                        
+                                        @if($task->priority === 'high')
+                                            <span class="w-2 h-2 rounded-full bg-red-400 absolute top-5 right-5" title="Prioridad Alta"></span>
+                                        @elseif($task->priority === 'medium')
+                                            <span class="w-2 h-2 rounded-full bg-yellow-400 absolute top-5 right-5" title="Prioridad Media"></span>
+                                        @endif
+                                    </div>
+
+                                    <!-- Date & Assignees -->
+                                    <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-4">
+                                        @if($task->end_date)
+                                            <div class="flex items-center gap-1 {{ $task->end_date->isPast() && $task->status !== 'finalizado' ? 'text-red-500 font-bold' : '' }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                <span>{{ $task->end_date->format('d M') }}</span>
+                                            </div>
+                                        @endif
+                                        
+                                        <div class="flex -space-x-2">
+                                            @foreach($task->assignees->take(3) as $assignee)
+                                                <div class="w-6 h-6 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[10px] uppercase font-bold text-gray-600" title="{{ $assignee->name }}">
+                                                    {{ substr($assignee->name, 0, 1) }}
+                                                </div>
+                                            @endforeach
+                                            @if($task->assignees->count() > 3)
+                                                <div class="w-6 h-6 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-[9px] font-bold text-gray-500">
+                                                    +{{ $task->assignees->count() - 3 }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <!-- Footer Actions -->
+                                    <div class="flex items-center justify-between pt-3 border-t border-gray-50">
+                                        <!-- Status Selector (Wrapped to prevent propagation) -->
+                                        <div @click.stop class="transform scale-90 origin-left">
+                                            <livewire:task-status-selector :task="$task" :wire:key="'kanban-'.$task->id" />
+                                        </div>
+
+                                        <div class="flex items-center gap-3">
+                                            <button @click.stop='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), "comments")' class="flex items-center gap-1 text-gray-400 hover:text-[#22A9C8] transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                                </svg>
+                                                <span class="text-xs font-medium">{{ $task->comments->count() }}</span>
+                                            </button>
+                                            
+                                            <button @click.stop='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), "files")' class="flex items-center gap-1 text-gray-400 hover:text-[#22A9C8] transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                                </svg>
+                                                <span class="text-xs font-medium">{{ $task->attachments->count() }}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-center py-10 opacity-50 bg-white/50 rounded-2xl border border-dashed border-gray-200">
+                                    <p class="text-sm text-gray-400 italic">Vacío</p>
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- Mobile List View (Fallback for mobile, kept simple or can be updated later) -->
+            <div class="md:hidden space-y-4">
+                 <template x-for="tarea in filteredTasks" :key="tarea.id">
+                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6 transition duration-300 ease-in-out hover:shadow-lg cursor-pointer" 
+                         @click='openDetailsModal(tarea)'>
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200" x-text="tarea.title"></h3>
+                                <div class="flex items-center space-x-3">
+                                    <button @click.stop="toggleTaskCompletion(tarea)" 
+                                            class="flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm"
+                                            :class="tarea.completed ? 'bg-green-100 text-green-700 border-green-200 hover:bg-white' : 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-green-50 hover:text-green-600 hover:border-green-200'">
+                                        <template x-if="tarea.completed">
+                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
+                                        </template>
+                                        <span x-text="tarea.completed ? 'Completado' : 'Pendiente'"></span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </template>
+                 <div x-show="filteredTasks.length === 0" class="text-center py-12 text-gray-500">
+                    No se encontraron tareas con estos criterios.
                 </div>
-            </template>
+            </div>
 
             @include('tareas.partials.task-details-modal')
             @include('empleadores.tareas.partials.create-modal')
-
-            <div x-show="filteredTasks.length === 0" class="text-center py-12 text-gray-500">
-                No se encontraron tareas con estos criterios.
-            </div>
         </div>
     </div>
 
@@ -127,12 +233,17 @@
                 targetEmployeeId: null,
                 
                 // UI State
+                hasChanges: false,
                 isUploadingFile: false,
                 newCommentText: '',
                 isSubmittingComment: false,
                 editingCommentId: null,
                 editCommentContent: '',
                 
+                // Drag and Drop State
+                draggedTaskId: null,
+                dragOverColumnId: null,
+
                 // Delete Confirmation State
                 deleteConfirmation: { isOpen: false, type: null, id: null },
                 
@@ -150,7 +261,7 @@
                     let tasks = [...this.allTasks];
                     if (this.startDate || this.endDate) {
                         tasks = tasks.filter(t => {
-                            const date = t.end_date.split('T')[0];
+                            const date = t.end_date ? t.end_date.split('T')[0] : '';
                             if (this.startDate && date < this.startDate) return false;
                             if (this.endDate && date > this.endDate) return false;
                             return true;
@@ -169,15 +280,133 @@
                     }
                     return tasks;
                 },
+
+                matchRow(el) {
+                    const taskDate = el.dataset.date || '';
+                    const title = (el.dataset.title || '').toLowerCase();
+                    const assignees = (el.dataset.assignees || '').toLowerCase();
+                    const q = this.searchQuery.toLowerCase();
+
+                    if (this.searchQuery) {
+                        if (!title.includes(q) && !assignees.includes(q)) return false;
+                    }
+                    
+                    if (this.startDate && taskDate < this.startDate) return false;
+                    if (this.endDate && taskDate > this.endDate) return false;
+                    
+                    return true;
+                },
+
                 formatDate(d) {
                     if (!d) return '--/--/----';
                     const parts = d.split('T')[0].split('-');
                     return `${parts[2]}/${parts[1]}/${parts[0]}`;
                 },
+
+                closeModal() {
+                    this.isDetailsModalOpen = false;
+                    this.selectedTask = null;
+                    if (this.hasChanges) {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 50);
+                    }
+                },
+
                 openDetailsModal(task, tab = 'details') {
                     this.selectedTask = task;
                     this.currentTab = tab;
                     this.isDetailsModalOpen = true;
+                    this.hasChanges = false;
+                    this.fetchTaskDetails(task.id);
+                },
+
+                async fetchTaskDetails(id) {
+                     try {
+                        const response = await fetch(`/tasks/${id}/details?t=${new Date().getTime()}`, {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (this.selectedTask && this.selectedTask.id === id) {
+                                this.selectedTask = { 
+                                    ...this.selectedTask, 
+                                    comments: data.comments, 
+                                    attachments: data.attachments,
+                                    completed: data.completed,
+                                    status: data.status
+                                };
+                            }
+                        }
+                    } catch (error) { console.error('Error fetching details:', error); }
+                },
+
+                dragStart(event, taskId) {
+                    this.draggedTaskId = taskId;
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', taskId);
+                    event.dataTransfer.setData('application/json', JSON.stringify({ taskId: taskId }));
+                    requestAnimationFrame(() => {
+                        event.target.classList.add('opacity-50', 'scale-95', 'rotate-1');
+                    });
+                },
+
+                dragEnd(event) {
+                    this.draggedTaskId = null;
+                    this.dragOverColumnId = null;
+                    event.target.classList.remove('opacity-50', 'scale-95', 'rotate-1');
+                },
+
+                async handleDrop(event, newStatus) {
+                    const taskId = this.draggedTaskId;
+                    this.dragOverColumnId = null;
+                    this.draggedTaskId = null;
+                    
+                    if (!taskId) return;
+                    
+                    const card = document.getElementById(`task-card-${taskId}`);
+                    if (card) card.classList.remove('opacity-50', 'scale-95', 'rotate-1');
+
+                    if (card) {
+                        const columnContainer = event.currentTarget.querySelector('.space-y-3');
+                        if (columnContainer) {
+                            columnContainer.appendChild(card);
+                        }
+                    }
+
+                    await this.updateTaskStatusV2(taskId, newStatus);
+                },
+
+                async updateTaskStatusV2(taskId, newStatus) {
+                   try {
+                        const response = await fetch(`/tareas/${taskId}/status`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                        
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                             setTimeout(() => {
+                                const currentUrl = new URL(window.location.href);
+                                currentUrl.searchParams.set('t', new Date().getTime());
+                                window.location.href = currentUrl.toString();
+                             }, 500); 
+                        } else {
+                            showError(data.message || 'Error al actualizar estado');
+                            setTimeout(() => location.reload(), 1500); 
+                        }
+                   } catch (e) {
+                       console.error(e);
+                       showError('Error de conexión con el servidor');
+                       setTimeout(() => location.reload(), 1500); 
+                   }
                 },
 
                 async submitComment() {
@@ -214,6 +443,7 @@
                             const data = await response.json();
                             const index = this.selectedTask.comments.findIndex(c => c.id === tempId);
                             if (index !== -1) this.selectedTask.comments[index] = data.comment;
+                            this.hasChanges = true;
                         } else {
                             this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
                             showError('Error al enviar el comentario.');
@@ -250,6 +480,7 @@
                             const index = this.selectedTask.comments.findIndex(c => c.id === commentId);
                             if (index !== -1) this.selectedTask.comments[index] = data.comment;
                             this.editingCommentId = null;
+                            this.hasChanges = true;
                         } else {
                             showError('Error al actualizar.');
                         }
@@ -283,6 +514,7 @@
                             const data = await response.json();
                             if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
                             this.selectedTask.attachments.unshift(data.attachment);
+                            this.hasChanges = true;
                         } else {
                             const data = await response.json();
                             showError(data.message || 'Error al subir el archivo.');
@@ -314,6 +546,7 @@
                             });
                             if (response.ok) {
                                 this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
+                                this.hasChanges = true;
                             } else {
                                 const data = await response.json();
                                 showError(data.message || 'Error al eliminar archivo');
@@ -330,6 +563,7 @@
                             });
                              if (response.ok) {
                                 this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
+                                this.hasChanges = true;
                             } else {
                                 showError('Error al eliminar comentario');
                             }
@@ -382,7 +616,7 @@
                             const data = await response.json();
                             this.selectedTask = data.task;
                             this.isEditingTask = false;
-                            location.reload();
+                            this.hasChanges = true;
                         } else {
                             const data = await response.json();
                             showError(data.message || 'Error al guardar cambios');
@@ -405,6 +639,8 @@
                 },
 
                 async toggleTaskCompletion(task) {
+                    // Legacy toggling kept for mobile view, but ideally should use updateTaskStatusV2 too
+                    // For now, let's keep it but ensure it reloads
                     if (this.isSavingTask) return;
                     this.isSavingTask = true;
                     
@@ -420,12 +656,8 @@
                         
                         const data = await response.json();
                         if (data.success) {
-                            task.completed = data.completed;
-                            task.status = data.status;
-                            if (this.selectedTask && this.selectedTask.id === task.id) {
-                                this.selectedTask.completed = data.completed;
-                                this.selectedTask.status = data.status;
-                            }
+                            // Reload to sync kanban
+                            location.reload();
                         } else {
                             showError(data.message || 'Error al actualizar el estado');
                         }
