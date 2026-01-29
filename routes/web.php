@@ -90,6 +90,10 @@ Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->grou
     // Detailed Views
     Route::get('/companies/{id}', [\App\Http\Controllers\AdminDashboardController::class, 'showCompany'])->name('companies.show');
     Route::get('/professionals/{id}/details', [\App\Http\Controllers\AdminDashboardController::class, 'showProfessional'])->name('professionals.show-details');
+    
+    // User Management
+    Route::resource('users', \App\Http\Controllers\AdminUserController::class);
+    Route::post('/users/{id}/toggle-status', [\App\Http\Controllers\AdminUserController::class, 'toggleStatus'])->name('users.toggle-status');
 });
 
 // Chat Route
