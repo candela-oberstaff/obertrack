@@ -36,7 +36,7 @@ class RecoveryHoursController extends Controller
                 'user_id' => $user->id,
                 'recovery_date' => $today,
                 'hours_recovered' => $request->hours,
-                'activities' => $request->activities,
+                'activities' => strip_tags($request->activities),
                 'approved' => null, // Pending approval (null)
             ]);
 

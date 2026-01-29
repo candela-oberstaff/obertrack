@@ -36,17 +36,25 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|confirmed|min:8',
-            'tipo_usuario' => 'required|string|in:empleador,empleado',
-            'empleado_por_id' => 'required_if:tipo_usuario,empleado|nullable|exists:users,id',
-            'job_title' => 'nullable|string|max:100',
+            'name' => [
+                'required', 
+                'string', 
+                'min:5', 
+                'max:255', 
+                'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\.]+(\s+[a-zA-ZáéíóúÁÉÍÓÚñÑ\.]+)+$/u', // Multiple words
+                'regex:/[aeiouAEIOUáéíóúÁÉÍÓÚ]/u', // Contains vowels
+            ],
+            'email' => ['required', 'string', 'email:rfc,dns', 'max:255', 'unique:users'],
+            'password' => ['required', 'confirmed', 'min:8'],
+            'tipo_usuario' => ['required', 'string', 'in:empleador,empleado'],
+            'empleado_por_id' => ['required_if:tipo_usuario,empleado', 'nullable', 'exists:users,id'],
+            'job_title' => ['nullable', 'string', 'max:100'],
             // Company specific fields
-            'company_name' => 'required_if:tipo_usuario,empleador|nullable|string|max:255',
-            'related_contact' => 'required_if:tipo_usuario,empleador|nullable|string|max:255',
-            'phone_number' => 'required_if:tipo_usuario,empleador|nullable|string|max:20',
-            'country' => 'required_if:tipo_usuario,empleador|nullable|string|max:100',
+            'company_name' => ['required_if:tipo_usuario,empleador', 'nullable', 'string', 'min:3', 'max:255'],
+            'related_contact' => ['required_if:tipo_usuario,empleador', 'nullable', 'string', 'min:3', 'max:255'],
+            'phone_number' => ['required', 'string', 'min:7', 'max:20', 'regex:/^\+?[0-9\s\-]+$/'],
+            'country' => ['required', 'string', 'min:3', 'max:100', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u'],
+            'city' => ['required', 'string', 'min:3', 'max:100', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u'],
         ]);
 
 
@@ -69,6 +77,7 @@ class RegisteredUserController extends Controller
             'related_contact' => $request->tipo_usuario === 'empleador' ? $request->related_contact : null,
             'phone_number' => $request->phone_number, // Can be common
             'country' => $request->country,
+            'city' => $request->city,
             'avatar' => $avatar,
         ]);
 

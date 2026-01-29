@@ -130,7 +130,9 @@
             <!-- Name -->
             <div>
                 <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Nombre</label>
-                <input id="name" name="name" type="text" placeholder="Nombre y apellido" required autofocus
+                <input id="name" name="name" type="text" placeholder="Ej: Juan Pérez" required autofocus minlength="5" 
+                       pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\.]+(\s+[a-zA-ZáéíóúÁÉÍÓÚñÑ\.]+)+$"
+                       title="Por favor, ingresa tu Nombre y Apellido (mínimo dos palabras)"
                        class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
                        value="{{ old('name') }}">
                 <x-input-error :messages="$errors->get('name')" class="mt-2 text-xs font-bold text-brutalRed" />
@@ -216,7 +218,9 @@
                             </select>
                         </div>
                         <div class="flex-1">
-                            <input type="text" x-model="localNumber" @input="updateFull()" placeholder="Número" class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400">
+                            <input type="text" x-model="localNumber" @input="updateFull()" placeholder="Número (mín. 7 dígitos)" 
+                                   minlength="7" pattern="[0-9\s\-]+" title="Ingresa un número de teléfono válido (mínimo 7 dígitos)"
+                                   class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400">
                         </div>
                     </div>
                     <input type="hidden" name="phone_number" :value="fullNumber">
@@ -225,12 +229,79 @@
                     <p class="mt-1 text-[10px] text-gray-500 ml-1">Formato: <span x-text="fullNumber || 'No ingresado'"></span></p>
                     <x-input-error :messages="$errors->get('phone_number')" class="mt-2 text-xs font-bold text-brutalRed" />
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">País de Residencia</label>
-                    <input id="country" name="country" type="text" placeholder="Venezuela, España, etc."
-                           class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
-                           value="{{ old('country') }}" required>
-                    <x-input-error :messages="$errors->get('country')" class="mt-2 text-xs font-bold text-brutalRed" />
+                <!-- Country & City (Dynamic) -->
+                <div class="space-y-4" x-data="{
+                    countries: [],
+                    states: [],
+                    selectedCountry: '{{ old('country', '') }}',
+                    selectedState: '{{ old('city', '') }}',
+                    loadingCountries: false,
+                    loadingStates: false,
+                    async init() {
+                        this.loadingCountries = true;
+                        try {
+                            const response = await fetch('https://countriesnow.space/api/v0.1/countries');
+                            const data = await response.json();
+                            if (!data.error) {
+                                this.countries = data.data.map(c => c.country).sort();
+                                if (this.selectedCountry) {
+                                    await this.fetchStates();
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Error fetching countries:', e);
+                        } finally {
+                            this.loadingCountries = false;
+                        }
+                    },
+                    async fetchStates() {
+                        if (!this.selectedCountry) {
+                            this.states = [];
+                            return;
+                        }
+                        this.loadingStates = true;
+                        try {
+                            const response = await fetch('https://countriesnow.space/api/v0.1/countries/states', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ country: this.selectedCountry })
+                            });
+                            const data = await response.json();
+                            if (!data.error) {
+                                this.states = data.data.states.map(s => s.name).sort();
+                            } else {
+                                this.states = [];
+                            }
+                        } catch (e) {
+                            console.error('Error fetching states:', e);
+                            this.states = [];
+                        } finally {
+                            this.loadingStates = false;
+                        }
+                    }
+                }">
+                    <div>
+                        <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">País</label>
+                        <select name="country" id="country" x-model="selectedCountry" @change="fetchStates()" 
+                                required class="w-full brutal-select py-2.5 px-4 text-brandBlack">
+                            <option value="" x-text="loadingCountries ? 'Cargando países...' : 'Selecciona un país'"></option>
+                            <template x-for="country in countries" :key="country">
+                                <option :value="country" x-text="country" :selected="country === selectedCountry"></option>
+                            </template>
+                        </select>
+                        <x-input-error :messages="$errors->get('country')" class="mt-2 text-xs font-bold text-brutalRed" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Ciudad / Estado</label>
+                        <select name="city" id="city" x-model="selectedState" required 
+                                class="w-full brutal-select py-2.5 px-4 text-brandBlack">
+                            <option value="" x-text="loadingStates ? 'Cargando...' : (selectedCountry ? 'Selecciona una opción' : 'Primero elige un país')"></option>
+                            <template x-for="state in states" :key="state">
+                                <option :value="state" x-text="state" :selected="state === selectedState"></option>
+                            </template>
+                        </select>
+                        <x-input-error :messages="$errors->get('city')" class="mt-2 text-xs font-bold text-brutalRed" />
+                    </div>
                 </div>
             </div>
 
@@ -259,15 +330,15 @@
             <div id="company_fields_container" class="hidden space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Nombre de Empresa</label>
-                    <input id="company_name" name="company_name" type="text" placeholder="Tu empresa S.A."
-                           class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
+                    <input id="company_name" name="company_name" type="text" placeholder="Ej: Empresa S.A."
+                           minlength="3" class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
                            value="{{ old('company_name') }}">
                     <x-input-error :messages="$errors->get('company_name')" class="mt-2 text-xs font-bold text-brutalRed" />
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-brandBlack uppercase mb-1 ml-1">Contacto Relacionado</label>
-                    <input id="related_contact" name="related_contact" type="text" placeholder="Nombre del contacto"
-                           class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
+                    <input id="related_contact" name="related_contact" type="text" placeholder="Ej: María García"
+                           minlength="3" class="w-full brutal-input py-2.5 px-4 text-brandBlack placeholder-gray-400"
                            value="{{ old('related_contact') }}">
                     <x-input-error :messages="$errors->get('related_contact')" class="mt-2 text-xs font-bold text-brutalRed" />
                 </div>

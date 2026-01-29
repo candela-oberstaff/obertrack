@@ -170,7 +170,11 @@
                                     <!-- Visible Fields -->
                                     <div>
                                         <label for="name" class="block text-sm font-bold text-gray-700 mb-1">Nombre y Apellido</label>
-                                        <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                        <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" 
+                                               required minlength="5" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\.]+(\s+[a-zA-ZáéíóúÁÉÍÓÚñÑ\.]+)+$"
+                                               title="Ingresa tu Nombre y Apellido (mínimo dos palabras)"
+                                               placeholder="Ej: Juan Pérez"
+                                               class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
                                         <x-input-error class="mt-2" :messages="$errors->get('name')" />
                                     </div>
 
@@ -230,7 +234,9 @@
                                                 </select>
                                             </div>
                                             <div class="flex-1">
-                                                <input type="text" x-model="localNumber" @input="updateFull()" placeholder="Número" class="block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                                <input type="text" x-model="localNumber" @input="updateFull()" placeholder="Número (mín. 7 dígitos)" 
+                                                       minlength="7" pattern="[0-9\s\-]+" title="Ingresa un número de teléfono válido (mínimo 7 dígitos)"
+                                                       class="block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
                                             </div>
                                         </div>
                                         <input type="hidden" name="phone_number" :value="fullNumber">
@@ -241,7 +247,9 @@
                                     <!-- Address -->
                                     <div>
                                         <label for="location" class="block text-sm font-bold text-gray-700 mb-1">Dirección</label>
-                                        <input type="text" name="location" id="location" value="{{ old('location', $user->location) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4" placeholder="Ej: Av. Siempreviva 123">
+                                        <input type="text" name="location" id="location" value="{{ old('location', $user->location) }}" 
+                                               minlength="5" placeholder="Ej: Av. Siempreviva 123"
+                                               class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
                                         <x-input-error class="mt-2" :messages="$errors->get('location')" />
                                     </div>
 
@@ -322,14 +330,18 @@
                                         <!-- Company Name -->
                                         <div>
                                             <label for="company_name" class="block text-sm font-bold text-gray-700 mb-1">Nombre de Empresa</label>
-                                            <input type="text" name="company_name" id="company_name" value="{{ old('company_name', $user->company_name) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                            <input type="text" name="company_name" id="company_name" value="{{ old('company_name', $user->company_name) }}" 
+                                                   minlength="3" placeholder="Ej: Empresa S.A."
+                                                   class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
                                             <x-input-error class="mt-2" :messages="$errors->get('company_name')" />
                                         </div>
 
                                         <!-- Related Contact -->
                                         <div>
                                             <label for="related_contact" class="block text-sm font-bold text-gray-700 mb-1">Contacto Relacionado</label>
-                                            <input type="text" name="related_contact" id="related_contact" value="{{ old('related_contact', $user->related_contact) }}" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                            <input type="text" name="related_contact" id="related_contact" value="{{ old('related_contact', $user->related_contact) }}" 
+                                                   minlength="3" placeholder="Ej: María García"
+                                                   class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
                                             <x-input-error class="mt-2" :messages="$errors->get('related_contact')" />
                                         </div>
                                     @endif
@@ -678,7 +690,7 @@
             @endif
 
             <!-- DANGER ZONE SECTION -->
-            <div id="profile-danger-zone" x-data="{ openDeleteAccountModal: false }">
+            <div id="profile-danger-zone" x-data="{ openDeleteAccountModal: {{ $errors->userDeletion->isNotEmpty() ? 'true' : 'false' }} }">
                 <h3 class="text-[#22A9C8] font-medium text-lg mb-6">Zona peligrosa</h3>
                 
                 <div class="bg-[#F3F4F6] rounded-xl p-8">
@@ -710,13 +722,23 @@
                         <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
                             <div class="bg-white px-6 pt-6 pb-4">
                                 <div class="text-center">
-                                    <h3 class="text-lg font-bold text-gray-900 mb-6">
-                                        ¿Estás seguro de que deseas<br>eliminar tu cuenta?
+                                    <h3 class="text-lg font-bold text-gray-900 mb-2">
+                                        ¿Estás seguro de que deseas eliminar tu cuenta?
                                     </h3>
+                                    <p class="text-sm text-gray-600 mb-6">
+                                        Por favor, introduce tu contraseña para confirmar que deseas eliminar tu cuenta de forma permanente.
+                                    </p>
                                     
                                     <form method="post" action="{{ route('profile.destroy') }}" id="deleteAccountForm">
                                         @csrf
                                         @method('delete')
+                                        
+                                        <div class="mb-6">
+                                            <input type="password" name="password" 
+                                                   placeholder="Tu contraseña" required
+                                                   class="block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm py-3 px-4">
+                                            <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2 text-left" />
+                                        </div>
                                         
                                         <div class="flex justify-center gap-3 mt-6 pb-2">
                                             <button 
@@ -728,7 +750,7 @@
                                             <button 
                                                 type="submit" 
                                                 class="w-32 rounded-lg bg-[#EF4444] py-2 text-white font-medium hover:bg-red-700 transition">
-                                                Eliminar cuenta
+                                                Eliminar
                                             </button>
                                         </div>
                                     </form>
