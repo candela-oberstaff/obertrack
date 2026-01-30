@@ -22,13 +22,13 @@ class TaskController extends Controller
     public function index()
     {
         // Redirect to the new dashboard view
-        return redirect()->route('empleador.tareas.index');
+        return redirect()->route('empresa.tareas.index');
     }
 
     public function create()
     {
         // Redirect to the new dashboard view where creation is inline
-        return redirect()->route('empleador.tareas.index');
+        return redirect()->route('empresa.tareas.index');
     }
 
     public function store(StoreTaskRequest $request)
@@ -195,37 +195,37 @@ class TaskController extends Controller
 
     // Funciones para crear tareas de empresa
 
-    public function createForEmployee()
+    public function createForProfessional()
     {
         // Redirect to the new dashboard view where creation is inline
-        return redirect()->route('empleador.tareas.index');
+        return redirect()->route('empresa.tareas.index');
     }
 
-    public function storeForEmployee(StoreTaskRequest $request)
+    public function storeForProfessional(StoreTaskRequest $request)
     {
         $validatedData = $request->validated();
-        // Service handles 'employee_id' mapping to assignees
+        // Service handles 'professional_id' mapping to assignees
         
         $this->taskManagementService->createTask($validatedData);
-        return redirect()->route('empleador.tareas.index')->with('success', 'Tarea creada y asignada exitosamente.');
+        return redirect()->route('empresa.tareas.index')->with('success', 'Tarea creada y asignada exitosamente.');
     }
 
     public function edit(Task $task)
     {
         // Redirect to the new dashboard view where editing is inline
-        return redirect()->route('empleador.tareas.index');
+        return redirect()->route('empresa.tareas.index');
     }
 
-    public function updateForEmployer(UpdateTaskRequest $request, Task $task)
+    public function updateForCompany(UpdateTaskRequest $request, Task $task)
     {
         $validatedData = $request->validated();
         // Service handles updates
         
         $this->taskManagementService->updateTask($task, $validatedData);
-        return redirect()->route('empleador.tareas.index')->with('success', 'Tarea actualizada exitosamente.');
+        return redirect()->route('empresa.tareas.index')->with('success', 'Tarea actualizada exitosamente.');
     }
 
-    public function toggleEmployerTaskCompletion(Request $request, $taskId)
+    public function toggleCompanyTaskCompletion(Request $request, $taskId)
     {
         // Enforce restriction: Employers cannot change status
         if ($request->user()->tipo_usuario === 'empleador') {
@@ -234,7 +234,7 @@ class TaskController extends Controller
 
         $task = Task::findOrFail($taskId);
         
-        // Verificar si el usuario autenticado es el empleador de esta tarea
+        // Verificar si el usuario autenticado es la empresa de esta tarea
         if ($task->created_by !== Auth::id()) { // Using created_by instead of relation for now, simplified
             return response()->json(['success' => false, 'message' => 'No tienes permiso para modificar esta tarea'], 403);
         }
@@ -250,29 +250,29 @@ class TaskController extends Controller
         }
     }
 
-    public function editEmployerTask($taskId)
+    public function editCompanyTask($taskId)
     {
         $task = Task::findOrFail($taskId);
         
-        // Verificar si el usuario autenticado es el empleador de esta tarea
+        // Verificar si el usuario autenticado es la empresa de esta tarea
         if ($task->created_by !== Auth::id()) {
             return redirect()->back()->with('error', 'No tienes permiso para editar esta tarea');
         }
 
-        return view('empleador.tareas.edit', compact('task'));
+        return view('empresas.tareas.edit', compact('task'));
     }
 
-    public function updateEmployerTask(UpdateTaskRequest $request, $taskId)
+    public function updateCompanyTask(UpdateTaskRequest $request, $taskId)
     {
         $task = Task::findOrFail($taskId);
         
-        // Verificar si el usuario autenticado es el empleador de esta tarea
+        // Verificar si el usuario autenticado es la empresa de esta tarea
         if ($task->created_by !== Auth::id()) {
             return redirect()->back()->with('error', 'No tienes permiso para actualizar esta tarea');
         }
 
         $this->taskManagementService->updateTask($task, $request->validated());
-        return redirect()->route('empleador.tareas.index')->with('success', 'Tarea actualizada con éxito');
+        return redirect()->route('empresa.tareas.index')->with('success', 'Tarea actualizada con éxito');
     }
 
     public function downloadAttachment(\App\Models\TaskAttachment $attachment)
@@ -368,7 +368,7 @@ class TaskController extends Controller
         $task = $attachment->task;
         $user = Auth::user();
 
-        // Allow deletion if user is uploader OR task creator (employer/manager)
+        // Allow deletion if user is uploader OR task creator (company/manager)
         $canDelete = $attachment->uploaded_by === $user->id || 
                      $task->created_by === $user->id || 
                      ($user->tipo_usuario === 'empleador' && $task->assignees()->where('empleador_id', $user->id)->exists());

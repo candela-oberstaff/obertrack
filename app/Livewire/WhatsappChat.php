@@ -43,7 +43,7 @@ class WhatsappChat extends Component
 
     public function mount(WahaService $wahaService)
     {
-        // Block access for employers - WhatsApp is only for employees
+        // Block access for companies - WhatsApp is only for professionals
         $user = Auth::user();
         if ($user->tipo_usuario === 'empleador' || $user->is_superadmin) {
             abort(403, 'WhatsApp solo está disponible para profesionales.');
@@ -171,9 +171,9 @@ class WhatsappChat extends Component
         if ($user->tipo_usuario === 'empleado') {
             // 2. Add Company
             if ($user->empleador_id) {
-                $employer = User::find($user->empleador_id);
-                if ($employer && $employer->phone_number) {
-                    $this->contacts->push($employer);
+                $company = User::find($user->empleador_id);
+                if ($company && $company->phone_number) {
+                    $this->contacts->push($company);
                 }
             }
 

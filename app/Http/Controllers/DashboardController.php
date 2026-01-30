@@ -11,7 +11,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use App\Services\WorkHoursSummaryService;
 use App\Services\TaskDataService;
-use App\Services\EmployeeDataService;
+use App\Services\ProfessionalDataService;
 use App\Services\TaskManagementService;
 
 class DashboardController extends Controller
@@ -19,7 +19,7 @@ class DashboardController extends Controller
     public function __construct(
         private WorkHoursSummaryService $workHoursService,
         private TaskDataService $taskDataService,
-        private EmployeeDataService $employeeDataService,
+        private ProfessionalDataService $professionalDataService,
         private TaskManagementService $taskManagementService,
         private \App\Services\ProfessionalActivityService $activityService
     ) {}
@@ -29,7 +29,7 @@ class DashboardController extends Controller
         return view("dashboard.$role");
     }
 
-    public function crearTareaParaEmpleado(Request $request)
+    public function crearTareaParaProfesional(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
@@ -37,7 +37,7 @@ class DashboardController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'priority' => 'required|in:low,medium,high,urgent',
-            'employee_id' => 'required|exists:users,id',
+            'professional_id' => 'required|exists:users,id',
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,txt,jpg,jpeg,png',
         ]);
 
@@ -70,7 +70,7 @@ class DashboardController extends Controller
         return redirect()->back()->with('success', 'Tarea creada y asignada con éxito.');
     }
 
-    public function verTareasEmpleados(Request $request)
+    public function verTareasProfesionales(Request $request)
     {
         $user = auth()->user();
 
@@ -86,37 +86,37 @@ class DashboardController extends Controller
 
         // Cachear por 60 segundos para evitar queries repetidas
         $data = cache()->remember($cacheKey, 60, function () use ($user, $request) {
-            // Obtener los empleados
-            $employees = $this->employeeDataService->getEmployeesForUser($user);
+            // Obtener los profesionales
+            $profesionales = $this->professionalDataService->getProfessionalsForUser($user);
 
             // Obtener todas las tareas de la organización (incluye las de los profesionales)
             $teamTasks = $this->taskManagementService->getCompanyTasks($user, $request->all());
 
-            // Asignar las tareas individuales a cada empleado
-            $employees->each(function ($employee) use ($teamTasks) {
-                $employee->individualTasks = $teamTasks->filter(function($t) use ($employee) {
-                    return $t->created_by == $employee->id || $t->assignees->contains('id', $employee->id);
+            // Asignar las tareas individuales a cada profesional
+            $profesionales->each(function ($profesional) use ($teamTasks) {
+                $profesional->individualTasks = $teamTasks->filter(function($t) use ($profesional) {
+                    return $t->created_by == $profesional->id || $t->assignees->contains('id', $profesional->id);
                 });
             });
 
             // Preparar datos para el gráfico
             $chartData = $this->taskDataService->prepareChartData($teamTasks);
 
-            // Obtener las horas trabajadas de los empleados por semana
+            // Obtener las horas trabajadas de los profesionales por semana
             $weekStart = $request->week ? Carbon::parse($request->week) : Carbon::now()->startOfWeek(Carbon::MONDAY);
             $weekEnd = $weekStart->copy()->endOfWeek(Carbon::FRIDAY);
-            $workHoursSummary = $this->workHoursService->getWorkHoursSummary($employees, $weekStart, $weekEnd);
+            $workHoursSummary = $this->workHoursService->getWorkHoursSummary($profesionales, $weekStart, $weekEnd);
 
             // Obtener las semanas pendientes
-            $pendingWeeks = $this->workHoursService->getPendingWeeks($employees);
+            $pendingWeeks = $this->workHoursService->getPendingWeeks($profesionales);
 
             $currentMonth = Carbon::now()->startOfMonth();
 
             // Calcular el total de horas aprobadas para el mes actual
-            $totalApprovedHours = $this->workHoursService->getTotalApprovedHoursForMonth($employees, $currentMonth);
+            $totalApprovedHours = $this->workHoursService->getTotalApprovedHoursForMonth($profesionales, $currentMonth);
 
-            // Obtener información detallada de los empleados
-            $empleadosInfo = $this->employeeDataService->getEmployeesInfo($employees, $currentMonth, $this->workHoursService);
+            // Obtener información detallada de los profesionales
+            $profesionalesInfo = $this->professionalDataService->getProfessionalsInfo($profesionales, $currentMonth, $this->workHoursService);
 
             return compact(
                 'teamTasks',
@@ -126,27 +126,27 @@ class DashboardController extends Controller
                 'currentMonth',
                 'totalApprovedHours',
                 'pendingWeeks',
-                'empleadosInfo',
-                'employees'
+                'profesionalesInfo',
+                'profesionales'
             );
         });
 
-        return view('empleadores.ver_tareas_empleados', $data);
+        return view('empresas.ver_tareas_profesionales', $data);
     }
 
-    public function empleadorDashboard(Request $request)
+    public function empresaDashboard(Request $request)
     {
         $user = auth()->user();
         
-        // Use service to get employees (consistent with other methods)
-        $empleados = $this->employeeDataService->getEmployeesForUser($user);
+        // Use service to get professionals (consistent with other methods)
+        $profesionales = $this->professionalDataService->getProfessionalsForUser($user);
 
         $currentMonth = $request->month ? Carbon::parse($request->month) : Carbon::now();
         $startOfMonth = $currentMonth->copy()->startOfMonth();
         $endOfMonth = $currentMonth->copy()->endOfMonth();
 
-        // Get all work hours for the month for all employees to calculate stats and calendar
-        $monthlyHours = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+        // Get all work hours for the month for all professionals to calculate stats and calendar
+        $monthlyHours = WorkHours::whereIn('user_id', $profesionales->pluck('id'))
             ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
             ->get();
         
@@ -155,21 +155,21 @@ class DashboardController extends Controller
             return $item->work_date->format('Y-m-d');
         });
         
-        // Assign colors to employees for UI consistency
+        // Assign colors to professionals for UI consistency
         $colors = ['bg-pink-500', 'bg-cyan-500', 'bg-green-600', 'bg-blue-500', 'bg-purple-500', 'bg-orange-500'];
-        $employeeColors = [];
-        foreach($empleados as $index => $emp) {
-            $employeeColors[$emp->id] = $colors[$index % count($colors)];
+        $professionalColors = [];
+        foreach($profesionales as $index => $prof) {
+            $professionalColors[$prof->id] = $colors[$index % count($colors)];
         }
 
         // Professional Activity Statuses
-        $professionalStatuses = $this->activityService->getStatusesForUsers($empleados);
+        $professionalStatuses = $this->activityService->getStatusesForUsers($profesionales);
 
         // Fetch all organizationally relevant tasks (Active during the month)
-        $monthlyTasks = \App\Models\Task::where(function($query) use ($empleados, $user) {
-            $query->whereIn('created_by', $empleados->pluck('id')->push($user->id))
-                  ->orWhereHas('assignees', function($q) use ($empleados, $user) {
-                      $q->whereIn('users.id', $empleados->pluck('id')->push($user->id));
+        $monthlyTasks = \App\Models\Task::where(function($query) use ($profesionales, $user) {
+            $query->whereIn('created_by', $profesionales->pluck('id')->push($user->id))
+                  ->orWhereHas('assignees', function($q) use ($profesionales, $user) {
+                      $q->whereIn('users.id', $profesionales->pluck('id')->push($user->id));
                   });
         })
         ->where(function($q) use ($startOfMonth, $endOfMonth) {
@@ -185,35 +185,35 @@ class DashboardController extends Controller
         ->get();
 
         // Fetch recovery hours from the new table
-        $monthlyRecoveries = RecoveryHour::whereIn('user_id', $empleados->pluck('id'))
+        $monthlyRecoveries = RecoveryHour::whereIn('user_id', $profesionales->pluck('id'))
             ->whereBetween('recovery_date', [$startOfMonth, $endOfMonth])
             ->get()
             ->groupBy(function($item) {
                 return $item->recovery_date->format('Y-m-d');
             });
 
-        // Employee Summary Cards Data
-        $employeeSummaries = $empleados->map(function($employee) use ($monthlyHours, $monthlyTasks, $employeeColors, $professionalStatuses) {
-            $employeeHours = $monthlyHours->where('user_id', $employee->id);
+        // Professional Summary Cards Data
+        $professionalSummaries = $profesionales->map(function($professional) use ($monthlyHours, $monthlyTasks, $professionalColors, $professionalStatuses) {
+            $professionalHours = $monthlyHours->where('user_id', $professional->id);
             
-            // Filter tasks for this specific employee
-            $empTasks = $monthlyTasks->filter(function($task) use ($employee) {
-                return $task->created_by == $employee->id || $task->assignees->contains('id', $employee->id);
+            // Filter tasks for this specific professional
+            $profTasks = $monthlyTasks->filter(function($task) use ($professional) {
+                return $task->created_by == $professional->id || $task->assignees->contains('id', $professional->id);
             });
 
-            $statusData = $professionalStatuses->firstWhere('user.id', $employee->id);
-            $debtSummary = \App\Http\Controllers\RecoveryHoursController::getDebtSummary($employee->id);
+            $statusData = $professionalStatuses->firstWhere('user.id', $professional->id);
+            $debtSummary = \App\Http\Controllers\RecoveryHoursController::getDebtSummary($professional->id);
             
             return [
-                'user' => $employee,
-                'total_hours' => $employeeHours->sum('hours_worked'),
-                'days_registered' => $employeeHours->where('hours_worked', '>', 0)->count(),
+                'user' => $professional,
+                'total_hours' => $professionalHours->sum('hours_worked'),
+                'days_registered' => $professionalHours->where('hours_worked', '>', 0)->count(),
                 'target_hours' => 160,
-                'completed_tasks' => $empTasks->filter(fn($t) => (bool)$t->completed)->count(),
-                'total_tasks' => $empTasks->count(),
-                'color' => $employeeColors[$employee->id] ?? 'bg-gray-500',
-                'role' => $employee->job_title ?? 'Sin puesto definido',
-                'initials' => strtoupper(substr($employee->name, 0, 1) . substr(strrchr($employee->name, ' ') ?: ' ' . substr($employee->name, 1), 1, 1)),
+                'completed_tasks' => $profTasks->filter(fn($t) => (bool)$t->completed)->count(),
+                'total_tasks' => $profTasks->count(),
+                'color' => $professionalColors[$professional->id] ?? 'bg-gray-500',
+                'role' => $professional->job_title ?? 'Sin puesto definido',
+                'initials' => strtoupper(substr($professional->name, 0, 1) . substr(strrchr($professional->name, ' ') ?: ' ' . substr($professional->name, 1), 1, 1)),
                 'activity_status' => $statusData['status'] ?? 'active',
                 'days_inactive' => $statusData['days_inactive'] ?? 0,
                 'debt_summary' => $debtSummary,
@@ -221,7 +221,7 @@ class DashboardController extends Controller
         });
 
         // Sorted Recovery History for the section below calendar
-        $recoveryHistory = RecoveryHour::whereIn('user_id', $empleados->pluck('id'))
+        $recoveryHistory = RecoveryHour::whereIn('user_id', $profesionales->pluck('id'))
             ->whereBetween('recovery_date', [$startOfMonth, $endOfMonth])
             ->with('user')
             ->orderBy('recovery_date', 'desc')
@@ -239,16 +239,16 @@ class DashboardController extends Controller
                 'day' => $currentDay->day,
                 'is_current_month' => $currentDay->month === $currentMonth->month,
                 'has_events' => false,
-                'employees' => [],
+                'profesionales' => [],
                 'pending_recoveries_count' => 0
             ];
 
             $dayRecords = $hoursByDate->get($dateStr, collect());
             $dayRecoveries = $monthlyRecoveries->get($dateStr, collect());
 
-                foreach ($empleados as $employee) {
-                    $record = $dayRecords->where('user_id', $employee->id)->first();
-                    $userRecoveries = $dayRecoveries->where('user_id', $employee->id);
+                foreach ($profesionales as $professional) {
+                    $record = $dayRecords->where('user_id', $professional->id)->first();
+                    $userRecoveries = $dayRecoveries->where('user_id', $professional->id);
                     
                     if ($record || $userRecoveries->isNotEmpty()) {
                         $dayData['has_events'] = true;
@@ -262,19 +262,19 @@ class DashboardController extends Controller
                             ];
                         })->values();
 
-                        $dayData['employees'][] = [
+                        $dayData['profesionales'][] = [
                             'record_id' => $record ? $record->id : null,
-                            'id' => $employee->id,
-                            'name' => $employee->name,
-                            'avatar' => $employee->avatar ? (str_starts_with($employee->avatar, 'http') ? $employee->avatar : asset('avatars/' . $employee->avatar)) : '',
-                            'initials' => $employeeSummaries->firstWhere('user.id', $employee->id)['initials'],
+                            'id' => $professional->id,
+                            'name' => $professional->name,
+                            'avatar' => $professional->avatar ? (str_starts_with($professional->avatar, 'http') ? $professional->avatar : asset('avatars/' . $professional->avatar)) : '',
+                            'initials' => $professionalSummaries->firstWhere('user.id', $professional->id)['initials'],
                             'hours' => $record ? $record->hours_worked : 0,
                             'approved' => $record ? (bool)$record->approved : true,
                             'user_comment' => $record ? $record->user_comment : null,
                             'comment' => $record ? $record->approval_comment : null,
                             'new_comment' => '',
                             'absence_reason' => $record ? $record->absence_reason : null,
-                            'color_class' => $employeeColors[$employee->id] ?? 'bg-gray-500',
+                            'color_class' => $professionalColors[$professional->id] ?? 'bg-gray-500',
                             
                             // Recovery list and aggregates
                             'recoveries' => $mappedRecoveries,
@@ -284,24 +284,24 @@ class DashboardController extends Controller
                     }
                 }
                 
-                // Count pending recoveries for this day (if any recovery is pending for an employee)
-                $dayData['pending_recoveries_count'] = collect($dayData['employees'])
+                // Count pending recoveries for this day (if any recovery is pending for a professional)
+                $dayData['pending_recoveries_count'] = collect($dayData['profesionales'])
                     ->filter(fn($emp) => $emp['has_pending_recovery'])
                     ->count();
                 
                 // NEW: Add has_pending flag to accurately show the red dot only if there's work to do
-                $dayData['has_pending'] = collect($dayData['employees'])
+                $dayData['has_pending'] = collect($dayData['profesionales'])
                     ->contains(fn($emp) => !$emp['approved'] || $emp['has_pending_recovery']);
             
             $calendar[] = $dayData;
             $currentDay->addDay();
         }
 
-        return view('empleadores.dashboard', compact(
+        return view('empresas.dashboard', compact(
             'user',
-            'empleados',
+            'profesionales',
             'currentMonth',
-            'employeeSummaries',
+            'professionalSummaries',
             'calendar',
             'recoveryHistory'
         ));
@@ -312,26 +312,26 @@ class DashboardController extends Controller
         $targetDate = Carbon::parse($date);
         $user = auth()->user();
         
-        $empleados = $this->employeeDataService->getEmployeesForUser($user);
+        $profesionales = $this->professionalDataService->getProfessionalsForUser($user);
         
         // Needed for initials and colors
-        $employeeSummaries = $this->workHoursService->getSummaries($empleados, $targetDate, $targetDate->copy()->endOfDay());
-        $employeeColors = $employeeSummaries->pluck('color_class', 'user.id');
+        $professionalSummaries = $this->workHoursService->getSummaries($profesionales, $targetDate, $targetDate->copy()->endOfDay());
+        $professionalColors = $professionalSummaries->pluck('color_class', 'user.id');
 
         // Fetch records for this day
-        $dayRecords = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+        $dayRecords = WorkHours::whereIn('user_id', $profesionales->pluck('id'))
             ->whereDate('work_date', $targetDate->format('Y-m-d'))
             ->get();
 
-        $dayRecoveries = RecoveryHour::whereIn('user_id', $empleados->pluck('id'))
+        $dayRecoveries = RecoveryHour::whereIn('user_id', $profesionales->pluck('id'))
             ->whereDate('recovery_date', $targetDate->format('Y-m-d'))
             ->get();
 
-        $employeesData = [];
+        $profesionalesData = [];
 
-        foreach ($empleados as $employee) {
-            $record = $dayRecords->where('user_id', $employee->id)->first();
-            $userRecoveries = $dayRecoveries->where('user_id', $employee->id);
+        foreach ($profesionales as $professional) {
+            $record = $dayRecords->where('user_id', $professional->id)->first();
+            $userRecoveries = $dayRecoveries->where('user_id', $professional->id);
             
             if ($record || $userRecoveries->isNotEmpty()) {
                 
@@ -344,13 +344,13 @@ class DashboardController extends Controller
                     ];
                 })->values();
 
-                $initials = $employeeSummaries->firstWhere('user.id', $employee->id)['initials'] ?? strtoupper(substr($employee->name, 0, 1));
-
-                $employeesData[] = [
+                $initials = $professionalSummaries->firstWhere('user.id', $professional->id)['initials'] ?? strtoupper(substr($professional->name, 0, 1));
+ 
+                $profesionalesData[] = [
                     'record_id' => $record ? $record->id : null,
-                    'id' => $employee->id,
-                    'name' => $employee->name,
-                    'avatar' => $employee->avatar ? (str_starts_with($employee->avatar, 'http') ? $employee->avatar : asset('avatars/' . $employee->avatar)) : '',
+                    'id' => $professional->id,
+                    'name' => $professional->name,
+                    'avatar' => $professional->avatar ? (str_starts_with($professional->avatar, 'http') ? $professional->avatar : asset('avatars/' . $professional->avatar)) : '',
                     'initials' => $initials,
                     'hours' => $record ? $record->hours_worked : 0,
                     'approved' => $record ? (bool)$record->approved : true,
@@ -358,7 +358,7 @@ class DashboardController extends Controller
                     'comment' => $record ? $record->approval_comment : null,
                     'new_comment' => '',
                     'absence_reason' => $record ? $record->absence_reason : null,
-                    'color_class' => $employeeColors[$employee->id] ?? 'bg-gray-500',
+                    'color_class' => $professionalColors[$professional->id] ?? 'bg-gray-500',
                     
                     'recoveries' => $mappedRecoveries,
                     'recovered_hours' => $userRecoveries->where('approved', '!==', false)->sum('hours_recovered'),
@@ -368,19 +368,19 @@ class DashboardController extends Controller
         }
 
         // Calculate Day Summary stats
-        $pendingRecoveriesCount = collect($employeesData)
+        $pendingRecoveriesCount = collect($profesionalesData)
             ->filter(fn($emp) => $emp['has_pending_recovery'])
             ->count();
         
-        $hasPending = collect($employeesData)
+        $hasPending = collect($profesionalesData)
             ->contains(fn($emp) => !$emp['approved'] || $emp['has_pending_recovery']);
 
         return response()->json([
             'date' => $targetDate->format('Y-m-d'),
             'day' => $targetDate->day,
             'is_current_month' => $targetDate->isCurrentMonth(),
-            'has_events' => count($employeesData) > 0,
-            'employees' => $employeesData,
+            'has_events' => count($profesionalesData) > 0,
+            'profesionales' => $profesionalesData,
             'pending_recoveries_count' => $pendingRecoveriesCount,
             'has_pending' => $hasPending
         ]);
@@ -395,7 +395,7 @@ class DashboardController extends Controller
             return redirect()->route('dashboard')->with('error', 'No tienes permiso para ver esta información.');
         }
 
-        $allProfessionals = $this->employeeDataService->getEmployeesForUser($user);
+        $allProfessionals = $this->professionalDataService->getProfessionalsForUser($user);
         $allCompanies = collect(); // Managers/Employers typically don't email other companies
 
         // Get email stats for the sidebar
@@ -409,7 +409,7 @@ class DashboardController extends Controller
             'recent_logs' => collect()
         ];
         
-        return view('empleadores.emails', compact('allProfessionals', 'allCompanies', 'emailStats'));
+        return view('empresas.emails', compact('allProfessionals', 'allCompanies', 'emailStats'));
     }
 
     public function sendMassEmail(Request $request, \App\Services\BrevoEmailService $emailService)
@@ -425,16 +425,26 @@ class DashboardController extends Controller
         $companyName = $user->company_name ?? $user->name;
 
         if ($request->recipient_id) {
-            $employees = \App\Models\User::where('id', $request->recipient_id)
-                ->where('empleador_id', $user->id)
-                ->get();
+            $query = \App\Models\User::where('id', $request->recipient_id);
+            
+            if ($user->is_superadmin) {
+                // Superadmins can email anyone
+            } elseif ($user->tipo_usuario === 'empleador') {
+                $query->where('empleador_id', $user->id);
+            } elseif ($user->is_manager) {
+                $query->where('empleador_id', $user->empleador_id);
+            } else {
+                $query->whereRaw('1=0'); // Security: no access
+            }
+            
+            $profesionales = $query->get();
             $targetLabel = "al profesional seleccionado";
         } else {
-            $employees = $this->employeeDataService->getEmployeesForUser($user);
+            $profesionales = $this->professionalDataService->getProfessionalsForUser($user);
             $targetLabel = "a tu equipo de profesionales";
         }
-
-        if ($employees->isEmpty()) {
+ 
+        if ($profesionales->isEmpty()) {
             return redirect()->back()->with('error', 'No se encontró el destinatario o no tienes profesionales a cargo.');
         }
 
@@ -450,13 +460,13 @@ class DashboardController extends Controller
         }
 
         $successCount = 0;
-        foreach ($employees as $employee) {
-            if ($employee->email) {
+        foreach ($profesionales as $profesional) {
+            if ($profesional->email) {
                 $sent = $emailService->sendMassCommunication(
-                    $employee->email,
-                    $employee->name,
+                    $profesional->email,
+                    $profesional->name,
                     $request->subject,
-                    nl2br(e($request->message)),
+                    $request->message,
                     $companyName,
                     $processedAttachments
                 );
@@ -479,31 +489,41 @@ class DashboardController extends Controller
         $sessionName = $waha->getSessionName($user->id);
 
         if ($request->recipient_id) {
-            $employees = \App\Models\User::where('id', $request->recipient_id)
-                ->where('empleador_id', $user->id)
-                ->get();
+            $query = \App\Models\User::where('id', $request->recipient_id);
+            
+            if ($user->is_superadmin) {
+                // Anyone
+            } elseif ($user->tipo_usuario === 'empleador') {
+                $query->where('empleador_id', $user->id);
+            } elseif ($user->is_manager) {
+                $query->where('empleador_id', $user->empleador_id);
+            } else {
+                $query->whereRaw('1=0');
+            }
+            
+            $profesionales = $query->get();
             $targetLabel = "al profesional seleccionado";
         } else {
-            $employees = $this->employeeDataService->getEmployeesForUser($user);
+            $profesionales = $this->professionalDataService->getProfessionalsForUser($user);
             $targetLabel = "a tu equipo de profesionales";
         }
-
-        // Filter employees with phone number
-        $employees = $employees->filter(fn($e) => !empty($e->phone_number));
-
-        if ($employees->isEmpty()) {
+ 
+        // Filter professionals with phone number
+        $profesionales = $profesionales->filter(fn($e) => !empty($e->phone_number));
+ 
+        if ($profesionales->isEmpty()) {
             return redirect()->back()->with('error', 'No se encontraron destinatarios con número de teléfono registrado.');
         }
 
         $count = 0;
         $delayIncrement = 15; // Reduced from 60 to 15 seconds for responsiveness
 
-        foreach ($employees as $employee) {
+        foreach ($profesionales as $profesional) {
             $delay = $count * $delayIncrement;
-            \App\Jobs\SendMassWhatsappJob::dispatch($employee->id, $request->message, $companyName, $sessionName)
+            \App\Jobs\SendMassWhatsappJob::dispatch($profesional->id, $request->message, $companyName, $sessionName)
                 ->delay(now()->addSeconds($delay));
             
-            \Log::info("DashboardController: Dispatched mass WhatsApp job for {$employee->name}", [
+            \Log::info("DashboardController: Dispatched mass WhatsApp job for {$profesional->name}", [
                 'delay_seconds' => $delay,
                 'session' => $sessionName
             ]);
@@ -556,22 +576,22 @@ class DashboardController extends Controller
         }
 
         $targetDate = \Illuminate\Support\Carbon::parse($date);
-        $empleados = $this->employeeDataService->getEmployeesForUser($user);
+        $profesionales = $this->professionalDataService->getProfessionalsForUser($user);
         
-        if ($empleados->isEmpty()) {
+        if ($profesionales->isEmpty()) {
             return redirect()->back()->with('error', 'No tienes profesionales a cargo para ver en esta fecha.');
         }
-
-        $dayRecords = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+ 
+        $dayRecords = WorkHours::whereIn('user_id', $profesionales->pluck('id'))
             ->whereDate('work_date', $targetDate)
             ->with('user')
             ->get();
             
         // Fetch all tasks for this day (Created by or assigned to anyone in the company)
-        $dayTasks = \App\Models\Task::where(function($query) use ($empleados, $user) {
-            $query->whereIn('created_by', $empleados->pluck('id')->push($user->id))
-                  ->orWhereHas('assignees', function($q) use ($empleados, $user) {
-                      $q->whereIn('users.id', $empleados->pluck('id')->push($user->id));
+        $dayTasks = \App\Models\Task::where(function($query) use ($profesionales, $user) {
+            $query->whereIn('created_by', $profesionales->pluck('id')->push($user->id))
+                  ->orWhereHas('assignees', function($q) use ($profesionales, $user) {
+                      $q->whereIn('users.id', $profesionales->pluck('id')->push($user->id));
                   });
         })
         ->where(function($query) use ($targetDate) {
@@ -585,16 +605,16 @@ class DashboardController extends Controller
         ->with(['assignees', 'createdBy'])
         ->get();
 
-        $dayRecoveries = RecoveryHour::whereIn('user_id', $empleados->pluck('id'))
+        $dayRecoveries = RecoveryHour::whereIn('user_id', $profesionales->pluck('id'))
             ->whereDate('recovery_date', $targetDate)
             ->with('user')
             ->get();
 
-        return view('empleadores.detalle_diario', compact(
+        return view('empresas.detalle_diario', compact(
             'targetDate',
             'dayRecords',
             'dayRecoveries',
-            'empleados',
+            'profesionales',
             'dayTasks'
         ));
     }

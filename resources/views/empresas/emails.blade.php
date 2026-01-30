@@ -19,7 +19,7 @@
                     if (this.isCheckingWa || this.activeTab !== 'whatsapp') return;
                     this.isCheckingWa = true;
                     try {
-                        let res = await fetch('{{ route('empleador.whatsapp.status') }}');
+                        let res = await fetch('{{ route('empresa.whatsapp.status') }}');
                         if (!res.ok) throw new Error('Status Error');
                         let data = await res.json();
                         
@@ -40,7 +40,7 @@
                     this.waError = null;
                     this.waCheckCount = 0;
                     try {
-                        let url = '{{ route('empleador.whatsapp.start') }}';
+                        let url = '{{ route('empresa.whatsapp.start') }}';
                         if (force) url += '?force=true';
                         
                         let res = await fetch(url, {
@@ -91,7 +91,7 @@
                         <!-- Quill Styles -->
                         <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 
-                        <form action="{{ route('empleador.mass-email') }}" method="POST" class="space-y-6" id="massEmailForm" enctype="multipart/form-data">
+                        <form action="{{ route('empresa.mass-email') }}" method="POST" class="space-y-6" id="massEmailForm" enctype="multipart/form-data">
                             @csrf
                             
                             @if(session('success'))
@@ -245,7 +245,7 @@
                                 <h2 class="text-gray-900 font-extrabold text-xl">Mensaje de WhatsApp Masivo</h2>
                             </div>
 
-                            <form action="{{ route('empleador.mass-whatsapp') }}" method="POST" class="space-y-6" id="massWhatsappForm">
+                            <form action="{{ route('empresa.mass-whatsapp') }}" method="POST" class="space-y-6" id="massWhatsappForm">
                                 @csrf
                                 
                                 @if(session('success'))

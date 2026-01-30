@@ -19,7 +19,7 @@
 
     <!-- Create Task Form -->
     <div x-show="activeTab === 'create'" class="p-6">
-        <form action="{{ route('empleador.crear-tarea') }}" method="POST" enctype="multipart/form-data" onsubmit="handleFormSubmit(this)">
+        <form action="{{ route('empresa.tareas.store') }}" method="POST" enctype="multipart/form-data" onsubmit="handleFormSubmit(this)">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="col-span-2">
@@ -103,7 +103,7 @@
 
     <!-- Filter Tasks Form -->
     <div x-show="activeTab === 'filter'" class="p-6">
-        <form action="{{ route('empleador.tareas.index') }}" method="GET">
+        <form action="{{ route('empresa.tareas.index') }}" method="GET">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>

@@ -35,7 +35,7 @@ class WorkHoursController extends Controller
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'Por favor, completa tus datos personales en tu perfil antes de registrar horas.']);
             }
-            return redirect()->route('profile.edit')->with('error', 'Por favor, completa tus datos personales antes de registrar horas.');
+            return redirect(route('profile.edit', [], false))->with('error', 'Por favor, completa tus datos personales antes de registrar horas.');
         }
 
         $workDate = Carbon::parse($request->work_date);
@@ -111,13 +111,13 @@ class WorkHoursController extends Controller
             ->whereMonth('work_date', $currentMonth->month)
             ->sum(DB::raw('hours_worked + CASE WHEN recovery_approved = true THEN recovered_hours ELSE 0 END'));
     
-        // Send notification to employer with cooldown
+        // Send notification to company with cooldown
         try {
             $user = auth()->user();
-            $employer = $user->empleador_id ? User::find($user->empleador_id) : null;
+            $company = $user->empleador_id ? User::find($user->empleador_id) : null;
 
-            if ($employer) {
-                $cacheKey = "pending_hours_notification_{$employer->id}_{$user->id}";
+            if ($company) {
+                $cacheKey = "pending_hours_notification_{$company->id}_{$user->id}";
                 
                 if (!cache()->has($cacheKey)) {
                     $pendingHoursCount = WorkHours::where('user_id', $user->id)
@@ -126,14 +126,14 @@ class WorkHoursController extends Controller
 
                     if ($pendingHoursCount > 0) {
                         $this->emailService->sendPendingHoursNotification(
-                            $employer->email,
-                            $employer->name,
+                            $company->email,
+                            $company->name,
                             [
-                                'employee_name' => $user->name,
+                                'professional_name' => $user->name,
                                 'total_hours' => $pendingHoursCount,
                                 'pending_hours' => [
                                     [
-                                        'employee_name' => $user->name,
+                                        'professional_name' => $user->name,
                                         'hours' => $pendingHoursCount,
                                         'week' => $workDate->startOfWeek()->format('d/m/Y')
                                     ]
@@ -172,7 +172,7 @@ class WorkHoursController extends Controller
             ]);
         }
 
-        return redirect()->route('empleado.registrar-horas')->with([
+        return redirect(route('profesional.registrar-horas', [], false))->with([
             'success' => 'Horas registradas correctamente.',
             'totalHours' => $totalHours
         ]);
@@ -204,19 +204,21 @@ class WorkHoursController extends Controller
             ->whereYear('end_date', $currentMonth->year)
             ->count();
             
-        return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'missingHours', 'completedTasksCount', 'pendingTasksCount'));
+        return view('profesionales.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'missingHours', 'completedTasksCount', 'pendingTasksCount'));
     }
 
     public function approveWeek(ApproveWorkHoursRequest $request)
     {
-        $this->approvalService->approveWeek($request->employee_id, $request->week_start);
+        $professionalId = $request->input('professional_id') ?? $request->input('employee_id');
+        $this->approvalService->approveWeek($professionalId, $request->week_start);
         return back()->with('success', 'Semana aprobada correctamente.');
     }
 
     public function approveWeekWithComment(ApproveWorkHoursRequest $request)
     {
+        $professionalId = $request->input('professional_id') ?? $request->input('employee_id');
         $this->approvalService->approveWeekWithComment(
-            $request->employee_id, 
+            $professionalId, 
             $request->week_start, 
             $request->comment
         );
@@ -226,25 +228,27 @@ class WorkHoursController extends Controller
     public function approveDays(Request $request)
     {
         $request->validate([
-            'employee_id' => 'required|exists:users,id',
+            'professional_id' => 'required_without:employee_id|exists:users,id',
+            'employee_id' => 'required_without:professional_id|exists:users,id',
             'dates' => 'required|array',
             'comment' => 'nullable|string'
         ]);
 
-        $employee = User::findOrFail($request->employee_id);
+        $professionalId = $request->input('professional_id') ?? $request->input('employee_id');
+        $professional = User::findOrFail($professionalId);
         $user = Auth::user();
 
         // Security check: superadmin, employer of the employee, or manager of the same employer
         $isAuthorized = $user->is_superadmin || 
-                        ($user->tipo_usuario === 'empleador' && $employee->empleador_id === $user->id) ||
-                        ($user->is_manager && $employee->empleador_id === $user->empleador_id);
+                        ($user->tipo_usuario === 'empleador' && $professional->empleador_id === $user->id) ||
+                        ($user->is_manager && $professional->empleador_id === $user->empleador_id);
 
         if (!$isAuthorized) {
             return response()->json(['success' => false, 'message' => 'No tienes permiso para aprobar estas horas.'], 403);
         }
 
         $this->approvalService->approveDates(
-            $request->employee_id,
+            $professionalId,
             $request->dates,
             $request->comment
         );
@@ -339,34 +343,42 @@ class WorkHoursController extends Controller
         ]);
 
         $employeeId = $request->query('employee_id');
-        $employee = User::findOrFail($employeeId);
+        $professional = User::findOrFail($employeeId);
         // Clean month parameter if it contains query string artifacts
         if ($month && str_contains($month, '?')) {
             $month = explode('?', $month)[0];
         }
         $monthDate = Carbon::parse($month);
 
+        $currentUser = Auth::user();
+        if (!$currentUser->is_superadmin && $currentUser->id !== $professional->id) {
+            $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
+            if ($professional->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) {
+                abort(403);
+            }
+        }
+
         try {
             \Log::info('Monthly report download initiated', [
-                'employee_id' => $employeeId,
+                'professional_id' => $professional->id,
                 'month' => $month,
                 'user_id' => auth()->id()
             ]);
 
-            $result = $this->reportService->generateMonthlyReportOrchestration($employee, $monthDate);
+            $result = $this->reportService->generateMonthlyReportOrchestration($professional, $monthDate);
             
             // Dispatch Zapier notification asynchronously to prevent blocking the download
-            dispatch(function() use ($monthDate, $result, $employee) {
+            dispatch(function() use ($monthDate, $result, $professional) {
                 try {
                     app(\App\Services\ZapierService::class)->notifyReportDownload(
                         $monthDate, 
                         $result['csvContent'], 
-                        $employee, 
+                        $professional, 
                         $result['summary']
                     );
                 } catch (\Exception $e) {
                     \Log::error('Zapier notification failed', [
-                        'employee_id' => $employee->id,
+                        'professional_id' => $professional->id,
                         'month' => $monthDate->format('Y-m'),
                         'error' => $e->getMessage()
                     ]);
@@ -379,7 +391,7 @@ class WorkHoursController extends Controller
             ];
 
             \Log::info('Monthly report generated successfully', [
-                'employee_id' => $employeeId,
+                'professional_id' => $professional->id,
                 'month' => $month,
                 'file_name' => $result['fileName']
             ]);
@@ -388,7 +400,7 @@ class WorkHoursController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Monthly report generation failed', [
-                'employee_id' => $employeeId,
+                'professional_id' => $professional->id,
                 'month' => $month,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -402,7 +414,7 @@ class WorkHoursController extends Controller
             }
             
             // For regular requests, redirect to reports index with error
-            return redirect()->route('reportes.index')->with('error', $e->getMessage());
+            return redirect(route('reportes.index', [], false))->with('error', $e->getMessage());
         }
     }
 
@@ -419,8 +431,8 @@ class WorkHoursController extends Controller
             if ($user->tipo_usuario !== 'empleador' && !$user->is_manager) {
                 abort(403, 'No autorizado');
             }
-            $employerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
-            $professionalsQuery = User::where('empleador_id', $employerId);
+            $companyId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
+            $professionalsQuery = User::where('empleador_id', $companyId);
         }
 
         // Apply filters
@@ -578,11 +590,26 @@ class WorkHoursController extends Controller
     {
         $currentUser = Auth::user();
         
-        if (!$currentUser->is_superadmin) {
-            $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
-            if ($user->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) {
-                abort(403, 'No autorizado');
-            }
+        // Authorization Logic
+        $isAuthorized = false;
+        
+        if ($currentUser->is_superadmin || $currentUser->id == $user->id) {
+            $isAuthorized = true;
+        } elseif ($currentUser->tipo_usuario === 'empleador' && $user->empleador_id == $currentUser->id) {
+            $isAuthorized = true;
+        } elseif ($currentUser->is_manager && $user->empleador_id == $currentUser->empleador_id) {
+            $isAuthorized = true;
+        }
+
+        if (!$isAuthorized) {
+            \Log::warning('Unauthorized access attempt to professional report', [
+                'visitor_id' => $currentUser->id,
+                'requested_id' => $user->id,
+                'visitor_role' => $currentUser->tipo_usuario,
+                'visitor_is_manager' => $currentUser->is_manager,
+                'requested_employer_id' => $user->empleador_id
+            ]);
+            abort(403, 'No autorizado');
         }
 
         $weekInput = $request->query('week');
@@ -668,7 +695,7 @@ class WorkHoursController extends Controller
     {
         $currentUser = Auth::user();
         
-        if (!$currentUser->is_superadmin) {
+        if (!$currentUser->is_superadmin && $currentUser->id !== $user->id) {
             $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
             if ($user->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) {
                 abort(403);
@@ -807,7 +834,7 @@ class WorkHoursController extends Controller
     {
         $currentUser = Auth::user();
         
-        if (!$currentUser->is_superadmin) {
+        if (!$currentUser->is_superadmin && $currentUser->id !== $user->id) {
             $employerId = $currentUser->tipo_usuario === 'empleador' ? $currentUser->id : $currentUser->empleador_id;
             if ($user->empleador_id !== $employerId || ($currentUser->tipo_usuario !== 'empleador' && !$currentUser->is_manager)) {
                 abort(403);
@@ -965,16 +992,27 @@ class WorkHoursController extends Controller
         $user = Auth::user();
         $month = $request->input('month');
         
-        // Validar que el usuario es empleador
-        if ($user->tipo_usuario !== 'empleador' && !$user->is_superadmin) {
+    
+        // Validar que el usuario es empleador, superadmin o manager
+        if ($user->tipo_usuario !== 'empleador' && !$user->is_superadmin && !$user->is_manager) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
             }
             return back()->with('error', 'No autorizado');
         }
     
+        // Determine employer ID to filter employees
+        $employerId = null;
+        if ($user->is_superadmin) {
+            $employerId = null;
+        } elseif ($user->tipo_usuario === 'empleador') {
+            $employerId = $user->id;
+        } else {
+            // Managers filter by their company
+            $employerId = $user->empleador_id;
+        }
+
         // Obtener todos los empleados del empleador
-        $employerId = $user->is_superadmin ? null : $user->id;
         $employeesQuery = User::where('tipo_usuario', 'empleado');
         
         if ($employerId) {
@@ -1080,18 +1118,28 @@ class WorkHoursController extends Controller
         $user = Auth::user();
         $weekDate = Carbon::parse($request->week_date);
         
-        // Validar que el usuario es empleador o superadmin
-        if ($user->tipo_usuario !== 'empleador' && !$user->is_superadmin) {
+        // Validar que el usuario es empleador, superadmin o manager
+        if ($user->tipo_usuario !== 'empleador' && !$user->is_superadmin && !$user->is_manager) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
             }
             return back()->with('error', 'No autorizado');
         }
     
+        // Determine employer ID to filter employees
+        $employerId = null;
+        if ($user->is_superadmin) {
+            $employerId = null;
+        } elseif ($user->tipo_usuario === 'empleador') {
+            $employerId = $user->id;
+        } else {
+            $employerId = $user->empleador_id;
+        }
+
         // Obtener todos los empleados del empleador
         $employeesQuery = User::where('tipo_usuario', 'empleado');
-        if (!$user->is_superadmin) {
-            $employeesQuery->where('empleador_id', $user->id);
+        if ($employerId) {
+            $employeesQuery->where('empleador_id', $employerId);
         }
         $employees = $employeesQuery->get();
     

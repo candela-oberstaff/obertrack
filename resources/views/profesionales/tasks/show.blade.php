@@ -9,7 +9,7 @@
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             
             <div class="mb-6">
-                <a href="{{ route('empleados.tasks.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-white dark:text-gray-800 uppercase tracking-widest hover:bg-gray-700 dark:hover:bg-white focus:bg-gray-700 dark:focus:bg-white active:bg-gray-900 dark:active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                <a href="{{ route('profesionales.tasks.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-white dark:text-gray-800 uppercase tracking-widest hover:bg-gray-700 dark:hover:bg-white focus:bg-gray-700 dark:focus:bg-white active:bg-gray-900 dark:active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     Volver a tareas
                 </a>
@@ -154,7 +154,7 @@
                 const taskId = this.dataset.taskId;
                 const completed = this.dataset.completed === 'true';
 
-                fetch(`/empleados/tareas/${taskId}/toggle-completion`, {
+                fetch(`/profesionales/tareas/${taskId}/toggle-completion`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -179,7 +179,7 @@
                 const content = this.querySelector('textarea[name="content"]').value;
                 const taskId = this.dataset.taskId;
 
-                fetch(`/empleados/tareas/${taskId}/comment`, {
+                fetch(`/profesionales/tareas/${taskId}/comment`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -223,7 +223,7 @@
                     const commentId = e.target.dataset.commentId;
                     const content = e.target.querySelector('textarea').value;
 
-                    fetch(`/empleados/tareas/comment/${commentId}`, {
+                    fetch(`/profesionales/tareas/comment/${commentId}`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
@@ -259,7 +259,7 @@
                         if (isConfirmed) {
                             const commentId = e.target.dataset.commentId;
 
-                            fetch(`/empleados/tareas/comment/${commentId}`, {
+                            fetch(`/profesionales/tareas/comment/${commentId}`, {
                                 method: 'DELETE',
                                 headers: {
                                     'Content-Type': 'application/json',

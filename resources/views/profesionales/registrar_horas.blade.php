@@ -157,16 +157,16 @@
 </span>
                      </h3>
                      <div class="flex items-center bg-gray-100 rounded-lg p-1">
-                        <a href="{{ route('empleado.registrar-horas', ['month' => $currentMonth->copy()->subMonth()->format('Y-m-d')]) }}" class="p-1 hover:bg-white rounded text-gray-500 hover:text-primary transition shadow-sm">
+                        <a href="{{ route('profesional.registrar-horas', ['month' => $currentMonth->copy()->subMonth()->format('Y-m-d')]) }}" class="p-1 hover:bg-white rounded text-gray-500 hover:text-primary transition shadow-sm">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         </a>
                         
                         <input type="month" 
                                value="{{ $currentMonth->format('Y-m') }}" 
                                class="bg-transparent border-none text-sm font-bold text-gray-700 focus:ring-0 cursor-pointer px-1 text-center"
-                               onchange="window.location.href = '{{ route('empleado.registrar-horas') }}?month=' + this.value + '-01'">
+                               onchange="window.location.href = '{{ route('profesional.registrar-horas') }}?month=' + this.value + '-01'">
 
-                        <a href="{{ route('empleado.registrar-horas', ['month' => $currentMonth->copy()->addMonth()->format('Y-m-d')]) }}" class="p-1 hover:bg-white rounded text-gray-500 hover:text-primary transition shadow-sm">
+                        <a href="{{ route('profesional.registrar-horas', ['month' => $currentMonth->copy()->addMonth()->format('Y-m-d')]) }}" class="p-1 hover:bg-white rounded text-gray-500 hover:text-primary transition shadow-sm">
                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </a>
                      </div>
@@ -865,7 +865,7 @@
                       const task = this.pendingTasks.find(t => t.id === taskId);
                       if (!task) return;
 
-                      fetch(`/empleados/tareas/${taskId}/toggle-completion`, {
+                      fetch(`/profesionales/tareas/${taskId}/toggle-completion`, {
                           method: 'POST',
                           headers: {
                               'Content-Type': 'application/json',

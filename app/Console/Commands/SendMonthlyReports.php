@@ -24,7 +24,7 @@ class SendMonthlyReports extends Command
         
         foreach ($companies as $company) {
             try {
-                $professionals = $company->empleados;
+                $professionals = $company->profesionales;
                 
                 if ($professionals->isEmpty()) {
                     $this->warn("Company {$company->name} has no professionals. Skipping.");

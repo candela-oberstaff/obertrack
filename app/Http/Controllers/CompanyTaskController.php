@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
-class EmployerTaskController extends Controller
+class CompanyTaskController extends Controller
 {
     use AuthorizesRequests;
     public function __construct(
@@ -23,22 +23,22 @@ class EmployerTaskController extends Controller
         $user = Auth::user();
         $teamTasks = $this->taskManagementService->getCompanyTasks($user, $request->all())->values();
 
-        // 2. Employees (needed for modals and dropdowns)
+        // 2. Professionals (needed for modals and dropdowns)
         $ownerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
         
         if ($user->isSuperAdmin()) {
-            $employees = \App\Models\User::where('tipo_usuario', 'empleado')->get();
+            $profesionales = \App\Models\User::where('tipo_usuario', 'empleado')->get();
         } else {
-             $employees = \App\Models\User::where('empleador_id', $ownerId)->get();
+             $profesionales = \App\Models\User::where('empleador_id', $ownerId)->get();
         }
-
-        return view('empleadores.ver_tareas_empleados', compact('teamTasks', 'employees'));
+ 
+        return view('empresas.ver_tareas_profesionales', compact('teamTasks', 'profesionales'));
     }
 
     public function create()
     {
-        $empleados = Auth::user()->empleados;
-        return view('empleadores.ver_tareas_empleados', compact('empleados'));
+        $profesionales = Auth::user()->profesionales;
+        return view('empresas.ver_tareas_profesionales', compact('profesionales'));
     }
 
     public function store(Request $request)
@@ -54,18 +54,18 @@ class EmployerTaskController extends Controller
         ]);
 
         // Service handles 'assignees' directly
-        // $validatedData['assignees'] = [$validatedData['employee_id']]; // Handled in Service
+        // $validatedData['assignees'] = [$validatedData['professional_id']]; // Handled in Service
 
         $this->taskManagementService->createTask($validatedData);
 
-        return redirect()->route('empleador.tareas.index')->with('success', 'Tarea creada y asignada exitosamente.');
+        return redirect()->route('empresa.tareas.index')->with('success', 'Tarea creada y asignada exitosamente.');
     }
 
     public function edit(Task $task)
     {
         $this->authorize('update', $task);
-        $empleados = Auth::user()->empleados;
-        return view('empleadores.ver_tareas_empleados', compact('task', 'empleados'));
+        $profesionales = Auth::user()->profesionales;
+        return view('empresas.ver_tareas_profesionales', compact('task', 'profesionales'));
     }
 
     public function update(Request $request, Task $task)
@@ -78,19 +78,21 @@ class EmployerTaskController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'priority' => 'required|in:low,medium,high,urgent',
-            'employee_id' => 'required|exists:users,id',
+            'assignees' => 'sometimes|array',
+            'assignees.*' => 'exists:users,id',
+            'professional_id' => 'sometimes|exists:users,id', // Fallback for legacy
         ]);
 
         $this->taskManagementService->updateTask($task, $validatedData);
 
-        return redirect()->route('empleador.tareas.index')->with('success', 'Tarea actualizada exitosamente.');
+        return redirect()->route('empresa.tareas.index')->with('success', 'Tarea actualizada exitosamente.');
     }
 
     public function destroy(Task $task)
     {
         $this->authorize('delete', $task);
         $this->taskManagementService->deleteTask($task->id);
-        return redirect()->route('empleador.tareas.index')->with('success', 'Tarea eliminada exitosamente.');
+        return redirect()->route('empresa.tareas.index')->with('success', 'Tarea eliminada exitosamente.');
     }
 
     public function toggleCompletion(Request $request, Task $task)

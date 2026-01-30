@@ -10,9 +10,9 @@ use App\Models\RecoveryHour;
 class ReportService
 {
     /**
-     * Prepare report data for a specific employee and month
+     * Prepare report data for a specific professional and month
      */
-    public function prepareReportData(User $employee, $workHours, Carbon $month): array
+    public function prepareReportData(User $professional, $workHours, Carbon $month): array
     {
         $reportData = [];
         $weekStart = $month->copy()->startOfMonth()->startOfWeek(Carbon::MONDAY);
@@ -26,7 +26,7 @@ class ReportService
             $totalHours = $weekHours->sum('hours_worked');
 
             $reportData[] = [
-                'profesional' => $employee->name,
+                'profesional' => $professional->name,
                 'semana' => $weekStart->format('d/m/Y') . ' - ' . min($weekEnd, $month->copy()->endOfMonth())->format('d/m/Y'),
                 'horas_trabajadas' => $totalHours,
                 'estado' => $totalHours > 0 ? 'Aprobado' : 'Sin horas'
@@ -42,7 +42,7 @@ class ReportService
     /**
      * Generate CSV content from report data
      */
-    public function generateCSV(array $reportData, User $employee, Carbon $month): string
+    public function generateCSV(array $reportData, User $professional, Carbon $month): string
     {
         $csv = fopen('php://temp', 'r+');
         
@@ -50,8 +50,8 @@ class ReportService
         fputcsv($csv, ['REPORTE MENSUAL DE HORAS TRABAJADAS']);
         fputcsv($csv, []);
         fputcsv($csv, ['Empresa:', auth()->user()->name]);
-        fputcsv($csv, ['Profesional:', $employee->name]);
-        fputcsv($csv, ['Email del Profesional:', $employee->email]);
+        fputcsv($csv, ['Profesional:', $professional->name]);
+        fputcsv($csv, ['Email del Profesional:', $professional->email]);
         fputcsv($csv, ['Mes:', $month->format('F Y')]);
         fputcsv($csv, ['Generado el:', Carbon::now()->format('d/m/Y H:i:s')]);
         fputcsv($csv, []);
@@ -88,7 +88,7 @@ class ReportService
         // Añadir firma y fecha
         fputcsv($csv, []);
         fputcsv($csv, ['FIRMA']);
-        fputcsv($csv, ['Empleador:', auth()->user()->name]);
+        fputcsv($csv, ['Empresa:', auth()->user()->name]);
         fputcsv($csv, ['Fecha:', Carbon::now()->format('d/m/Y')]);
         fputcsv($csv, ['Firma: ', auth()->user()->name]);
         
@@ -137,7 +137,7 @@ class ReportService
     /**
      * Orchestrate the generation of a monthly report
      */
-    public function generateMonthlyReportOrchestration(User $employee, Carbon $month): array
+    public function generateMonthlyReportOrchestration(User $professional, Carbon $month): array
     {
         $startOfMonth = $month->copy()->startOfMonth();
         $endOfMonth = $month->copy()->endOfMonth();
@@ -173,7 +173,7 @@ class ReportService
         return [
             'csvContent' => $csvContent,
             'summary' => $summary,
-            'fileName' => "reporte_mensual_{$employee->name}_{$month->format('Y_m')}.csv"
+            'fileName' => "reporte_mensual_{$professional->name}_{$month->format('Y_m')}.csv"
         ];
     }
 
@@ -182,7 +182,7 @@ class ReportService
      */
     public function generateClientReportPDF(User $company, Carbon $startDate, Carbon $endDate, string $type = 'Semanal')
     {
-        $professionals = $company->empleados;
+        $professionals = $company->profesionales;
         $professionalsData = [];
         
         foreach ($professionals as $prof) {

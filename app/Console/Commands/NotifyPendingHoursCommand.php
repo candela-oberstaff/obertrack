@@ -41,8 +41,8 @@ class NotifyPendingHoursCommand extends Command
         $notificationsSent = 0;
 
         foreach ($employers as $employer) {
-            // Get all employees for this employer
-            $employeeIds = $employer->empleados()->pluck('id');
+            // Get all professionals for this employer
+            $employeeIds = $employer->profesionales()->pluck('id');
 
             if ($employeeIds->isEmpty()) {
                 continue;

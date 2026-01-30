@@ -53,7 +53,7 @@
                             <label class="text-[10px] uppercase font-bold text-gray-400 mb-1 block">Rol</label>
                             <select name="role" class="w-full py-2 text-sm border-gray-200 rounded-lg focus:ring-[#22A9C8] font-medium text-gray-600 bg-white">
                                 <option value="">Todos</option>
-                                <option value="empleado" {{ request('role') == 'empleado' ? 'selected' : '' }}>Empleado</option>
+                                <option value="empleado" {{ request('role') == 'empleado' ? 'selected' : '' }}>Profesional</option>
                                 <option value="empleador" {{ request('role') == 'empleador' ? 'selected' : '' }}>Empresa</option>
                                 <option value="superadmin" {{ request('role') == 'superadmin' ? 'selected' : '' }}>Superadmin</option>
                             </select>
@@ -97,7 +97,7 @@
                                             </span>
                                         @else
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-800">
-                                                Empleado
+                                                Profesional
                                             </span>
                                         @endif
                                     </td>

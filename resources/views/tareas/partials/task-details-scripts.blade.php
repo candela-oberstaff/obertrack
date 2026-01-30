@@ -131,7 +131,10 @@
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                         },
-                        body: JSON.stringify({ content: content })
+                        body: JSON.stringify({ 
+                            content: content,
+                            task_id: taskId
+                        })
                     });
 
                     if (response.ok) {

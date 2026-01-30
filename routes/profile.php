@@ -9,7 +9,7 @@
  * - Profile editing and deletion
  * - Manager promotion/demotion
  * - Superadmin management
- * - Employee management
+ * - Professional management
  */
 
 use Illuminate\Support\Facades\Route;
@@ -52,11 +52,11 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/profile/{user}/toggle-superadmin', [ProfileController::class, 'toggleSuperAdmin'])
         ->name('profile.toggle-superadmin');
     
-    // Employee Management
-    // DELETE /profile/eliminar-empleado/{empleado} - Delete an employee
-    Route::delete('/profile/eliminar-empleado/{empleado}', [ProfileController::class, 'eliminarEmpleado'])
-        ->name('profile.eliminar-empleado');
+    // Professional Management
+    // DELETE /profile/eliminar-profesional/{profesional} - Delete a professional
+    Route::delete('/profile/eliminar-profesional/{profesional}', [ProfileController::class, 'eliminarProfesional'])
+        ->name('profile.eliminar-profesional');
     
-    // GET /empleadores - Get list of employers (legacy endpoint)
-    Route::get('/empleadores', [ProfileController::class, 'obtenerEmpleadores']);
+    // GET /empresas - Get list of companies (legacy endpoint)
+    Route::get('/empresas', [ProfileController::class, 'obtenerEmpresas']);
 });

@@ -576,37 +576,37 @@
 
                         <!-- List Items -->
                         <div class="space-y-3">
-                            @foreach($empleados as $empleado)
+                            @foreach($profesionales as $profesional)
                                 <div class="bg-white rounded-lg border border-[#22A9C8] shadow-sm p-4 flex flex-col md:grid md:grid-cols-12 gap-2 md:gap-4 items-start md:items-center">
                                     <div class="w-full md:col-span-3 font-medium text-gray-900">
                                         <span class="md:hidden text-xs text-gray-500 block">Nombre</span>
-                                        {{ $empleado->name }}
+                                        {{ $profesional->name }}
                                     </div>
                                     <div class="w-full md:col-span-4 text-gray-600 text-sm truncate">
                                         <span class="md:hidden text-xs text-gray-500 block">Email</span>
-                                        {{ $empleado->email }}
+                                        {{ $profesional->email }}
                                     </div>
                                     <div class="w-full md:col-span-2 text-gray-900">
                                         <span class="md:hidden text-xs text-gray-500 block">Rol</span>
-                                        {{ $empleado->is_manager ? 'Manager' : 'Profesional' }}
+                                        {{ $profesional->is_manager ? 'Manager' : 'Profesional' }}
                                     </div>
                                     <div class="w-full md:col-span-3 flex justify-start md:justify-end items-center gap-3 mt-2 md:mt-0">
-                                        @if(!$empleado->is_manager)
+                                        @if(!$profesional->is_manager)
                                             <button 
-                                                @click="selectedUser = '{{ $empleado->name }}'; actionUrl = '{{ route('profile.promover-manager', $empleado) }}'; actionTitle = '¿Estás seguro de que quieres promover a este profesional?'; actionVerb = 'Promover'; openPromoteModal = true"
+                                                @click="selectedUser = '{{ $profesional->name }}'; actionUrl = '{{ route('profile.promover-manager', $profesional) }}'; actionTitle = '¿Estás seguro de que quieres promover a este profesional?'; actionVerb = 'Promover'; openPromoteModal = true"
                                                 class="text-[#22A9C8] hover:underline text-sm font-medium">
                                                 Promover a manager
                                             </button>
                                         @else
                                             <button 
-                                                @click="selectedUser = '{{ $empleado->name }}'; actionUrl = '{{ route('profile.degradar-manager', $empleado) }}'; actionTitle = '¿Estás seguro de que deseas degradar a este manager?'; actionVerb = 'Degradar'; openPromoteModal = true"
+                                                @click="selectedUser = '{{ $profesional->name }}'; actionUrl = '{{ route('profile.degradar-manager', $profesional) }}'; actionTitle = '¿Estás seguro de que deseas degradar a este manager?'; actionVerb = 'Degradar'; openPromoteModal = true"
                                                 class="text-orange-600 hover:underline text-sm font-medium">
                                                 Degradar
                                             </button>
                                         @endif
                                         
                                         <button 
-                                            @click="selectedUser = '{{ $empleado->name }}'; actionUrl = '{{ route('profile.eliminar-empleado', $empleado) }}'; openDeleteModal = true"
+                                            @click="selectedUser = '{{ $profesional->name }}'; actionUrl = '{{ route('profile.eliminar-profesional', $profesional) }}'; openDeleteModal = true"
                                             class="bg-[#EF4444] hover:bg-red-700 text-white text-xs font-bold py-1.5 px-4 rounded transition">
                                             Eliminar
                                         </button>

@@ -296,7 +296,7 @@ class BrevoEmailService
             'previousStatus' => $taskData['previous_status_label'] ?? 'Desconocido',
             'updatedBy' => $taskData['updated_by'] ?? 'Profesional',
             'completed' => $taskData['completed'] ?? false,
-            'taskUrl' => route('empleador.tareas.index')
+            'taskUrl' => route('empresa.tareas.index')
         ])->render();
     }
 
@@ -335,7 +335,7 @@ class BrevoEmailService
             'startDate' => $startDate,
             'endDate' => $endDate,
             'assignedBy' => $taskData['assigned_by'] ?? 'Obertrack',
-            'taskUrl' => route('empleados.tasks.index')
+            'taskUrl' => route('profesionales.tasks.index')
         ])->render();
     }
 
@@ -345,10 +345,10 @@ class BrevoEmailService
     private function renderPendingHoursEmail($pendingHoursData)
     {
         return view('emails.pending-hours-approval', [
-            'employeeName' => $pendingHoursData['employee_name'] ?? 'Profesional',
+            'professionalName' => $pendingHoursData['professional_name'] ?? 'Profesional',
             'pendingHours' => $pendingHoursData['pending_hours'] ?? [],
             'totalHours' => $pendingHoursData['total_hours'] ?? 0,
-            'approvalUrl' => route('empleador.dashboard')
+            'approvalUrl' => route('empresa.dashboard')
         ])->render();
     }
 
@@ -362,7 +362,7 @@ class BrevoEmailService
             'period' => $approvalData['period'] ?? '',
             'comment' => $approvalData['comment'] ?? null,
             'approvedBy' => $approvalData['approved_by'] ?? 'Administrador',
-            'dashboardUrl' => route('empleado.registrar-horas')
+            'dashboardUrl' => route('profesional.registrar-horas')
         ])->render();
     }
 
@@ -377,7 +377,7 @@ class BrevoEmailService
             'approved' => $recoveryData['approved'],
             'comment' => $recoveryData['comment'] ?? null,
             'approvedBy' => $recoveryData['approved_by'] ?? 'Administrador',
-            'dashboardUrl' => route('empleado.registrar-horas')
+            'dashboardUrl' => route('profesional.registrar-horas')
         ])->render();
     }
 
@@ -412,7 +412,7 @@ class BrevoEmailService
             <p>Este es un recordatorio automatizado para mantener tu registro de horas al día.</p>
             <p>Si tienes horas pendientes de cargar, por favor ingrésalas lo antes posible.</p>
             {$absenceHtml}
-            <p><a href=\"" . route('empleado.registrar-horas') . "\">Ir a registrar horas</a></p>
+            <p><a href=\"" . route('profesional.registrar-horas') . "\">Ir a registrar horas</a></p>
         ";
 
         return $this->sendEmail($toEmail, $toName, 'Recordatorio de Registro de Horas', $htmlContent);

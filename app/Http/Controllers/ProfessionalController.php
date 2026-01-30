@@ -10,19 +10,19 @@ use Illuminate\Support\Carbon;
 use App\Http\Controllers\Controller;
 use App\Services\CalendarService;
 
-class EmpleadoController extends Controller
+class ProfessionalController extends Controller
 {
     public function create()
     {
         $user = auth()->user();
-        $empleador = User::find($user->empleador_id);
+        $empresa = $user->empresa;
         
         $tareasCreadas = Task::where('created_by', $user->id)->get();
         $tareas = $tareasCreadas;
         $tareasAsignadas = $user->assignedTasks()->with('assignees')->get(); // visible_para -> assignedTasks
         
-        $tareasManageres = Task::whereHas('createdBy', function($query) use ($empleador) {
-            $query->where('empleador_id', $empleador->id)
+        $tareasManagers = Task::whereHas('createdBy', function($query) use ($empresa) {
+            $query->where('empleador_id', $empresa->id)
                   ->whereRaw('is_manager IS TRUE')
                   ->where('tipo_usuario', 'empleado');
         })
@@ -32,14 +32,14 @@ class EmpleadoController extends Controller
         ->with(['createdBy', 'assignees'])
         ->get();
 
-        $tareasEmpleador = Task::where('created_by', $empleador->id)
+        $tareasEmpresa = Task::where('created_by', $empresa->id)
             ->whereHas('assignees', function($q) use ($user) {
                 $q->where('users.id', $user->id);
             })
             ->with(['createdBy', 'assignees', 'comments.user'])
             ->get();
 
-        return view('empleados.crear_tarea', compact('tareas', 'tareasAsignadas', 'tareasManageres', 'tareasEmpleador', 'empleador'));
+        return view('profesionales.crear_tarea', compact('tareas', 'tareasAsignadas', 'tareasManagers', 'tareasEmpresa', 'empresa'));
     }
 
     public function registrarHoras(Request $request, CalendarService $calendarService)
@@ -75,7 +75,7 @@ class EmpleadoController extends Controller
             ->distinct()
             ->get();
 
-        return view('empleados.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'debtSummary', 'completedTasksCount', 'pendingTasksCount', 'pendingTasks'));
+        return view('profesionales.registrar_horas', compact('calendar', 'currentMonth', 'totalHours', 'debtSummary', 'completedTasksCount', 'pendingTasksCount', 'pendingTasks'));
     }
 
 }

@@ -7,7 +7,7 @@ use App\Models\Comment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class EmployeeTaskController extends Controller
+class ProfessionalTaskController extends Controller
 {
     public function index()
     {
@@ -66,7 +66,7 @@ class EmployeeTaskController extends Controller
         $pendingTasksCount = $allTasks->where('completed', false)->count();
         $completedTasksCount = $allTasks->where('completed', true)->count();
 
-        return view('empleados.tasks.index', compact('teamTasks', 'individualTasks', 'pendingTasksCount', 'completedTasksCount'));
+        return view('profesionales.tasks.index', compact('teamTasks', 'individualTasks', 'pendingTasksCount', 'completedTasksCount'));
     }
 
     public function show(Task $task)
@@ -84,7 +84,7 @@ class EmployeeTaskController extends Controller
                          ->orderBy('created_at', 'desc')
                          ->get();
         $task->load('createdBy');
-        return view('empleados.tasks.show', compact('task', 'comments'));
+        return view('profesionales.tasks.show', compact('task', 'comments'));
     }
 
     public function addComment(Request $request, Task $task)

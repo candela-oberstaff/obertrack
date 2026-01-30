@@ -28,7 +28,7 @@
 
             <!-- Filters Section -->
             <div class="mb-8 p-1">
-                <form method="GET" action="{{ route('reportes.index') }}" 
+                <form method="GET" action="{{ route('reportes.index', [], false) }}" 
                       class="bg-gray-50 p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-5 items-end relative z-10">
                     
                     <!-- Date Filter (Server Side) -->
@@ -44,7 +44,7 @@
                     <!-- Name Filter (Client Side) -->
                     <div class="w-full md:w-auto flex-1">
                         <label for="name" class="block text-xs font-extrabold text-[#0D1E4C] uppercase tracking-widest mb-2 ml-1">
-                            Nombre Empleado
+                            Nombre Profesional
                         </label>
                         <input type="text" id="name" x-model="searchQuery" 
                                placeholder="Filtrar por nombre..." 
@@ -145,7 +145,7 @@
 
                         <!-- Actions & Status Row -->
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mt-2 pt-6 border-t border-gray-50">
-                            <a href="{{ route('reportes.show', $prof['id']) }}" 
+                            <a href="{{ route('reportes.show', $prof['id'], false) }}" 
                                class="inline-flex items-center px-8 py-3 bg-[#0D1117] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-[#1a202c] transition-all shadow-md active:scale-95">
                                 Ver reporte completo
                             </a>

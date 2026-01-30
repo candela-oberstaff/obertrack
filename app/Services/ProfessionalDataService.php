@@ -5,24 +5,24 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\WorkHours;
 
-class EmployeeDataService
+class ProfessionalDataService
 {
     /**
-     * Get employees based on user role
+     * Get professionals based on user role
      */
-    public function getEmployeesForUser(User $user)
+    public function getProfessionalsForUser(User $user)
     {
-        // Si es superadmin, obtener todos los empleados
+        // Si es superadmin, obtener todos los profesionales
         if ($user->is_superadmin) {
             return User::where('tipo_usuario', 'empleado')->get();
         }
 
-        // Si es empleador, obtener sus empleados directos
+        // Si es empresa, obtener sus profesionales directos
         if ($user->tipo_usuario === 'empleador') {
             return User::where('empleador_id', $user->id)->get();
         }
 
-        // Si es manager, obtener empleados del mismo empleador
+        // Si es manager, obtener profesionales de la misma empresa
         if ($user->is_manager) {
             return User::where('empleador_id', $user->empleador_id)->get();
         }
@@ -31,30 +31,30 @@ class EmployeeDataService
     }
 
     /**
-     * Get employee info with work hours summary
+     * Get professional info with work hours summary
      * Optimized to avoid N+1 queries
      */
-    public function getEmployeesInfo($empleados, $currentMonth, WorkHoursSummaryService $workHoursService)
+    public function getProfessionalsInfo($profesionales, $currentMonth, WorkHoursSummaryService $workHoursService)
     {
         $startOfMonth = $currentMonth->copy()->startOfMonth();
         $endOfMonth = $currentMonth->copy()->endOfMonth();
         
-        // Single query for all employees - NO N+1!
-        $allApprovedHours = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+        // Single query for all professionals - NO N+1!
+        $allApprovedHours = WorkHours::whereIn('user_id', $profesionales->pluck('id'))
             ->whereBetween('work_date', [$startOfMonth, $endOfMonth])
             ->whereRaw('approved IS TRUE')
             ->selectRaw('user_id, SUM(hours_worked) as total')
             ->groupBy('user_id')
             ->pluck('total', 'user_id');
 
-        return $empleados->map(function ($empleado) use ($currentMonth, $workHoursService, $allApprovedHours) {
-            $totalApprovedHours = $allApprovedHours->get($empleado->id, 0);
-            $approvedWeeks = $workHoursService->getApprovedWeeks(collect([$empleado]), $currentMonth);
+        return $profesionales->map(function ($profesional) use ($currentMonth, $workHoursService, $allApprovedHours) {
+            $totalApprovedHours = $allApprovedHours->get($profesional->id, 0);
+            $approvedWeeks = $workHoursService->getApprovedWeeks(collect([$profesional]), $currentMonth);
 
             return [
-                'id' => $empleado->id,
-                'name' => $empleado->name,
-                'is_manager' => $empleado->is_manager,
+                'id' => $profesional->id,
+                'name' => $profesional->name,
+                'is_manager' => $profesional->is_manager,
                 'totalApprovedHours' => $totalApprovedHours,
                 'approvedWeeks' => $approvedWeeks
             ];

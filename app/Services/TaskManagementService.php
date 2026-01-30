@@ -16,9 +16,12 @@ class TaskManagementService
     public function createTask(array $data)
     {
         // Handle 'employee_id' (single) or 'assignees' (multiple)
-        // For backward compatibility, if 'visible_para' or 'employee_id' is present, convert to array
+        // For backward compatibility, if 'visible_para' or 'professional_id' / 'employee_id' is present, convert to array
         $assignees = $data['assignees'] ?? [];
         
+        if (isset($data['professional_id'])) {
+            $assignees[] = $data['professional_id'];
+        }
         if (isset($data['employee_id'])) {
             $assignees[] = $data['employee_id'];
         }
@@ -91,7 +94,10 @@ class TaskManagementService
         // Handle assignees update if provided
         $assignees = $data['assignees'] ?? null;
         
-        // Backward compatibility for single employee_id
+        // Backward compatibility for single professional_id / employee_id
+        if ($assignees === null && isset($data['professional_id'])) {
+            $assignees = [$data['professional_id']];
+        }
         if ($assignees === null && isset($data['employee_id'])) {
             $assignees = [$data['employee_id']];
         }
@@ -105,6 +111,7 @@ class TaskManagementService
         // Remove assignees from data before updating model (it's not a fillable field)
         unset($data['assignees']);
         unset($data['employee_id']);
+        unset($data['professional_id']);
 
         // Detect status or completion changes for notification
         $oldStatus = $task->status;
@@ -196,14 +203,14 @@ class TaskManagementService
     {
         $user = Auth::user();
         
-        // 1. Determine the recipient (Client/Employer)
-        // Usually the employer of the person who updated it
-        $recipient = $user->empleador;
+        // 1. Determine the recipient (Client/Company)
+        // Usually the company of the person who updated it
+        $recipient = $user->empresa;
         
         if (!$recipient || !$recipient->email) {
              // Fallback to task creator if they are an employer
              $creator = $task->createdBy;
-             if ($creator && $creator->tipo_usuario === 'empleador') {
+             if ($creator && ($creator->tipo_usuario === 'empleador' || $creator->is_superadmin)) {
                  $recipient = $creator;
              }
         }
@@ -239,32 +246,32 @@ class TaskManagementService
     }
 
     /**
-     * Get tasks created by employees
+     * Get tasks created by professionals
      */
-    public function getEmployeeTasks($empleados, $filters = [])
+    public function getProfessionalTasks($profesionales, $filters = [])
     {
-        $employeeIds = $empleados->pluck('id');
-        $query = Task::where(function($q) use ($employeeIds) {
-            $q->whereIn('created_by', $employeeIds)
-              ->orWhereHas('assignees', function($sub) use ($employeeIds) {
-                  $sub->whereIn('users.id', $employeeIds);
+        $professionalIds = $profesionales->pluck('id');
+        $query = Task::where(function($q) use ($professionalIds) {
+            $q->whereIn('created_by', $professionalIds)
+              ->orWhereHas('assignees', function($sub) use ($professionalIds) {
+                  $sub->whereIn('users.id', $professionalIds);
               });
         })->with(['comments.user', 'createdBy', 'attachments.uploader', 'assignees']);
-
+ 
         return $this->applyFilters($query, $filters)->get();
     }
 
-    public function getEmployerTasks($user, $empleados, $filters = [])
+    public function getCompanyTaskSummaries($user, $profesionales, $filters = [])
     {
         $query = Task::where(function ($query) use ($user) {
             $query->where('created_by', $user->id)
                   ->orWhere('created_by', $user->empleador_id)
                   ->orWhereIn('created_by', User::whereRaw('is_superadmin IS TRUE')->pluck('id'));
-        })->whereHas('assignees', function($q) use ($empleados) {
-                       $q->whereIn('user_id', $empleados->pluck('id'));
+        })->whereHas('assignees', function($q) use ($profesionales) {
+                       $q->whereIn('user_id', $profesionales->pluck('id'));
                    })
                      ->with(['comments.user', 'assignees', 'attachments.uploader', 'createdBy']);
-
+ 
         return $this->applyFilters($query, $filters)->get();
     }
 

@@ -16,20 +16,20 @@ class ZapierService
     public function notifyReportDownload(
         Carbon $month,
         string $csvContent,
-        User $employee,
+        User $professional,
         array $summary
     ): void {
         $formattedMonth = $month->format('F Y');
-        $employer = auth()->user()->name;
-        $employerEmail = auth()->user()->email;
+        $companyName = auth()->user()->name;
+        $companyEmail = auth()->user()->email;
         $downloadTime = now()->toDateTimeString();
 
         // Crear contenido HTML con Tailwind CSS
         $formattedContent = $this->generateHTMLContent(
             $formattedMonth,
-            $employee,
-            $employer,
-            $employerEmail,
+            $professional,
+            $companyName,
+            $companyEmail,
             $downloadTime,
             $summary
         );
@@ -37,10 +37,10 @@ class ZapierService
         // Preparar los datos para enviar a Zapier
         $data = [
             'month' => $formattedMonth,
-            'professional_name' => $employee->name,
-            'professional_email' => $employee->email,
-            'employer' => $employer,
-            'employer_email' => $employerEmail,
+            'professional_name' => $professional->name,
+            'professional_email' => $professional->email,
+            'company_name' => $companyName,
+            'company_email' => $companyEmail,
             'csv_content' => base64_encode($csvContent),
             'formatted_content' => $formattedContent,
             'download_time' => $downloadTime,
@@ -73,9 +73,9 @@ class ZapierService
                 <div class='p-6 bg-white rounded-lg shadow-md max-w-2xl mx-auto mt-10'>
                     <h1 class='text-2xl font-bold mb-4'>Reporte de Horas</h1>
                     <p class='text-lg'><strong>Mes:</strong> {$month}</p>
-                    <p class='text-lg'><strong>Profesional:</strong> {$employee->name}</p>
-                    <p class='text-lg'><strong>Empleador:</strong> {$employer}</p>
-                    <p class='text-lg'><strong>Email del empleador:</strong> {$employerEmail}</p>
+                    <p class='text-lg'><strong>Profesional:</strong> {$professional->name}</p>
+                    <p class='text-lg'><strong>Empresa:</strong> {$companyName}</p>
+                    <p class='text-lg'><strong>Email de la empresa:</strong> {$companyEmail}</p>
                     <p class='text-lg'><strong>Hora de descarga:</strong> {$downloadTime}</p>
                     <h2 class='text-xl font-semibold mt-6 mb-2'>Resumen</h2>
                     <p class='text-lg'><strong>Total de horas:</strong> {$summary['total_hours']}</p>

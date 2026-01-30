@@ -101,7 +101,7 @@
                             <!-- Description -->
                             <div class="space-y-3">
                                 <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Descripción</h4>
-                                <div x-show="!isEditingTask" class="text-gray-700 leading-relaxed text-sm whitespace-pre-line">
+                                <div x-show="!isEditingTask" class="text-gray-700 leading-relaxed text-sm whitespace-pre-line break-all">
                                     <p x-text="selectedTask?.description || 'Añade una descripción...'"></p>
                                 </div>
                                 <div x-show="isEditingTask">
@@ -234,7 +234,7 @@
                                         <img :src="comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : '/avatars/' + comment.user.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(comment.user_name || comment.user?.name || 'U')+'&color=FFFFFF&background=22A9C8'" 
                                              class="w-8 h-8 rounded-full bg-gray-200 border border-gray-200">
                                     </div>
-                                    <div class="flex-1">
+                                    <div class="flex-1 min-w-0">
                                         <div class="bg-white rounded-2xl rounded-tl-none p-3 shadow-sm border border-gray-100 relative group-hover:border-gray-200 transition-all">
                                             <div class="flex justify-between items-start mb-1 gap-2">
                                                 <span class="text-xs font-bold text-gray-900" x-text="comment.user_name || comment.user?.name || 'Usuario'"></span>
@@ -242,7 +242,7 @@
                                             </div>
                                             
                                             <template x-if="editingCommentId !== comment.id">
-                                                <p class="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed" x-text="comment.content"></p>
+                                                <p class="text-sm text-gray-600 whitespace-pre-wrap break-all leading-relaxed" x-text="comment.content"></p>
                                             </template>
 
                                             <!-- Edit Mode -->

@@ -205,7 +205,7 @@ class AdminDashboardController extends Controller
     public function companies()
     {
         $companies = User::where('tipo_usuario', 'empleador')
-            ->withCount('empleados')
+            ->withCount('profesionales')
             ->orderBy('name')
             ->paginate(15);
 
@@ -265,22 +265,22 @@ class AdminDashboardController extends Controller
 
     public function showCompany($id)
     {
-        $company = User::where('tipo_usuario', 'empleador')->with('empleados')->findOrFail($id);
+        $company = User::where('tipo_usuario', 'empleador')->with('profesionales')->findOrFail($id);
         
         // Stats
-        $totalEmployees = $company->empleados->count();
-        $employeeIds = $company->empleados->pluck('id');
-        $totalTasks = \App\Models\Task::where(function($q) use ($employeeIds, $company) {
-            $q->whereIn('created_by', $employeeIds->push($company->id))
-              ->orWhereHas('assignees', function($sub) use ($employeeIds, $company) {
-                  $sub->whereIn('users.id', $employeeIds);
+        $totalProfessionals = $company->profesionales->count();
+        $professionalIds = $company->profesionales->pluck('id');
+        $totalTasks = \App\Models\Task::where(function($q) use ($professionalIds, $company) {
+            $q->whereIn('created_by', $professionalIds->push($company->id))
+              ->orWhereHas('assignees', function($sub) use ($professionalIds, $company) {
+                  $sub->whereIn('users.id', $professionalIds);
               });
         })->count();
         
-        // Current Employees
-        $currentEmployees = $this->activityService->getStatusesForUsers($company->empleados)
+        // Current Professionals
+        $currentProfessionals = $this->activityService->getStatusesForUsers($company->profesionales)
             ->map(function ($p) {
-                $p['relation'] = 'active'; // Current employee
+                $p['relation'] = 'active'; // Current professional
                 return $p;
             });
 
@@ -292,27 +292,27 @@ class AdminDashboardController extends Controller
             ->pluck('task_user.user_id')
             ->unique();
             
-        $disconnectedUserIds = $taskAssigneeIds->diff($company->empleados->pluck('id'));
+        $disconnectedUserIds = $taskAssigneeIds->diff($company->profesionales->pluck('id'));
         
-        $disconnectedEmployees = collect();
+        $disconnectedProfessionals = collect();
         if ($disconnectedUserIds->isNotEmpty()) {
             $disconnectedUsers = User::whereIn('id', $disconnectedUserIds)->get();
-            $disconnectedEmployees = $this->activityService->getStatusesForUsers($disconnectedUsers)
+            $disconnectedProfessionals = $this->activityService->getStatusesForUsers($disconnectedUsers)
                 ->map(function ($p) {
-                    $p['relation'] = 'disconnected'; // Past employee
+                    $p['relation'] = 'disconnected'; // Past professional
                     return $p;
                 });
         }
 
         // Merge both lists (convert to base Collection since we're working with arrays, not models)
-        $employeesWithStatus = collect($currentEmployees)->merge(collect($disconnectedEmployees));
+        $professionalsWithStatus = collect($currentProfessionals)->merge(collect($disconnectedProfessionals));
 
-        return view('admin.companies.show', compact('company', 'totalEmployees', 'totalTasks', 'employeesWithStatus'));
+        return view('admin.companies.show', compact('company', 'totalProfessionals', 'totalTasks', 'professionalsWithStatus'));
     }
 
     public function showProfessional($id)
     {
-        $professional = User::where('tipo_usuario', 'empleado')->with('empleador')->findOrFail($id);
+        $professional = User::where('tipo_usuario', 'empleado')->with('empresa')->findOrFail($id);
         
         // Punctuality Logic
         // Calculate workable days since created_at or last 30 days

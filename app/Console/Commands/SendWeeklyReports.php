@@ -26,7 +26,7 @@ class SendWeeklyReports extends Command
         foreach ($companies as $company) {
             try {
                 // Get all professionals for this company
-                $professionals = $company->empleados;
+                $professionals = $company->profesionales;
                 
                 if ($professionals->isEmpty()) {
                     $this->warn("Company {$company->name} has no professionals. Skipping.");

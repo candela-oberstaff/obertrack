@@ -104,7 +104,7 @@
                     });
 
                     // Route-specific steps
-                    if (route.includes('/dashboard') && !route.includes('/empleador')) {
+                    if (route.includes('/dashboard') && !route.includes('/empresa')) {
                         // Employee Dashboard
                         steps.push({
                             element: document.querySelector('#dashboard-stats-cards'),
@@ -121,7 +121,7 @@
                             title: 'Últimos Comentarios',
                             intro: 'Aquí aparecen los comentarios más recientes en tus tareas.'
                         });
-                    } else if (route.includes('/empleador/dashboard')) {
+                    } else if (route.includes('/empresa/dashboard')) {
                         // Employer Dashboard
                         steps.push({
                             element: document.querySelector('#employer-stats-cards'),
@@ -133,7 +133,7 @@
                             title: 'Calendario Interactivo',
                             intro: 'Haz clic en cualquier día para ver las horas registradas por tu equipo.'
                         });
-                    } else if (route.includes('/empleador/tareas')) {
+                    } else if (route.includes('/empresa/tareas')) {
                         // Employer Tasks
                         steps.push({
                             element: document.querySelector('#team-tasks-section'),

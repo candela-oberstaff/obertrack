@@ -61,7 +61,7 @@ class TaskPolicy
      */
     public function create(User $user)
     {
-        return $user->is_manager || $user->isEmpleadorOrSuperAdmin();
+        return $user->is_manager || $user->isEmpresaOrSuperAdmin();
     }
 
     /**
@@ -73,7 +73,7 @@ class TaskPolicy
      */
     public function update(User $user, Task $task)
     {
-        return $user->id === $task->created_by || $user->isEmpleadorOrSuperAdmin() || $user->is_manager;
+        return $user->id === $task->created_by || $user->isEmpresaOrSuperAdmin() || $user->is_manager;
     }
 
     /**
@@ -85,7 +85,7 @@ class TaskPolicy
      */
     public function delete(User $user, Task $task)
     {
-        return $user->id === $task->created_by || $user->isEmpleadorOrSuperAdmin();
+        return $user->id === $task->created_by || $user->isEmpresaOrSuperAdmin();
     }
 
     /**
@@ -97,7 +97,7 @@ class TaskPolicy
      */
     public function restore(User $user, Task $task)
     {
-        return $user->id === $task->created_by || $user->isEmpleadorOrSuperAdmin();
+        return $user->id === $task->created_by || $user->isEmpresaOrSuperAdmin();
     }
 
     /**
@@ -109,7 +109,7 @@ class TaskPolicy
      */
     public function forceDelete(User $user, Task $task)
     {
-        return $user->id === $task->created_by || $user->isEmpleadorOrSuperAdmin();
+        return $user->id === $task->created_by || $user->isEmpresaOrSuperAdmin();
     }
 
 
@@ -122,6 +122,6 @@ class TaskPolicy
      */
     public function updateStatus(User $user, Task $task)
     {
-        return $user->id === $task->created_by || $task->assignees->contains($user->id) || $user->isEmpleadorOrSuperAdmin();
+        return $user->id === $task->created_by || $task->assignees->contains($user->id) || $user->isEmpresaOrSuperAdmin();
     }
 }

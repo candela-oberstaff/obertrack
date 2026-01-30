@@ -107,7 +107,7 @@
 
         @if(count($pendingWeeks) > 0)
             <div class="bg-gray-50 px-4 py-2 border-t border-gray-100">
-                <a href="{{ route('empleador.dashboard') }}" class="text-sm text-orange-600 hover:text-orange-800 font-medium">
+                <a href="{{ route('empresa.dashboard') }}" class="text-sm text-orange-600 hover:text-orange-800 font-medium">
                     Ir a aprobar horas →
                 </a>
             </div>

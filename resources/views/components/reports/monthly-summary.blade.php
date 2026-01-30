@@ -21,7 +21,7 @@
                     </h3>
                     
                     <div class="flex items-center gap-3">
-                        <form action="{{ route('empleador.empleados.toggle-manager', $empleado['id']) }}" method="POST" @click.stop>
+                        <form action="{{ route('empresa.profesionales.toggle-manager', $empleado['id']) }}" method="POST" @click.stop>
                             @csrf
                             <button type="submit" class="text-xs px-3 py-1 rounded-full border border-white/30 hover:bg-white/10 text-white transition-colors">
                                 {{ $empleado['is_manager'] ? 'Degradar' : 'Promover a Manager' }}

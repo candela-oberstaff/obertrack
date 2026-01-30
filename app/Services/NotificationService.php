@@ -11,27 +11,27 @@ class NotificationService
 {
     const CACHE_TTL = 300; // 5 minutes
 
-    public function getPendingHoursForEmployer(User $employer)
+    public function getPendingHoursForCompany(User $company)
     {
-        $cacheKey = "notifications.employer.{$employer->id}.pending_hours";
+        $cacheKey = "notifications.company.{$company->id}.pending_hours";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($employer) {
-            $empleados = $this->getEmployerEmployees($employer);
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($company) {
+            $profesionales = $this->getCompanyProfessionals($company);
 
-            if ($empleados->isEmpty()) {
+            if ($profesionales->isEmpty()) {
                 return [
                     'pending_count' => 0,
                     'pending_weeks' => []
                 ];
             }
 
-            $employeeIds = $empleados->pluck('id');
+            $professionalIds = $profesionales->pluck('id');
 
-            $hasPendingHours = WorkHours::whereIn('user_id', $employeeIds)
+            $hasPendingHours = WorkHours::whereIn('user_id', $professionalIds)
                 ->whereRaw('approved IS FALSE')
                 ->exists();
 
-            $hasPendingRecoveries = WorkHours::whereIn('user_id', $employeeIds)
+            $hasPendingRecoveries = WorkHours::whereIn('user_id', $professionalIds)
                 ->where('recovered_hours', '>', 0)
                 ->whereRaw('recovery_approved IS FALSE')
                 ->exists();
@@ -43,8 +43,8 @@ class NotificationService
                 ];
             }
 
-            $workHoursSummary = $this->getWorkHoursSummary($empleados);
-            $recoveryRequests = $this->getRecoveryRequests($employeeIds);
+            $workHoursSummary = $this->getWorkHoursSummary($profesionales);
+            $recoveryRequests = $this->getRecoveryRequests($professionalIds);
 
             if (empty($workHoursSummary) && $recoveryRequests->isEmpty()) {
                 return [
@@ -71,18 +71,18 @@ class NotificationService
         });
     }
 
-    public function getRecentTasksForEmployee(User $employee)
+    public function getRecentTasksForProfessional(User $professional)
     {
-        $cacheKey = "notifications.employee.{$employee->id}.recent_tasks";
+        $cacheKey = "notifications.professional.{$professional->id}.recent_tasks";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($employee) {
-            $recentTasks = Task::whereHas('assignees', function ($q) use ($employee) {
-                $q->where('user_id', $employee->id);
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($professional) {
+            $recentTasks = Task::whereHas('assignees', function ($q) use ($professional) {
+                $q->where('user_id', $professional->id);
             })
                 ->whereRaw('completed IS FALSE')
                 ->where('created_at', '>=', now()->subDays(7))
-                ->whereDoesntHave('readBy', function ($query) use ($employee) {
-                    $query->where('user_id', $employee->id);
+                ->whereDoesntHave('readBy', function ($query) use ($professional) {
+                    $query->where('user_id', $professional->id);
                 })
                 ->with('createdBy')
                 ->orderBy('created_at', 'desc')
@@ -96,17 +96,17 @@ class NotificationService
         });
     }
 
-    public function clearEmployerCache(User $employer)
+    public function clearCompanyCache(User $company)
     {
-        Cache::forget("notifications.employer.{$employer->id}.pending_hours");
+        Cache::forget("notifications.company.{$company->id}.pending_hours");
     }
 
-    public function clearEmployeeCache(User $employee)
+    public function clearProfessionalCache(User $professional)
     {
-        Cache::forget("notifications.employee.{$employee->id}.recent_tasks");
+        Cache::forget("notifications.professional.{$professional->id}.recent_tasks");
     }
 
-    private function getEmployerEmployees(User $employer)
+    private function getCompanyProfessionals(User $employer)
     {
         if ($employer->tipo_usuario === 'empleador') {
             return User::where('empleador_id', $employer->id)->get();
@@ -115,22 +115,22 @@ class NotificationService
         return User::where('empleador_id', $employer->empleador_id)->get();
     }
 
-    private function getWorkHoursSummary($empleados)
+    private function getWorkHoursSummary($profesionales)
     {
         $workHoursSummary = [];
 
-        $pendingHoursByEmployee = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+        $pendingHoursByEmployee = WorkHours::whereIn('user_id', $profesionales->pluck('id'))
             ->whereRaw('approved IS FALSE')
             ->selectRaw('user_id, SUM(hours_worked) as total_pending')
             ->groupBy('user_id')
             ->pluck('total_pending', 'user_id');
 
-        foreach ($empleados as $empleado) {
-            $pendingHours = $pendingHoursByEmployee->get($empleado->id, 0);
+        foreach ($profesionales as $profesional) {
+            $pendingHours = $pendingHoursByEmployee->get($profesional->id, 0);
 
             if ($pendingHours > 0) {
-                $workHoursSummary[$empleado->id] = [
-                    'name' => $empleado->name,
+                $workHoursSummary[$profesional->id] = [
+                    'name' => $profesional->name,
                     'pending_hours' => $pendingHours,
                 ];
             }
@@ -139,9 +139,9 @@ class NotificationService
         return $workHoursSummary;
     }
 
-    private function getRecoveryRequests($employeeIds)
+    private function getRecoveryRequests($professionalIds)
     {
-        return WorkHours::whereIn('user_id', $employeeIds)
+        return WorkHours::whereIn('user_id', $professionalIds)
             ->where('recovered_hours', '>', 0)
             ->whereRaw('recovery_approved IS NULL')
             ->with('user')

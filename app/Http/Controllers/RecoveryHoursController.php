@@ -40,15 +40,15 @@ class RecoveryHoursController extends Controller
                 'approved' => null, // Pending approval (null)
             ]);
 
-            // Notify employer
-            $employer = $user->empleador_id ? User::find($user->empleador_id) : null;
-            if ($employer) {
+            // Notify company (empresa)
+            $empresa = $user->empleador_id ? User::find($user->empleador_id) : null;
+            if ($empresa) {
                 try {
                     $this->emailService->sendRecoveryRequestNotification(
-                        $employer->email,
-                        $employer->name,
+                        $empresa->email,
+                        $empresa->name,
                         [
-                            'employee_name' => $user->name,
+                            'professional_name' => $user->name,
                             'date' => now()->format('d/m/Y'),
                             'hours' => $request->hours,
                             'activities' => $request->activities
@@ -90,7 +90,7 @@ class RecoveryHoursController extends Controller
     }
 
     /**
-     * Approve or reject a recovery request (Employer/Admin).
+     * Approve or reject a recovery request (Company/Admin).
      */
     public function updateStatus(Request $request, $id)
     {
@@ -100,8 +100,15 @@ class RecoveryHoursController extends Controller
 
         $recovery = RecoveryHour::findOrFail($id);
         
-        // Authorization check (could use a Policy)
-        if (auth()->user()->tipo_usuario !== 'empleador' && !auth()->user()->is_superadmin) {
+        // Authorization check
+        $currentUser = auth()->user();
+        $recoveryUser = User::find($recovery->user_id);
+        
+        $isAuthorized = $currentUser->is_superadmin || 
+                        ($currentUser->tipo_usuario === 'empleador' && $recoveryUser->empleador_id === $currentUser->id) ||
+                        ($currentUser->is_manager && $recoveryUser->empleador_id === $currentUser->empleador_id);
+
+        if (!$isAuthorized) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
 

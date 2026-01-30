@@ -75,7 +75,7 @@
     </p>
     
     <div class="button-container">
-        <a href="{{ route('empleado.registrar-horas') }}" class="button">Registrar recuperación</a>
+        <a href="{{ route('profesional.registrar-horas') }}" class="button">Registrar recuperación</a>
     </div>
     
     <p class="text" style="font-size: 14px; color: #718096; margin-top: 30px; border-top: 1px solid #edf2f7; padding-top: 20px;">

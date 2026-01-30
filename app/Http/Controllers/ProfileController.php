@@ -16,6 +16,10 @@ use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
 {
+    public function __construct(
+        private \App\Services\ProfessionalDataService $professionalDataService
+    ) {}
+
     /**
      * Display the user's profile form.
      */
@@ -47,15 +51,11 @@ class ProfileController extends Controller
     public function edit(Request $request): View
     {
         $user = $request->user();
-        $empleados = [];
-        
-        if ($user->tipo_usuario === 'empleador') {
-            $empleados = $user->empleados;
-        }
+        $profesionales = $this->professionalDataService->getProfessionalsForUser($user);
 
         return view('profile.edit', [
             'user' => $user,
-            'empleados' => $empleados,
+            'profesionales' => $profesionales,
         ]);
     }
 
@@ -117,7 +117,7 @@ class ProfileController extends Controller
         $user->save();
 
         if ($user->tipo_usuario === 'empleado') {
-            return Redirect::route('empleado.registrar-horas')->with('success', 'Perfil actualizado exitosamente.');
+            return Redirect::route('profesional.registrar-horas')->with('success', 'Perfil actualizado exitosamente.');
         }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
@@ -145,23 +145,23 @@ class ProfileController extends Controller
     }
 
 
-    public function eliminarEmpleado(User $empleado)
+    public function eliminarProfesional(User $usuario)
     {
         try {
             DB::beginTransaction();
     
-            Log::info("Intentando eliminar empleado ID: " . $empleado->id);
+            Log::info("Intentando eliminar usuario ID: " . $usuario->id);
     
-            // 1. Manejar empleados asociados
-            $empleadosAsociados = $empleado->empleados;
-            foreach ($empleadosAsociados as $empleadoAsociado) {
-                $empleadoAsociado->empleador_id = null;
-                $empleadoAsociado->save();
+            // 1. Manejar profesionales asociados
+            $profesionalesAsociados = $usuario->profesionales;
+            foreach ($profesionalesAsociados as $profesionalAsociado) {
+                $profesionalAsociado->empleador_id = null;
+                $profesionalAsociado->save();
             }
-            Log::info("Empleados desasociados: " . $empleadosAsociados->count());
+            Log::info("Profesionales desasociados: " . $profesionalesAsociados->count());
     
             // 2. Manejar tareas creadas
-            $tareasCreadas = $empleado->createdTasks;
+            $tareasCreadas = $usuario->createdTasks;
             foreach ($tareasCreadas as $tarea) {
                 // Puedes elegir eliminar las tareas o reasignarlas a otro usuario
                 $tarea->delete(); // O $tarea->created_by = $otroUsuarioId; $tarea->save();
@@ -169,38 +169,38 @@ class ProfileController extends Controller
             Log::info("Tareas creadas manejadas: " . $tareasCreadas->count());
     
             // 3. Manejar tareas asignadas
-            $tareasAsignadas = $empleado->assignedTasks;
+            $tareasAsignadas = $usuario->assignedTasks;
             foreach ($tareasAsignadas as $tarea) {
-                // Puedes elegir eliminar las tareas o reasignarlas a otro usuario
+                // Puedes elegir elegir eliminar las tareas o reasignarlas a otro usuario
                 $tarea->visible_para = null; // O $tarea->visible_para = $otroUsuarioId;
                 $tarea->save();
             }
             Log::info("Tareas asignadas manejadas: " . $tareasAsignadas->count());
     
             // 4. Manejar horas de trabajo
-            $empleado->workHours()->delete();
+            $usuario->workHours()->delete();
             Log::info("Horas de trabajo eliminadas");
     
             // 5. Eliminar firma del usuario
-            if ($empleado->signature) {
-                $empleado->signature->delete();
+            if ($usuario->signature) {
+                $usuario->signature->delete();
                 Log::info("Firma del usuario eliminada");
             }
     
             // 6. Finalmente, eliminar al usuario
-            $userDeleted = $empleado->delete();
+            $userDeleted = $usuario->delete();
             Log::info("Usuario eliminado: " . ($userDeleted ? 'Sí' : 'No'));
     
             if (!$userDeleted) {
-                throw new \Exception("No se pudo eliminar al empleado por razones desconocidas.");
+                throw new \Exception("No se pudo eliminar al usuario por razones desconocidas.");
             }
     
             DB::commit();
-            return redirect()->back()->with('status', 'Empleado y sus datos asociados eliminados con éxito.');
+            return redirect()->back()->with('status', 'Profesional y sus datos asociados eliminados con éxito.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error al eliminar empleado: " . $e->getMessage());
-            return redirect()->back()->with('error', 'No se pudo eliminar al empleado. Error: ' . $e->getMessage());
+            Log::error("Error al eliminar profesional: " . $e->getMessage());
+            return redirect()->back()->with('error', 'No se pudo eliminar al profesional. Error: ' . $e->getMessage());
         }
     }
 

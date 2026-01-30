@@ -302,7 +302,7 @@
 
             <!-- Modals moved to bottom of scope for safety -->
             @include('tareas.partials.task-details-modal')
-            @include('empleadores.tareas.partials.create-modal')
+            @include('empresas.tareas.partials.create-modal')
             <x-work-hours.approval-modal />
         </div>
 
@@ -601,7 +601,7 @@
                     this.newCommentText = '';
 
                     try {
-                        const response = await fetch(`/empleador/tareas/${taskId}/comments`, {
+                        const response = await fetch(`/empresa/tareas/${taskId}/comments`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -639,7 +639,7 @@
                     this.updatingCommentId = commentId;
 
                     try {
-                        const response = await fetch(`/empleador/comments/${commentId}`, {
+                        const response = await fetch(`/empresa/comments/${commentId}`, {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -671,7 +671,7 @@
                     this.deletingCommentId = id;
 
                     try {
-                        const response = await fetch(`/empleador/comments/${id}`, {
+                        const response = await fetch(`/empresa/comments/${id}`, {
                             method: 'DELETE',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -702,7 +702,7 @@
                     formData.append('task_id', this.selectedTask.id);
 
                     try {
-                        const response = await fetch(`/empleador/tareas/${this.selectedTask.id}/files`, {
+                        const response = await fetch(`/empresa/tareas/${this.selectedTask.id}/files`, {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
@@ -761,7 +761,40 @@
 
                     const { type, id } = this.deleteConfirmation;
                     
-                    if (type === 'task') {
+                    if (type === 'file') {
+                        try {
+                            const response = await fetch(`/tasks/attachments/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                }
+                            });
+                            if (response.ok) {
+                                this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
+                            } else {
+                                const data = await response.json();
+                                showError(data.message || 'Error al eliminar archivo');
+                            }
+                        } catch (e) { showError('Error de conexión'); }
+                    } else if (type === 'comment') {
+                        try {
+                            const response = await fetch(`/empresa/comments/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                }
+                            });
+                            if (response.ok) {
+                                this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
+                            } else {
+                                showError('Error al eliminar comentario');
+                            }
+                        } catch (e) { showError('Error de conexión'); }
+                    } else if (type === 'task') {
                         try {
                             const response = await fetch(`/tareas/${id}`, {
                                 method: 'DELETE',
@@ -783,8 +816,8 @@
                                 showError(data.message || 'Error al eliminar tarea');
                                 this.deleteConfirmation.isOpen = false;
                             }
-                        } catch (e) { 
-                            showError('Error de conexión');  
+                        } catch (e) {
+                            showError('Error de conexión');
                             this.deleteConfirmation.isOpen = false;
                         } finally {
                             this.isDeleting = false;

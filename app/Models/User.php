@@ -23,13 +23,13 @@ class User extends Authenticatable
                 $user = auth()->user();
                 
                 if ($user->tipo_usuario === 'empleador') {
-                    // Employers see their employees
+                    // Companies see their professionals
                     $builder->where('empleador_id', $user->id);
                 } elseif ($user->tipo_usuario === 'empleado') { 
-                    // Employees see their employer
-                    // Also maybe see other employees of same employer? 
+                    // Professionals see their company
+                    // Also maybe see other professionals of same company? 
                     // User request said: "empresa ... a profesionales y viceversa". 
-                    // Implies mainly vertical communication. Let's stick to Employer <-> Employee for now.
+                    // Implies mainly vertical communication. Let's stick to Company <-> Professional for now.
                     $builder->where('id', $user->empleador_id);
                 }
             }
@@ -92,12 +92,12 @@ class User extends Authenticatable
         return $this->is_superadmin;
     }
 
-    public function empleados(): HasMany
+    public function profesionales(): HasMany
     {
         return $this->hasMany(User::class, 'empleador_id');
     }
 
-    public function empleador(): BelongsTo
+    public function empresa(): BelongsTo
     {
         return $this->belongsTo(User::class, 'empleador_id');
     }
@@ -129,7 +129,7 @@ class User extends Authenticatable
         return $this->tipo_usuario === 'empleador' || $this->is_manager;
     }
 
-    public function isEmpleadorOrSuperAdmin(): bool
+    public function isEmpresaOrSuperAdmin(): bool
     {
         return $this->tipo_usuario === 'empleador' || $this->is_superadmin;
     }
@@ -151,7 +151,7 @@ class User extends Authenticatable
     public function compañerosDeTrabajo()
     {
         if ($this->tipo_usuario === 'empleador') {
-            return $this->empleados;
+            return $this->profesionales;
         } else {
             return User::where('empleador_id', $this->empleador_id)
                        ->where('id', '!=', $this->id)
@@ -174,7 +174,7 @@ class User extends Authenticatable
     public function getChatContacts()
     {
         if ($this->tipo_usuario === 'empleador') {
-            return $this->empleados;
+            return $this->profesionales;
         } else {
             return User::where('id', $this->empleador_id)->get();
         }
@@ -187,14 +187,16 @@ class User extends Authenticatable
 
     public function getDashboardRoute(): string
     {
-        if ($this->is_superadmin) {
+        // Explicitly check if is_superadmin is true (handles null, false, and true correctly)
+        if ($this->is_superadmin === true) {
             return 'admin.dashboard';
         }
 
         if ($this->tipo_usuario === 'empleador') {
-            return 'empleador.dashboard';
+            return 'empresa.dashboard';
         }
 
+        // Professionals go to the main dashboard which shows dashboard-professional.blade.php
         return 'dashboard';
     }
 }

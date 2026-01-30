@@ -62,6 +62,7 @@ class Chat extends Component
         if ($user->is_superadmin) {
             // Superadmins see everyone
         } elseif ($user->tipo_usuario === 'empleador') {
+            // Companies see their professionals
             $contactsQuery->where('empleador_id', $user->id);
         } else {
             $contactsQuery->where(function($query) use ($user) {

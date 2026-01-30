@@ -451,7 +451,7 @@
                     this.selectedTask.comments.unshift(optimisticComment);
                     this.newCommentText = '';
                     try {
-                        const response = await fetch(`/empleados/tareas/${taskId}/comment`, {
+                        const response = await fetch(`/profesionales/tareas/${taskId}/comment`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -484,7 +484,7 @@
                 async updateComment(commentId) {
                     if (!this.editCommentContent.trim()) return;
                     try {
-                        const response = await fetch(`/empleados/tareas/comment/${commentId}`, {
+                        const response = await fetch(`/profesionales/tareas/comment/${commentId}`, {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -516,7 +516,7 @@
                     const formData = new FormData();
                     formData.append('file', file);
                     try {
-                        const response = await fetch(`/empleados/tareas/${this.selectedTask.id}/files`, {
+                        const response = await fetch(`/profesionales/tareas/${this.selectedTask.id}/files`, {
                             method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -565,7 +565,7 @@
                         } catch (e) { showError('Error de conexión'); }
                     } else if (type === 'comment') {
                         try {
-                            const response = await fetch(`/empleados/tareas/comment/${id}`, {
+                            const response = await fetch(`/profesionales/tareas/comment/${id}`, {
                                 method: 'DELETE',
                                 headers: {
                                     'Content-Type': 'application/json',

@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Tareas asignadas a mi equipo') }}
         </h2>
     </x-slot>
@@ -45,19 +45,19 @@
                     </div>
                 </div>
             @endif
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <div class="flex flex-col lg:flex-row justify-between items-center gap-4">
                         <div class="w-full lg:w-1/3 relative">
-                            <input type="text" x-model="searchQuery" placeholder="Buscar por tarea/profesional." class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <input type="text" x-model="searchQuery" placeholder="Buscar por tarea/profesional." class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary">
                             <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </div>
                         
-                        <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 p-1 rounded-lg border border-gray-200 dark:border-gray-600 w-full lg:w-auto">
-                            <span class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-2 uppercase">Fecha:</span>
-                            <input type="date" x-model="startDate" class="border-none bg-transparent focus:ring-0 text-sm p-1 rounded-lg dark:text-white">
+                        <div class="flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200 w-full lg:w-auto">
+                            <span class="text-xs font-bold text-gray-500 ml-2 uppercase">Fecha:</span>
+                            <input type="date" x-model="startDate" class="border-none bg-transparent focus:ring-0 text-sm p-1 rounded-lg text-gray-700">
                             <span class="text-gray-400">/</span>
-                            <input type="date" x-model="endDate" class="border-none bg-transparent focus:ring-0 text-sm p-1 rounded-lg dark:text-white">
+                            <input type="date" x-model="endDate" class="border-none bg-transparent focus:ring-0 text-sm p-1 rounded-lg text-gray-700">
                         </div>
 
                         <button 
@@ -213,7 +213,7 @@
             </div>
 
             @include('tareas.partials.task-details-modal')
-            @include('empleadores.tareas.partials.create-modal')
+            @include('empresas.tareas.partials.create-modal')
         </div>
     </div>
 

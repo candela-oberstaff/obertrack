@@ -25,7 +25,7 @@
                         window.showLoader();
                         this.weekSuccessMessage = '';
                         try {
-                            const response = await fetch('{{ route('work-hours.approve-all-week') }}', {
+                            const response = await fetch('{{ route('work-hours.approve-all-week', [], false) }}', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -58,7 +58,7 @@
                         window.showLoader();
                         this.allMonthSuccessMessage = '';
                         try {
-                            const response = await fetch('{{ route('work-hours.approve-all-month') }}', {
+                            const response = await fetch('{{ route('work-hours.approve-all-month', [], false) }}', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -113,7 +113,7 @@
 
                     async fetchDayDetails(dateStr) {
                         try {
-                            const response = await fetch(`/empleador/api/day-details/${dateStr}`);
+                            const response = await fetch(`/empresa/api/day-details/${dateStr}`);
                             if (!response.ok) throw new Error('Network response was not ok');
                             
                             const data = await response.json();
@@ -129,7 +129,7 @@
 
                     openDetails(day) {
                         this.selectedDay = JSON.parse(JSON.stringify(day)); // Deep copy to isolate state
-                        this.selectedDay.employees.forEach(emp => {
+                        this.selectedDay.profesionales.forEach(emp => {
                             if (!emp.hasOwnProperty('new_comment')) emp.new_comment = '';
                         });
                         this.showModal = true;
@@ -147,7 +147,7 @@
                         window.showLoader();
                         
                         try {
-                            const response = await fetch('{{ route('work-hours.approve-days') }}', {
+                            const response = await fetch('{{ route('work-hours.approve-days', [], false) }}', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -292,7 +292,7 @@
             
             <!-- Employee Stats Cards -->
             <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-                @foreach($employeeSummaries as $summary)
+                @foreach($professionalSummaries as $summary)
                     @php
                         $percentage = $summary['target_hours'] > 0 ? min(100, ($summary['total_hours'] / $summary['target_hours']) * 100) : 0;
                         $dateRange = $currentMonth->copy()->startOfMonth()->format('M 1') . ' - ' . $currentMonth->copy()->endOfMonth()->format('M d');
@@ -400,7 +400,7 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-50">
-                                        @foreach($employeeSummaries as $sum)
+                                        @foreach($professionalSummaries as $sum)
                                             <tr class="hover:bg-gray-50/30 transition-colors">
                                                 <td class="px-8 py-5">
                                                     <div class="flex items-center gap-3">
@@ -579,7 +579,7 @@
                 <!-- Month Navigation -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <div class="flex items-center gap-4">
-                       <a href="{{ route('empleador.dashboard', ['month' => $currentMonth->copy()->subMonth()->format('Y-m')]) }}" class="bg-[#22A9C8] text-white rounded p-1.5 hover:bg-primary-hover transition">
+                       <a href="{{ route('empresa.dashboard', ['month' => $currentMonth->copy()->subMonth()->format('Y-m')], false) }}" class="bg-[#22A9C8] text-white rounded p-1.5 hover:bg-primary-hover transition">
                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                            </svg>
@@ -588,9 +588,9 @@
                        <input type="month" 
                               value="{{ $currentMonth->format('Y-m') }}" 
                               class="bg-transparent border-none text-xl font-bold text-gray-900 focus:ring-0 cursor-pointer px-1 text-center"
-                              onchange="window.location.href = '{{ route('empleador.dashboard') }}?month=' + this.value">
+                              onchange="window.location.href = '{{ route('empresa.dashboard', [], false) }}?month=' + this.value">
                        
-                       <a href="{{ route('empleador.dashboard', ['month' => $currentMonth->copy()->addMonth()->format('Y-m')]) }}" class="bg-[#22A9C8] text-white rounded p-1.5 hover:bg-primary-hover transition">
+                       <a href="{{ route('empresa.dashboard', ['month' => $currentMonth->copy()->addMonth()->format('Y-m')], false) }}" class="bg-[#22A9C8] text-white rounded p-1.5 hover:bg-primary-hover transition">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                             </svg>
@@ -634,7 +634,7 @@
                                         <button 
                                             @click="openDetails({{ json_encode($day) }})"
                                             class="relative w-12 h-12 rounded-full flex items-center justify-center text-base transition-colors
-                                            {{ count($day['employees']) > 0 ? 'bg-gray-200 hover:bg-gray-300 text-gray-800' : 'bg-transparent text-gray-800 hover:bg-gray-100' }}"
+                                            {{ count($day['profesionales']) > 0 ? 'bg-gray-200 hover:bg-gray-300 text-gray-800' : 'bg-transparent text-gray-800 hover:bg-gray-100' }}"
                                         >
                                             <span class="z-10">{{ str_pad($day['day'], 2, '0', STR_PAD_LEFT) }}</span>
                                             
@@ -680,7 +680,7 @@
                                             </span>
                                             
                                             <!-- Indicator Dot: Red for pending, Green for all approved, None for no records -->
-                                            @if(count($day['employees']) > 0)
+                                            @if(count($day['profesionales']) > 0)
                                                 @if($day['has_pending'])
                                                     <span class="w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm" title="Pendiente de aprobación"></span>
                                                 @else
@@ -690,9 +690,9 @@
                                         </div>
 
                                         <!-- Professionals Hours -->
-                                        @if(count($day['employees']) > 0)
+                                        @if(count($day['profesionales']) > 0)
                                             <div class="space-y-2 flex-1">
-                                                @foreach($day['employees'] as $employee)
+                                                @foreach($day['profesionales'] as $employee)
                                                     <div class="flex flex-col items-center gap-1 mt-1" title="{{ $employee['name'] }}">
                                                         <!-- Avatar -->
                                                         <x-user-avatar :name="$employee['name']" :avatar="$employee['avatar']" size="6" />
@@ -800,9 +800,9 @@
 
                                 <!-- Modal Body -->
                                 <div class="bg-white px-4 py-4 sm:p-6 max-h-[70vh] overflow-y-auto no-scrollbar">
-                                    <template x-if="selectedDay && selectedDay.employees.length > 0">
+                                    <template x-if="selectedDay && selectedDay.profesionales.length > 0">
                                         <div class="space-y-8">
-                                            <template x-for="emp in selectedDay.employees" :key="emp.record_id">
+                                            <template x-for="emp in selectedDay.profesionales" :key="emp.record_id">
                                                 <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all">
                                                     <!-- Employee Header with Profile Badge Style -->
                                                     <div class="flex items-start justify-between mb-6">
@@ -1000,7 +1000,7 @@
                                         </div>
                                     </template>
                                     
-                                    <template x-if="!selectedDay || selectedDay.employees.length === 0">
+                                    <template x-if="!selectedDay || selectedDay.profesionales.length === 0">
                                         <div class="py-12 flex flex-col items-center">
                                             <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                                                 <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -1019,9 +1019,9 @@
                                         Cerrar
                                     </button>
                                     
-                                    <template x-if="selectedDay && selectedDay.employees.length > 0">
+                                    <template x-if="selectedDay && selectedDay.profesionales.length > 0">
                                         <a 
-                                            :href="'/empleador/detalle-diario/' + (typeof selectedDay.date === 'string' ? selectedDay.date : (selectedDay.date.date || selectedDay.date)).split(' ')[0]"
+                                            :href="'/empresa/detalle-diario/' + (typeof selectedDay.date === 'string' ? selectedDay.date : (selectedDay.date.date || selectedDay.date)).split(' ')[0]"
                                             class="w-full inline-flex justify-center items-center gap-2 rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#22A9C8] text-base font-bold text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22A9C8] sm:w-auto sm:text-sm transition-all"
                                         >
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
@@ -1156,7 +1156,7 @@
                                                         ¡Atención! Esta acción aprobará TODAS las horas pendientes del mes.
                                                     </p>
                                                     <p class="text-sm text-yellow-600 mt-2">
-                                                        • Se aprobarán horas de todos los empleados<br>
+                                                        • Se aprobarán horas de todos los profesionales<br>
                                                         • Esta acción no se puede deshacer
                                                     </p>
                                                 </div>
@@ -1168,13 +1168,13 @@
                                             <div class="grid grid-cols-2 gap-4">
                                                 <div class="text-center">
                                                     <p class="text-2xl font-bold text-[#22A9C8]">
-                                                        {{ count($employeeSummaries) }}
+                                                        {{ count($professionalSummaries) }}
                                                     </p>
-                                                    <p class="text-xs text-gray-500">Empleados</p>
+                                                    <p class="text-xs text-gray-500">Profesionales</p>
                                                 </div>
                                                 <div class="text-center">
                                                     <p class="text-2xl font-bold text-green-500">
-                                                        {{ collect($calendar)->where('is_current_month', true)->sum(fn($day) => count($day['employees'])) }}
+                                                        {{ collect($calendar)->where('is_current_month', true)->sum(fn($day) => count($day['profesionales'])) }}
                                                     </p>
                                                     <p class="text-xs text-gray-500">Registros totales</p>
                                                 </div>

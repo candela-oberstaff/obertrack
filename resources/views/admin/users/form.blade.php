@@ -47,7 +47,7 @@
                                 class="w-full border-gray-200 rounded-lg focus:ring-[#22A9C8] font-medium text-gray-800">
                             <option value="">Selecciona un rol</option>
                             <option value="empleador" {{ (old('tipo_usuario', $user->tipo_usuario ?? '') == 'empleador') ? 'selected' : '' }}>Empresa</option>
-                            <option value="empleado" {{ (old('tipo_usuario', $user->tipo_usuario ?? '') == 'empleado') ? 'selected' : '' }}>Empleado</option>
+                            <option value="empleado" {{ (old('tipo_usuario', $user->tipo_usuario ?? '') == 'empleado') ? 'selected' : '' }}>Profesional</option>
                             <option value="superadmin" {{ (old('tipo_usuario', $user->tipo_usuario ?? '') == 'superadmin') ? 'selected' : '' }}>Superadmin</option>
                         </select>
                         @error('tipo_usuario')

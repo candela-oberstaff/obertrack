@@ -11,12 +11,16 @@
             @endif
         </div>
         <div>
-            @if(auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager)
-                <a href="{{ route('empleadores.tareas-asignadas') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#22A9C8] transition-colors">
+            @if(auth()->user()->tipo_usuario === 'empleador')
+                <a href="{{ route('empresa.tareas.index') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#22A9C8] transition-colors">
+                    Asignar tareas
+                </a>
+            @elseif(auth()->user()->is_manager)
+                 <a href="{{ route('manager.tasks.index') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#22A9C8] transition-colors">
                     Asignar tareas
                 </a>
             @else
-                <a href="{{ route('empleados.tasks.index') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#22A9C8] transition-colors">
+                <a href="{{ route('profesionales.tasks.index') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#22A9C8] transition-colors">
                     Ver mis tareas
                 </a>
             @endif
@@ -48,7 +52,7 @@
             @endif
         </div>
         <!-- Register Hours Card -->
-    <a href="{{ route('empleado.registrar-horas') }}" class="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+    <a href="{{ route('profesional.registrar-horas') }}" class="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
         <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
         
         <div class="relative flex items-center gap-4">
@@ -69,11 +73,11 @@
         </div>
     </a>        <div>
             @if(auth()->user()->tipo_usuario === 'empleador')
-                <a href="{{ route('empleador.dashboard') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#22A9C8] transition-colors">
+                <a href="{{ route('empresa.dashboard') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#22A9C8] transition-colors">
                     Ver resumen
                 </a>
             @else
-                <a href="{{ route('empleado.registrar-horas') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#22A9C8] transition-colors">
+                <a href="{{ route('profesional.registrar-horas') }}" class="inline-block bg-[#1E293B] text-white text-sm font-medium px-6 py-2 rounded-full hover:bg-[#22A9C8] transition-colors">
                 </a>
             @endif
         </div>

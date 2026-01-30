@@ -26,7 +26,7 @@ function toggleEmployerTaskCompletion(taskId) {
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-        fetch(`/empleador/tareas/${taskId}/toggle-completion`, {
+        fetch(`/empresa/tareas/${taskId}/toggle-completion`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ function addEmployerTaskComment(event, taskId) {
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-        fetch(`/empleador/tareas/${taskId}/comments`, {
+        fetch(`/empresa/tareas/${taskId}/comments`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -164,7 +164,7 @@ function deleteEmployerComment(commentId, taskId) {
 function performDeleteComment(commentId, taskId) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    fetch(`/empleador/tareas/${taskId}/comments/${commentId}`, {
+    fetch(`/empresa/tareas/${taskId}/comments/${commentId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': csrfToken,

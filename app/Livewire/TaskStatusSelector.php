@@ -24,7 +24,7 @@ class TaskStatusSelector extends Component
             return;
         }
 
-        // Restrict employers from changing status
+        // Restrict companies from changing status
         $user = auth()->user();
         if ($user && $user->tipo_usuario === 'empleador') {
             $this->dispatch('notify', message: 'Solo los profesionales pueden actualizar el estado de las tareas.');
@@ -64,7 +64,7 @@ class TaskStatusSelector extends Component
             wasCompleted: $wasCompleted
         );
 
-        // Notify client (Employer) if changed by an employee
+        // Notify client (Company) if changed by a professional
         $user = auth()->user();
         if ($user && $user->tipo_usuario === 'empleado') {
             try {

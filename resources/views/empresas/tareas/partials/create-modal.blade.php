@@ -40,7 +40,7 @@
         </div>
 
         <div class="overflow-y-auto flex-1 p-8">
-            <form action="{{ route('empleador.tareas.store') }}" method="POST" id="createTaskForm">
+            <form action="{{ auth()->user()->is_manager ? route('manager.tasks.store') : route('empresa.tareas.store') }}" method="POST" id="createTaskForm">
                 @csrf
                 
                 <h3 class="text-[#22A9C8] font-medium text-lg mb-6" x-text="isTeamTask ? 'Crea una tarea en equipo' : 'Crea una tarea para este profesional'"></h3>
@@ -79,7 +79,7 @@
                     <div class="bg-gray-50 rounded-lg p-4 max-h-32 overflow-y-auto">
                         <p class="text-xs text-gray-500 mb-2 uppercase font-bold tracking-wider">Asigna a los profesionales</p>
                         <div class="space-y-2">
-                            @forelse($employees as $emp)
+                            @forelse($profesionales as $emp)
                                 <label class="flex items-center space-x-3 cursor-pointer hover:bg-gray-100 p-1 rounded">
                                     <input type="checkbox" name="assignees[]" value="{{ $emp->id }}" class="rounded border-gray-300 text-[#22A9C8] focus:ring-[#22A9C8]">
                                     <span class="text-sm text-gray-700">{{ $emp->name }}</span>

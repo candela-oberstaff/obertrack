@@ -31,7 +31,7 @@ class ManagerTaskController extends Controller
         $tareas = $this->taskManagementService->getCompanyTasks($user);
         
         $ownerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
-        $employees = \App\Models\User::where('empleador_id', $ownerId)->get();
+        $profesionales = \App\Models\User::where('empleador_id', $ownerId)->get();
 
         $currentUserData = [
             'id' => $user->id,
@@ -41,15 +41,15 @@ class ManagerTaskController extends Controller
             'is_superadmin' => $user->is_superadmin
         ];
 
-        return view('manager.tasks.index', compact('tareas', 'employees', 'currentUserData'));
+        return view('manager.tasks.index', compact('tareas', 'profesionales', 'currentUserData'));
     }
 
     public function create()
     {
         $this->checkManagerAccess();
         
-        $empleados = auth()->user()->compañerosDeTrabajo();
-        return view('manager.tasks.create', compact('empleados'));
+        $profesionales = auth()->user()->compañerosDeTrabajo();
+        return view('manager.tasks.create', compact('profesionales'));
     }
 
     public function store(StoreTaskRequest $request)
@@ -58,23 +58,7 @@ class ManagerTaskController extends Controller
         
         $validatedData = $request->validated();
 
-        $task = Task::create([
-            'title' => $validatedData['title'],
-            'description' => $validatedData['description'],
-            'created_by' => auth()->id(),
-            'start_date' => $validatedData['start_date'],
-            'end_date' => $validatedData['end_date'],
-            'priority' => $validatedData['priority'],
-            'completed' => false,
-        ]);
-
-        if (isset($validatedData['visible_para'])) {
-            $task->assignees()->attach($validatedData['visible_para']);
-            
-            // Enviar notificación al usuario asignado
-            $assignedUser = User::find($validatedData['visible_para']);
-            $assignedUser->notify(new NewTaskAssigned($task));
-        }
+        $this->taskManagementService->createTask($validatedData);
 
         return redirect()->route('manager.tasks.index')->with('success', 'Tarea creada y asignada exitosamente.');
     }
@@ -82,8 +66,8 @@ class ManagerTaskController extends Controller
     public function edit(Task $task)
     {
         Gate::authorize('update', $task);
-        $empleados = auth()->user()->compañerosDeTrabajo();
-        return view('manager.tasks.edit', compact('task', 'empleados'));
+        $profesionales = auth()->user()->compañerosDeTrabajo();
+        return view('manager.tasks.edit', compact('task', 'profesionales'));
     }
 
     public function update(UpdateTaskRequest $request, Task $task)
@@ -96,6 +80,8 @@ class ManagerTaskController extends Controller
             
             if (isset($validatedData['visible_para'])) {
                 $task->assignees()->sync([$validatedData['visible_para']]);
+            } elseif (isset($validatedData['assignees'])) {
+                $task->assignees()->sync($validatedData['assignees']);
             }
 
             if ($request->ajax()) {

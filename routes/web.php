@@ -59,15 +59,15 @@ Route::get('/livewire-script', function () {
 // GET /dashboard - Main dashboard (redirects based on user role)
 Route::middleware(['auth'])->get('/dashboard', function () {
     $user = Auth::user();
-    
-    // Check if the user is already on their correct dashboard route
     $targetRoute = $user->getDashboardRoute();
     
-    if (Route::currentRouteName() === $targetRoute) {
-        return view('dashboard-professional');
+    // Only redirect if we're not already at the target route
+    if ($targetRoute !== 'dashboard') {
+        return redirect()->route($targetRoute);
     }
-
-    return redirect()->route($targetRoute);
+    
+    // Fallback view for professionals (if dashboard route is returned)
+    return view('dashboard-professional');
 })->name('dashboard');
 
 // Admin / Analyst Routes
@@ -143,14 +143,14 @@ require __DIR__.'/auth.php';
 // Profile and user management routes
 require __DIR__.'/profile.php';
 
-// Employer-specific routes
-require __DIR__.'/employer.php';
+// Company-specific routes
+require __DIR__.'/company.php';
 
 // Manager-specific routes
 require __DIR__.'/manager.php';
 
-// Employee-specific routes
-require __DIR__.'/employee.php';
+// Professional-specific routes
+require __DIR__.'/professional.php';
 
 // General task management routes
 require __DIR__.'/tasks.php';

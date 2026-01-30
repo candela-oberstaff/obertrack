@@ -5,7 +5,7 @@
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                 <div class="flex items-center gap-6">
-                    <a href="{{ route('reportes.index') }}" class="w-10 h-10 bg-[#22A9C8] text-white rounded-lg flex items-center justify-center hover:opacity-90 transition-all">
+                    <a href="{{ route('reportes.index', [], false) }}" class="w-10 h-10 bg-[#22A9C8] text-white rounded-lg flex items-center justify-center hover:opacity-90 transition-all">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                         </svg>
@@ -22,7 +22,7 @@
             <!-- Week Navigator & Action Buttons -->
             <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
                 <div class="flex items-center gap-4 text-[#22A9C8] font-bold">
-                    <a href="{{ route('reportes.show', ['user' => $professional->id, 'week' => $weekStart->copy()->subWeek()->format('Y-m-d')]) }}" class="hover:opacity-75">
+                    <a href="{{ route('reportes.show', ['user' => $professional->id, 'week' => $weekStart->copy()->subWeek()->format('Y-m-d')], false) }}" class="hover:opacity-75">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/>
                         </svg>
@@ -31,14 +31,14 @@
                     <div class="relative flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
                         <input type="date" 
                                value="{{ $weekStart->format('Y-m-d') }}"
-                               onchange="window.location.href = '{{ route('reportes.show', ['user' => $professional->id]) }}?week=' + this.value"
+                               onchange="window.location.href = '{{ route('reportes.show', ['user' => $professional->id], false) }}?week=' + this.value"
                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                title="Seleccionar fecha para ir a esa semana">
                         <svg class="w-5 h-5 text-[#22A9C8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                     </div>
-                    <a href="{{ route('reportes.show', ['user' => $professional->id, 'week' => $weekStart->copy()->addWeek()->format('Y-m-d')]) }}" class="hover:opacity-75">
+                    <a href="{{ route('reportes.show', ['user' => $professional->id, 'week' => $weekStart->copy()->addWeek()->format('Y-m-d')], false) }}" class="hover:opacity-75">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/>
                         </svg>
@@ -56,12 +56,12 @@
                     </label>
 
                     <div class="flex gap-4">
-                        <a :href="'{{ route('reportes.download.weekly', ['user' => $professional->id, 'week' => $weekStart->format('Y-m-d')]) }}' + (sendEmail ? '&send_email=1' : '')" 
+                        <a :href="'{{ route('reportes.download.weekly', ['user' => $professional->id, 'week' => $weekStart->format('Y-m-d')], false) }}' + (sendEmail ? '&send_email=1' : '')" 
                            @click="window.showLoader()"
                            class="px-6 py-2 border-2 border-[#22A9C8] text-[#0D1E4C] text-sm font-bold rounded-full hover:bg-gray-50 transition-all">
                             Descargar reporte semanal
                         </a>
-                        <a :href="'{{ route('reportes.download.monthly', ['user' => $professional->id, 'month' => $weekStart->format('Y-m-d')]) }}' + (sendEmail ? '&send_email=1' : '')" 
+                        <a :href="'{{ route('reportes.download.monthly', ['user' => $professional->id, 'month' => $weekStart->format('Y-m-d')], false) }}' + (sendEmail ? '&send_email=1' : '')" 
                            @click="window.showLoader()"
                            class="px-6 py-2 bg-[#22A9C8] text-white text-sm font-bold rounded-full hover:opacity-90 transition-all shadow-sm">
                             Descargar reporte mensual

@@ -9,23 +9,23 @@ use Illuminate\Support\Carbon;
 class WorkHoursSummaryService
 {
     /**
-     * Get work hours summary for a list of employees within a date range
+     * Get work hours summary for a list of professionals within a date range
      * Optimized to avoid N+1 queries
      */
-    public function getWorkHoursSummary($empleados, $weekStart, $weekEnd)
+    public function getWorkHoursSummary($profesionales, $weekStart, $weekEnd)
     {
-        // Single query for all employees - NO N+1!
-        $allWorkHours = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+        // Single query for all professionals - NO N+1!
+        $allWorkHours = WorkHours::whereIn('user_id', $profesionales->pluck('id'))
             ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
             ->get()
             ->groupBy('user_id');
 
         $summary = [];
-        foreach ($empleados as $empleado) {
-            $workHours = $allWorkHours->get($empleado->id, collect([]));
+        foreach ($profesionales as $profesional) {
+            $workHours = $allWorkHours->get($profesional->id, collect([]));
     
-            $summary[$empleado->id] = [
-                'name' => $empleado->name,
+            $summary[$profesional->id] = [
+                'name' => $profesional->name,
                 'total_hours' => $workHours->sum('hours_worked'),
                 'approved_hours' => $workHours->filter(fn($h) => (bool)$h->approved)->sum('hours_worked'),
                 'pending_hours' => $workHours->filter(fn($h) => !(bool)$h->approved)->sum('hours_worked'),
@@ -60,9 +60,9 @@ class WorkHoursSummaryService
     }
 
     /**
-     * Get weeks with pending (unapproved) hours for a list of employees
+     * Get weeks with pending (unapproved) hours for a list of professionals
      */
-    public function getPendingWeeks($empleados)
+    public function getPendingWeeks($profesionales)
     {
         $pendingWeeks = [];
         $currentWeek = Carbon::now()->startOfWeek(Carbon::MONDAY);
@@ -72,29 +72,29 @@ class WorkHoursSummaryService
             $weekStart = $currentWeek->copy()->subWeeks($i);
             $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
             
-            $pendingHoursExists = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+            $pendingHoursExists = WorkHours::whereIn('user_id', $profesionales->pluck('id'))
                 ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
                 ->whereRaw('approved IS FALSE')
                 ->exists();
 
             if (!$pendingHoursExists) {
-                $pendingHoursExists = RecoveryHour::whereIn('user_id', $empleados->pluck('id'))
+                $pendingHoursExists = RecoveryHour::whereIn('user_id', $profesionales->pluck('id'))
                     ->whereBetween('recovery_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
                     ->whereRaw('approved IS FALSE')
                     ->exists();
             }
             
             if ($pendingHoursExists) {
-                $summary = $this->getWorkHoursSummary($empleados, $weekStart, $weekEnd);
+                $summary = $this->getWorkHoursSummary($profesionales, $weekStart, $weekEnd);
                 
                 // Add recovery pending data
-                $recoveryPending = RecoveryHour::whereIn('user_id', $empleados->pluck('id'))
+                $recoveryPending = RecoveryHour::whereIn('user_id', $profesionales->pluck('id'))
                     ->whereBetween('recovery_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
                     ->whereRaw('approved IS FALSE')
                     ->get();
 
                 // Merge with old recoveries for transition period
-                $oldRecoveryPending = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+                $oldRecoveryPending = WorkHours::whereIn('user_id', $profesionales->pluck('id'))
                     ->whereBetween('work_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
                     ->where('recovered_hours', '>', 0)
                     ->whereRaw('recovery_approved IS FALSE')
@@ -118,7 +118,7 @@ class WorkHoursSummaryService
     /**
      * Get approved weeks for a specific month
      */
-    public function getApprovedWeeks($empleados, $month)
+    public function getApprovedWeeks($profesionales, $month)
     {
         $approvedWeeks = [];
         $currentWeek = $month->copy()->startOfMonth()->startOfWeek(Carbon::MONDAY);
@@ -132,7 +132,7 @@ class WorkHoursSummaryService
             $weekEnd = min($weekEnd, $endOfMonth);
 
             if ($weekStart->lte($endOfMonth)) {
-                $isApproved = WorkHours::whereIn('user_id', $empleados->pluck('id'))
+                $isApproved = WorkHours::whereIn('user_id', $profesionales->pluck('id'))
                     ->whereBetween('work_date', [$weekStart, $weekEnd])
                     ->whereRaw('approved IS TRUE')
                     ->exists();
@@ -153,9 +153,9 @@ class WorkHoursSummaryService
     /**
      * Calculate total approved hours for a specific month
      */
-    public function getTotalApprovedHoursForMonth($empleados, $month)
+    public function getTotalApprovedHoursForMonth($profesionales, $month)
     {
-        return WorkHours::whereIn('user_id', $empleados->pluck('id'))
+        return WorkHours::whereIn('user_id', $profesionales->pluck('id'))
             ->whereYear('work_date', $month->year)
             ->whereMonth('work_date', $month->month)
             ->whereRaw('approved IS TRUE')
@@ -163,11 +163,11 @@ class WorkHoursSummaryService
     }
 
     /**
-     * Calculate total approved hours for a specific employee in a date range
+     * Calculate total approved hours for a specific professional in a date range
      */
-    public function getEmployeeApprovedHoursInRange($employeeId, $startDate, $endDate)
+    public function getProfessionalApprovedHoursInRange($professionalId, $startDate, $endDate)
     {
-        return WorkHours::where('user_id', $employeeId)
+        return WorkHours::where('user_id', $professionalId)
             ->whereBetween('work_date', [$startDate, $endDate])
             ->whereRaw('approved IS TRUE')
             ->sum('hours_worked');
