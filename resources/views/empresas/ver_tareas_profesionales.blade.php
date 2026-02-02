@@ -111,10 +111,7 @@
                     ['id' => 'en_proceso', 'label' => 'En proceso', 'color' => 'bg-blue-100', 'text' => 'text-[#22A9C8]'],
                     ['id' => 'finalizado', 'label' => 'Finalizado', 'color' => 'bg-green-100', 'text' => 'text-green-700']
                 ] as $column)
-                    <div class="flex flex-col gap-4 h-full" 
-                         @dragover.prevent="dragOverColumnId = '{{ $column['id'] }}'" 
-                         @dragleave="dragOverColumnId = null"
-                         @drop="handleDrop($event, '{{ $column['id'] }}')">
+                    <div class="flex flex-col gap-4 h-full">
                         
                         <!-- Column Header -->
                         <div class="flex items-center justify-between mb-2 px-2 select-none group-hover:text-[#22A9C8] transition-colors">
@@ -131,10 +128,7 @@
                                 '!bg-blue-50/80 !border-blue-300 ring-2 ring-blue-100': dragOverColumnId === '{{ $column['id'] }}'
                              }">
                             @forelse($teamTasks->where('status', $column['id']) as $task)
-                                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-grab active:cursor-grabbing group relative"
-                                     draggable="true"
-                                     @dragstart="dragStart($event, {{ $task->id }})"
-                                     @dragend="dragEnd($event)"
+                                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all group relative"
                                      id="task-card-{{ $task->id }}"
                                      data-title="{{ $task->title }}"
                                      data-date="{{ $task->end_date ? $task->end_date->format('Y-m-d') : '' }}"
@@ -182,9 +176,15 @@
                                     <!-- Footer Actions -->
                                     <div class="flex items-center justify-between pt-3 border-t border-gray-50">
                                         <!-- Status Selector (Wrapped to prevent propagation) -->
-                                        <div @click.stop class="transform scale-90 origin-left">
-                                            <livewire:task-status-selector :task="$task" :wire:key="'kanban-'.$task->id" />
-                                        </div>
+                                            <div class="transform scale-90 origin-left">
+                                                <div class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium 
+                                                    {{ $task->status === 'por_hacer' ? 'bg-gray-100 text-gray-800' : 
+                                                    ($task->status === 'en_proceso' ? 'bg-blue-100 text-blue-800' : 
+                                                    'bg-green-100 text-green-800') }}">
+                                                    {{ $task->status === 'por_hacer' ? 'Por hacer' : 
+                                                    ($task->status === 'en_proceso' ? 'En proceso' : 'Finalizado') }}
+                                                </div>
+                                            </div>
 
                                         <div class="flex items-center gap-3">
                                             <button @click.stop='openDetailsModal(@json($task, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), "comments")' class="flex items-center gap-1 text-gray-400 hover:text-[#22A9C8] transition-colors">
@@ -269,7 +269,13 @@
 
                                     <div class="text-gray-600 font-medium self-center">Estado</div>
                                     <div class="flex justify-end order-status-selector">
-                                        <livewire:task-status-selector :task="$task" />
+                                        <div class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium 
+                                            {{ $task->status === 'por_hacer' ? 'bg-gray-100 text-gray-800' : 
+                                            ($task->status === 'en_proceso' ? 'bg-blue-100 text-blue-800' : 
+                                            'bg-green-100 text-green-800') }}">
+                                            {{ $task->status === 'por_hacer' ? 'Por hacer' : 
+                                            ($task->status === 'en_proceso' ? 'En proceso' : 'Finalizado') }}
+                                        </div>
                                     </div>
                                 </div>
                                 

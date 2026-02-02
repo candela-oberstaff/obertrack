@@ -55,9 +55,9 @@
                                         </div>
                                     </td>
                                     <td class="px-4 md:px-8 py-7 hidden lg:table-cell">
-                                        @if($p['user']->empleador)
+                                        @if($p['user']->empresa)
                                             <div class="flex flex-col">
-                                                <span class="text-sm font-bold text-gray-800">{{ $p['user']->empleador->company_name ?? $p['user']->empleador->name }}</span>
+                                                <span class="text-sm font-bold text-gray-800">{{ $p['user']->empresa->company_name ?? $p['user']->empresa->name }}</span>
                                                 <form action="{{ route('admin.unlink-professional', $p['user']->id) }}" method="POST" onsubmit="return confirmFormSubmit(event, '¿Estás seguro de desvincular este profesional?')">
                                                     @csrf
                                                     @method('DELETE')

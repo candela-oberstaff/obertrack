@@ -216,6 +216,12 @@ class AdminDashboardController extends Controller
     {
         $professionalsData = $this->activityService->getProfessionalsStatus();
         
+        // Eager load empresa relationship for each user in the collection
+        $professionalsData->transform(function($p) {
+            $p['user']->load('empresa');
+            return $p;
+        });
+        
         $companyId = $request->query('company_id');
         if ($companyId) {
             $professionalsData = $professionalsData->filter(function($p) use ($companyId) {

@@ -93,7 +93,7 @@
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                                         <span class="text-[10px] font-black uppercase tracking-widest">Motivo de Ausencia</span>
                                                     </div>
-                                                    <p class="text-sm text-gray-800 font-bold ml-6">{{ $record->absence_reason }}</p>
+                                                    <p class="text-sm text-gray-800 font-bold ml-6 break-all">{{ $record->absence_reason }}</p>
                                                 </div>
                                             @endif
                                             
@@ -126,7 +126,7 @@
                                                             @foreach($activities as $activity)
                                                                 <li class="flex items-start gap-3">
                                                                     <div class="w-1.5 h-1.5 rounded-full bg-[#22A9C8] mt-1.5 flex-shrink-0"></div>
-                                                                    <span class="text-sm text-gray-600 leading-relaxed font-medium">{{ $activity }}</span>
+                                                                    <span class="text-sm text-gray-600 leading-relaxed font-medium break-all">{{ $activity }}</span>
                                                                 </li>
                                                             @endforeach
                                                         </ul>
@@ -135,7 +135,7 @@
                                                     @if($summary)
                                                         <div class="{{ count($activities) > 0 ? 'mt-6 pt-6 border-t border-gray-50' : '' }}">
                                                             <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Resumen Adicional</p>
-                                                            <p class="text-sm text-gray-600 leading-relaxed font-medium whitespace-pre-line break-words">{{ $summary }}</p>
+                                                            <p class="text-sm text-gray-600 leading-relaxed font-medium whitespace-pre-line break-all">{{ $summary }}</p>
                                                         </div>
                                                     @endif
 
@@ -192,7 +192,7 @@
 
                                                         <div class="bg-white/50 rounded-xl p-4 border border-blue-50">
                                                             <p class="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-2">Actividades de recuperación</p>
-                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line break-words">{{ $recovery->activities }}</p>
+                                                            <p class="text-sm text-gray-700 font-medium whitespace-pre-line break-all">{{ $recovery->activities }}</p>
                                                         </div>
                                                     </div>
                                                 @endforeach

@@ -57,7 +57,7 @@
                             
                             <!-- Task Title -->
                             <div x-show="!isEditingTask">
-                                <h1 class="text-3xl font-bold text-gray-900 leading-tight" x-text="selectedTask?.title"></h1>
+                                <h1 class="text-3xl font-bold text-gray-900 leading-tight break-words" x-text="selectedTask?.title"></h1>
                             </div>
                             <!-- Edit Title -->
                             <div x-show="isEditingTask">
@@ -195,7 +195,7 @@
                                                 </div>
                                             </div>
                                             <div class="px-3 py-2">
-                                                <p class="text-xs font-bold text-gray-700 truncate" x-text="attachment.filename"></p>
+                                                <p class="text-xs font-bold text-gray-700 break-all" x-text="attachment.filename"></p>
                                                 <p class="text-[10px] text-gray-400" x-text="(attachment.size / 1024).toFixed(1) + ' KB'"></p>
                                             </div>
                                         </div>
@@ -206,7 +206,7 @@
                     </div>
 
                     <!-- RIGHT COLUMN: Activity & Chat (35%) -->
-                    <div class="w-full md:w-[380px] bg-gray-50 flex flex-col border-l border-gray-100">
+                    <div class="w-full md:w-[380px] bg-gray-50 flex flex-col border-l border-gray-100 overflow-x-hidden">
                         <!-- Header -->
                         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white md:bg-gray-50">
                             <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wide">Actividad</h3>
@@ -216,7 +216,7 @@
                         </div>
 
                         <!-- Chat List -->
-                        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <div class="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
                             <!-- Empty State -->
                              <template x-if="!selectedTask?.comments || selectedTask.comments.length === 0">
                                 <div class="h-full flex flex-col items-center justify-center text-center opacity-50 pb-10">
@@ -229,15 +229,15 @@
                             </template>
 
                             <template x-for="comment in selectedTask?.comments" :key="comment.id">
-                                <div class="flex gap-3 group">
+                                <div class="flex gap-3 group max-w-full">
                                     <div class="flex-shrink-0 mt-1">
                                         <img :src="comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : '/avatars/' + comment.user.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(comment.user_name || comment.user?.name || 'U')+'&color=FFFFFF&background=22A9C8'" 
                                              class="w-8 h-8 rounded-full bg-gray-200 border border-gray-200">
                                     </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="bg-white rounded-2xl rounded-tl-none p-3 shadow-sm border border-gray-100 relative group-hover:border-gray-200 transition-all">
+                                    <div class="flex-1 min-w-0 overflow-hidden max-w-full">
+                                        <div class="bg-white rounded-2xl rounded-tl-none p-3 shadow-sm border border-gray-100 relative group-hover:border-gray-200 transition-all break-words max-w-full" style="overflow-wrap: anywhere; word-break: break-word;">
                                             <div class="flex justify-between items-start mb-1 gap-2">
-                                                <span class="text-xs font-bold text-gray-900" x-text="comment.user_name || comment.user?.name || 'Usuario'"></span>
+                                                <span class="text-xs font-bold text-gray-900 break-all" x-text="comment.user_name || comment.user?.name || 'Usuario'"></span>
                                                 <span class="text-[10px] text-gray-400 whitespace-nowrap" x-text="new Date(comment.created_at).toLocaleDateString() + ' ' + new Date(comment.created_at).toLocaleTimeString().slice(0,5)"></span>
                                             </div>
                                             

@@ -210,7 +210,7 @@
                                                             @foreach($pActivities as $activity)
                                                                 <li class="flex items-start gap-2">
                                                                     <div class="w-1.5 h-1.5 rounded-full bg-[#22A9C8] mt-1.5 flex-shrink-0"></div>
-                                                                    <span class="text-sm text-gray-600 font-medium leading-tight">{{ $activity }}</span>
+                                                                    <span class="text-sm text-gray-600 font-medium leading-tight break-all">{{ $activity }}</span>
                                                                 </li>
                                                             @endforeach
                                                         </ul>
@@ -218,7 +218,7 @@
 
                                                     @if($pSummary)
                                                         <div class="{{ count($pActivities) > 0 ? 'mt-3 pt-3 border-t border-gray-50' : '' }}">
-                                                            <p class="text-xs text-gray-700 font-semibold leading-relaxed">
+                                                            <p class="text-xs text-gray-700 font-semibold leading-relaxed break-all">
                                                                 {{ $pSummary }}
                                                             </p>
                                                         </div>
@@ -247,14 +247,14 @@
                                                             @foreach($eActivities as $activity)
                                                                 <li class="flex items-start gap-2">
                                                                     <div class="w-1.5 h-1.5 rounded-full bg-[#22A9C8] mt-1.5 flex-shrink-0 opacity-50"></div>
-                                                                    <span class="text-sm text-gray-600 leading-tight">"{{ ltrim($activity, '"') }}"</span>
+                                                                    <span class="text-sm text-gray-600 leading-tight break-all">"{{ ltrim($activity, '"') }}"</span>
                                                                 </li>
                                                             @endforeach
                                                         </ul>
                                                     @endif
 
                                                     @if($eSummary)
-                                                        <p class="text-sm text-gray-600 leading-relaxed">
+                                                        <p class="text-sm text-gray-600 leading-relaxed break-all">
                                                             "{{ $eSummary }}"
                                                         </p>
                                                     @endif

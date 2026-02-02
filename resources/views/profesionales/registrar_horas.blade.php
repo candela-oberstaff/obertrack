@@ -371,7 +371,7 @@
                                     <template x-for="(activity, index) in activities" :key="index">
                                         <li class="flex items-start gap-3">
                                             <span class="w-3 h-3 rounded-full bg-[#22A9C8] mt-1.5 flex-shrink-0"></span>
-                                            <span class="flex-1 text-sm text-gray-700" x-text="activity"></span>
+                                            <span class="flex-1 text-sm text-gray-700 break-all" x-text="activity"></span>
                                             <button @click="removeActivity(index)" class="text-gray-400 hover:text-red-500 transition-colors">
                                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                             </button>
@@ -768,7 +768,7 @@
                                 <template x-for="(activity, index) in recoveryActivities" :key="index">
                                     <li class="flex items-start gap-3">
                                         <span class="w-3 h-3 rounded-full bg-[#22A9C8] mt-1.5 flex-shrink-0"></span>
-                                        <span class="flex-1 text-sm text-gray-700" x-text="activity"></span>
+                                        <span class="flex-1 text-sm text-gray-700 break-all" x-text="activity"></span>
                                         <button @click="removeRecoveryActivity(index)" class="text-gray-400 hover:text-red-500 transition-colors">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                         </button>
