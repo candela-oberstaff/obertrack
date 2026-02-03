@@ -282,6 +282,13 @@ class TaskManagementService
     {
         $ownerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
         
+        Log::info('getCompanyTasks Debug:', [
+            'user_id' => $user->id,
+            'role' => $user->tipo_usuario,
+            'is_manager' => $user->is_manager,
+            'owner_id' => $ownerId,
+        ]);
+
         if (!$ownerId) {
             return collect([]);
         }
