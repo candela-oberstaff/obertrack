@@ -246,6 +246,7 @@
 
                 // Delete Confirmation State
                 deleteConfirmation: { isOpen: false, type: null, id: null },
+                isDeleting: false,
                 
                 // Task Edit State
                 isEditingTask: false,
@@ -257,287 +258,24 @@
                     end_date: ''
                 },
                 
-                get filteredTasks() {
-                    let tasks = [...this.allTasks];
-                    if (this.startDate || this.endDate) {
-                        tasks = tasks.filter(t => {
-                            const date = t.end_date ? t.end_date.split('T')[0] : '';
-                            if (this.startDate && date < this.startDate) return false;
-                            if (this.endDate && date > this.endDate) return false;
-                            return true;
-                        });
-                    }
-                    if (this.searchQuery) {
-                        const q = this.searchQuery.toLowerCase();
-                        tasks = tasks.filter(t => {
-                            const matchTitle = t.title.toLowerCase().includes(q);
-                            const matchAssignee = t.assignees.some(a => 
-                                a.name.toLowerCase().includes(q) || 
-                                (a.email && a.email.toLowerCase().includes(q))
-                            );
-                            return matchTitle || matchAssignee;
-                        });
-                    }
-                    return tasks;
-                },
-
-                matchRow(el) {
-                    const taskDate = el.dataset.date || '';
-                    const title = (el.dataset.title || '').toLowerCase();
-                    const assignees = (el.dataset.assignees || '').toLowerCase();
-                    const q = this.searchQuery.toLowerCase();
-
-                    if (this.searchQuery) {
-                        if (!title.includes(q) && !assignees.includes(q)) return false;
-                    }
-                    
-                    if (this.startDate && taskDate < this.startDate) return false;
-                    if (this.endDate && taskDate > this.endDate) return false;
-                    
-                    return true;
-                },
-
-                formatDate(d) {
-                    if (!d) return '--/--/----';
-                    const parts = d.split('T')[0].split('-');
-                    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-                },
-
-                closeModal() {
-                    this.isDetailsModalOpen = false;
-                    this.selectedTask = null;
-                    if (this.hasChanges) {
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 50);
-                    }
-                },
-
-                openDetailsModal(task, tab = 'details') {
-                    this.selectedTask = task;
-                    this.currentTab = tab;
-                    this.isDetailsModalOpen = true;
-                    this.hasChanges = false;
-                    this.fetchTaskDetails(task.id);
-                },
-
-                async fetchTaskDetails(id) {
-                     try {
-                        const response = await fetch(`/tasks/${id}/details?t=${new Date().getTime()}`, {
-                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-                        });
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (this.selectedTask && this.selectedTask.id === id) {
-                                this.selectedTask = { 
-                                    ...this.selectedTask, 
-                                    comments: data.comments, 
-                                    attachments: data.attachments,
-                                    completed: data.completed,
-                                    status: data.status
-                                };
-                            }
-                        }
-                    } catch (error) { console.error('Error fetching details:', error); }
-                },
-
-                dragStart(event, taskId) {
-                    this.draggedTaskId = taskId;
-                    event.dataTransfer.effectAllowed = 'move';
-                    event.dataTransfer.setData('text/plain', taskId);
-                    event.dataTransfer.setData('application/json', JSON.stringify({ taskId: taskId }));
-                    requestAnimationFrame(() => {
-                        event.target.classList.add('opacity-50', 'scale-95', 'rotate-1');
-                    });
-                },
-
-                dragEnd(event) {
-                    this.draggedTaskId = null;
-                    this.dragOverColumnId = null;
-                    event.target.classList.remove('opacity-50', 'scale-95', 'rotate-1');
-                },
-
-                async handleDrop(event, newStatus) {
-                    const taskId = this.draggedTaskId;
-                    this.dragOverColumnId = null;
-                    this.draggedTaskId = null;
-                    
-                    if (!taskId) return;
-                    
-                    const card = document.getElementById(`task-card-${taskId}`);
-                    if (card) card.classList.remove('opacity-50', 'scale-95', 'rotate-1');
-
-                    if (card) {
-                        const columnContainer = event.currentTarget.querySelector('.space-y-3');
-                        if (columnContainer) {
-                            columnContainer.appendChild(card);
-                        }
-                    }
-
-                    await this.updateTaskStatusV2(taskId, newStatus);
-                },
-
-                async updateTaskStatusV2(taskId, newStatus) {
-                   try {
-                        const response = await fetch(`/tareas/${taskId}/status`, {
-                            method: 'PATCH',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({ status: newStatus })
-                        });
-                        
-                        const data = await response.json();
-
-                        if (response.ok && data.success) {
-                             setTimeout(() => {
-                                const currentUrl = new URL(window.location.href);
-                                currentUrl.searchParams.set('t', new Date().getTime());
-                                window.location.href = currentUrl.toString();
-                             }, 500); 
-                        } else {
-                            showError(data.message || 'Error al actualizar estado');
-                            setTimeout(() => location.reload(), 1500); 
-                        }
-                   } catch (e) {
-                       console.error(e);
-                       showError('Error de conexión con el servidor');
-                       setTimeout(() => location.reload(), 1500); 
-                   }
-                },
-
-                async submitComment() {
-                    if (!this.newCommentText.trim()) return;
-                    this.isSubmittingComment = true;
-                    
-                    const taskId = this.selectedTask.id;
-                    const content = this.newCommentText;
-                    
-                    const tempId = 'temp_' + Date.now();
-                    const optimisticComment = {
-                        id: tempId,
-                        content: content,
-                        created_at: new Date().toISOString(),
-                        user: this.currentUser,
-                        task_id: taskId
-                    };
-                    
-                    if (!this.selectedTask.comments) this.selectedTask.comments = [];
-                    this.selectedTask.comments.unshift(optimisticComment);
-                    this.newCommentText = ''; 
-
-                    try {
-                        const response = await fetch(`/manager/tasks/${taskId}/comment`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: JSON.stringify({ content: content })
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            const index = this.selectedTask.comments.findIndex(c => c.id === tempId);
-                            if (index !== -1) this.selectedTask.comments[index] = data.comment;
-                            this.hasChanges = true;
-                        } else {
-                            this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
-                            showError('Error al enviar el comentario.');
-                        }
-                    } catch (error) {
-                        this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
-                        console.error('Error:', error);
-                        showError('Error de conexión.');
-                    } finally {
-                        this.isSubmittingComment = false;
-                    }
-                },
-
-                startEditingComment(comment) {
-                    this.editingCommentId = comment.id;
-                    this.editCommentContent = comment.content;
-                },
-
-                async updateComment(commentId) {
-                    if (!this.editCommentContent.trim()) return;
-
-                    try {
-                        const response = await fetch(`/manager/comments/${commentId}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: JSON.stringify({ content: this.editCommentContent })
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            const index = this.selectedTask.comments.findIndex(c => c.id === commentId);
-                            if (index !== -1) this.selectedTask.comments[index] = data.comment;
-                            this.editingCommentId = null;
-                            this.hasChanges = true;
-                        } else {
-                            showError('Error al actualizar.');
-                        }
-                    } catch (error) {
-                        console.error(error);
-                        showError('Error de conexión');
-                    }
-                },
-
-                confirmDeleteComment(id) {
-                    this.deleteConfirmation = { isOpen: true, type: 'comment', id: id };
-                },
-
-                async uploadFile(file) {
-                    if (!file || this.isUploadingFile) return;
-                    this.isUploadingFile = true;
-
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    
-                    try {
-                        const response = await fetch(`/manager/tasks/${this.selectedTask.id}/files`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: formData
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
-                            this.selectedTask.attachments.unshift(data.attachment);
-                            this.hasChanges = true;
-                        } else {
-                            const data = await response.json();
-                            showError(data.message || 'Error al subir el archivo.');
-                        }
-                    } catch (error) {
-                        console.error(error);
-                        showError('Error de conexión.');
-                    } finally {
-                        this.isUploadingFile = false;
-                    }
-                },
+                // ... (existing code) ...
 
                 confirmDeleteFile(id) {
                     this.deleteConfirmation = { isOpen: true, type: 'file', id: id };
                 },
 
                 async performDelete() {
+                    if (this.isDeleting) return;
+                    this.isDeleting = true;
+                    
                     const { type, id } = this.deleteConfirmation;
-                    this.deleteConfirmation.isOpen = false;
+                    // Keep modal open to show loading state
+                    // this.deleteConfirmation.isOpen = false; 
 
-                    if (type === 'file') {
-                        try {
-                            const response = await fetch(`/tasks/attachments/${id}`, {
+                    try {
+                        let response;
+                        if (type === 'file') {
+                            response = await fetch(`/tasks/attachments/${id}`, {
                                 method: 'DELETE',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -547,14 +285,13 @@
                             if (response.ok) {
                                 this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
                                 this.hasChanges = true;
+                                this.deleteConfirmation.isOpen = false;
                             } else {
                                 const data = await response.json();
                                 showError(data.message || 'Error al eliminar archivo');
                             }
-                        } catch (e) { showError('Error de conexión'); }
-                    } else if (type === 'comment') {
-                        try {
-                            const response = await fetch(`/manager/comments/${id}`, {
+                        } else if (type === 'comment') {
+                            response = await fetch(`/manager/comments/${id}`, {
                                 method: 'DELETE',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -564,13 +301,12 @@
                              if (response.ok) {
                                 this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
                                 this.hasChanges = true;
+                                this.deleteConfirmation.isOpen = false;
                             } else {
                                 showError('Error al eliminar comentario');
                             }
-                        } catch (e) { showError('Error de conexión'); }
-                    } else if (type === 'task') {
-                        try {
-                            const response = await fetch(`/tareas/${id}`, {
+                        } else if (type === 'task') {
+                            response = await fetch(`/tareas/${id}`, {
                                 method: 'DELETE',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -578,13 +314,21 @@
                                 }
                             });
                             if (response.ok) {
+                                this.deleteConfirmation.isOpen = false;
                                 this.isDetailsModalOpen = false;
                                 location.reload();
                             } else {
                                 const data = await response.json();
                                 showError(data.message || 'Error al eliminar tarea');
+                                this.deleteConfirmation.isOpen = false; // Close on error to allow retry or show generic error
                             }
-                        } catch (e) { showError('Error de conexión'); }
+                        }
+                    } catch (e) { 
+                        console.error(e);
+                        showError('Error de conexión');
+                        this.deleteConfirmation.isOpen = false;
+                    } finally {
+                        this.isDeleting = false;
                     }
                 },
 
