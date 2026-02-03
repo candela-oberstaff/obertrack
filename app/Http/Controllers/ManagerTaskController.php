@@ -28,7 +28,7 @@ class ManagerTaskController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $tareas = $this->taskManagementService->getCompanyTasks($user);
+        $tareas = $this->taskManagementService->getCompanyTasks($user)->values();
         
         $ownerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
         $profesionales = \App\Models\User::where('empleador_id', $ownerId)->get();

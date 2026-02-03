@@ -70,9 +70,7 @@
                                 <x-dropdown-link :href="route('manager.tasks.index', [], false)">
                                     {{ __('Asignar tareas') }}
                                 </x-dropdown-link>
-                                <x-dropdown-link :href="route('profesionales.tasks.index', [], false)">
-                                    {{ __('Mis tareas') }}
-                                </x-dropdown-link>
+                                {{-- 'Mis tareas' link removed as per user request --}}
                             </x-slot>
                         </x-dropdown>
                     </div>
@@ -252,9 +250,7 @@
                         Asignar tareas
                     </x-responsive-nav-link>
 
-                    <x-responsive-nav-link :href="route('profesionales.tasks.index', [], false)" :active="request()->routeIs('profesionales.tasks.index')">
-                        Mis tareas
-                    </x-responsive-nav-link>
+                    {{-- 'Mis tareas' responsive link removed as per user request --}}
                 @else
                     <x-responsive-nav-link :href="route('profesionales.tasks.index', [], false)" :active="request()->routeIs('profesionales.tasks.index')">
                         Tareas
