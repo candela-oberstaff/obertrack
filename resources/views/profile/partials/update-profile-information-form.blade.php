@@ -25,6 +25,12 @@
         </div>
 
         <div>
+            <x-input-label for="job_title" :value="__('Cargo')" />
+            <x-text-input id="job_title" name="job_title" type="text" class="mt-1 block w-full" :value="old('job_title', $user->job_title)" />
+            <x-input-error class="mt-2" :messages="$errors->get('job_title')" />
+        </div>
+
+        <div>
             <x-input-label for="avatar" :value="__('Profile Photo')" />
             <div class="mt-2 flex items-center gap-4">
                 <x-user-avatar :user="$user" size="20" />

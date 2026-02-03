@@ -24,12 +24,8 @@ class TaskStatusSelector extends Component
             return;
         }
 
-        // Restrict companies from changing status
-        $user = auth()->user();
-        if ($user && $user->tipo_usuario === 'empleador') {
-            $this->dispatch('notify', message: 'Solo los profesionales pueden actualizar el estado de las tareas.');
-            return;
-        }
+        // Restrict companies from changing status - RESTRICTION REMOVED
+        // The check for 'empleador' has been removed to allow them to update status.
 
         $wasCompleted = $this->task->completed;
         $oldStatusSlug = $this->task->status;
@@ -37,11 +33,13 @@ class TaskStatusSelector extends Component
         
         $isNowCompleted = $newStatus === Task::STATUS_COMPLETED;
         
-        // Use Eloquent for safe, consistent updates (avoids strict boolean/integer mismatch on Postgres if handled correctly via casting)
+        // Use query update to avoid boolean casting issues with Postgres
         try {
-            $this->task->status = $newStatus;
-            $this->task->completed = $isNowCompleted;
-            $this->task->save();
+            Task::where('id', $this->task->id)->update([
+                'status' => $newStatus,
+                'completed' => $isNowCompleted ? DB::raw('true') : DB::raw('false'),
+                'updated_at' => now()
+            ]);
         } catch (\Exception $e) {
             \Log::error("Task update failed: " . $e->getMessage());
             $this->dispatch('notify', message: 'Error de base de datos: ' . $e->getMessage());

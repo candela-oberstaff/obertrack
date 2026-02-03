@@ -27,14 +27,21 @@ class AdminUserController extends Controller
             $query->where('tipo_usuario', $request->role);
         }
 
-        $users = $query->orderBy('created_at', 'desc')->paginate(15);
+        $query->orderBy('created_at', 'desc');
+        $users = $query->paginate(15);
 
-        return view('admin.users.index', compact('users'));
+        // Get potential assignees for reassignment modal
+        $potentialAssignees = User::whereIn('tipo_usuario', ['empleador', 'superadmin'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'tipo_usuario', 'empleador_id']);
+
+        return view('admin.users.index', compact('users', 'potentialAssignees'));
     }
 
     public function create()
     {
-        return view('admin.users.form');
+        $companies = User::where('tipo_usuario', 'empleador')->orderBy('name')->get();
+        return view('admin.users.form', compact('companies'));
     }
 
     public function store(Request $request)
@@ -45,6 +52,8 @@ class AdminUserController extends Controller
             'tipo_usuario' => ['required', 'in:superadmin,empleador,empleado'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'phone_number' => ['nullable', 'string', 'max:20'],
+            'job_title' => ['nullable', 'string', 'max:255'],
+            'empleador_id' => ['nullable', 'exists:users,id'],
         ]);
 
         $user = User::create([
@@ -53,6 +62,8 @@ class AdminUserController extends Controller
             'tipo_usuario' => $request->tipo_usuario,
             'password' => Hash::make($request->password),
             'phone_number' => $request->phone_number,
+            'job_title' => $request->job_title,
+            'empleador_id' => $request->empleador_id,
         ]);
 
         return redirect()->route('admin.users.index')->with('status', 'Usuario creado correctamente.');
@@ -61,7 +72,8 @@ class AdminUserController extends Controller
     public function edit($id)
     {
         $user = User::findOrFail($id);
-        return view('admin.users.form', compact('user'));
+        $companies = User::where('tipo_usuario', 'empleador')->orderBy('name')->get();
+        return view('admin.users.form', compact('user', 'companies'));
     }
 
     public function update(Request $request, $id)
@@ -74,12 +86,16 @@ class AdminUserController extends Controller
             'tipo_usuario' => ['required', 'in:superadmin,empleador,empleado'],
             'phone_number' => ['nullable', 'string', 'max:20'],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+            'job_title' => ['nullable', 'string', 'max:255'],
+            'empleador_id' => ['nullable', 'exists:users,id'],
         ]);
 
         $user->name = $request->name;
         $user->email = $request->email;
         $user->tipo_usuario = $request->tipo_usuario;
         $user->phone_number = $request->phone_number;
+        $user->job_title = $request->job_title;
+        $user->empleador_id = $request->empleador_id;
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
@@ -90,7 +106,7 @@ class AdminUserController extends Controller
         return redirect()->route('admin.users.index')->with('status', 'Usuario actualizado correctamente.');
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $user = User::findOrFail($id);
         
@@ -99,9 +115,28 @@ class AdminUserController extends Controller
             return back()->with('error', 'No puedes eliminar tu propia cuenta.');
         }
 
+        // Reassign tasks if requested
+        if ($request->filled('reassign_to')) {
+             $newOwnerId = $request->reassign_to;
+             
+             // Update created tasks
+             \App\Models\Task::where('created_by', $user->id)->update(['created_by' => $newOwnerId]);
+        } else {
+            // Default reassignment to Admin or Employer if not specified? 
+            // For now, if no reassignment selected and tasks exist, it might crash.
+            // But let's assume the user selects something or checks if tasks exist.
+            // Actually, for safety, let's reassign to Auth user if not specified and tasks exist
+            if (\App\Models\Task::where('created_by', $user->id)->exists()) {
+                \App\Models\Task::where('created_by', $user->id)->update(['created_by' => auth()->id()]);
+            }
+        }
+
+        // Unlink dependent users (employees) to prevent foreign key constraint violation
+        User::where('empleador_id', $user->id)->update(['empleador_id' => null]);
+
         $user->delete();
 
-        return redirect()->route('admin.users.index')->with('status', 'Usuario eliminado correctamente.');
+        return redirect()->route('admin.users.index')->with('status', 'Usuario eliminado y tareas reasignadas correctamente.');
     }
 
     public function toggleStatus($id)

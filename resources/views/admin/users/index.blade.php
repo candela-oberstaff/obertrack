@@ -5,7 +5,7 @@
         </h2>
     </x-slot>
 
-    <div class="py-12 bg-gray-50 min-h-screen">
+    <div class="py-12 bg-gray-50 min-h-screen" x-data="userManagement()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
             @include('admin.partials.nav')
@@ -110,13 +110,9 @@
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                             </a>
                                             
-                                            <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50" title="Eliminar">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                                </button>
-                                            </form>
+                                            <button @click="openDeleteModal({{ $user->id }}, '{{ $user->name }}')" class="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50" title="Eliminar">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -136,5 +132,121 @@
                 </div>
             </div>
         </div>
+
+        <!-- Delete User Modal -->
+        <div x-show="isDeleteModalOpen" 
+             style="display: none;"
+             class="fixed inset-0 z-[100] overflow-y-auto" 
+             aria-labelledby="modal-title" 
+             role="dialog" 
+             aria-modal="true">
+             
+            <!-- Backdrop -->
+            <div x-show="isDeleteModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+                 aria-hidden="true"></div>
+
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <!-- Modal Panel -->
+                <div x-show="isDeleteModalOpen"
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full"
+                     @click.away="closeDeleteModal()">
+                    
+                    <form :action="'/admin/users/' + deletingUserId" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <div class="sm:flex sm:items-start">
+                                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                        Eliminar Usuario
+                                    </h3>
+                                    <div class="mt-2">
+                                        <p class="text-sm text-gray-500">
+                                            ¿Estás seguro de que deseas eliminar a <span class="font-bold text-gray-800" x-text="deletingUserName"></span>?
+                                            Esta acción no se puede deshacer.
+                                        </p>
+                                        
+                                        <!-- Reassignment Section -->
+                                        <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                            <label for="reassign_to" class="block text-sm font-medium text-gray-700 mb-2">
+                                                Reasignar tareas a:
+                                            </label>
+                                            <select name="reassign_to" id="reassign_to" class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-[#22A9C8] focus:ring focus:ring-[#22A9C8] focus:ring-opacity-50">
+                                                <option value="">-- Seleccionar Usuario --</option>
+                                                <option value="{{ auth()->id() }}">Mí mismo (Admin)</option>
+                                                @foreach($potentialAssignees as $assignee)
+                                                    @if($assignee->id !== auth()->id())
+                                                        <option value="{{ $assignee->id }}" x-show="deletingUserId != {{ $assignee->id }}">
+                                                            {{ $assignee->name }} ({{ $assignee->empresa ?? ($assignee->tipo_usuario == 'superadmin' ? 'Admin' : 'Empresa') }})
+                                                        </option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
+                                            <p class="text-xs text-gray-500 mt-2">
+                                                Si el usuario tiene tareas creadas, deben ser reasignadas para evitar errores.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                Eliminar y Reasignar
+                            </button>
+                            <button type="button" @click="closeDeleteModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Alpine Data -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('userManagement', () => ({
+                isDeleteModalOpen: false,
+                deletingUserId: null,
+                deletingUserName: '',
+
+                openDeleteModal(userId, userName) {
+                    this.deletingUserId = userId;
+                    this.deletingUserName = userName;
+                    this.isDeleteModalOpen = true;
+                },
+
+                closeDeleteModal() {
+                    this.isDeleteModalOpen = false;
+                    setTimeout(() => {
+                        this.deletingUserId = null;
+                        this.deletingUserName = '';
+                    }, 300);
+                }
+            }))
+        })
+    </script>
 </x-app-layout>

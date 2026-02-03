@@ -31,6 +31,7 @@ class ProfileUpdateRequest extends FormRequest
             'city' => ['required', 'string', 'min:3', 'max:100', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/u'],
             'company_name' => ['nullable', 'string', 'min:3', 'max:255'],
             'related_contact' => ['nullable', 'string', 'min:3', 'max:255'],
+            'job_title' => ['nullable', 'string', 'max:255'],
             'avatar' => ['nullable', 'image', 'max:2048'], // Max 2MB
         ];
     }

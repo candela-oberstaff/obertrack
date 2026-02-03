@@ -69,10 +69,11 @@
                                 <!-- Assignees -->
                                 <div class="flex items-center -space-x-2">
                                     <template x-for="assignee in selectedTask?.assignees" :key="assignee.id">
-                                        <div class="relative z-0 hover:z-10 group cursor-help">
+                                        <div class="relative z-0 group cursor-help flex items-center gap-2 pr-4 bg-white border border-gray-100 rounded-full pl-1 py-1 shadow-sm hover:shadow-md transition-all">
                                             <img :src="assignee.avatar ? (assignee.avatar.startsWith('http') ? assignee.avatar : '/avatars/' + assignee.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(assignee.name)+'&color=FFFFFF&background=22A9C8'" 
                                                  class="w-8 h-8 rounded-full border-2 border-white shadow-sm"
                                                  :title="assignee.name">
+                                            <span class="text-sm font-medium text-gray-700 max-w-[120px] truncate" x-text="assignee.name"></span>
                                         </div>
                                     </template>
                                     <button x-show="isEditingTask" class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-[#22A9C8] hover:border-[#22A9C8] bg-white transition-colors" title="Add Assignee (Use edit mode below)">

@@ -55,6 +55,33 @@
                         @enderror
                     </div>
 
+                    <!-- Job Title -->
+                    <div>
+                        <label for="job_title" class="block text-sm font-bold text-gray-700 mb-1">Cargo</label>
+                        <input type="text" name="job_title" id="job_title" value="{{ old('job_title', $user->job_title ?? '') }}"
+                               class="w-full border-gray-200 rounded-lg focus:ring-[#22A9C8] font-medium text-gray-800">
+                        @error('job_title')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Company (Employer) -->
+                    <div>
+                        <label for="empleador_id" class="block text-sm font-bold text-gray-700 mb-1">Empresa</label>
+                        <select name="empleador_id" id="empleador_id"
+                                class="w-full border-gray-200 rounded-lg focus:ring-[#22A9C8] font-medium text-gray-800">
+                            <option value="">Ninguna</option>
+                            @foreach($companies as $company)
+                                <option value="{{ $company->id }}" {{ (old('empleador_id', $user->empleador_id ?? '') == $company->id) ? 'selected' : '' }}>
+                                    {{ $company->company_name ?? $company->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('empleador_id')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <!-- Phone -->
                     <div>
                         <label for="phone_number" class="block text-sm font-bold text-gray-700 mb-1">Teléfono (Opcional)</label>

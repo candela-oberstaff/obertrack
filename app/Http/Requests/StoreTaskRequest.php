@@ -27,7 +27,9 @@ class StoreTaskRequest extends FormRequest
             'priority' => 'required|in:low,medium,high,urgent',
             'employee_id' => 'sometimes|required|exists:users,id',
             // 'visible_para' key might still be sent by form, but we validte it as valid user id if present
-             'visible_para' => 'sometimes|required|exists:users,id', 
+            'visible_para' => 'sometimes|required|exists:users,id', 
+            'assignees' => 'sometimes|array',
+            'assignees.*' => 'exists:users,id',
             'completed' => 'sometimes|boolean',
         ];
     }

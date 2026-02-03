@@ -77,6 +77,14 @@
                             </div>
                         </div>
 
+                        <!-- Job Title -->
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Cargo</label>
+                            <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
+                                {{ $user->job_title ?? 'No registrado' }}
+                            </div>
+                        </div>
+
                         <!-- Email -->
                         <div>
                             <label class="block text-sm font-bold text-gray-900 mb-2">Correo electrónico</label>
@@ -176,6 +184,15 @@
                                                placeholder="Ej: Juan Pérez"
                                                class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
                                         <x-input-error class="mt-2" :messages="$errors->get('name')" />
+                                    </div>
+
+                                    <!-- Job Title -->
+                                    <div>
+                                        <label for="job_title" class="block text-sm font-bold text-gray-700 mb-1">Cargo</label>
+                                        <input type="text" name="job_title" id="job_title" value="{{ old('job_title', $user->job_title) }}" 
+                                               placeholder="Ej: Desarrollador Backend"
+                                               class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                        <x-input-error class="mt-2" :messages="$errors->get('job_title')" />
                                     </div>
 
                                     <!-- Phone -->

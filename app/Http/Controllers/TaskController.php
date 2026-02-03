@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Services\TaskManagementService;
 use App\Services\TaskCommentService;
 use App\Http\Requests\StoreTaskRequest;
@@ -89,9 +90,15 @@ class TaskController extends Controller
                 return response()->json(['success' => true, 'message' => 'El estado no ha cambiado']);
             }
 
-            $task->status = $newStatus;
-            $task->completed = ($newStatus === 'finalizado');
-            $task->save();
+            // Use direct update to handle boolean casing correctly for Postgres
+            Task::where('id', $id)->update([
+                'status' => $newStatus,
+                'completed' => ($newStatus === 'finalizado') ? DB::raw('true') : DB::raw('false'),
+                'updated_at' => now()
+            ]);
+            
+            // Refresh model instance for response
+            $task->refresh();
 
             // Notify if changed by an employee
             if (Auth::user()->tipo_usuario === 'empleado') {
@@ -150,9 +157,9 @@ class TaskController extends Controller
 
     public function toggleCompletion(Request $request, $taskId)
     {
-        if ($request->user()->tipo_usuario === 'empleador') {
-            return response()->json(['success' => false, 'message' => 'Solo los profesionales pueden cambiar el estado de las tareas.'], 403);
-        }
+
+        // Restriction for 'empleador' removed to allow them to toggle completion.
+
 
         try {
             $result = $this->taskManagementService->toggleCompletion($taskId);
@@ -227,10 +234,8 @@ class TaskController extends Controller
 
     public function toggleCompanyTaskCompletion(Request $request, $taskId)
     {
-        // Enforce restriction: Employers cannot change status
-        if ($request->user()->tipo_usuario === 'empleador') {
-            return response()->json(['success' => false, 'message' => 'Solo los profesionales pueden cambiar el estado de las tareas.'], 403);
-        }
+
+        // Restriction for 'empleador' removed.
 
         $task = Task::findOrFail($taskId);
         
