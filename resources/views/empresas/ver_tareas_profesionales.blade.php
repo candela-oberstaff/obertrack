@@ -126,10 +126,16 @@
                              :class="{
                                 'bg-gray-50/50 border-dashed border-gray-300': draggedTaskId,
                                 '!bg-blue-50/80 !border-blue-300 ring-2 ring-blue-100': dragOverColumnId === '{{ $column['id'] }}'
-                             }">
+                             }"
+                             @dragover.prevent="dragOverColumnId = '{{ $column['id'] }}'"
+                             @dragleave="dragOverColumnId = null"
+                             @drop="handleDrop($event, '{{ $column['id'] }}')">
                             @forelse($teamTasks->where('status', $column['id']) as $task)
-                                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all group relative"
+                                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all group relative cursor-move"
                                      id="task-card-{{ $task->id }}"
+                                     draggable="true"
+                                     @dragstart="dragStart($event, {{ $task->id }})"
+                                     @dragend="dragEnd($event)"
                                      data-title="{{ $task->title }}"
                                      data-date="{{ $task->end_date ? $task->end_date->format('Y-m-d') : '' }}"
                                      data-assignees="{{ $task->assignees->pluck('name')->join(',') }}"

@@ -1064,7 +1064,7 @@
                     
                                 <label for="week_date" class="form-label">Selecciona cualquier día de la semana</label>
                                 <input type="date" id="week_date" x-model="weekDate" class="form-control w-full mb-3 rounded-lg border-gray-300" required>
-                                <p class="text-sm text-gray-500 mb-4">El sistema tomará automáticamente el lunes y viernes de esa semana.</p>
+                                <p class="text-sm text-gray-500 mb-4">El sistema aprobará automáticamente toda la semana correspondiente al día seleccionado.</p>
                     
                                 <div x-show="weekSuccessMessage" x-transition class="mb-4 p-3 bg-green-50 text-green-700 rounded-lg">
                                     <p x-text="weekSuccessMessage"></p>

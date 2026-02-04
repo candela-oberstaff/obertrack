@@ -26,13 +26,7 @@
                         <div class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-8 py-6 flex justify-between items-start">
                             <div class="flex items-center gap-3">
                                 <!-- Mark Complete Circle -->
-                                <button @click="toggleTaskCompletion(selectedTask.id)" 
-                                        class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200"
-                                        :class="selectedTask?.completed ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-green-500'">
-                                    <svg x-show="selectedTask?.completed" class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </button>
+
                                 
                                 <span class="text-xs font-semibold tracking-wider text-gray-500 uppercase" x-text="selectedTask?.project?.name || 'Tareas'"></span>
                             </div>

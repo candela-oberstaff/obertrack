@@ -98,7 +98,11 @@ Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->grou
 
 // Chat Route
 Route::middleware(['auth'])->get('/chat/{userId?}', Chat::class)->name('chat');
-Route::middleware(['auth'])->get('/whatsapp', \App\Livewire\WhatsappChat::class)->name('whatsapp.chat');
+// Route::middleware(['auth'])->get('/whatsapp', \App\Livewire\WhatsappChat::class)->name('whatsapp.chat');
+Route::middleware(['auth'])->get('/whatsapp', function() {
+    return view('whatsapp-soon');
+})->name('whatsapp.chat');
+
 Route::middleware(['auth'])->get('/whatsapp/session-status', function(\Illuminate\Http\Request $request) {
     $waha = app(\App\Services\WahaService::class);
     $statusData = $waha->getSessionStatus('default');

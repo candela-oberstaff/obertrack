@@ -172,6 +172,7 @@
                                             <input type="file" name="avatar" id="avatar" class="hidden" accept="image/*" onchange="previewAvatar(this)">
                                         </div>
                                         <p class="text-xs text-gray-500 mt-2">Haz clic en la cámara para cambiar tu foto</p>
+                                        <p class="text-[10px] text-orange-500 mt-1 font-medium">Para que veas tu foto de perfil cambiada debes guardar los cambios.</p>
                                         <x-input-error class="mt-2" :messages="$errors->get('avatar')" />
                                     </div>
                                     
