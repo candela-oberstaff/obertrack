@@ -466,37 +466,8 @@
                 </div>
 
                 <!-- PASSWORD UPDATE MODAL -->
-                <div x-data="{ 
-                    step: {{ $errors->has('code') || $errors->has('password') ? 2 : 1 }}, 
-                    sending: false, 
-                    errorMessage: '',
-                    async sendCode() {
-                        this.sending = true;
-                        window.showLoader();
-                        this.errorMessage = '';
-                        try {
-                            const response = await fetch('{{ route('profile.send-password-code') }}', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                }
-                            });
-                            
-                            if (response.ok) {
-                                this.step = 2;
-                            } else {
-                                this.errorMessage = 'Hubo un error al enviar el código. Inténtalo de nuevo.';
-                            }
-                        } catch (error) {
-                            this.errorMessage = 'Error de conexión.';
-                        } finally {
-                            this.sending = false;
-                        }
-                    }
-                }" 
-                x-show="openPasswordModal" 
-                x-init="@if($errors->has('code') || $errors->has('password')) openPasswordModal = true; @endif"
+                <div x-show="openPasswordModal" 
+                x-init="@if($errors->has('current_password') || $errors->has('password')) openPasswordModal = true; @endif"
                 style="display: none;" 
                 class="fixed inset-0 z-50 overflow-y-auto" 
                 x-cloak>
@@ -517,59 +488,37 @@
                                     </button>
                                 </div>
                                 
-                                <!-- Step 1: Send Code -->
-                                <div x-show="step === 1">
-                                    <p class="text-gray-600 mb-6">
-                                        Para tu seguridad, enviaremos un código de verificación a tu correo electrónico registrado ({{ substr($user->email, 0, 3) }}***{{ substr($user->email, strpos($user->email, '@')) }}).
-                                    </p>
+                                <form method="post" action="{{ route('profile.password.update') }}" class="space-y-6">
+                                    @csrf
+                                    @method('put')
                                     
-                                    <div x-show="errorMessage" class="mb-4 text-red-600 text-sm" x-text="errorMessage"></div>
+                                    <div>
+                                        <label for="current_password" class="block text-sm text-gray-600 mb-2">Contraseña actual</label>
+                                        <input type="password" name="current_password" id="current_password" class="w-full bg-[#F3F4F6] border-none rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#22A9C8] transition" required>
+                                        <x-input-error :messages="$errors->get('current_password')" class="mt-2" />
+                                    </div>
+
+                                    <div>
+                                        <label for="password" class="block text-sm text-gray-600 mb-2">Nueva contraseña</label>
+                                        <input type="password" name="password" id="password" class="w-full bg-[#F3F4F6] border-none rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#22A9C8] transition" required>
+                                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                                    </div>
+
+                                    <div>
+                                        <label for="password_confirmation" class="block text-sm text-gray-600 mb-2">Confirma la nueva contraseña</label>
+                                        <input type="password" name="password_confirmation" id="password_confirmation" class="w-full bg-[#F3F4F6] border-none rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#22A9C8] transition" required>
+                                        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+                                    </div>
 
                                     <div class="flex flex-row justify-center gap-4 pt-2">
                                         <button type="button" class="w-full sm:w-auto px-8 py-2.5 rounded-full border border-[#22A9C8] text-[#22A9C8] font-medium bg-white hover:bg-gray-50 focus:outline-none transition duration-150 min-w-[140px] text-center" @click="openPasswordModal = false">
                                             Cancelar
                                         </button>
-                                        <button type="button" @click="sendCode()" :disabled="sending" class="w-full sm:w-auto px-8 py-2.5 rounded-full bg-[#22A9C8] text-white font-medium hover:bg-primary-hover focus:outline-none transition duration-150 min-w-[140px] text-center disabled:opacity-50">
-                                            <span x-show="!sending">Enviar código</span>
-                                            <span x-show="sending">Enviando...</span>
+                                        <button type="submit" class="w-full sm:w-auto px-8 py-2.5 rounded-full bg-[#22A9C8] text-white font-medium hover:bg-primary-hover focus:outline-none transition duration-150 min-w-[140px] text-center">
+                                            Cambiar contraseña
                                         </button>
                                     </div>
-                                </div>
-
-                                <!-- Step 2: Verify and Change -->
-                                <div x-show="step === 2">
-                                    <form method="post" action="{{ route('profile.update-password-with-code') }}" id="updatePasswordForm" class="space-y-6">
-                                        @csrf
-                                        @method('put')
-                                        
-                                        <div>
-                                            <label for="code" class="block text-sm text-gray-600 mb-2">Código de verificación</label>
-                                            <input type="text" name="code" id="code" class="w-full bg-[#F3F4F6] border-none rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#22A9C8] transition" placeholder="123456" required>
-                                            <x-input-error :messages="$errors->get('code')" class="mt-2" />
-                                        </div>
-
-                                        <div>
-                                            <label for="password" class="block text-sm text-gray-600 mb-2">Introduce la nueva contraseña</label>
-                                            <input type="password" name="password" id="password" class="w-full bg-[#F3F4F6] border-none rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#22A9C8] transition" required>
-                                            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                                        </div>
-
-                                        <div>
-                                            <label for="password_confirmation" class="block text-sm text-gray-600 mb-2">Confirma la nueva contraseña</label>
-                                            <input type="password" name="password_confirmation" id="password_confirmation" class="w-full bg-[#F3F4F6] border-none rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#22A9C8] transition" required>
-                                            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-                                        </div>
-
-                                        <div class="flex flex-row justify-center gap-4 pt-2">
-                                            <button type="button" class="w-full sm:w-auto px-8 py-2.5 rounded-full border border-[#22A9C8] text-[#22A9C8] font-medium bg-white hover:bg-gray-50 focus:outline-none transition duration-150 min-w-[140px] text-center" @click="openPasswordModal = false; step = 1">
-                                                Cancelar
-                                            </button>
-                                            <button type="submit" class="w-full sm:w-auto px-8 py-2.5 rounded-full bg-[#22A9C8] text-white font-medium hover:bg-primary-hover focus:outline-none transition duration-150 min-w-[140px] text-center">
-                                                Cambiar contraseña
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
+                                </form>
                             </div>
                         </div>
                     </div>

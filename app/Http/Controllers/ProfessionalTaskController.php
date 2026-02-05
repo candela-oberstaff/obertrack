@@ -6,14 +6,48 @@ use App\Models\Task;
 use App\Models\Comment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\StoreTaskRequest;
+use App\Services\TaskManagementService;
 
 class ProfessionalTaskController extends Controller
 {
+    public function __construct(
+        private TaskManagementService $taskManagementService
+    ) {}
+
+    public function store(StoreTaskRequest $request)
+    {
+        $data = $request->validated();
+        
+        // If no assignees selected, default to self. 
+        // If assignees are selected, use them.
+        // We do NOT force assign to self if others are selected, unless the user selects themselves.
+        if (empty($data['assignees'])) {
+            $data['assignees'] = [\Illuminate\Support\Facades\Auth::id()];
+        }
+        
+        $this->taskManagementService->createTask($data);
+
+        // If user is manager, redirect to manager tasks
+        if (Auth::user()->is_manager) {
+            return redirect()->route('manager.tasks.index')->with('success', 'Tarea creada exitosamente.');
+        }
+        
+        return redirect()->route('profesionales.tasks.index')->with('success', 'Tarea creada exitosamente.');
+    }
+
     public function index()
     {
         $user = Auth::user();
-        // Fetch only tasks for the current month based on end_date
-        $allTasks = $user->assignedTasks()
+        
+        // Fetch tasks where user is assignee OR creator
+        // We use the service or build a query similar to getCompanyTasks but scoped to the professional
+        $allTasks = Task::where(function($q) use ($user) {
+                            $q->where('created_by', $user->id)
+                              ->orWhereHas('assignees', function($sub) use ($user) {
+                                  $sub->where('users.id', $user->id);
+                              });
+                         })
                          ->with(['assignees', 'createdBy', 'comments.user', 'attachments.uploader'])
                          ->orderBy('end_date', 'desc')
                          ->get()
@@ -60,13 +94,15 @@ class ProfessionalTaskController extends Controller
                          });
 
         $teamTasks = $allTasks;
-
         $individualTasks = collect([]);
 
         $pendingTasksCount = $allTasks->where('completed', false)->count();
         $completedTasksCount = $allTasks->where('completed', true)->count();
 
-        return view('profesionales.tasks.index', compact('teamTasks', 'individualTasks', 'pendingTasksCount', 'completedTasksCount'));
+        // Fetch colleagues for the assignment modal
+        $profesionales = $user->compañerosDeTrabajo();
+
+        return view('profesionales.tasks.index', compact('teamTasks', 'individualTasks', 'pendingTasksCount', 'completedTasksCount', 'profesionales'));
     }
 
     public function show(Task $task)

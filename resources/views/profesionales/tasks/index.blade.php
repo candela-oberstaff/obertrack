@@ -90,6 +90,15 @@
                     <button @click="startDate = ''; endDate = ''; searchQuery = ''" class="text-xs text-gray-400 hover:text-primary transition-colors font-medium" x-show="startDate || endDate || searchQuery">
                         Limpiar filtros
                     </button>
+
+                    <div class="ml-auto">
+                        <button @click="openCreateModal()" class="bg-[#22A9C8] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-cyan-600 transition flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Crear Tarea
+                        </button>
+                    </div>
                 </div>
                 
             <!-- Kanban View (Desktop) -->
@@ -228,6 +237,7 @@
             </div>
 
             @include('tareas.partials.task-details-modal')
+            @include('profesionales.tasks.create-modal')
         </div>
     </div>
 
@@ -269,6 +279,11 @@
                 draggedTaskId: null,
                 dragOverColumnId: null,
                 hasChanges: false,
+
+                // Create Task State
+                isCreateModalOpen: false,
+                openCreateModal() { this.isCreateModalOpen = true; },
+                closeCreateModal() { this.isCreateModalOpen = false; },
 
                 matches(task) {
                     const taskDate = task.date || '';

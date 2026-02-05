@@ -23,6 +23,10 @@ Route::middleware(['auth'])->prefix('profesionales')->name('profesionales.')->gr
     // GET /profesionales/tareas - View all tasks assigned to the professional
     Route::get('/tareas', [ProfessionalTaskController::class, 'index'])
         ->name('tasks.index');
+
+    // POST /profesionales/tareas - Create a new task
+    Route::post('/tareas', [ProfessionalTaskController::class, 'store'])
+        ->name('tasks.store');
     
     // GET /profesionales/tareas/{task} - View details of a specific task
     Route::get('/tareas/{task}', [ProfessionalTaskController::class, 'show'])

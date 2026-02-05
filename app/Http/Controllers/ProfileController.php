@@ -205,51 +205,16 @@ class ProfileController extends Controller
     }
 
 
-    public function sendPasswordCode(Request $request)
-    {
-        $user = $request->user();
-        $code = rand(100000, 999999);
-        
-        // Store code in cache for 15 minutes
-        \Illuminate\Support\Facades\Cache::put('password_reset_code_' . $user->id, $code, now()->addMinutes(15));
-        
-        // Send email via Brevo Service
-        try {
-            $brevoService = app(\App\Services\BrevoEmailService::class);
-            $sent = $brevoService->sendPasswordResetCode($user->email, $user->name, $code);
-
-            if (!$sent) {
-                // Determine if we should fail or just log (fail is better for user feedback)
-                return response()->json(['message' => 'No se pudo enviar el correo de verificación due to Brevo error.'], 500);
-            }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('OTP Send Error: ' . $e->getMessage());
-            return response()->json(['message' => 'Error interno al enviar correo.'], 500);
-        }
-        
-        return response()->json(['message' => 'Código enviado correctamente']);
-    }
-
-    public function updatePasswordWithCode(Request $request)
+    public function updatePassword(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'code' => ['required', 'string'],
+            'current_password' => ['required', 'current_password'],
             'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
         ]);
 
-        $user = $request->user();
-        $cachedCode = \Illuminate\Support\Facades\Cache::get('password_reset_code_' . $user->id);
-        
-        if (!$cachedCode || $cachedCode != $request->code) {
-            return back()->withErrors(['code' => 'El código es inválido o ha expirado.']);
-        }
-
-        $user->update([
+        $request->user()->update([
             'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
         ]);
-        
-        // Clear the code
-        \Illuminate\Support\Facades\Cache::forget('password_reset_code_' . $user->id);
 
         return back()->with('status', 'password-updated');
     }

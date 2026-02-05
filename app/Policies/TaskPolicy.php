@@ -61,7 +61,8 @@ class TaskPolicy
      */
     public function create(User $user)
     {
-        return $user->is_manager || $user->isEmpresaOrSuperAdmin();
+        // Allow professionals (employees) to create tasks too
+        return $user->is_manager || $user->isEmpresaOrSuperAdmin() || $user->tipo_usuario === 'empleado';
     }
 
     /**
