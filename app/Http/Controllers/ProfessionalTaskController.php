@@ -149,7 +149,9 @@ class ProfessionalTaskController extends Controller
         $completedTasksCount = $allTasks->where('completed', true)->count();
 
         // Fetch colleagues for the assignment modal
-        $profesionales = $user->compañerosDeTrabajo();
+        $profesionales = $user->compañerosDeTrabajo()->filter(function ($colleague) {
+            return $colleague->tipo_usuario !== 'empleador';
+        });
 
         return view('profesionales.tasks.index', compact('teamTasks', 'individualTasks', 'pendingTasksCount', 'completedTasksCount', 'profesionales'));
     }
