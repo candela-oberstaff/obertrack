@@ -28,12 +28,61 @@ class ProfessionalTaskController extends Controller
         
         $this->taskManagementService->createTask($data);
 
-        // If user is manager, redirect to manager tasks
+        // Redirect based on user role
+        if (Auth::user()->tipo_usuario === 'empleador') {
+            return redirect()->route('empresa.tareas.index')->with('success', 'Tarea creada exitosamente.');
+        }
+
         if (Auth::user()->is_manager) {
-            return redirect()->route('manager.tasks.index')->with('success', 'Tarea creada exitosamente.');
+            return redirect()->route('profesionales.tasks.index')->with('success', 'Tarea creada exitosamente.');
         }
         
         return redirect()->route('profesionales.tasks.index')->with('success', 'Tarea creada exitosamente.');
+    }
+
+    public function update(Request $request, Task $task)
+    {
+        // Permission check: Creator, Manager, or Superadmin
+        $canEdit = $task->created_by === Auth::id() || Auth::user()->tipo_usuario === 'empleador' || Auth::user()->is_manager || Auth::user()->is_superadmin;
+        
+        if (!$canEdit) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'priority' => 'required|in:low,medium,high,urgent',
+            'end_date' => 'required|date',
+            'assignees' => 'array',
+        ]);
+
+        $task->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'priority' => $validated['priority'],
+            'end_date' => $validated['end_date'],
+        ]);
+
+        if (isset($validated['assignees'])) {
+            $task->assignees()->sync($validated['assignees']);
+        }
+
+        return response()->json(['success' => true, 'task' => $task]);
+    }
+
+    public function destroy(Task $task)
+    {
+        // Permission check: Creator, Manager, or Superadmin
+        $canDelete = $task->created_by === Auth::id() || Auth::user()->tipo_usuario === 'empleador' || Auth::user()->is_manager || Auth::user()->is_superadmin;
+
+        if (!$canDelete) {
+            abort(403);
+        }
+
+        $task->delete();
+
+        return response()->json(['success' => true]);
     }
 
     public function index()

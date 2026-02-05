@@ -67,7 +67,7 @@
                             </x-slot>
 
                             <x-slot name="content">
-                                <x-dropdown-link :href="route('manager.tasks.index', [], false)">
+                                <x-dropdown-link :href="route('profesionales.tasks.index', [], false)">
                                     {{ __('Asignar tareas') }}
                                 </x-dropdown-link>
                                 {{-- 'Mis tareas' link removed as per user request --}}

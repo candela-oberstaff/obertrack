@@ -33,7 +33,8 @@
                 'avatar' => auth()->user()->avatar ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : asset('storage/' . auth()->user()->avatar)) : '',
                 'initials' => substr(auth()->user()->name, 0, 1),
                 'tipo_usuario' => auth()->user()->tipo_usuario,
-                'is_superadmin' => auth()->user()->is_superadmin
+                'is_superadmin' => auth()->user()->is_superadmin,
+                'is_manager' => auth()->user()->is_manager
             ],
             'pendingCount' => $pendingTasksCount,
             'completedCount' => $completedTasksCount
@@ -268,10 +269,39 @@
                 isSubmittingComment: false,
                 editingCommentId: null,
                 editCommentContent: '',
+                updatingCommentId: null,
+                deletingCommentId: null,
                 deleteConfirmation: {
                     isOpen: false,
                     type: null,
                     id: null
+                },
+                
+                confirmDeleteTask() {
+                    if (confirm('¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.')) {
+                        this.deleteTask();
+                    }
+                },
+
+                async deleteTask() {
+                    try {
+                        const response = await fetch(`/profesionales/tareas/${this.selectedTask.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        });
+
+                        if (response.ok) {
+                            this.closeModal();
+                            window.location.reload();
+                        } else {
+                            showError('Error al eliminar la tarea');
+                        }
+                    } catch (error) {
+                        showError('Error de conexión');
+                    }
                 },
                 updatedTaskStates: {},
                 
@@ -279,7 +309,7 @@
                 draggedTaskId: null,
                 dragOverColumnId: null,
                 hasChanges: false,
-
+                
                 // Create Task State
                 isCreateModalOpen: false,
                 openCreateModal() { this.isCreateModalOpen = true; },
@@ -435,12 +465,38 @@
 
                 async saveTask() {
                     this.isSavingTask = true;
-                    // Mock save or implement actual save if needed for Employee
-                    // Assuming employees can't edit task details based on limited UI in original file
-                    // But if they can, fit logic here. Keeping original behavior primarily.
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    this.isSavingTask = false;
-                    this.isEditingTask = false;
+                    try {
+                        const response = await fetch(`/profesionales/tareas/${this.selectedTask.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify(this.editTaskData)
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            this.selectedTask = { ...this.selectedTask, ...data.task };
+                            this.hasChanges = true;
+                            this.isEditingTask = false;
+                            
+                            // Update list view optimistically or reload
+                            if (this.updatedTaskStates[this.selectedTask.id]) {
+                                // If already tracking state, update it
+                            }
+                        } else {
+                            showError(data.message || 'Error al guardar la tarea.');
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        showError('Error de conexión.');
+                    } finally {
+                        this.isSavingTask = false;
+                    }
                 },
 
                 formatDate(dateStr) {
@@ -498,6 +554,7 @@
 
                 async updateComment(commentId) {
                     if (!this.editCommentContent.trim()) return;
+                    this.updatingCommentId = commentId;
                     try {
                         const response = await fetch(`/profesionales/tareas/comment/${commentId}`, {
                             method: 'PUT',
@@ -518,11 +575,35 @@
                         }
                     } catch (error) {
                         showError('Error de conexión');
+                    } finally {
+                        this.updatingCommentId = null;
                     }
                 },
 
                 confirmDeleteComment(id) {
-                    this.deleteConfirmation = { isOpen: true, type: 'comment', id: id };
+                    if(confirm('¿Seguro que quieres eliminar este comentario?')) {
+                        this.deleteComment(id);
+                    }
+                },
+                
+                async deleteComment(id) {
+                    this.deletingCommentId = id;
+                    try {
+                        const response = await fetch(`/profesionales/tareas/comment/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        });
+                        if (response.ok) {
+                            this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
+                            this.hasChanges = true;
+                        } else {
+                            showError('Error al eliminar comentario');
+                        }
+                    } catch (e) { showError('Error de conexión'); }
+                    finally { this.deletingCommentId = null; }
                 },
 
                 async uploadFile(file) {
@@ -555,46 +636,29 @@
                 },
 
                 confirmDeleteFile(id) {
-                    this.deleteConfirmation = { isOpen: true, type: 'file', id: id };
-                },
-
-                async performDelete() {
-                    const { type, id } = this.deleteConfirmation;
-                    this.deleteConfirmation.isOpen = false;
-                    if (type === 'file') {
-                        try {
-                            const response = await fetch(`/tasks/attachments/${id}`, {
-                                method: 'DELETE',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                                }
-                            });
-                            if (response.ok) {
-                                this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
-                                this.hasChanges = true;
-                            } else {
-                                const data = await response.json();
-                                showError(data.message || 'Error al eliminar archivo');
-                            }
-                        } catch (e) { showError('Error de conexión'); }
-                    } else if (type === 'comment') {
-                        try {
-                            const response = await fetch(`/profesionales/tareas/comment/${id}`, {
-                                method: 'DELETE',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                                }
-                            });
-                            if (response.ok) {
-                                this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
-                                this.hasChanges = true;
-                            } else {
-                                showError('Error al eliminar comentario');
-                            }
-                        } catch (e) { showError('Error de conexión'); }
+                    if(confirm('¿Seguro que quieres eliminar este archivo?')) {
+                         this.this.deleteFile(id);
                     }
+                },
+                
+                async deleteFile(id) {
+                     // Adding deleteFile method which was missing or relied on performDelete previously
+                     try {
+                        const response = await fetch(`/tasks/attachments/${id}`, {
+                             method: 'DELETE',
+                             headers: {
+                                 'Content-Type': 'application/json',
+                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                             }
+                        });
+                        if (response.ok) {
+                            this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
+                            this.hasChanges = true;
+                        } else {
+                            const data = await response.json();
+                            showError(data.message || 'Error al eliminar archivo');
+                        }
+                    } catch (e) { showError('Error de conexión'); }
                 },
 
                 handleStatusUpdate(detail) {

@@ -89,9 +89,19 @@
         <!-- Footer -->
         @if(count($recentTasks) > 0)
             <div class="bg-gray-50 px-4 py-2 border-t border-gray-100">
-                <a href="{{ route('profesionales.tasks.index') }}" class="text-sm text-[#22A9C8] hover:text-[#1b8fa8] font-medium">
-                    Ver todas las tareas →
-                </a>
+                @if(auth()->user()->tipo_usuario === 'empleador')
+                    <a href="{{ route('empresa.tareas.index') }}" class="text-sm text-[#22A9C8] hover:text-[#1b8fa8] font-medium">
+                        Ver todas las tareas →
+                    </a>
+                @elseif(auth()->user()->is_manager)
+                    <a href="{{ route('profesionales.tasks.index') }}" class="text-sm text-[#22A9C8] hover:text-[#1b8fa8] font-medium">
+                        Ver todas las tareas →
+                    </a>
+                @else
+                    <a href="{{ route('profesionales.tasks.index') }}" class="text-sm text-[#22A9C8] hover:text-[#1b8fa8] font-medium">
+                        Ver todas las tareas →
+                    </a>
+                @endif
             </div>
         @endif
     </div>

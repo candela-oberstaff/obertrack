@@ -35,6 +35,14 @@ Route::middleware(['auth'])->prefix('profesionales')->name('profesionales.')->gr
     // POST /profesionales/tareas/{task}/toggle-completion - Toggle task completion status
     Route::post('/tareas/{task}/toggle-completion', [ProfessionalTaskController::class, 'toggleCompletion'])
         ->name('tasks.toggle-completion');
+        
+    // PUT /profesionales/tareas/{task} - Update a task
+    Route::put('/tareas/{task}', [ProfessionalTaskController::class, 'update'])
+        ->name('tasks.update');
+
+    // DELETE /profesionales/tareas/{task} - Delete a task
+    Route::delete('/tareas/{task}', [ProfessionalTaskController::class, 'destroy'])
+        ->name('tasks.destroy');
     
     // Comments Management
     // POST /profesionales/tareas/{task}/comment - Add a comment to a task
