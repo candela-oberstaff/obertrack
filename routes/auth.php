@@ -23,17 +23,23 @@ Route::middleware('guest')->group(function () {
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
-    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
+    Route::get('forgot-password', [CodeBasedPasswordResetController::class, 'showLinkRequestForm'])
                 ->name('password.request');
 
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+    Route::post('forgot-password', [CodeBasedPasswordResetController::class, 'sendResetCode'])
                 ->name('password.email');
 
-    Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
-                ->name('password.reset');
+    Route::get('verify-code', [CodeBasedPasswordResetController::class, 'showVerifyCodeForm'])
+                ->name('password.verify-code.form');
 
-    Route::post('reset-password', [NewPasswordController::class, 'store'])
-                ->name('password.store');
+    Route::post('verify-code', [CodeBasedPasswordResetController::class, 'verifyCode'])
+                ->name('password.verify-code');
+
+    Route::get('reset-password', [CodeBasedPasswordResetController::class, 'showResetForm'])
+                ->name('password.reset.form');
+
+    Route::post('reset-password', [CodeBasedPasswordResetController::class, 'resetPassword'])
+                ->name('password.reset.update');
     
     // Google Auth
     Route::get('/auth/google', [\App\Http\Controllers\SocialAuthController::class, 'redirectToGoogle'])->name('login.google');
