@@ -53,6 +53,7 @@ class CodeBasedPasswordResetController extends Controller
 
     public function showVerifyCodeForm(Request $request)
     {
+        \Illuminate\Support\Facades\Log::info('Showing verify code form', ['email' => $request->email]);
         return view('auth.verify-code', ['email' => $request->email]);
     }
 
