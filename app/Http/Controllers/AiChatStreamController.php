@@ -103,6 +103,9 @@ class AiChatStreamController extends Controller
             
             if ($driver === 'ollama') {
                 $data['keep_alive'] = '5m';
+            } else {
+                // Groq/OpenAI: Set max_tokens to prevent cut-off responses
+                $data['max_tokens'] = 2048;
             }
 
             // 6. Init Curl

@@ -10,19 +10,28 @@
     $displayAvatar = $user ? $user->avatar : $avatar;
     
     $avatarSrc = null;
+    
     if ($displayAvatar) {
         if (filter_var($displayAvatar, FILTER_VALIDATE_URL)) {
              $avatarSrc = $displayAvatar;
-        } elseif (file_exists(public_path('avatars/' . $displayAvatar))) {
-             // Legacy: Direct public path
-             $avatarSrc = asset('avatars/' . $displayAvatar);
         } else {
-             // Modern: Storage path (requires php artisan storage:link)
-             $avatarSrc = \Illuminate\Support\Facades\Storage::url('avatars/' . $displayAvatar);
+             // 1. Check if it's in Storage (app/public/avatars)
+             // The controller stores it as 'avatars/filename.jpg'
+             if (\Illuminate\Support\Facades\Storage::disk('public')->exists('avatars/' . $displayAvatar)) {
+                 $avatarSrc = \Illuminate\Support\Facades\Storage::url('avatars/' . $displayAvatar);
+             } 
+             // 2. Fallback: Check if it's in public/avatars (Legacy)
+             elseif (file_exists(public_path('avatars/' . $displayAvatar))) {
+                 $avatarSrc = asset('avatars/' . $displayAvatar);
+             }
+             // 3. Fallback: Try strict path if it was saved without folder prefix
+             elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($displayAvatar)) {
+                  $avatarSrc = \Illuminate\Support\Facades\Storage::url($displayAvatar);
+             }
         }
     }
     
-    // Final fallback to UI Avatars if no avatar is set
+    // Final fallback to UI Avatars if no avatar is set or found
     $fallbackUrl = "https://ui-avatars.com/api/?name=" . urlencode($displayName) . "&color=FFFFFF&background=22A9C8";
     $avatarSrc = $avatarSrc ?: $fallbackUrl;
 @endphp

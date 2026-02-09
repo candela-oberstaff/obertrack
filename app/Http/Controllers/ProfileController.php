@@ -93,25 +93,43 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
-        $user->fill($request->validated());
+        $validated = $request->validated();
+        
+        // Remove avatar from validated data to prevent it from being filled as null/file object directly
+        if (isset($validated['avatar'])) {
+            unset($validated['avatar']);
+        }
+        
+        $user->fill($validated);
 
         if ($request->hasFile('avatar')) {
-            // Delete old avatar if it's a file (not a URL)
+            // Delete old avatar if it's a local file
             if ($user->avatar && !filter_var($user->avatar, FILTER_VALIDATE_URL)) {
-                $oldPath = public_path('avatars/' . $user->avatar);
-                if (file_exists($oldPath)) {
-                    unlink($oldPath);
+                // Check both public path and storage path
+                $pathsToDelete = [
+                    public_path('avatars/' . $user->avatar),
+                    storage_path('app/public/avatars/' . $user->avatar)
+                ];
+                
+                foreach ($pathsToDelete as $path) {
+                    if (file_exists($path)) {
+                        @unlink($path);
+                    }
                 }
             }
 
             $file = $request->file('avatar');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9.]/', '_', $file->getClientOriginalName());
             
-            // Use Storage facade for better permission handling
-            // This stores in storage/app/public/avatars
-            \Illuminate\Support\Facades\Storage::disk('public')->putFileAs('avatars', $file, $filename);
+            // Store in storage/app/public/avatars
+            $path = $file->storeAs('avatars', $filename, 'public');
             
-            $user->avatar = $filename;
+            if ($path) {
+                // Ensure we only save the filename if storage was successful
+                $user->avatar = $filename;
+            } else {
+                 Log::error("Failed to store avatar for user {$user->id}");
+            }
         }
 
         if ($user->isDirty('email')) {
