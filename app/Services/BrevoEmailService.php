@@ -46,9 +46,12 @@ class BrevoEmailService
         $this->senderName = config('services.brevo.sender_name');
 
         // Force production URL for routes generated within this service (emails)
-        URL::forceRootUrl($this->baseUrl);
-        if (strpos($this->baseUrl, 'https') === 0) {
-            URL::forceScheme('https');
+        // ONLY if we are not in local or development environment
+        if (config('app.env') !== 'local' && config('app.env') !== 'development') {
+            URL::forceRootUrl($this->baseUrl);
+            if (strpos($this->baseUrl, 'https') === 0) {
+                URL::forceScheme('https');
+            }
         }
     }
 
