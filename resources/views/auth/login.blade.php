@@ -186,13 +186,6 @@
                     Iniciar sesión
                 </button>
             </div>
-
-            <!-- Register Link -->
-            <div class="text-center mt-6">
-                 <p class="text-sm text-gray-600 font-medium">
-                    ¿No tienes una cuenta? <a href="{{ route('register') }}" class="text-brandBlue hover:text-brandBlueDark font-bold underline decoration-2">Regístrate aquí</a>
-                </p>
-            </div>
         </form>
     </div>
 </body>
