@@ -8,8 +8,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\View\View;
 
+use App\Services\BrevoEmailService;
+use App\Models\User;
+use Illuminate\Support\Facades\Cache;
+
 class PasswordResetLinkController extends Controller
 {
+    public function __construct(
+        private BrevoEmailService $brevoEmailService
+    ) {}
     /**
      * Display the password reset link request view.
      */
@@ -29,16 +36,26 @@ class PasswordResetLinkController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response then see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        $user = User::where('email', $request->email)->first();
 
-        return $status == Password::RESET_LINK_SENT
-                    ? back()->with('status', __($status))
-                    : back()->withInput($request->only('email'))
-                            ->withErrors(['email' => __($status)]);
+        if (!$user) {
+            // Return success even if user doesn't exist to prevent email enumeration
+            return redirect()->route('password.verify-code.form', ['email' => $request->email]);
+        }
+
+        // Generate 6-digit code
+        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        
+        // Store in cache for 15 minutes
+        Cache::put('password_reset_code_' . $user->email, $code, now()->addMinutes(15));
+
+        $sent = $this->brevoEmailService->sendPasswordResetCode($user->email, $user->name, $code);
+
+        if (!$sent) {
+             return back()->withInput($request->only('email'))
+                         ->withErrors(['email' => 'Error al enviar el código. Inténtalo más tarde.']);
+        }
+
+        return redirect()->route('password.verify-code.form', ['email' => $request->email]);
     }
 }
