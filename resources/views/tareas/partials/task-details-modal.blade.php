@@ -63,10 +63,7 @@
                                 <!-- Assignees -->
                                 <div class="flex items-center -space-x-2">
                                     <template x-for="assignee in selectedTask?.assignees" :key="assignee.id">
-                                        <div class="relative z-0 group cursor-help flex items-center gap-2 pr-4 bg-white border border-gray-100 rounded-full pl-1 py-1 shadow-sm hover:shadow-md transition-all">
-                                            <img :src="assignee.avatar ? (assignee.avatar.startsWith('http') ? assignee.avatar : '/avatars/' + assignee.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(assignee.name)+'&color=FFFFFF&background=22A9C8'" 
-                                                 class="w-8 h-8 rounded-full border-2 border-white shadow-sm"
-                                                 :title="assignee.name">
+                                        <div class="relative z-0 group cursor-help flex items-center gap-2 px-3 bg-white border border-gray-100 rounded-full py-1 shadow-sm hover:shadow-md transition-all">
                                             <span class="text-sm font-medium text-gray-700 max-w-[120px] truncate" x-text="assignee.name"></span>
                                         </div>
                                     </template>
@@ -225,10 +222,7 @@
 
                             <template x-for="comment in selectedTask?.comments" :key="comment.id">
                                 <div class="flex gap-3 group max-w-full">
-                                    <div class="flex-shrink-0 mt-1">
-                                        <img :src="comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : '/avatars/' + comment.user.avatar) : 'https://ui-avatars.com/api/?name='+encodeURIComponent(comment.user_name || comment.user?.name || 'U')+'&color=FFFFFF&background=22A9C8'" 
-                                             class="w-8 h-8 rounded-full bg-gray-200 border border-gray-200">
-                                    </div>
+
                                     <div class="flex-1 min-w-0 overflow-hidden max-w-full">
                                         <div class="bg-white rounded-2xl rounded-tl-none p-3 shadow-sm border border-gray-100 relative group-hover:border-gray-200 transition-all break-words max-w-full" style="overflow-wrap: anywhere; word-break: break-word;">
                                             <div class="flex justify-between items-start mb-1 gap-2">
@@ -286,8 +280,8 @@
                         <!-- Chat Input -->
                         <div class="p-4 bg-white border-t border-gray-200">
                             <div class="relative">
-                                <textarea x-model="newCommentText" 
-                                          placeholder="Escribe un comentario o @menciona..." 
+                                    <textarea x-model="newCommentText" 
+                                          placeholder="Escribe un comentario..." 
                                           class="w-full text-sm bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#22A9C8] focus:border-transparent resize-none py-3 pl-4 pr-12 transition-all"
                                           rows="1"
                                           @keydown.enter.prevent="if(!$event.shiftKey) submitComment()"
@@ -300,7 +294,6 @@
                                     </svg>
                                 </button>
                             </div>
-                            <p class="text-[10px] text-gray-400 mt-2 text-center" x-show="newCommentText.length > 0">Presiona Enter para enviar</p>
                         </div>
                     </div>
 

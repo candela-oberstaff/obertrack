@@ -817,8 +817,9 @@
 
     @push('scripts')
     <script>
-        document.addEventListener('alpine:init', () => {
-             Alpine.data('hoursRegistration', () => ({
+        (function() {
+            const initHoursRegistration = () => {
+                Alpine.data('hoursRegistration', () => ({
                   isModalOpen: false,
                   isDetailModalOpen: false,
                   isDropdownOpen: false,
@@ -1071,11 +1072,11 @@
                              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                          },
                          body: JSON.stringify({
-                              work_date: this.selectedDate,
-                              hours_worked: this.hours,
-                              absence_reason: finalReason,
-                              absence_hours: this.absenceHours,
-                              user_comment: finalComment
+                               work_date: this.selectedDate,
+                               hours_worked: this.hours,
+                               absence_reason: finalReason,
+                               absence_hours: this.absenceHours,
+                               user_comment: finalComment
                           })
                      })
                      .then(response => {
@@ -1152,8 +1153,8 @@
                              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                          },
                          body: JSON.stringify({
-                              hours: this.recoveryHours,
-                              activities: finalComment
+                               hours: this.recoveryHours,
+                               activities: finalComment
                           })
                      })
                      .then(response => response.json())
@@ -1170,8 +1171,15 @@
                           showError('Error de conexión.');
                      });
                  }
-             }));
-        });
+                }));
+            };
+
+            if (typeof Alpine !== 'undefined') {
+                initHoursRegistration();
+            } else {
+                document.addEventListener('alpine:init', initHoursRegistration);
+            }
+        })();
     </script>
     @endpush
 </x-app-layout>

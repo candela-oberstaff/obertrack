@@ -41,6 +41,461 @@
         ];
     @endphp
 
+    <script>
+        (function() {
+            const initEmployeeTaskTracking = () => {
+                Alpine.data('employeeTaskTracking', (config) => ({
+                    currentUser: config.currentUser,
+                    pendingCount: config.pendingCount,
+                    completedCount: config.completedCount,
+                    startDate: '',
+                    endDate: '',
+                    searchQuery: '',
+                    selectedTask: null,
+                    isDetailsModalOpen: false,
+                    currentTab: 'details',
+                    isEditingTask: false,
+                    isSavingTask: false,
+                    editTaskData: {
+                        id: null,
+                        title: '',
+                        description: '',
+                        priority: 'low',
+                        end_date: ''
+                    },
+                    isUploadingFile: false,
+                    newCommentText: '',
+                    isSubmittingComment: false,
+                    editingCommentId: null,
+                    editCommentContent: '',
+                    updatingCommentId: null,
+                    deletingCommentId: null,
+                    deleteConfirmation: {
+                        isOpen: false,
+                        type: null,
+                        id: null
+                    },
+                    
+                    confirmDeleteTask() {
+                        if (confirm('¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.')) {
+                            this.deleteTask();
+                        }
+                    },
+
+                    async deleteTask() {
+                        try {
+                            const response = await fetch(`/profesionales/tareas/${this.selectedTask.id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                }
+                            });
+
+                            if (response.ok) {
+                                this.closeModal();
+                                window.location.reload();
+                            } else {
+                                showError('Error al eliminar la tarea');
+                            }
+                        } catch (error) {
+                            showError('Error de conexión');
+                        }
+                    },
+                    updatedTaskStates: {},
+                    
+                    // Drag and Drop State
+                    draggedTaskId: null,
+                    dragOverColumnId: null,
+                    hasChanges: false,
+                    
+                    // Create Task State
+                    isCreateModalOpen: false,
+                    openCreateModal() { this.isCreateModalOpen = true; },
+                    closeCreateModal() { this.isCreateModalOpen = false; },
+
+                    matches(task) {
+                        const taskDate = task.date || '';
+                        const taskTitle = (task.title || '').toLowerCase();
+                        const q = this.searchQuery.toLowerCase();
+                        
+                        if (this.searchQuery && !taskTitle.includes(q)) return false;
+                        
+                        if (this.startDate && taskDate < this.startDate) return false;
+                        if (this.endDate && taskDate > this.endDate) return false;
+                        
+                        return true;
+                    },
+
+                    matchRow(el) {
+                        const taskDate = el.dataset.date || '';
+                        const title = (el.dataset.title || '').toLowerCase();
+                        const q = this.searchQuery.toLowerCase();
+
+                        if (this.searchQuery && !title.includes(q)) return false;
+                        if (this.startDate && taskDate < this.startDate) return false;
+                        if (this.endDate && taskDate > this.endDate) return false;
+                        
+                        return true;
+                    },
+
+                    closeModal() {
+                        this.isDetailsModalOpen = false;
+                        this.selectedTask = null;
+                        if (this.hasChanges) {
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 50);
+                        }
+                    },
+
+                    openDetailsModal(task, tab = 'details') {
+                        if (this.updatedTaskStates[task.id]) {
+                            task.status = this.updatedTaskStates[task.id].status;
+                            task.completed = this.updatedTaskStates[task.id].completed;
+                        }
+                        this.selectedTask = task;
+                        this.currentTab = tab;
+                        this.isDetailsModalOpen = true;
+                        this.isEditingTask = false;
+                        this.hasChanges = false;
+                        this.fetchTaskDetails(task.id);
+                    },
+
+                    async fetchTaskDetails(id) {
+                         try {
+                            const response = await fetch(`/tasks/${id}/details?t=${new Date().getTime()}`, {
+                                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                            });
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (this.selectedTask && this.selectedTask.id === id) {
+                                    this.selectedTask = { 
+                                        ...this.selectedTask, 
+                                        comments: data.comments, 
+                                        attachments: data.attachments,
+                                        completed: data.completed,
+                                        status: data.status
+                                    };
+                                }
+                            }
+                        } catch (error) { console.error('Error fetching details:', error); }
+                    },
+
+                    dragStart(event, taskId) {
+                        this.draggedTaskId = taskId;
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', taskId);
+                        event.dataTransfer.setData('application/json', JSON.stringify({ taskId: taskId }));
+                        requestAnimationFrame(() => {
+                            event.target.classList.add('opacity-50', 'scale-95', 'rotate-1');
+                        });
+                    },
+
+                    dragEnd(event) {
+                        this.draggedTaskId = null;
+                        this.dragOverColumnId = null;
+                        event.target.classList.remove('opacity-50', 'scale-95', 'rotate-1');
+                    },
+
+                    async handleDrop(event, newStatus) {
+                        const taskId = this.draggedTaskId;
+                        this.dragOverColumnId = null;
+                        this.draggedTaskId = null;
+                        
+                        if (!taskId) return;
+                        
+                        const card = document.getElementById(`task-card-${taskId}`);
+                        if (card) card.classList.remove('opacity-50', 'scale-95', 'rotate-1');
+
+                        if (card) {
+                            const columnContainer = event.currentTarget.querySelector('.space-y-3');
+                            if (columnContainer) {
+                                columnContainer.appendChild(card);
+                            }
+                        }
+
+                        await this.updateTaskStatusV2(taskId, newStatus);
+                    },
+
+                    async updateTaskStatusV2(taskId, newStatus) {
+                       try {
+                            const response = await fetch(`/tareas/${taskId}/status`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: JSON.stringify({ status: newStatus })
+                            });
+                            
+                            const data = await response.json();
+
+                            if (response.ok && data.success) {
+                                 setTimeout(() => {
+                                    const currentUrl = new URL(window.location.href);
+                                    currentUrl.searchParams.set('t', new Date().getTime());
+                                    window.location.href = currentUrl.toString();
+                                 }, 500); 
+                            } else {
+                                showError(data.message || 'Error al actualizar estado');
+                                setTimeout(() => location.reload(), 1500); 
+                            }
+                       } catch (e) {
+                           console.error(e);
+                           showError('Error de conexión con el servidor');
+                           setTimeout(() => location.reload(), 1500); 
+                       }
+                    },
+
+                    startEditingTask() {
+                        if (!this.selectedTask) return;
+                        this.editTaskData = {
+                            id: this.selectedTask.id,
+                            title: this.selectedTask.title,
+                            description: this.selectedTask.description,
+                            priority: this.selectedTask.priority,
+                            end_date: this.selectedTask.end_date ? this.selectedTask.end_date.split('T')[0] : ''
+                        };
+                        this.isEditingTask = true;
+                    },
+
+                    async saveTask() {
+                        this.isSavingTask = true;
+                        try {
+                            const response = await fetch(`/profesionales/tareas/${this.selectedTask.id}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: JSON.stringify(this.editTaskData)
+                            });
+
+                            const data = await response.json();
+
+                            if (response.ok && data.success) {
+                                this.selectedTask = { ...this.selectedTask, ...data.task };
+                                this.hasChanges = true;
+                                this.isEditingTask = false;
+                                
+                                // Update list view optimistically or reload
+                                if (this.updatedTaskStates[this.selectedTask.id]) {
+                                    // If already tracking state, update it
+                                }
+                            } else {
+                                showError(data.message || 'Error al guardar la tarea.');
+                            }
+                        } catch (error) {
+                            console.error(error);
+                            showError('Error de conexión.');
+                        } finally {
+                            this.isSavingTask = false;
+                        }
+                    },
+
+                    formatDate(dateStr) {
+                        if (!dateStr) return '';
+                        const parts = dateStr.split('T')[0].split('-');
+                        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                    },
+
+                    async submitComment() {
+                        if (!this.newCommentText.trim()) return;
+                        this.isSubmittingComment = true;
+                        const taskId = this.selectedTask.id;
+                        const content = this.newCommentText;
+                        const tempId = 'temp_' + Date.now();
+                        const optimisticComment = {
+                            id: tempId,
+                            content: content,
+                            created_at: new Date().toISOString(),
+                            user: this.currentUser,
+                            task_id: taskId
+                        };
+                        if (!this.selectedTask.comments) this.selectedTask.comments = [];
+                        this.selectedTask.comments.unshift(optimisticComment);
+                        this.newCommentText = '';
+                        try {
+                            const response = await fetch(`/profesionales/tareas/${taskId}/comment`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify({ content: content })
+                            });
+                            if (response.ok) {
+                                const data = await response.json();
+                                const index = this.selectedTask.comments.findIndex(c => c.id === tempId);
+                                if (index !== -1) this.selectedTask.comments[index] = data.comment;
+                                this.hasChanges = true;
+                            } else {
+                                this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
+                                showError('Error al enviar el comentario.');
+                            }
+                        } catch (error) {
+                            this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
+                            showError('Error de conexión.');
+                        } finally {
+                            this.isSubmittingComment = false;
+                        }
+                    },
+
+                    startEditingComment(comment) {
+                        this.editingCommentId = comment.id;
+                        this.editCommentContent = comment.content;
+                    },
+
+                    async updateComment(commentId) {
+                        if (!this.editCommentContent.trim()) return;
+                        this.updatingCommentId = commentId;
+                        try {
+                            const response = await fetch(`/profesionales/tareas/comment/${commentId}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify({ content: this.editCommentContent })
+                            });
+                            if (response.ok) {
+                                const data = await response.json();
+                                const index = this.selectedTask.comments.findIndex(c => c.id === commentId);
+                                if (index !== -1) this.selectedTask.comments[index] = data.comment;
+                                this.editingCommentId = null;
+                                this.hasChanges = true;
+                            } else {
+                                showError('Error al actualizar.');
+                            }
+                        } catch (error) {
+                            showError('Error de conexión');
+                        } finally {
+                            this.updatingCommentId = null;
+                        }
+                    },
+
+                    confirmDeleteComment(id) {
+                        if(confirm('¿Seguro que quieres eliminar este comentario?')) {
+                            this.deleteComment(id);
+                        }
+                    },
+                    
+                    async deleteComment(id) {
+                        this.deletingCommentId = id;
+                        try {
+                            const response = await fetch(`/profesionales/tareas/comment/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                }
+                            });
+                            if (response.ok) {
+                                this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
+                                this.hasChanges = true;
+                            } else {
+                                showError('Error al eliminar comentario');
+                            }
+                        } catch (e) { showError('Error de conexión'); }
+                        finally { this.deletingCommentId = null; }
+                    },
+
+                    async uploadFile(file) {
+                        if (!file || this.isUploadingFile) return;
+                        this.isUploadingFile = true;
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        try {
+                            const response = await fetch(`/profesionales/tareas/${this.selectedTask.id}/files`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: formData
+                            });
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
+                                this.selectedTask.attachments.unshift(data.attachment);
+                                this.hasChanges = true;
+                            } else {
+                                const data = await response.json();
+                                showError(data.message || 'Error al subir el archivo.');
+                            }
+                        } catch (error) {
+                            showError('Error de conexión.');
+                        } finally {
+                            this.isUploadingFile = false;
+                        }
+                    },
+
+                    confirmDeleteFile(id) {
+                        if(confirm('¿Seguro que quieres eliminar este archivo?')) {
+                             this.deleteFile(id);
+                        }
+                    },
+                    
+                    async deleteFile(id) {
+                         // Adding deleteFile method which was missing or relied on performDelete previously
+                         try {
+                            const response = await fetch(`/tasks/attachments/${id}`, {
+                                 method: 'DELETE',
+                                 headers: {
+                                     'Content-Type': 'application/json',
+                                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                 }
+                            });
+                            if (response.ok) {
+                                this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
+                                this.hasChanges = true;
+                            } else {
+                                const data = await response.json();
+                                showError(data.message || 'Error al eliminar archivo');
+                            }
+                        } catch (e) { showError('Error de conexión'); }
+                    },
+
+                    handleStatusUpdate(detail) {
+                        // Logic to handle external status updates if needed
+                        let previousCompleted = detail.wasCompleted;
+                        if (this.updatedTaskStates[detail.taskId]) {
+                            previousCompleted = this.updatedTaskStates[detail.taskId].completed;
+                        }
+                        this.updatedTaskStates[detail.taskId] = {
+                            status: detail.status,
+                            completed: detail.completed
+                        };
+                        if (this.selectedTask && this.selectedTask.id == detail.taskId) {
+                            this.selectedTask.status = detail.status;
+                            this.selectedTask.completed = detail.completed;
+                        }
+                        if (!previousCompleted && detail.completed) {
+                            this.pendingCount = Math.max(0, this.pendingCount - 1);
+                            this.completedCount++;
+                        } else if (previousCompleted && !detail.completed) {
+                            this.pendingCount++;
+                            this.completedCount = Math.max(0, this.completedCount - 1);
+                        }
+                        // Reload to reflect kanban column changes accurately without complex DOM manipulation
+                         setTimeout(() => {
+                            window.location.reload();
+                         }, 500);
+                    }
+                }));
+            };
+
+            if (typeof Alpine !== 'undefined') {
+                initEmployeeTaskTracking();
+            } else {
+                document.addEventListener('alpine:init', initEmployeeTaskTracking);
+            }
+        })();
+    </script>
     <div class="py-8 bg-white min-h-screen" x-data="employeeTaskTracking({{ json_encode($employeeTaskData) }})"
     @task-status-updated.window="handleStatusUpdate($event.detail)"
     >
@@ -243,451 +698,4 @@
     </div>
 
 
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('employeeTaskTracking', (config) => ({
-                currentUser: config.currentUser,
-                pendingCount: config.pendingCount,
-                completedCount: config.completedCount,
-                startDate: '',
-                endDate: '',
-                searchQuery: '',
-                selectedTask: null,
-                isDetailsModalOpen: false,
-                currentTab: 'details',
-                isEditingTask: false,
-                isSavingTask: false,
-                editTaskData: {
-                    id: null,
-                    title: '',
-                    description: '',
-                    priority: 'low',
-                    end_date: ''
-                },
-                isUploadingFile: false,
-                newCommentText: '',
-                isSubmittingComment: false,
-                editingCommentId: null,
-                editCommentContent: '',
-                updatingCommentId: null,
-                deletingCommentId: null,
-                deleteConfirmation: {
-                    isOpen: false,
-                    type: null,
-                    id: null
-                },
-                
-                confirmDeleteTask() {
-                    if (confirm('¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.')) {
-                        this.deleteTask();
-                    }
-                },
-
-                async deleteTask() {
-                    try {
-                        const response = await fetch(`/profesionales/tareas/${this.selectedTask.id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            }
-                        });
-
-                        if (response.ok) {
-                            this.closeModal();
-                            window.location.reload();
-                        } else {
-                            showError('Error al eliminar la tarea');
-                        }
-                    } catch (error) {
-                        showError('Error de conexión');
-                    }
-                },
-                updatedTaskStates: {},
-                
-                // Drag and Drop State
-                draggedTaskId: null,
-                dragOverColumnId: null,
-                hasChanges: false,
-                
-                // Create Task State
-                isCreateModalOpen: false,
-                openCreateModal() { this.isCreateModalOpen = true; },
-                closeCreateModal() { this.isCreateModalOpen = false; },
-
-                matches(task) {
-                    const taskDate = task.date || '';
-                    const taskTitle = (task.title || '').toLowerCase();
-                    const q = this.searchQuery.toLowerCase();
-                    
-                    if (this.searchQuery && !taskTitle.includes(q)) return false;
-                    
-                    if (this.startDate && taskDate < this.startDate) return false;
-                    if (this.endDate && taskDate > this.endDate) return false;
-                    
-                    return true;
-                },
-
-                matchRow(el) {
-                    const taskDate = el.dataset.date || '';
-                    const title = (el.dataset.title || '').toLowerCase();
-                    const q = this.searchQuery.toLowerCase();
-
-                    if (this.searchQuery && !title.includes(q)) return false;
-                    if (this.startDate && taskDate < this.startDate) return false;
-                    if (this.endDate && taskDate > this.endDate) return false;
-                    
-                    return true;
-                },
-
-                closeModal() {
-                    this.isDetailsModalOpen = false;
-                    this.selectedTask = null;
-                    if (this.hasChanges) {
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 50);
-                    }
-                },
-
-                openDetailsModal(task, tab = 'details') {
-                    if (this.updatedTaskStates[task.id]) {
-                        task.status = this.updatedTaskStates[task.id].status;
-                        task.completed = this.updatedTaskStates[task.id].completed;
-                    }
-                    this.selectedTask = task;
-                    this.currentTab = tab;
-                    this.isDetailsModalOpen = true;
-                    this.isEditingTask = false;
-                    this.hasChanges = false;
-                    this.fetchTaskDetails(task.id);
-                },
-
-                async fetchTaskDetails(id) {
-                     try {
-                        const response = await fetch(`/tasks/${id}/details?t=${new Date().getTime()}`, {
-                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-                        });
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (this.selectedTask && this.selectedTask.id === id) {
-                                this.selectedTask = { 
-                                    ...this.selectedTask, 
-                                    comments: data.comments, 
-                                    attachments: data.attachments,
-                                    completed: data.completed,
-                                    status: data.status
-                                };
-                            }
-                        }
-                    } catch (error) { console.error('Error fetching details:', error); }
-                },
-
-                dragStart(event, taskId) {
-                    this.draggedTaskId = taskId;
-                    event.dataTransfer.effectAllowed = 'move';
-                    event.dataTransfer.setData('text/plain', taskId);
-                    event.dataTransfer.setData('application/json', JSON.stringify({ taskId: taskId }));
-                    requestAnimationFrame(() => {
-                        event.target.classList.add('opacity-50', 'scale-95', 'rotate-1');
-                    });
-                },
-
-                dragEnd(event) {
-                    this.draggedTaskId = null;
-                    this.dragOverColumnId = null;
-                    event.target.classList.remove('opacity-50', 'scale-95', 'rotate-1');
-                },
-
-                async handleDrop(event, newStatus) {
-                    const taskId = this.draggedTaskId;
-                    this.dragOverColumnId = null;
-                    this.draggedTaskId = null;
-                    
-                    if (!taskId) return;
-                    
-                    const card = document.getElementById(`task-card-${taskId}`);
-                    if (card) card.classList.remove('opacity-50', 'scale-95', 'rotate-1');
-
-                    if (card) {
-                        const columnContainer = event.currentTarget.querySelector('.space-y-3');
-                        if (columnContainer) {
-                            columnContainer.appendChild(card);
-                        }
-                    }
-
-                    await this.updateTaskStatusV2(taskId, newStatus);
-                },
-
-                async updateTaskStatusV2(taskId, newStatus) {
-                   try {
-                        const response = await fetch(`/tareas/${taskId}/status`, {
-                            method: 'PATCH',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({ status: newStatus })
-                        });
-                        
-                        const data = await response.json();
-
-                        if (response.ok && data.success) {
-                             setTimeout(() => {
-                                const currentUrl = new URL(window.location.href);
-                                currentUrl.searchParams.set('t', new Date().getTime());
-                                window.location.href = currentUrl.toString();
-                             }, 500); 
-                        } else {
-                            showError(data.message || 'Error al actualizar estado');
-                            setTimeout(() => location.reload(), 1500); 
-                        }
-                   } catch (e) {
-                       console.error(e);
-                       showError('Error de conexión con el servidor');
-                       setTimeout(() => location.reload(), 1500); 
-                   }
-                },
-
-                startEditingTask() {
-                    if (!this.selectedTask) return;
-                    this.editTaskData = {
-                        id: this.selectedTask.id,
-                        title: this.selectedTask.title,
-                        description: this.selectedTask.description,
-                        priority: this.selectedTask.priority,
-                        end_date: this.selectedTask.end_date ? this.selectedTask.end_date.split('T')[0] : ''
-                    };
-                    this.isEditingTask = true;
-                },
-
-                async saveTask() {
-                    this.isSavingTask = true;
-                    try {
-                        const response = await fetch(`/profesionales/tareas/${this.selectedTask.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify(this.editTaskData)
-                        });
-
-                        const data = await response.json();
-
-                        if (response.ok && data.success) {
-                            this.selectedTask = { ...this.selectedTask, ...data.task };
-                            this.hasChanges = true;
-                            this.isEditingTask = false;
-                            
-                            // Update list view optimistically or reload
-                            if (this.updatedTaskStates[this.selectedTask.id]) {
-                                // If already tracking state, update it
-                            }
-                        } else {
-                            showError(data.message || 'Error al guardar la tarea.');
-                        }
-                    } catch (error) {
-                        console.error(error);
-                        showError('Error de conexión.');
-                    } finally {
-                        this.isSavingTask = false;
-                    }
-                },
-
-                formatDate(dateStr) {
-                    if (!dateStr) return '';
-                    const parts = dateStr.split('T')[0].split('-');
-                    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-                },
-
-                async submitComment() {
-                    if (!this.newCommentText.trim()) return;
-                    this.isSubmittingComment = true;
-                    const taskId = this.selectedTask.id;
-                    const content = this.newCommentText;
-                    const tempId = 'temp_' + Date.now();
-                    const optimisticComment = {
-                        id: tempId,
-                        content: content,
-                        created_at: new Date().toISOString(),
-                        user: this.currentUser,
-                        task_id: taskId
-                    };
-                    if (!this.selectedTask.comments) this.selectedTask.comments = [];
-                    this.selectedTask.comments.unshift(optimisticComment);
-                    this.newCommentText = '';
-                    try {
-                        const response = await fetch(`/profesionales/tareas/${taskId}/comment`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: JSON.stringify({ content: content })
-                        });
-                        if (response.ok) {
-                            const data = await response.json();
-                            const index = this.selectedTask.comments.findIndex(c => c.id === tempId);
-                            if (index !== -1) this.selectedTask.comments[index] = data.comment;
-                            this.hasChanges = true;
-                        } else {
-                            this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
-                            showError('Error al enviar el comentario.');
-                        }
-                    } catch (error) {
-                        this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== tempId);
-                        showError('Error de conexión.');
-                    } finally {
-                        this.isSubmittingComment = false;
-                    }
-                },
-
-                startEditingComment(comment) {
-                    this.editingCommentId = comment.id;
-                    this.editCommentContent = comment.content;
-                },
-
-                async updateComment(commentId) {
-                    if (!this.editCommentContent.trim()) return;
-                    this.updatingCommentId = commentId;
-                    try {
-                        const response = await fetch(`/profesionales/tareas/comment/${commentId}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: JSON.stringify({ content: this.editCommentContent })
-                        });
-                        if (response.ok) {
-                            const data = await response.json();
-                            const index = this.selectedTask.comments.findIndex(c => c.id === commentId);
-                            if (index !== -1) this.selectedTask.comments[index] = data.comment;
-                            this.editingCommentId = null;
-                            this.hasChanges = true;
-                        } else {
-                            showError('Error al actualizar.');
-                        }
-                    } catch (error) {
-                        showError('Error de conexión');
-                    } finally {
-                        this.updatingCommentId = null;
-                    }
-                },
-
-                confirmDeleteComment(id) {
-                    if(confirm('¿Seguro que quieres eliminar este comentario?')) {
-                        this.deleteComment(id);
-                    }
-                },
-                
-                async deleteComment(id) {
-                    this.deletingCommentId = id;
-                    try {
-                        const response = await fetch(`/profesionales/tareas/comment/${id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            }
-                        });
-                        if (response.ok) {
-                            this.selectedTask.comments = this.selectedTask.comments.filter(c => c.id !== id);
-                            this.hasChanges = true;
-                        } else {
-                            showError('Error al eliminar comentario');
-                        }
-                    } catch (e) { showError('Error de conexión'); }
-                    finally { this.deletingCommentId = null; }
-                },
-
-                async uploadFile(file) {
-                    if (!file || this.isUploadingFile) return;
-                    this.isUploadingFile = true;
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    try {
-                        const response = await fetch(`/profesionales/tareas/${this.selectedTask.id}/files`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: formData
-                        });
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (!this.selectedTask.attachments) this.selectedTask.attachments = [];
-                            this.selectedTask.attachments.unshift(data.attachment);
-                            this.hasChanges = true;
-                        } else {
-                            const data = await response.json();
-                            showError(data.message || 'Error al subir el archivo.');
-                        }
-                    } catch (error) {
-                        showError('Error de conexión.');
-                    } finally {
-                        this.isUploadingFile = false;
-                    }
-                },
-
-                confirmDeleteFile(id) {
-                    if(confirm('¿Seguro que quieres eliminar este archivo?')) {
-                         this.deleteFile(id);
-                    }
-                },
-                
-                async deleteFile(id) {
-                     // Adding deleteFile method which was missing or relied on performDelete previously
-                     try {
-                        const response = await fetch(`/tasks/attachments/${id}`, {
-                             method: 'DELETE',
-                             headers: {
-                                 'Content-Type': 'application/json',
-                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                             }
-                        });
-                        if (response.ok) {
-                            this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
-                            this.hasChanges = true;
-                        } else {
-                            const data = await response.json();
-                            showError(data.message || 'Error al eliminar archivo');
-                        }
-                    } catch (e) { showError('Error de conexión'); }
-                },
-
-                handleStatusUpdate(detail) {
-                    // Logic to handle external status updates if needed
-                    let previousCompleted = detail.wasCompleted;
-                    if (this.updatedTaskStates[detail.taskId]) {
-                        previousCompleted = this.updatedTaskStates[detail.taskId].completed;
-                    }
-                    this.updatedTaskStates[detail.taskId] = {
-                        status: detail.status,
-                        completed: detail.completed
-                    };
-                    if (this.selectedTask && this.selectedTask.id == detail.taskId) {
-                        this.selectedTask.status = detail.status;
-                        this.selectedTask.completed = detail.completed;
-                    }
-                    if (!previousCompleted && detail.completed) {
-                        this.pendingCount = Math.max(0, this.pendingCount - 1);
-                        this.completedCount++;
-                    } else if (previousCompleted && !detail.completed) {
-                        this.pendingCount++;
-                        this.completedCount = Math.max(0, this.completedCount - 1);
-                    }
-                    // Reload to reflect kanban column changes accurately without complex DOM manipulation
-                     setTimeout(() => {
-                        window.location.reload();
-                     }, 500);
-                }
-            }));
-        });
-    </script>
 </x-app-layout>

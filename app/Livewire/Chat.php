@@ -55,6 +55,12 @@ class Chat extends Component
 
     public function loadContacts()
     {
+        // Only load full contacts if not already loaded or if searching
+        if ($this->contacts && empty($this->search) && !$this->isBroadcastMode) {
+            $this->refreshUnreadCounts();
+            return;
+        }
+
         $user = Auth::user();
         
         $contactsQuery = User::query()->where('id', '!=', $user->id);
@@ -93,8 +99,32 @@ class Chat extends Component
             ->get();
     }
 
+    public function refreshUnreadCounts()
+    {
+        // Heavy optimization: Only query counts, map to existing contacts
+        // This avoids hydrating all User models again
+        if (!$this->contacts) return;
+
+        $user = Auth::user();
+        
+        // Get all unread counts for current user grouped by sender
+        $unreadCounts = Message::where('to_user_id', $user->id)
+            ->whereNull('read_at')
+            ->selectRaw('from_user_id, count(*) as count')
+            ->groupBy('from_user_id')
+            ->pluck('count', 'from_user_id');
+
+        // Update the collection in memory
+        $this->contacts->transform(function ($contact) use ($unreadCounts) {
+            $contact->unread_messages_count = $unreadCounts[$contact->id] ?? 0;
+            return $contact;
+        });
+    }
+
     public function updatedSearch()
     {
+        // Force reload when searching
+        $this->contacts = null; 
         $this->loadContacts();
     }
 
@@ -105,6 +135,7 @@ class Chat extends Component
         $this->isBroadcastMode = !$this->isBroadcastMode;
         if ($this->isBroadcastMode) {
             $this->selectedUserId = null;
+            $this->contacts = null; // Force reload for broadcast filtering if needed
         }
     }
 
@@ -118,6 +149,7 @@ class Chat extends Component
         $this->isBroadcastMode = false;
         $this->selectedUserId = $userId;
         $this->markMessagesAsRead();
+        // Don't force reload contacts here, just update view
     }
 
     public function removeAttachment()
@@ -139,7 +171,9 @@ class Chat extends Component
             }
             $recipientIds = $recipientsQuery->pluck('id');
         } else {
-            $this->loadContacts();
+            // Ensure contacts are loaded to validate existence
+            if (!$this->contacts) $this->loadContacts();
+            
             if (!$this->contacts->contains('id', $this->selectedUserId)) {
                 $this->addError('messageText', 'Error de seguridad: No tienes permiso para enviar mensajes a este usuario.');
                 return;
@@ -207,6 +241,16 @@ class Chat extends Component
             ->where('from_user_id', $this->selectedUserId)
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
+            
+        // Update memory immediately
+        if ($this->contacts) {
+            $this->contacts->transform(function ($contact) {
+                if ($contact->id === $this->selectedUserId) {
+                    $contact->unread_messages_count = 0;
+                }
+                return $contact;
+            });
+        }
     }
 
     public function refreshMessages()
@@ -228,36 +272,38 @@ class Chat extends Component
 
     public function render()
     {
-        // Refresh contacts to update unread counts and status
+        // Refresh contacts/counts
         $this->loadContacts();
 
         // Detect new messages and dispatch event
-        foreach ($this->contacts as $contact) {
-            $previousCount = $this->previousUnreadCounts[$contact->id] ?? 0;
-            $currentCount = $contact->unread_messages_count;
-            
-            // If there are new unread messages and we're not viewing this contact
-            if ($currentCount > $previousCount && $this->selectedUserId != $contact->id) {
-                // Get initials
-                $nameParts = explode(' ', $contact->name);
-                $initials = '';
-                foreach ($nameParts as $part) {
-                    if (!empty($part)) {
-                        $initials .= strtoupper(substr($part, 0, 1));
-                        if (strlen($initials) >= 2) break;
+        if ($this->contacts) {
+            foreach ($this->contacts as $contact) {
+                $previousCount = $this->previousUnreadCounts[$contact->id] ?? 0;
+                $currentCount = $contact->unread_messages_count;
+                
+                // If there are new unread messages and we're not viewing this contact
+                if ($currentCount > $previousCount && $this->selectedUserId != $contact->id) {
+                    // Get initials
+                    $nameParts = explode(' ', $contact->name);
+                    $initials = '';
+                    foreach ($nameParts as $part) {
+                        if (!empty($part)) {
+                            $initials .= strtoupper(substr($part, 0, 1));
+                            if (strlen($initials) >= 2) break;
+                        }
                     }
+                    
+                    // Dispatch browser event
+                    $this->dispatch('new-message-received', [
+                        'name' => $contact->name,
+                        'initials' => $initials,
+                        'userId' => $contact->id
+                    ]);
                 }
                 
-                // Dispatch browser event
-                $this->dispatch('new-message-received', [
-                    'name' => $contact->name,
-                    'initials' => $initials,
-                    'userId' => $contact->id
-                ]);
+                // Update previous count
+                $this->previousUnreadCounts[$contact->id] = $currentCount;
             }
-            
-            // Update previous count
-            $this->previousUnreadCounts[$contact->id] = $currentCount;
         }
 
         $messages = [];

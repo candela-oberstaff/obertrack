@@ -506,25 +506,27 @@
                                             <div class="mt-3 -mx-2 mb-1">
                                                 @php
                                                     $path = $message->attachment_path;
-                                                    $isUrl = \Illuminate\Support\Str::startsWith($path, ['http://', 'https://']);
-                                                    $url = $isUrl ? $path : (str_starts_with($path, '/storage/') ? $path : '/storage/' . $path);
-                                                    $isImg = \Illuminate\Support\Str::endsWith($path, ['.jpg', '.jpeg', '.png', '.gif', '.webp']);
+                                                    $isImg = \Illuminate\Support\Str::endsWith(strtolower($path), ['.jpg', '.jpeg', '.png', '.gif', '.webp']);
+                                                    // Use the new secure route for both images (preview) and files
+                                                    $downloadUrl = route('chat.attachments.download', $message->id);
                                                 @endphp
                                                 @if($isImg)
                                                     <div class="relative group/img cursor-pointer">
-                                                        <img src="{{ $url }}" class="rounded-xl w-full max-h-60 object-cover hover:opacity-95 transition">
-                                                        <a href="{{ $url }}" target="_blank" class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/img:bg-black/20 transition-all opacity-0 group-hover/img:opacity-100 rounded-xl">
+                                                        <!-- For images we might want a direct link for <img> tag if possible, or use the route -->
+                                                        <!-- Using route for src is fine as it returns the file content -->
+                                                        <img src="{{ $downloadUrl }}" class="rounded-xl w-full max-h-60 object-cover hover:opacity-95 transition">
+                                                        <a href="{{ $downloadUrl }}" target="_blank" class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/img:bg-black/20 transition-all opacity-0 group-hover/img:opacity-100 rounded-xl">
                                                             <svg class="w-8 h-8 text-white drop-shadow-lg transform scale-90 group-hover/img:scale-100 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                                         </a>
                                                     </div>
                                                 @else
-                                                    <a href="{{ $url }}" target="_blank" class="flex items-center gap-3 p-3 bg-black/5 rounded-xl hover:bg-black/10 transition group/file">
+                                                    <a href="{{ $downloadUrl }}" target="_blank" class="flex items-center gap-3 p-3 bg-black/5 rounded-xl hover:bg-black/10 transition group/file">
                                                         <div class="p-2 bg-white rounded-lg text-primary shadow-sm group-hover/file:scale-110 transition-transform">
                                                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                                         </div>
                                                         <div class="flex-1 min-w-0">
                                                             <p class="font-medium text-sm truncate opacity-90">Archivo adjunto</p>
-                                                            <p class="text-xs opacity-70 font-medium">Clic para abrir</p>
+                                                            <p class="text-xs opacity-70 font-medium">Clic para descargar</p>
                                                         </div>
                                                     </a>
                                                 @endif

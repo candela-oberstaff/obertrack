@@ -28,27 +28,33 @@ class AiChatStreamController extends Controller
             ->take(10)
             ->get();
             
-        $hasImages = false;
+        return response()->stream(function () use ($messages, $conversation) {
+            // 1. Send immediate ping to show the user we are working
+            echo "data: " . json_encode(['content' => '']) . "\n\n";
+            if (ob_get_level() > 0) ob_flush();
+            flush();
 
-        $context = $messages->map(function($msg) use (&$hasImages) {
+            // 2. Build context inside the stream (lazy loading)
+            $hasImages = false;
+            $context = $messages->map(function($msg) use (&$hasImages) {
                 $payload = [
                     'role' => $msg->role,
                     'content' => $msg->content
                 ];
 
                 if ($msg->attachment_path && $msg->attachment_type === 'image') {
+                    // Check if file exists in public/storage
                     $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($msg->attachment_path);
                     if (file_exists($fullPath)) {
+                        // Optimally, we could resize here if too large, but for now just encode
                         $payload['images'] = [base64_encode(file_get_contents($fullPath))];
                         $hasImages = true;
                     }
                 }
                 
                 return $payload;
-            })
-            ->toArray();
+            })->toArray();
 
-        return response()->stream(function () use ($context, $hasImages) {
             $ollamaUrl = env('OLLAMA_URL');
             if (empty($ollamaUrl)) {
                  $ollamaUrl = 'http://109.199.104.87:11434';
@@ -64,12 +70,8 @@ class AiChatStreamController extends Controller
                 'model' => $model,
                 'messages' => $context,
                 'stream' => true,
+                'keep_alive' => '5m', // Keep model in memory for 5 minutes
             ];
-
-            // Send initial ping to keep connection alive and show responsiveness
-            echo "data: " . json_encode(['content' => '']) . "\n\n";
-            if (ob_get_level() > 0) ob_flush();
-            flush();
 
             // Open connection to Ollama with timeouts
             $ch = curl_init($url);
@@ -77,14 +79,11 @@ class AiChatStreamController extends Controller
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, false); 
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5); // 5 seconds to connect
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // Increased to 10s
             curl_setopt($ch, CURLOPT_TIMEOUT, 120); // 2 minutes max for generation
             curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) {
                 // Ollama sends JSON objects line by line, or sometimes partial chunks
                 // We need to parse this and send SSE format
-                
-                // Note: In a raw curl callback, $chunk might be multiple lines or partial chunks.
-                // For simplicity/robustness in this specific setup, we'll try to find valid JSON lines.
                 
                 $lines = explode("\n", $chunk);
                 foreach ($lines as $line) {

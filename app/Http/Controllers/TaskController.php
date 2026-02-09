@@ -285,36 +285,46 @@ class TaskController extends Controller
         $task = $attachment->task;
         $user = auth()->user();
 
-        // Use the 'view' policy to determine access
-        // This unifies logic: if you can view the task, you can download its attachments
         if ($user->cannot('view', $task)) {
              abort(403, 'No tienes permiso para descargar este archivo.');
         }
 
         $path = $attachment->stored_filename;
-        
-        // 1. Try exact path on local disk
+        $filename = $attachment->filename;
+
+        // Strategy 1: Standard Storage Facade (Local)
         if (\Storage::disk('local')->exists($path)) {
-            return \Storage::disk('local')->download($path, $attachment->filename);
+            return \Storage::disk('local')->download($path, $filename);
         }
 
-        // 2. Try hyphen/underscore swap on local disk
+        // Strategy 2: Hyphen/Underscore Swap (Common issue)
         $swappedPath = str_contains($path, 'task-attachments/') 
             ? str_replace('task-attachments/', 'task_attachments/', $path)
             : str_replace('task_attachments/', 'task-attachments/', $path);
             
         if (\Storage::disk('local')->exists($swappedPath)) {
-            return \Storage::disk('local')->download($swappedPath, $attachment->filename);
+            return \Storage::disk('local')->download($swappedPath, $filename);
         }
 
-        // 3. Fallback for files stuck on public disk
-        if (str_contains($path, 'task-attachments/')) {
-            $publicPath = $path;
-            if (\Storage::disk('public')->exists($publicPath)) {
-                return \Storage::disk('public')->download($publicPath, $attachment->filename);
-            }
+        // Strategy 3: Check Public Disk (If accidentally stored there)
+        if (\Storage::disk('public')->exists($path)) {
+            return \Storage::disk('public')->download($path, $filename);
         }
 
+        // Strategy 4: Direct Absolute Path Check (Final Fallback for Production)
+        // Check standard storage path
+        $absolutePath = storage_path('app/' . $path);
+        if (file_exists($absolutePath)) {
+            return response()->download($absolutePath, $filename);
+        }
+        
+        // Check public storage path
+        $absolutePublicPath = storage_path('app/public/' . $path);
+        if (file_exists($absolutePublicPath)) {
+            return response()->download($absolutePublicPath, $filename);
+        }
+
+        \Illuminate\Support\Facades\Log::error("Attachment not found: ID {$attachment->id}, Path: {$path}, Abs: {$absolutePath}");
         abort(404, 'No se pudo encontrar el archivo físico en el almacenamiento.');
     }
 

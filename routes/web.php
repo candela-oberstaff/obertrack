@@ -119,7 +119,12 @@ Route::middleware(['auth'])->get('/whatsapp/session-status', function(\Illuminat
     }
     
     return response()->json(['status' => $status, 'qr' => $qr]);
+    return response()->json(['status' => $status, 'qr' => $qr]);
 })->name('whatsapp.session-status');
+
+// Chat Attachments
+Route::middleware(['auth'])->get('/chat/attachments/{message}', [\App\Http\Controllers\ChatAttachmentController::class, 'download'])
+    ->name('chat.attachments.download');
 
 
 // Contacto Route
