@@ -11,9 +11,15 @@
     
     $avatarSrc = null;
     if ($displayAvatar) {
-        $avatarSrc = filter_var($displayAvatar, FILTER_VALIDATE_URL) 
-            ? $displayAvatar 
-            : asset('avatars/' . $displayAvatar);
+        if (filter_var($displayAvatar, FILTER_VALIDATE_URL)) {
+             $avatarSrc = $displayAvatar;
+        } elseif (file_exists(public_path('avatars/' . $displayAvatar))) {
+             // Legacy: Direct public path
+             $avatarSrc = asset('avatars/' . $displayAvatar);
+        } else {
+             // Modern: Storage path (requires php artisan storage:link)
+             $avatarSrc = \Illuminate\Support\Facades\Storage::url('avatars/' . $displayAvatar);
+        }
     }
     
     // Final fallback to UI Avatars if no avatar is set

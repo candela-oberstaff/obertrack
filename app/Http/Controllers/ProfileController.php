@@ -107,12 +107,10 @@ class ProfileController extends Controller
             $file = $request->file('avatar');
             $filename = time() . '_' . $file->getClientOriginalName();
             
-            $path = public_path('avatars');
-            if (!file_exists($path)) {
-                mkdir($path, 0755, true);
-            }
+            // Use Storage facade for better permission handling
+            // This stores in storage/app/public/avatars
+            \Illuminate\Support\Facades\Storage::disk('public')->putFileAs('avatars', $file, $filename);
             
-            $file->move($path, $filename);
             $user->avatar = $filename;
         }
 
