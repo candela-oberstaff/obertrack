@@ -20,7 +20,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Livewire\Chat;
+use App\Livewire\AiChat;
 
 /*
 |--------------------------------------------------------------------------
@@ -97,7 +97,12 @@ Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->grou
 });
 
 // Chat Route
-Route::middleware(['auth'])->get('/chat/{userId?}', Chat::class)->name('chat');
+Route::middleware(['auth'])->get('/chat/{userId?}', \App\Livewire\Chat::class)->name('chat');
+// AI Chat Route
+Route::middleware(['auth'])->get('/ai', AiChat::class)->name('ai.chat');
+Route::middleware(['auth'])->get('/ai/stream', \App\Http\Controllers\AiChatStreamController::class)->name('ai.stream');
+
+
 // Route::middleware(['auth'])->get('/whatsapp', \App\Livewire\WhatsappChat::class)->name('whatsapp.chat');
 Route::middleware(['auth'])->get('/whatsapp', function() {
     return view('whatsapp-soon');
