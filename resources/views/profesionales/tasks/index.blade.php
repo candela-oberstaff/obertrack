@@ -637,7 +637,7 @@
 
                 confirmDeleteFile(id) {
                     if(confirm('¿Seguro que quieres eliminar este archivo?')) {
-                         this.this.deleteFile(id);
+                         this.deleteFile(id);
                     }
                 },
                 
