@@ -10,9 +10,17 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+use Livewire\WithFileUploads;
+
 class AiChat extends Component
 {
+    use WithFileUploads;
+
     public string $userMessage = '';
+    
+    #[Validate('nullable|file|max:10240')] // Max 10MB
+    public $attachment; 
+    
     public array $messages = [];
     public bool $isTyping = false;
     
@@ -66,7 +74,9 @@ class AiChat extends Component
                 ->map(function($msg) {
                     return [
                         'role' => $msg->role,
-                        'content' => $msg->content
+                        'content' => $msg->content,
+                        'attachment_path' => $msg->attachment_path,
+                        'attachment_type' => $msg->attachment_type
                     ];
                 })
                 ->toArray();
@@ -86,26 +96,40 @@ class AiChat extends Component
         }
     }
 
-    public function sendMessage(OllamaService $ollama)
+    public function sendMessage(OllamaService $ollama, $content = null)
     {
-        if (empty(trim($this->userMessage))) {
+        // Use the passed content (from Alpine) or fallback to the bound property (unlikely now but good for safety)
+        $userText = $content ?? $this->userMessage;
+
+        // Allow empty text if there is an attachment
+        if (empty(trim($userText)) && !$this->attachment) {
             return;
         }
 
-        $userText = $this->userMessage;
-        $this->userMessage = ''; // Clear input immediately
+        // Handle Attachment
+        $attachmentPath = null;
+        $attachmentType = null;
+        
+        // ... (attachment logic) ...
+
+        // Clear input immediately (property)
+        $this->userMessage = ''; 
+        
+        // ... (rest of the logic) ... 
         
         // 1. Create Conversation if not exists
         if (!$this->currentConversationId) {
             $conversation = AiConversation::create([
                 'user_id' => Auth::id(),
-                'title' => Str::limit($userText, 30, '...')
+                'title' => Str::limit($userText ?: 'Archivo adjunto', 30, '...')
             ]);
             $this->currentConversationId = $conversation->id;
-            $this->loadConversations(); // Refresh list to show new item
             
-            // Remove the initial "fake" greeting if we are saving true history
-            // Or keep it? Let's clear messages and reload from what we save to be consistent.
+            // We do NOT reload all conversations here to save time. 
+            // We can push the new one to the list manually if strictly needed,
+            // or just wait for the next full refresh. 
+            // For UX speed, we skip reloading the whole sidebar list logic for now.
+             
             $this->messages = []; 
         } else {
              $conversation = AiConversation::find($this->currentConversationId);
@@ -116,16 +140,19 @@ class AiChat extends Component
         AiMessage::create([
             'ai_conversation_id' => $this->currentConversationId,
             'role' => 'user',
-            'content' => $userText
+            'content' => $userText,
+            'attachment_path' => $attachmentPath,
+            'attachment_type' => $attachmentType
         ]);
 
         // 3. Update UI state (append locally for speed)
         $this->messages[] = [
             'role' => 'user',
-            'content' => $userText
+            'content' => $userText,
+            'attachment_path' => $attachmentPath,
+            'attachment_type' => $attachmentType
         ];
 
-        $context = array_slice($this->messages, -10);
         $this->isTyping = true;
 
         // Instead of calling Ollama synchronously, we return the conversation ID

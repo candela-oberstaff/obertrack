@@ -22,30 +22,43 @@ class AiChatStreamController extends Controller
 
         // Load context (last 10 messages)
         // We need to include the user's latest message which might just have been saved
+        // Load context (last 10 messages)
         $messages = $conversation->messages()
             ->orderBy('created_at', 'asc')
             ->take(10)
-            ->get()
-            ->map(function($msg) {
-                return [
+            ->get();
+            
+        $hasImages = false;
+
+        $context = $messages->map(function($msg) use (&$hasImages) {
+                $payload = [
                     'role' => $msg->role,
                     'content' => $msg->content
                 ];
+
+                if ($msg->attachment_path && $msg->attachment_type === 'image') {
+                    $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($msg->attachment_path);
+                    if (file_exists($fullPath)) {
+                        $payload['images'] = [base64_encode(file_get_contents($fullPath))];
+                        $hasImages = true;
+                    }
+                }
+                
+                return $payload;
             })
             ->toArray();
 
-        // Prepare context for Ollama
-        $context = $messages;
-
-        return response()->stream(function () use ($context) {
+        return response()->stream(function () use ($context, $hasImages) {
             $ollamaUrl = env('OLLAMA_URL');
             if (empty($ollamaUrl)) {
                  $ollamaUrl = 'http://109.199.104.87:11434';
             }
             $url = $ollamaUrl . '/api/chat';
-            $model = env('OLLAMA_MODEL', 'llama3.2');
             
-            \Illuminate\Support\Facades\Log::info("Connecting to Ollama at: " . $url);
+            // Use vision model if images are present, otherwise default to config text model
+            $model = $hasImages ? 'llama3.2-vision' : env('OLLAMA_MODEL', 'llama3.2');
+            
+            \Illuminate\Support\Facades\Log::info("Connecting to Ollama at: " . $url . " with model: " . $model);
             
             $data = [
                 'model' => $model,
@@ -70,11 +83,8 @@ class AiChatStreamController extends Controller
                 // Ollama sends JSON objects line by line, or sometimes partial chunks
                 // We need to parse this and send SSE format
                 
-                // Note: In a raw curl callback, $chunk might be multiple lines or partial lines.
+                // Note: In a raw curl callback, $chunk might be multiple lines or partial chunks.
                 // For simplicity/robustness in this specific setup, we'll try to find valid JSON lines.
-                
-                // However, directly echoing the chunk might break SSE if it's not formatted.
-                // Ollama sends: {"model":..., "created_at":..., "message":{"role":"assistant","content":"H"}, "done":false}
                 
                 $lines = explode("\n", $chunk);
                 foreach ($lines as $line) {
@@ -84,8 +94,6 @@ class AiChatStreamController extends Controller
                     
                     if (isset($json['message']['content'])) {
                         $content = $json['message']['content'];
-                        // Escape newlines for SSE data payload logic if needed, but usually just sending data is fine.
-                        // We'll send a JSON object as data
                         echo "data: " . json_encode(['content' => $content]) . "\n\n";
                         
                         if (ob_get_level() > 0) {
@@ -100,6 +108,11 @@ class AiChatStreamController extends Controller
                             ob_flush();
                         }
                         flush();
+                    }
+                    
+                    if (isset($json['error'])) {
+                         \Illuminate\Support\Facades\Log::error("Ollama API Error: " . $json['error']);
+                         echo "data: " . json_encode(['error' => $json['error']]) . "\n\n";
                     }
                 }
                 
