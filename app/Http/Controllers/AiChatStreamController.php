@@ -35,86 +35,141 @@ class AiChatStreamController extends Controller
             flush();
 
             // 2. Build context inside the stream (lazy loading)
-            $hasImages = false;
-            $context = $messages->map(function($msg) use (&$hasImages) {
+            
+            // 2. Build context
+            $messagesArray = $messages->map(function($msg) {
                 $payload = [
                     'role' => $msg->role,
                     'content' => $msg->content
                 ];
-
-                if ($msg->attachment_path && $msg->attachment_type === 'image') {
-                    // Check if file exists in public/storage
-                    $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($msg->attachment_path);
-                    if (file_exists($fullPath)) {
-                        // Optimally, we could resize here if too large, but for now just encode
-                        $payload['images'] = [base64_encode(file_get_contents($fullPath))];
-                        $hasImages = true;
-                    }
-                }
                 
+                // Image handling (Groq supports vision in some models, but we'll keep it simple for now or compatible)
+                if ($msg->attachment_path && $msg->attachment_type === 'image') {
+                     $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($msg->attachment_path);
+                     if (file_exists($fullPath)) {
+                         // OpenAI/Groq format for images is different, but for now let's keep it compatible 
+                         // or just strip images if driver is groq and model doesn't support it.
+                         // For simplicity in this iteration, we pass text only for Groq unless we confirm vision model.
+                         // But Ollama logic was: images: [base64]
+                         
+                         $driver = config('ai.default');
+                         if ($driver === 'ollama') {
+                             $payload['images'] = [base64_encode(file_get_contents($fullPath))];
+                         } 
+                         // For Groq/OpenAI, we would need content: [ {type: text...}, {type: image_url...} ]
+                         // We will implement that later if needed.
+                     }
+                }
                 return $payload;
             })->toArray();
 
-            $ollamaUrl = env('OLLAMA_URL');
-            if (empty($ollamaUrl)) {
-                 $ollamaUrl = 'http://109.199.104.87:11434';
+            // 3. Inject System Prompt
+            $user = Auth::user();
+            $systemPrompt = config('ai.system_prompt', 'You are a helpful assistant.');
+            
+            // Improve context injection
+            $contextData = [
+                'user_name' => $user->name,
+                'user_role' => $user->tipo_usuario,
+                'date' => now()->toDateTimeString(),
+                'app_name' => config('app.name'),
+            ];
+            
+            foreach ($contextData as $key => $value) {
+                $systemPrompt = str_replace(":{$key}", $value, $systemPrompt);
             }
-            $url = $ollamaUrl . '/api/chat';
             
-            // Use vision model if images are present, otherwise default to config text model
-            $model = $hasImages ? 'llama3.2-vision' : env('OLLAMA_MODEL', 'llama3.2');
+            array_unshift($messagesArray, [
+                'role' => 'system',
+                'content' => $systemPrompt
+            ]);
+
+            // 4. Configure Driver
+            $driver = config('ai.default', 'groq');
+            $config = config("ai.drivers.{$driver}");
             
-            \Illuminate\Support\Facades\Log::info("Connecting to Ollama at: " . $url . " with model: " . $model);
+            $url = $config['url'];
+            $model = $config['model'];
+            $apiKey = $config['api_key'] ?? null;
             
+            \Illuminate\Support\Facades\Log::info("AI Chat connecting to: {$driver} ({$model})");
+
+            // 5. Prepare Payload
             $data = [
                 'model' => $model,
-                'messages' => $context,
+                'messages' => $messagesArray,
                 'stream' => true,
-                'keep_alive' => '5m', // Keep model in memory for 5 minutes
             ];
+            
+            if ($driver === 'ollama') {
+                $data['keep_alive'] = '5m';
+            }
 
-            // Open connection to Ollama with timeouts
+            // 6. Init Curl
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, false); 
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // Increased to 10s
-            curl_setopt($ch, CURLOPT_TIMEOUT, 120); // 2 minutes max for generation
-            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) {
-                // Ollama sends JSON objects line by line, or sometimes partial chunks
-                // We need to parse this and send SSE format
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+            
+            $headers = ['Content-Type: application/json'];
+            if ($apiKey) {
+                $headers[] = "Authorization: Bearer {$apiKey}";
+            }
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use ($driver) {
+                // OpenAI/Groq format is "data: {...}"
+                // Ollama format is " {...} "
                 
                 $lines = explode("\n", $chunk);
                 foreach ($lines as $line) {
-                    if (empty(trim($line))) continue;
+                    $line = trim($line);
+                    if (empty($line)) continue;
                     
-                    $json = json_decode($line, true);
-                    
-                    if (isset($json['message']['content'])) {
-                        $content = $json['message']['content'];
-                        echo "data: " . json_encode(['content' => $content]) . "\n\n";
-                        
-                        if (ob_get_level() > 0) {
-                            ob_flush();
-                        }
-                        flush();
-                    }
-                    
-                    if (isset($json['done']) && $json['done'] === true) {
+                    // Handle "data: [DONE]" for OpenAI/Groq
+                    if ($line === 'data: [DONE]') {
                         echo "data: [DONE]\n\n";
-                        if (ob_get_level() > 0) {
-                            ob_flush();
-                        }
+                         if (ob_get_level() > 0) ob_flush();
+                        flush();
+                        continue;
+                    }
+                    
+                    // Parse JSON
+                    $jsonStr = $line;
+                    if ($driver === 'groq' && str_starts_with($line, 'data: ')) {
+                        $jsonStr = substr($line, 6);
+                    }
+                    
+                    $json = json_decode($jsonStr, true);
+                    
+                    $content = null;
+                    $error = null;
+                    $done = false;
+
+                    if ($driver === 'ollama') {
+                        $content = $json['message']['content'] ?? null;
+                        $done = $json['done'] ?? false;
+                        $error = $json['error'] ?? null;
+                    } else {
+                        // Groq / OpenAI
+                        $content = $json['choices'][0]['delta']['content'] ?? null;
+                        $finishReason = $json['choices'][0]['finish_reason'] ?? null;
+                        if ($finishReason) $done = true;
+                    }
+
+                    if ($content !== null) {
+                        echo "data: " . json_encode(['content' => $content]) . "\n\n";
+                        if (ob_get_level() > 0) ob_flush();
                         flush();
                     }
                     
-                    if (isset($json['error'])) {
-                         \Illuminate\Support\Facades\Log::error("Ollama API Error: " . $json['error']);
-                         echo "data: " . json_encode(['error' => $json['error']]) . "\n\n";
+                    if ($error) {
+                         \Illuminate\Support\Facades\Log::error("AI API Error: " . $error);
+                         echo "data: " . json_encode(['error' => $error]) . "\n\n";
                     }
                 }
-                
                 return strlen($chunk);
             });
 
@@ -122,10 +177,9 @@ class AiChatStreamController extends Controller
             
             if (curl_errno($ch)) {
                 $error = curl_error($ch);
-                \Illuminate\Support\Facades\Log::error("Ollama Stream Error: " . $error);
+                \Illuminate\Support\Facades\Log::error("AI Stream Error: " . $error);
                 echo "data: " . json_encode(['error' => $error]) . "\n\n";
             }
-            
             curl_close($ch);
 
         }, 200, [
