@@ -592,9 +592,11 @@ tailwind.config = {
       
       <!-- Botones con estilo neobrutalista -->
       <div class="hidden lg:flex gap-4 items-center">
+        {{-- 
         <a href="{{ url('/register') }}" class="px-4 py-2 bg-white text-brandBlack font-medium text-sm brutal-button animate-fadeInUp" style="animation-delay: 0.2s">
           Registrarse
         </a>
+        --}}
         <a href="{{ url('/dashboard') }}" class="px-4 py-2 bg-brandBlue text-white font-medium text-sm brutal-button animate-fadeInUp" style="animation-delay: 0.3s">
           Iniciar sesión
         </a>
