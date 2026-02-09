@@ -106,7 +106,13 @@ class ProfileController extends Controller
 
             $file = $request->file('avatar');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('avatars'), $filename);
+            
+            $path = public_path('avatars');
+            if (!file_exists($path)) {
+                mkdir($path, 0755, true);
+            }
+            
+            $file->move($path, $filename);
             $user->avatar = $filename;
         }
 
