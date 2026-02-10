@@ -40,6 +40,40 @@
             'completedCount' => $completedTasksCount
         ];
     @endphp
+    
+    <style>
+        /* Modern Scrollbar Styling */
+        .kanban-column-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .kanban-column-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .kanban-column-scroll::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .kanban-column-scroll:hover::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .kanban-column-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 169, 200, 0.5); /* Primary color with transparency */
+        }
+        
+        /* Dark mode support if needed */
+        .dark .kanban-column-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .dark .kanban-column-scroll:hover::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
 
     <script>
         (function() {
@@ -582,7 +616,7 @@
                         </div>
 
                         <!-- Tasks Column -->
-                        <div class="space-y-3 min-h-[200px] h-full rounded-2xl transition-all duration-200 border-2 border-transparent" 
+                        <div class="space-y-3 max-h-[calc(100vh-320px)] overflow-y-auto kanban-column-scroll pr-2 pb-4 rounded-2xl transition-all duration-200 border-2 border-transparent" 
                              :class="{
                                 'bg-gray-50/50 border-dashed border-gray-300': draggedTaskId,
                                 '!bg-blue-50/80 !border-blue-300 ring-2 ring-blue-100': dragOverColumnId === '{{ $column['id'] }}'
