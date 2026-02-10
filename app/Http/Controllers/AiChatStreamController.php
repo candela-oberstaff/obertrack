@@ -122,12 +122,15 @@ class AiChatStreamController extends Controller
             }
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use ($driver) {
-                // OpenAI/Groq format is "data: {...}"
-                // Ollama format is " {...} "
+            $buffer = '';
+
+            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use ($driver, &$buffer) {
+                $buffer .= $chunk;
                 
-                $lines = explode("\n", $chunk);
-                foreach ($lines as $line) {
+                while (($newlinePos = strpos($buffer, "\n")) !== false) {
+                    $line = substr($buffer, 0, $newlinePos);
+                    $buffer = substr($buffer, $newlinePos + 1);
+                    
                     $line = trim($line);
                     if (empty($line)) continue;
                     
@@ -146,6 +149,13 @@ class AiChatStreamController extends Controller
                     }
                     
                     $json = json_decode($jsonStr, true);
+                    
+                    // If JSON decode failed, it might be that we stripped wrongly or data is corrupt.
+                    // But with the buffer logic, we should have a complete line.
+                    if ($json === null) {
+                        // Log parsing error?
+                        continue;
+                    }
                     
                     $content = null;
                     $error = null;
@@ -173,6 +183,7 @@ class AiChatStreamController extends Controller
                          echo "data: " . json_encode(['error' => $error]) . "\n\n";
                     }
                 }
+                
                 return strlen($chunk);
             });
 
