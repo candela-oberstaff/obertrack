@@ -636,7 +636,7 @@ tailwind.config = {
                 <div class="text-base font-bold">DASHBOARD</div>
               </div>
               <div class="text-xs font-bold text-brutalGreen bg-brutalGreen/10 px-2 py-1 rounded brutal-border-thin">
-                CONECTADOOO
+                CONECTADO
               </div>
             </div>
             
