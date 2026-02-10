@@ -397,6 +397,7 @@
                 selectedTask: null,
                 isDetailsModalOpen: false,
                 isCreateModalOpen: false,
+                searchAssignee: '',
                 currentTab: 'details',
                 
                 // State tracking

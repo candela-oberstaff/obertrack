@@ -44,8 +44,11 @@ class ProfessionalTaskController extends Controller
     {
         // Permission check: Creator, Manager, or Superadmin
         $canEdit = $task->created_by === Auth::id() || Auth::user()->tipo_usuario === 'empleador' || Auth::user()->is_manager || Auth::user()->is_superadmin;
-        
+
         if (!$canEdit) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No tienes permiso para editar esta tarea'], 403);
+            }
             abort(403);
         }
 
@@ -54,21 +57,26 @@ class ProfessionalTaskController extends Controller
             'description' => 'nullable|string',
             'priority' => 'required|in:low,medium,high,urgent',
             'end_date' => 'required|date',
-            'assignees' => 'array',
+            'assignees' => 'sometimes|array',
         ]);
 
-        $task->update([
-            'title' => $validated['title'],
-            'description' => $validated['description'],
-            'priority' => $validated['priority'],
-            'end_date' => $validated['end_date'],
-        ]);
+        try {
+            $this->taskManagementService->updateTask($task, $validated);
 
-        if (isset($validated['assignees'])) {
-            $task->assignees()->sync($validated['assignees']);
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Tarea actualizada exitosamente.',
+                    'task' => $task->fresh(['comments.user', 'attachments.uploader', 'assignees', 'createdBy'])
+                ]);
+            }
+            return back()->with('success', 'Tarea actualizada exitosamente.');
+        } catch (\Throwable $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Error al actualizar: ' . $e->getMessage()], 500);
+            }
+            return back()->with('error', 'Error al actualizar: ' . $e->getMessage());
         }
-
-        return response()->json(['success' => true, 'task' => $task]);
     }
 
     public function destroy(Task $task)
@@ -151,7 +159,7 @@ class ProfessionalTaskController extends Controller
         // Fetch colleagues for the assignment modal
         $profesionales = $user->compañerosDeTrabajo()->filter(function ($colleague) {
             return $colleague->tipo_usuario !== 'empleador';
-        });
+        })->sortBy('name');
 
         return view('profesionales.tasks.index', compact('teamTasks', 'individualTasks', 'pendingTasksCount', 'completedTasksCount', 'profesionales'));
     }

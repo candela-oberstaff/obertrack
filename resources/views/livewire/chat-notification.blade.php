@@ -1,30 +1,37 @@
-<div wire:poll.5s="poll" class="relative inline-flex items-center">
-    @if(!(auth()->user()->is_superadmin || auth()->user()->tipo_usuario === 'empleador' || auth()->user()->is_manager))
-    <a 
-        href="{{ route('chat') }}" 
-        class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out relative {{ request()->routeIs('chat') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}"
-    >
-        Chat
-        
-        {{-- Notification badge removed per user request --}}
-        {{-- Notification badge removed per user request --}}
-    </a>
-
+<div wire:poll.5s="poll" class="hidden">
     <audio id="notification-sound" preload="auto">
         <source src="{{ asset('sounds/Sfx_Common_001 Notice1.ogg') }}" type="audio/ogg">
     </audio>
 
     <script>
         document.addEventListener('livewire:initialized', () => {
-            Livewire.on('play-new-message-sound', () => {
-                const audio = document.getElementById('notification-sound');
+            const audio = document.getElementById('notification-sound');
+            
+            // Audio Unlocker: Browsers block sound until a user interaction occurs.
+            // On the first click anywhere, we play/pause quickly to "unlock" the audio context.
+            const unlockAudio = () => {
                 if (audio) {
+                    audio.muted = true; // Mute for the unlock play
+                    audio.play().then(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                        audio.muted = false; // Restore sound for real notifications
+                        document.removeEventListener('click', unlockAudio);
+                        console.log('Audio notification channel unlocked silently.');
+                    }).catch(e => console.log('Unlock failed:', e));
+                }
+            };
+            document.addEventListener('click', unlockAudio);
+
+            Livewire.on('play-new-message-sound', () => {
+                if (audio) {
+                    audio.pause();
+                    audio.currentTime = 0;
                     audio.play().catch(error => {
-                        console.log('Audio autoplay prevented:', error);
+                        console.log('Audio playback failed (interaction required?):', error);
                     });
                 }
             });
         });
     </script>
-    @endif
 </div>

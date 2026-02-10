@@ -27,9 +27,9 @@ class CompanyTaskController extends Controller
         $ownerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
         
         if ($user->isSuperAdmin()) {
-            $profesionales = \App\Models\User::where('tipo_usuario', 'empleado')->get();
+            $profesionales = \App\Models\User::where('tipo_usuario', 'empleado')->orderBy('name')->get();
         } else {
-             $profesionales = \App\Models\User::where('empleador_id', $ownerId)->get();
+             $profesionales = \App\Models\User::where('empleador_id', $ownerId)->orderBy('name')->get();
         }
  
         return view('empresas.ver_tareas_profesionales', compact('teamTasks', 'profesionales'));

@@ -31,7 +31,7 @@ class ManagerTaskController extends Controller
         $tareas = $this->taskManagementService->getCompanyTasks($user)->values();
         
         $ownerId = $user->tipo_usuario === 'empleador' ? $user->id : $user->empleador_id;
-        $profesionales = \App\Models\User::where('empleador_id', $ownerId)->get();
+        $profesionales = \App\Models\User::where('empleador_id', $ownerId)->orderBy('name')->get();
 
         $currentUserData = [
             'id' => $user->id,
@@ -48,7 +48,7 @@ class ManagerTaskController extends Controller
     {
         $this->checkManagerAccess();
         
-        $profesionales = auth()->user()->compañerosDeTrabajo();
+        $profesionales = auth()->user()->compañerosDeTrabajo()->sortBy('name');
         return view('manager.tasks.create', compact('profesionales'));
     }
 
@@ -66,7 +66,7 @@ class ManagerTaskController extends Controller
     public function edit(Task $task)
     {
         Gate::authorize('update', $task);
-        $profesionales = auth()->user()->compañerosDeTrabajo();
+        $profesionales = auth()->user()->compañerosDeTrabajo()->sortBy('name');
         return view('manager.tasks.edit', compact('task', 'profesionales'));
     }
 

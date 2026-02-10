@@ -93,9 +93,7 @@
             if (value) setTimeout(scrollToBottom, 100);
         });
         
-        Livewire.hook('morph.updated', () => {
-             scrollToBottom();
-        });
+        // Removed Livewire.hook('morph.updated') to prevent forced scrolling during polling
         
         // Listen for new message events (with error handling)
         if (typeof Livewire !== 'undefined') {

@@ -93,8 +93,8 @@
                             <!-- Description -->
                             <div class="space-y-3">
                                 <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Descripción</h4>
-                                <div x-show="!isEditingTask" class="text-gray-700 leading-relaxed text-sm whitespace-pre-line break-all">
-                                    <p x-text="selectedTask?.description || 'Añade una descripción...'"></p>
+                                <div x-show="!isEditingTask" class="text-gray-700 leading-relaxed text-sm prose-task-description break-words">
+                                    <div x-html="selectedTask?.description_html || 'Añade una descripción...'"></div>
                                 </div>
                                 <div x-show="isEditingTask">
                                     <textarea x-model="editTaskData.description" rows="6" class="w-full bg-gray-50 border-gray-200 rounded-xl py-3 px-4 text-sm focus:ring-[#22A9C8] focus:border-[#22A9C8] transition-all resize-none" placeholder="Task description..."></textarea>
@@ -117,17 +117,38 @@
                                     </select>
                                 </div>
                                 <div class="col-span-2">
-                                    <label class="text-xs font-semibold text-gray-500 mb-2 block">Asignados</label>
-                                    <div class="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                                        @if(isset($employees) && count($employees) > 0)
-                                            @foreach($employees as $employee)
-                                                <label class="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-[#22A9C8] transition-colors">
-                                                    <input type="checkbox" value="{{ $employee->id }}" x-model="editTaskData.assignees" class="rounded text-[#22A9C8] focus:ring-[#22A9C8]">
-                                                    <span class="text-sm font-medium text-gray-700">{{ $employee->name }}</span>
+                                    <label class="text-xs font-semibold text-gray-500 mb-2 block uppercase tracking-wider">Asignados</label>
+                                    
+                                    <!-- Search for Assignees in Edit Mode -->
+                                    <div class="mb-3 relative">
+                                        <input 
+                                            type="text" 
+                                            x-model="searchAssignee" 
+                                            placeholder="Buscar profesional..." 
+                                            class="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 pl-8 text-xs text-gray-700 focus:ring-1 focus:ring-[#22A9C8] transition-all"
+                                        >
+                                        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                            <svg class="h-3.5 w-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-2 max-h-48 overflow-y-auto p-1 bg-white border border-gray-100 rounded-xl">
+                                        @if(isset($profesionales) && count($profesionales) > 0)
+                                            @foreach($profesionales as $prof)
+                                                <label 
+                                                    x-show="!searchAssignee || '{{ strtolower($prof->name) }}'.includes(searchAssignee.toLowerCase())"
+                                                    class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-gray-100"
+                                                >
+                                                    <input type="checkbox" value="{{ $prof->id }}" x-model="editTaskData.assignees" class="rounded text-[#22A9C8] focus:ring-[#22A9C8] w-4 h-4">
+                                                    <span class="text-sm font-medium text-gray-700">{{ $prof->name }}</span>
                                                 </label>
                                             @endforeach
                                         @else
-                                            <span class="text-sm text-gray-400">No employees found.</span>
+                                            <div class="py-4 text-center">
+                                                <span class="text-xs text-gray-400">No se encontraron profesionales.</span>
+                                            </div>
                                         @endif
                                     </div>
                                 </div>

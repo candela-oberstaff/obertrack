@@ -1,4 +1,6 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-200 relative">
+<nav x-data="{ open: false, unreadCount: 0 }" 
+     @unread-count-changed.window="unreadCount = $event.detail.count"
+     class="bg-white border-b border-gray-200 relative">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-20 items-center">
@@ -93,6 +95,15 @@
                     <a href="{{ route('profesionales.tasks.index', [], false) }}" wire:navigate class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('profesionales.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Tareas
                     </a>
+                    <a href="{{ route('chat', [], false) }}" wire:navigate class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out relative {{ request()->routeIs('chat') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                        Chat
+                        <template x-if="unreadCount > 0">
+                            <span class="absolute top-1 right-1 flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                            </span>
+                        </template>
+                    </a>
                 @endif
 
                 @if(auth()->user()->is_superadmin)
@@ -106,13 +117,19 @@
                     <div class="hidden sm:flex sm:items-center sm:ms-2">
                         <x-dropdown align="right" width="48">
                             <x-slot name="trigger">
-                                <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-full text-gray-500 hover:text-gray-900 focus:outline-none transition ease-in-out duration-150 {{ request()->routeIs('chat') || request()->routeIs('empresa.emails.*') || request()->routeIs('admin.mass-email.*') ? 'bg-white border-gray-300 text-gray-900 shadow-sm' : '' }}">
+                                <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-full text-gray-500 hover:text-gray-900 focus:outline-none transition ease-in-out duration-150 relative {{ request()->routeIs('chat') || request()->routeIs('empresa.emails.*') || request()->routeIs('admin.mass-email.*') ? 'bg-white border-gray-300 text-gray-900 shadow-sm' : '' }}">
                                     <div>Comunicaciones</div>
                                     <div class="ms-1">
                                         <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                         </svg>
                                     </div>
+                                    <template x-if="unreadCount > 0">
+                                        <span class="absolute top-1 right-1 flex h-2 w-2">
+                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                        </span>
+                                    </template>
                                 </button>
                             </x-slot>
 
@@ -285,8 +302,14 @@
                         <div class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                             Comunicaciones
                         </div>
-                        <x-responsive-nav-link :href="route('chat', [], false)" :active="request()->routeIs('chat')" wire:navigate>
+                        <x-responsive-nav-link :href="route('chat', [], false)" :active="request()->routeIs('chat')" wire:navigate class="relative">
                             {{ __('Chat') }}
+                            <template x-if="unreadCount > 0">
+                                <span class="absolute top-2 right-4 flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                </span>
+                            </template>
                         </x-responsive-nav-link>
                         
                         @if(auth()->user()->is_superadmin)
@@ -312,8 +335,14 @@
                     </div>
                 @else
                     {{-- Standard Chat Link for Employees --}}
-                    <x-responsive-nav-link :href="route('chat', [], false)" :active="request()->routeIs('chat')" wire:navigate>
+                    <x-responsive-nav-link :href="route('chat', [], false)" :active="request()->routeIs('chat')" wire:navigate class="relative">
                         {{ __('Chat') }}
+                        <template x-if="unreadCount > 0">
+                            <span class="absolute top-2 right-4 flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                            </span>
+                        </template>
                     </x-responsive-nav-link>
                 @endif
 

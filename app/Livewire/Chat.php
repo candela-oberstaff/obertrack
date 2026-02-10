@@ -88,13 +88,26 @@ class Chat extends Component
             });
         }
 
-        // Optimize: Select only needed columns
+        // Optimize: Select only needed columns and add last message timestamp
         $this->contacts = $contactsQuery
             ->select('id', 'name', 'job_title', 'avatar', 'company_name', 'tipo_usuario')
+            ->addSelect(['last_message_at' => Message::select('created_at')
+                ->where(function($q) {
+                    $q->whereColumn('from_user_id', 'users.id')
+                      ->where('to_user_id', Auth::id());
+                })->orWhere(function($q) {
+                    $q->whereColumn('to_user_id', 'users.id')
+                      ->where('from_user_id', Auth::id());
+                })
+                ->latest()
+                ->limit(1)
+            ])
             ->withCount(['sentMessages as unread_messages_count' => function ($query) {
                 $query->where('to_user_id', Auth::id())
                       ->whereNull('read_at');
             }])
+            ->orderBy('unread_messages_count', 'desc')
+            ->orderByRaw('last_message_at DESC NULLS LAST')
             ->orderBy('name')
             ->get();
     }
@@ -251,6 +264,13 @@ class Chat extends Component
                 return $contact;
             });
         }
+
+        // Dispatch global event to update navbar immediately
+        $unreadCount = Message::where('to_user_id', Auth::id())
+            ->whereNull('read_at')
+            ->count();
+        $this->dispatch('unread-count-changed', count: $unreadCount);
+        $this->dispatch('sync-unread-count-reset', count: $unreadCount);
     }
 
     public function refreshMessages()
@@ -299,6 +319,13 @@ class Chat extends Component
                         'initials' => $initials,
                         'userId' => $contact->id
                     ]);
+
+                    // Update total count and sync ChatNotification
+                    $totalUnread = Message::where('to_user_id', Auth::id())
+                        ->whereNull('read_at')
+                        ->count();
+                    $this->dispatch('unread-count-changed', count: $totalUnread);
+                    $this->dispatch('sync-unread-count', count: $totalUnread);
                 }
                 
                 // Update previous count

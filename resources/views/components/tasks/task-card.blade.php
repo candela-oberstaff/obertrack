@@ -24,8 +24,8 @@
     </div>
 
     <div id="taskDetails-{{ $task->id }}" class="hidden mt-4 space-y-4">
-        <div class="text-sm text-gray-700">
-            <p>{{ $task->description }}</p>
+        <div class="text-sm text-gray-700 prose-task-description">
+            {!! $task->description_html !!}
             <p class="mt-2 text-xs text-gray-500">Asignado por: {{ $task->createdBy->name ?? 'N/A' }}</p>
         </div>
         <div class="flex space-x-2">

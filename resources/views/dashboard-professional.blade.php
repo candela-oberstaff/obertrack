@@ -50,7 +50,9 @@
         
                     // Task Edit State
                     isEditingTask: false,
-                    editTaskData: {},
+                    editTaskData: {
+                        assignees: []
+                    },
                     isSavingTask: false,
                     isDeletingTask: false,
         
@@ -352,7 +354,7 @@
                             description: this.selectedTask.description,
                             priority: this.selectedTask.priority,
                             end_date: this.selectedTask.end_date ? this.selectedTask.end_date.split('T')[0] : '',
-                            assignees: this.selectedTask.assignees.map(a => a.id)
+                            assignees: (this.selectedTask.assignees || []).map(a => a.id)
                         };
                     },
                     
