@@ -145,7 +145,11 @@
                     
                     // Create Task State
                     isCreateModalOpen: false,
-                    openCreateModal() { this.isCreateModalOpen = true; },
+                    openCreateModal() { 
+                        const form = document.getElementById('createTaskForm');
+                        if (form) form.reset();
+                        this.isCreateModalOpen = true; 
+                    },
                     closeCreateModal() { this.isCreateModalOpen = false; },
 
                     matches(task) {
