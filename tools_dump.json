@@ -1,0 +1,60 @@
+[
+    {
+        "type": "function",
+        "function": {
+            "name": "search_users",
+            "description": "Search for users\/colleagues in the organization by name to get their IDs. Useful when needing to assign tasks or send messages.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Name or partial name to search for (e.g. \"Juan\", \"Maria\")"
+                    }
+                },
+                "required": [
+                    "query"
+                ]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_tasks",
+            "description": "Get a list of tasks filtering by status, priority, or date. Use this to see what work is pending.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "completed",
+                            "all"
+                        ],
+                        "description": "Filter by status (default: pending)"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ],
+                        "description": "Filter by priority level"
+                    },
+                    "search": {
+                        "type": "string",
+                        "description": "Keywords to search in title or description"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Max number of tasks to return (default 5)"
+                    }
+                },
+                "required": []
+            }
+        }
+    }
+]

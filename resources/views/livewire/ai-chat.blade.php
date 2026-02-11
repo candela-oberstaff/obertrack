@@ -1,5 +1,4 @@
 <div class="flex h-[calc(100vh-65px)] bg-white overflow-hidden" x-data="{ 
-<div class="flex h-[calc(100vh-65px)] bg-white overflow-hidden" x-data="{ 
     sidebarOpen: false,
     pendingMessage: '',
     pendingAttachment: null,
@@ -314,6 +313,36 @@
         // Streaming Logic
         // We use a named function to allow explicit removal if needed, 
         // but $wire.on should handle component lifecycle cleanup automatically.
+        // Helper: show error with retry button inside an AI bubble
+        const showErrorWithRetry = (contentArea, aiMsgDiv, conversationId, errorMsg) => {
+            contentArea.innerHTML = `
+                <div class="flex flex-col items-start gap-3">
+                    <div class="flex items-center gap-2 text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        <span class="text-sm">${errorMsg}</span>
+                    </div>
+                    <button class="ai-retry-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-full transition-all duration-200 hover:shadow-sm active:scale-95" data-conversation-id="${conversationId}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Reintentar
+                    </button>
+                </div>
+            `;
+            scrollToBottom();
+
+            // Bind retry button
+            const retryBtn = contentArea.querySelector('.ai-retry-btn');
+            if (retryBtn) {
+                retryBtn.addEventListener('click', () => {
+                    aiMsgDiv.remove();
+                    $wire.retryLastMessage();
+                });
+            }
+        };
+
         $wire.on('start-streaming', (event) => {
             console.log("Start streaming event received", event);
             const conversationId = event.conversationId;
@@ -337,7 +366,14 @@
                             <span class="text-xs text-gray-400 mb-1 px-1">AI</span>
                             <div class="text-[15px] leading-relaxed px-5 py-3.5 shadow-sm bg-white text-gray-800 rounded-2xl rounded-tl-sm border border-gray-100">
                             <div class="prose prose-sm max-w-none prose-p:my-1 prose-pre:bg-gray-800 prose-pre:text-gray-100" id="streaming-content">
-                                <span class="animate-pulse">Thinking...</span>
+                                <div class="flex items-center gap-2 text-gray-400">
+                                    <div class="flex gap-1">
+                                        <span class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                                        <span class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                                        <span class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                                    </div>
+                                    <span class="text-sm animate-pulse">Pensando...</span>
+                                </div>
                             </div>
                             </div>
                     </div>
@@ -363,7 +399,6 @@
             eventSource.onmessage = function(e) {
                 if (e.data === "[DONE]") {
                     eventSource.close();
-                    // Wait for Livewire to save and re-render before removing our temporary bubble
                     $wire.saveAiResponse(fullContent).then(() => {
                         aiMsgDiv.remove(); 
                         scrollToBottom();
@@ -377,21 +412,18 @@
                     if (data.error) {
                         console.error("Backend Error:", data.error);
                         eventSource.close();
-                        contentArea.innerText = "Error: " + data.error;
-                        $wire.saveAiResponse("Error: " + data.error).then(() => {
-                             aiMsgDiv.remove();
-                        });
+                        showErrorWithRetry(contentArea, aiMsgDiv, conversationId, 
+                            'No pude procesar tu solicitud. Inténtalo de nuevo en unos segundos.');
                         return;
                     }
 
                     if (typeof data.content !== 'undefined') {
                         if (isFirstChunk && data.content.length > 0) {
-                            contentArea.innerHTML = ''; // Remove "Thinking..."
+                            contentArea.innerHTML = '';
                             isFirstChunk = false;
                         }
                         fullContent += data.content;
                         if (fullContent.length > 0) {
-                            // Basic markdown-like handling for newlines
                             contentArea.innerText = fullContent; 
                             scrollToBottom();
                         }
@@ -406,10 +438,8 @@
                 if (eventSource.readyState === 2) { // CLOSED
                     eventSource.close();
                     if (!fullContent) {
-                            contentArea.innerText = "Reconectando...";
-                            $wire.saveAiResponse("Error de conexión (Timeout).").then(() => {
-                                aiMsgDiv.remove();
-                            });
+                        showErrorWithRetry(contentArea, aiMsgDiv, conversationId, 
+                            'La conexión se interrumpió. Espera unos segundos e inténtalo de nuevo.');
                     } else {
                         $wire.saveAiResponse(fullContent).then(() => {
                             aiMsgDiv.remove();

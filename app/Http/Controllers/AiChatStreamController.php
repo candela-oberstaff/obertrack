@@ -6,200 +6,102 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\AiConversation;
 use App\Models\AiMessage;
-use Illuminate\Support\Facades\Http;
+use App\Services\AiAgentService;
+use Illuminate\Support\Facades\Log;
 
 class AiChatStreamController extends Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request, AiAgentService $aiAgent)
     {
         $request->validate([
             'conversation_id' => 'required|exists:ai_conversations,id',
-            'message' => 'required|string' // The user's last message, or we can just load context
+            'message' => 'required|string'
         ]);
 
         $conversation = AiConversation::where('user_id', Auth::id())
             ->findOrFail($request->conversation_id);
 
-        // Load context (last 10 messages)
-        // We need to include the user's latest message which might just have been saved
-        // Load context (last 10 messages)
-        $messages = $conversation->messages()
-            ->orderBy('created_at', 'asc')
-            ->take(10)
-            ->get();
-            
-        return response()->stream(function () use ($messages, $conversation) {
-            // 1. Send immediate ping to show the user we are working
+        $user = Auth::user();
+
+        // Get the last user message from the conversation
+        $lastUserMessage = $conversation->messages()
+            ->where('role', 'user')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $userText = $lastUserMessage ? $lastUserMessage->content : '';
+
+        return response()->stream(function () use ($aiAgent, $conversation, $user, $userText) {
+            // 1. Send immediate "thinking" ping
             echo "data: " . json_encode(['content' => '']) . "\n\n";
             if (ob_get_level() > 0) ob_flush();
             flush();
 
-            // 2. Build context inside the stream (lazy loading)
-            
-            // 2. Build context
-            $messagesArray = $messages->map(function($msg) {
-                $payload = [
-                    'role' => $msg->role,
-                    'content' => $msg->content
-                ];
-                
-                // Image handling (Groq supports vision in some models, but we'll keep it simple for now or compatible)
-                if ($msg->attachment_path && $msg->attachment_type === 'image') {
-                     $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($msg->attachment_path);
-                     if (file_exists($fullPath)) {
-                         // OpenAI/Groq format for images is different, but for now let's keep it compatible 
-                         // or just strip images if driver is groq and model doesn't support it.
-                         // For simplicity in this iteration, we pass text only for Groq unless we confirm vision model.
-                         // But Ollama logic was: images: [base64]
-                         
-                         $driver = config('ai.default');
-                         if ($driver === 'ollama') {
-                             $payload['images'] = [base64_encode(file_get_contents($fullPath))];
-                         } 
-                         // For Groq/OpenAI, we would need content: [ {type: text...}, {type: image_url...} ]
-                         // We will implement that later if needed.
-                     }
+            try {
+                // 2. Execute the Agent (handles tool calls internally, returns final text)
+                $responseContent = $aiAgent->sendMessage($userText, $conversation, $user);
+
+                if (empty($responseContent)) {
+                    $responseContent = 'No pude procesar tu solicitud. Inténtalo de nuevo.';
                 }
-                return $payload;
-            })->toArray();
 
-            // 3. Inject System Prompt
-            $user = Auth::user();
-            $systemPrompt = config('ai.system_prompt', 'You are a helpful assistant.');
-            
-            // Improve context injection
-            $contextData = [
-                'user_name' => $user->name,
-                'user_role' => $user->tipo_usuario,
-                'date' => now()->toDateTimeString(),
-                'app_name' => config('app.name'),
-            ];
-            
-            foreach ($contextData as $key => $value) {
-                $systemPrompt = str_replace(":{$key}", $value, $systemPrompt);
-            }
-            
-            array_unshift($messagesArray, [
-                'role' => 'system',
-                'content' => $systemPrompt
-            ]);
-
-            // 4. Configure Driver
-            $driver = config('ai.default', 'groq');
-            $config = config("ai.drivers.{$driver}");
-            
-            $url = $config['url'];
-            $model = $config['model'];
-            $apiKey = $config['api_key'] ?? null;
-            
-            \Illuminate\Support\Facades\Log::info("AI Chat connecting to: {$driver} ({$model})");
-
-            // 5. Prepare Payload
-            $data = [
-                'model' => $model,
-                'messages' => $messagesArray,
-                'stream' => true,
-            ];
-            
-            if ($driver === 'ollama') {
-                $data['keep_alive'] = '5m';
-            } else {
-                // Groq/OpenAI: Set max_tokens to prevent cut-off responses
-                $data['max_tokens'] = 2048;
-            }
-
-            // 6. Init Curl
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, false); 
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 120);
-            
-            $headers = ['Content-Type: application/json'];
-            if ($apiKey) {
-                $headers[] = "Authorization: Bearer {$apiKey}";
-            }
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-            $buffer = '';
-
-            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use ($driver, &$buffer) {
-                $buffer .= $chunk;
+                // 3. Simulate streaming by sending the response in small chunks
+                // This gives the "typing" effect while keeping tool execution synchronous
+                $chunks = $this->splitIntoChunks($responseContent);
                 
-                while (($newlinePos = strpos($buffer, "\n")) !== false) {
-                    $line = substr($buffer, 0, $newlinePos);
-                    $buffer = substr($buffer, $newlinePos + 1);
+                foreach ($chunks as $chunk) {
+                    echo "data: " . json_encode(['content' => $chunk]) . "\n\n";
+                    if (ob_get_level() > 0) ob_flush();
+                    flush();
                     
-                    $line = trim($line);
-                    if (empty($line)) continue;
-                    
-                    // Handle "data: [DONE]" for OpenAI/Groq
-                    if ($line === 'data: [DONE]') {
-                        echo "data: [DONE]\n\n";
-                         if (ob_get_level() > 0) ob_flush();
-                        flush();
-                        continue;
-                    }
-                    
-                    // Parse JSON
-                    $jsonStr = $line;
-                    if ($driver === 'groq' && str_starts_with($line, 'data: ')) {
-                        $jsonStr = substr($line, 6);
-                    }
-                    
-                    $json = json_decode($jsonStr, true);
-                    
-                    // If JSON decode failed, it might be that we stripped wrongly or data is corrupt.
-                    // But with the buffer logic, we should have a complete line.
-                    if ($json === null) {
-                        // Log parsing error?
-                        continue;
-                    }
-                    
-                    $content = null;
-                    $error = null;
-                    $done = false;
-
-                    if ($driver === 'ollama') {
-                        $content = $json['message']['content'] ?? null;
-                        $done = $json['done'] ?? false;
-                        $error = $json['error'] ?? null;
-                    } else {
-                        // Groq / OpenAI
-                        $content = $json['choices'][0]['delta']['content'] ?? null;
-                        $finishReason = $json['choices'][0]['finish_reason'] ?? null;
-                        if ($finishReason) $done = true;
-                    }
-
-                    if ($content !== null) {
-                        echo "data: " . json_encode(['content' => $content]) . "\n\n";
-                        if (ob_get_level() > 0) ob_flush();
-                        flush();
-                    }
-                    
-                    if ($error) {
-                         \Illuminate\Support\Facades\Log::error("AI API Error: " . $error);
-                         echo "data: " . json_encode(['error' => $error]) . "\n\n";
-                    }
+                    // Small delay between chunks for natural typing feel
+                    usleep(8000); // 8ms between chunks
                 }
-                
-                return strlen($chunk);
-            });
 
-            curl_exec($ch);
-            
-            if (curl_errno($ch)) {
-                $error = curl_error($ch);
-                \Illuminate\Support\Facades\Log::error("AI Stream Error: " . $error);
-                echo "data: " . json_encode(['error' => $error]) . "\n\n";
+            } catch (\Exception $e) {
+                Log::error('AI Agent Stream Error: ' . $e->getMessage());
+                echo "data: " . json_encode(['content' => 'Error: ' . $e->getMessage()]) . "\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
             }
-            curl_close($ch);
+
+            // 4. Signal done
+            echo "data: [DONE]\n\n";
+            if (ob_get_level() > 0) ob_flush();
+            flush();
 
         }, 200, [
             'Cache-Control' => 'no-cache',
             'Content-Type' => 'text/event-stream',
             'X-Accel-Buffering' => 'no',
         ]);
+    }
+
+    /**
+     * Split text into small chunks to simulate streaming/typing effect
+     */
+    private function splitIntoChunks(string $text): array
+    {
+        $chunks = [];
+        $words = explode(' ', $text);
+        $buffer = [];
+
+        foreach ($words as $word) {
+            $buffer[] = $word;
+            
+            // Send chunks of 2 words for fast, natural typing feel
+            if (count($buffer) >= 2 || str_contains($word, "\n")) {
+                // Add trailing space so words don't merge between chunks
+                $chunks[] = implode(' ', $buffer) . ' ';
+                $buffer = [];
+            }
+        }
+
+        // Last partial chunk (no trailing space needed at end)
+        if (!empty($buffer)) {
+            $chunks[] = implode(' ', $buffer);
+        }
+
+        return $chunks;
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use App\Services\OllamaService;
 use App\Models\AiConversation;
 use App\Models\AiMessage;
 use Illuminate\Support\Facades\Auth;
@@ -96,9 +95,9 @@ class AiChat extends Component
         }
     }
 
-    public function sendMessage(OllamaService $ollama, $content = null)
+    public function sendMessage($content = null)
     {
-        // Use the passed content (from Alpine) or fallback to the bound property (unlikely now but good for safety)
+        // Use the passed content (from Alpine) or fallback to the bound property
         $userText = $content ?? $this->userMessage;
 
         // Allow empty text if there is an attachment
@@ -106,16 +105,19 @@ class AiChat extends Component
             return;
         }
 
-        // Handle Attachment
+        // Handle Attachment (Preserve existing logic if needed, or simplify)
         $attachmentPath = null;
         $attachmentType = null;
         
-        // ... (attachment logic) ...
+        if ($this->attachment) {
+            $attachmentPath = $this->attachment->store('ai_attachments', 'public');
+            $mime = $this->attachment->getMimeType();
+            $attachmentType = str_starts_with($mime, 'image/') ? 'image' : 'file';
+            $this->attachment = null;
+        }
 
-        // Clear input immediately (property)
+        // Clear input immediately
         $this->userMessage = ''; 
-        
-        // ... (rest of the logic) ... 
         
         // 1. Create Conversation if not exists
         if (!$this->currentConversationId) {
@@ -124,16 +126,10 @@ class AiChat extends Component
                 'title' => Str::limit($userText ?: 'Archivo adjunto', 30, '...')
             ]);
             $this->currentConversationId = $conversation->id;
-            
-            // We do NOT reload all conversations here to save time. 
-            // We can push the new one to the list manually if strictly needed,
-            // or just wait for the next full refresh. 
-            // For UX speed, we skip reloading the whole sidebar list logic for now.
-             
             $this->messages = []; 
         } else {
              $conversation = AiConversation::find($this->currentConversationId);
-             $conversation->touch(); // Update timestamp
+             $conversation->touch(); 
         }
 
         // 2. Save User Message to DB
@@ -145,7 +141,7 @@ class AiChat extends Component
             'attachment_type' => $attachmentType
         ]);
 
-        // 3. Update UI state (append locally for speed)
+        // 3. Update UI state
         $this->messages[] = [
             'role' => 'user',
             'content' => $userText,
@@ -155,8 +151,22 @@ class AiChat extends Component
 
         $this->isTyping = true;
 
-        // Instead of calling Ollama synchronously, we return the conversation ID
-        // The frontend will then initiate the SSE stream
+        // Dispatch event for frontend to initiate SSE streaming
+        // The AiChatStreamController handles the actual AI processing
+        $this->dispatch('start-streaming', conversationId: $this->currentConversationId);
+    }
+
+    /**
+     * Retry the last message after an error (called from the retry button)
+     */
+    public function retryLastMessage()
+    {
+        if (!$this->currentConversationId) return;
+
+        $this->isTyping = true;
+        
+        // Re-dispatch streaming for the current conversation
+        // The stream controller will pick up the last user message from the conversation history
         $this->dispatch('start-streaming', conversationId: $this->currentConversationId);
     }
     
