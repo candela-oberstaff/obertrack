@@ -51,6 +51,21 @@
                     'fullscreen',
                     '|',
                     {
+                        name: 'html-tag',
+                        action: (editor) => {
+                            const cm = editor.codemirror;
+                            const selection = cm.getSelection();
+                            cm.replaceSelection(`<${selection || 'tag'}>${selection}</${selection || 'tag'}>`);
+                            if (!selection) {
+                                const cursor = cm.getCursor();
+                                cm.setCursor(cursor.line, cursor.ch - 6);
+                            }
+                        },
+                        className: 'fa fa-code',
+                        title: 'Insertar Etiqueta HTML',
+                    },
+                    '|',
+                    {
                         name: 'guide',
                         action: () => window.open('https://www.markdownguide.org/basic-syntax/', '_blank'),
                         className: 'fa fa-question-circle',
@@ -91,7 +106,7 @@
                 });
             }
         },
-        insertCommand(text) {
+        insertCommand(opening, closing = '') {
             const cm = this.editor.codemirror;
             const cursor = cm.getCursor();
             
@@ -99,7 +114,12 @@
             cm.replaceRange('', {line: cursor.line, ch: cursor.ch - 1}, cursor);
             
             // Insert the command text
-            cm.replaceSelection(text);
+            if (closing) {
+                const selection = cm.getSelection();
+                cm.replaceSelection(opening + selection + closing);
+            } else {
+                cm.replaceSelection(opening);
+            }
             cm.focus();
             this.showSlashMenu = false;
         }
@@ -170,6 +190,46 @@
                 <div class="flex-1 text-left">
                     <div class="font-semibold leading-none mb-1">Cita / Bloque</div>
                     <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Destacar un fragmento de texto</div>
+                </div>
+            </button>
+
+            <button type="button" @click="insertCommand('<div>\n\n</div>')" class="w-full flex items-center gap-3.5 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all group/item">
+                <div class="w-8 h-8 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg shadow-sm group-hover/item:scale-110 transition-transform">
+                    <div class="text-[10px] font-bold">&lt;div&gt;</div>
+                </div>
+                <div class="flex-1 text-left">
+                    <div class="font-semibold leading-none mb-1">Contenedor HTML</div>
+                    <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Insertar etiqueta &lt;div&gt;</div>
+                </div>
+            </button>
+
+            <button type="button" @click="insertCommand('<span style=\"color: #22A9C8;\">', '</span>')" class="w-full flex items-center gap-3.5 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-cyan-50/50 dark:hover:bg-cyan-900/20 rounded-xl transition-all group/item">
+                <div class="w-8 h-8 flex items-center justify-center bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 rounded-lg shadow-sm group-hover/item:scale-110 transition-transform">
+                    <div class="text-[10px] font-bold">&lt;sp&gt;</div>
+                </div>
+                <div class="flex-1 text-left">
+                    <div class="font-semibold leading-none mb-1">Texto con Color</div>
+                    <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Insertar etiqueta &lt;span&gt; con estilo</div>
+                </div>
+            </button>
+
+            <button type="button" @click="insertCommand('<br>')" class="w-full flex items-center gap-3.5 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 rounded-xl transition-all group/item">
+                <div class="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg shadow-sm group-hover/item:scale-110 transition-transform">
+                    <div class="text-[10px] font-bold">BR</div>
+                </div>
+                <div class="flex-1 text-left">
+                    <div class="font-semibold leading-none mb-1">Salto de línea</div>
+                    <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Insertar etiqueta &lt;br&gt;</div>
+                </div>
+            </button>
+
+            <button type="button" @click="insertCommand('<hr>')" class="w-full flex items-center gap-3.5 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 rounded-xl transition-all group/item">
+                <div class="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg shadow-sm group-hover/item:scale-110 transition-transform">
+                    <div class="text-[10px] font-bold">HR</div>
+                </div>
+                <div class="flex-1 text-left">
+                    <div class="font-semibold leading-none mb-1">Línea divisoria</div>
+                    <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Insertar etiqueta &lt;hr&gt;</div>
                 </div>
             </button>
         </div>
