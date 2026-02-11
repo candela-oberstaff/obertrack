@@ -234,6 +234,10 @@
             <main>
                 {{ $slot }}
             </main>
+            
+            <!-- Global Listeners -->
+            <livewire:chat-notification />
+            <livewire:task-notification />
         </div>
         <script>
             // Handle Session Expiration (419 Page Expired)

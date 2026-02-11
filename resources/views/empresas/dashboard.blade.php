@@ -291,68 +291,214 @@
             <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas registradas por los profesionales</h3>
             
             <!-- Employee Stats Cards -->
-            <div id="employer-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-                @foreach($professionalSummaries as $summary)
-                    @php
-                        $percentage = $summary['target_hours'] > 0 ? min(100, ($summary['total_hours'] / $summary['target_hours']) * 100) : 0;
-                        $dateRange = $currentMonth->copy()->startOfMonth()->format('M 1') . ' - ' . $currentMonth->copy()->endOfMonth()->format('M d');
-                    @endphp
+            <!-- New Dashboard Layout -->
+            <div x-data="{
+                search: '',
+                statusFilter: 'all', // all, active, inactive_1, inactive_2
+                sortBy: 'inactivity', // inactivity, days, name, hours
+                
+                get filteredProfessionals() {
+                    let items = {{ Js::from($professionalSummaries) }};
                     
-                    <div class="bg-[#F8F9FA] rounded-[2rem] p-6 relative flex flex-col items-center shadow-sm h-[320px] transition-all hover:shadow-md">
-                        
-                        <!-- Header -->
-                        <div class="w-full text-center mb-6 mt-2 relative">
-                            <!-- Status Indicator -->
-                            @if($summary['activity_status'] === 'red')
-                                <div class="absolute -top-4 right-0 flex items-center gap-1 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
-                                    <span class="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                                    <span class="text-[8px] font-black text-red-600 uppercase tracking-wider">Inactivo 2+ d</span>
-                                </div>
-                            @elseif($summary['activity_status'] === 'yellow')
-                                <div class="absolute -top-4 right-0 flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100">
-                                    <span class="flex h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
-                                    <span class="text-[8px] font-black text-yellow-600 uppercase tracking-wider">Inactivo 1 d</span>
-                                </div>
-                            @endif
+                    // Filter by Status
+                    if (this.statusFilter === 'active') {
+                        items = items.filter(p => p.activity_status === 'active');
+                    } else if (this.statusFilter === 'inactive_1') {
+                        items = items.filter(p => p.activity_status === 'yellow');
+                    } else if (this.statusFilter === 'inactive_2') {
+                        items = items.filter(p => p.activity_status === 'red');
+                    }
+                    
+                    // Filter by Search
+                    if (this.search) {
+                        const q = this.search.toLowerCase();
+                        items = items.filter(p => 
+                            p.user.name.toLowerCase().includes(q) || 
+                            (p.role && p.role.toLowerCase().includes(q))
+                        );
+                    }
+                    
+                    // Sort
+                    return items.sort((a, b) => {
+                        if (this.sortBy === 'inactivity') {
+                            // Red > Yellow > Active
+                            const rank = { 'red': 3, 'yellow': 2, 'active': 1 };
+                            const rankDiff = rank[b.activity_status] - rank[a.activity_status];
+                            if (rankDiff !== 0) return rankDiff;
+                        }
+                        if (this.sortBy === 'days') return b.days_registered - a.days_registered;
+                        if (this.sortBy === 'hours') return b.total_hours - a.total_hours;
+                        if (this.sortBy === 'name') return a.user.name.localeCompare(b.user.name);
+                        return 0;
+                    });
+                },
+                
+                get stats() {
+                    const all = {{ Js::from($professionalSummaries) }};
+                    return {
+                        total: all.length,
+                        active_today: all.filter(p => p.active_today).length,
+                        inactive_1: all.filter(p => p.activity_status === 'yellow').length,
+                        inactive_2: all.filter(p => p.activity_status === 'red').length,
+                        avg_hours: all.length ? (all.reduce((acc, p) => acc + p.total_hours, 0) / all.length) : 0
+                    };
+                }
+            }" class="mb-16">
 
-                            <h4 class="text-lg font-black text-[#1a202c] leading-tight mb-0.5 truncate px-2">{{ $summary['user']->name }}</h4>
-                            <p class="text-gray-400 text-xs font-medium uppercase tracking-widest">{{ $summary['role'] }}</p>
-                        </div>
-
-                        <!-- Semi Circular Chart (U Shape) -->
-                        <div class="relative w-44 h-24 mb-4 flex justify-center overflow-hidden">
-                             <!-- Half circle SVG -->
-                             <svg viewBox="0 0 100 60" class="w-full h-full">
-                                 <!-- Background Arc -->
-                                 <path d="M 10,10 A 40,40 0 0 0 90,10" 
-                                       fill="none" 
-                                       stroke="#E2E8F0" 
-                                       stroke-width="12" 
-                                       stroke-linecap="round" />
-                                 <!-- Progress Arc -->
-                                  <path d="M 10,10 A 40,40 0 0 0 90,10" 
-                                       fill="none" 
-                                       stroke="#22A9C8" 
-                                       stroke-width="12" 
-                                       stroke-linecap="round"
-                                       stroke-dasharray="{{ 126 }}" 
-                                       stroke-dashoffset="{{ 126 - (126 * $percentage / 100) }}"
-                                       class="transition-all duration-1000 ease-out" />
-                             </svg>
-                             <!-- Number -->
-                             <div class="absolute top-6 text-center">
-                                 <span class="text-4xl font-black text-[#1a202c] block leading-none">{{ $summary['days_registered'] }}</span>
-                             </div>
-                        </div>
-
-                        <!-- Footer Text -->
-                        <div class="text-center mt-auto mb-2">
-                            <p class="text-[#1a202c] text-[10px] font-bold leading-tight max-w-[180px] mx-auto opacity-60">
-                                {{ $summary['days_registered'] }} días registrados ({{ round($summary['total_hours']) }} de {{ $summary['target_hours'] }} horas mensuales)
-                            </p>
-                        </div>
+                <!-- 1. KPI Cards Row -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <!-- Total -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Equipo</span>
+                        <span class="text-3xl font-black text-gray-800" x-text="stats.total"></span>
                     </div>
-                @endforeach
+                    <!-- Active Today -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-green-50 opacity-50"></div>
+                        <span class="text-xs font-bold text-green-600 uppercase tracking-widest relative z-10">Activos Hoy</span>
+                        <span class="text-3xl font-black text-green-600 relative z-10" x-text="stats.active_today"></span>
+                    </div>
+                    <!-- Inactive 1d -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-yellow-50 opacity-50"></div>
+                        <span class="text-xs font-bold text-yellow-600 uppercase tracking-widest relative z-10">Inactivos 1d</span>
+                        <span class="text-3xl font-black text-yellow-600 relative z-10" x-text="stats.inactive_1"></span>
+                    </div>
+                    <!-- Inactive 2d+ -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-red-50 opacity-50"></div>
+                        <span class="text-xs font-bold text-red-600 uppercase tracking-widest relative z-10">Criticos (2d+)</span>
+                        <span class="text-3xl font-black text-red-600 relative z-10" x-text="stats.inactive_2"></span>
+                    </div>
+                </div>
+
+                <!-- 2. Sticky Control Bar -->
+                <div class="sticky top-0 z-30 bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-gray-100 p-2 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <!-- Search -->
+                    <div class="relative w-full md:w-64">
+                        <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input x-model="search" type="text" placeholder="Buscar profesional..." class="w-full pl-10 pr-4 py-2 bg-gray-50 border-transparent focus:border-[#22A9C8] focus:ring-0 rounded-lg text-sm transition-all placeholder-gray-400">
+                    </div>
+
+                    <!-- Filter Chips -->
+                    <div class="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 no-scrollbar">
+                        <button @click="statusFilter = 'all'" :class="statusFilter === 'all' ? 'bg-gray-800 text-white shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-200'" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap">Todos</button>
+                        <button @click="statusFilter = 'active'" :class="statusFilter === 'active' ? 'bg-green-500 text-white shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-200'" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap">Activos</button>
+                        <button @click="statusFilter = 'inactive_1'" :class="statusFilter === 'inactive_1' ? 'bg-yellow-400 text-white shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-200'" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap">1 día inactivo</button>
+                        <button @click="statusFilter = 'inactive_2'" :class="statusFilter === 'inactive_2' ? 'bg-red-500 text-white shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-200'" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap">Críticos (2+)</button>
+                    </div>
+
+                    <!-- Sort -->
+                    <div class="flex items-center gap-2">
+                         <span class="text-xs font-bold text-gray-400 uppercase">Ordenar:</span>
+                         <select x-model="sortBy" class="py-1.5 pl-3 pr-8 bg-gray-50 border-transparent focus:border-[#22A9C8] focus:ring-0 rounded-lg text-xs font-bold text-gray-700 cursor-pointer">
+                             <option value="inactivity">Prioridad (Inactivos)</option>
+                             <option value="hours">Horas (Mayor a menor)</option>
+                             <option value="days">Días (Mayor a menor)</option>
+                             <option value="name">Alfabético</option>
+                         </select>
+                    </div>
+                </div>
+
+                <!-- 3. Compact Data Table -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50/50 border-b border-gray-100 text-xs text-gray-400 font-black uppercase tracking-wider">
+                                    <th class="px-6 py-4 w-16 text-center">Estado</th>
+                                    <th class="px-6 py-4">Profesional</th>
+                                    <th class="px-6 py-4 text-center">Días Reg.</th>
+                                    <th class="px-6 py-4 w-48">Progreso Mensual</th>
+                                    <th class="px-6 py-4 text-right">Última Actividad</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                <template x-for="emp in filteredProfessionals" :key="emp.user.id">
+                                    <!-- Row with Hover Effect -->
+                                    <tr class="hover:bg-blue-50/30 transition-colors group cursor-default">
+                                        <!-- Status Indicator -->
+                                        <td class="px-6 py-4 text-center">
+                                            <div class="flex justify-center">
+                                                <template x-if="emp.activity_status === 'red'">
+                                                     <div class="w-3 h-3 rounded-full bg-red-500 shadow-sm border-2 border-white ring-1 ring-red-100 animate-pulse" title="Inactivo 2+ d"></div>
+                                                </template>
+                                                <template x-if="emp.activity_status === 'yellow'">
+                                                     <div class="w-3 h-3 rounded-full bg-yellow-400 shadow-sm border-2 border-white ring-1 ring-yellow-100" title="Inactivo 1 d"></div>
+                                                </template>
+                                                <template x-if="emp.activity_status === 'active'">
+                                                     <div class="w-3 h-3 rounded-full bg-green-500 shadow-sm border-2 border-white opacity-80" title="Activo"></div>
+                                                </template>
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Name & Role -->
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                 <!-- Initials Avatar -->
+                                                <div :class="`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black text-white shadow-sm ${emp.color}`">
+                                                    <span x-text="emp.initials"></span>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-bold text-gray-800 leading-none group-hover:text-[#22A9C8] transition-colors" x-text="emp.user.name"></p>
+                                                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1" x-text="emp.role || 'Sin Rol'"></p>
+                                                </div>
+                                                <!-- Active Today Tag -->
+                                                <template x-if="emp.active_today">
+                                                    <span class="px-1.5 py-0.5 rounded bg-green-100 text-green-700 text-[9px] font-black uppercase tracking-tighter border border-green-200 ml-2">Hoy</span>
+                                                </template>
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Days Registered -->
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="text-sm font-bold text-gray-700" x-text="emp.days_registered"></span>
+                                            <span class="text-[10px] text-gray-400">d</span>
+                                        </td>
+                                        
+                                        <!-- Progress Bar -->
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center justify-between gap-2 mb-1">
+                                                <span class="text-[10px] font-bold text-gray-500" x-text="Number(emp.total_hours).toFixed(1) + 'h'"></span>
+                                                <span class="text-[9px] font-bold text-gray-300">Meta: 160h</span>
+                                            </div>
+                                             <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                                                <div class="h-full rounded-full transition-all duration-500"
+                                                     :class="{
+                                                         'bg-red-500': (emp.total_hours / emp.target_hours) < 0.3,
+                                                         'bg-[#22A9C8]': (emp.total_hours / emp.target_hours) >= 0.3
+                                                     }"
+                                                     :style="`width: ${Math.min(100, (emp.total_hours / emp.target_hours) * 100)}%`">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Last Activity -->
+                                        <td class="px-6 py-4 text-right">
+                                            <template x-if="emp.last_activity">
+                                                <div>
+                                                    <p class="text-xs font-bold text-gray-700" x-text="new Date(emp.last_activity).toLocaleDateString()"></p>
+                                                    <p class="text-[10px] text-gray-400" x-text="emp.activity_status === 'active' ? 'Reciente' : 'Hace días'"></p>
+                                                </div>
+                                            </template>
+                                            <template x-if="!emp.last_activity">
+                                                <span class="text-xs text-gray-300 italic">Sin registros</span>
+                                            </template>
+                                        </td>
+                                    </tr>
+                                </template>
+                                
+                                <template x-if="filteredProfessionals.length === 0">
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-12 text-center text-gray-400 text-sm">
+                                            No se encontraron profesionales con estos filtros.
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <!-- Recovery Overview Section (Informativo Detallado) -->

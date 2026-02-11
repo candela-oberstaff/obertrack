@@ -32,6 +32,16 @@ class CompanyTaskController extends Controller
              $profesionales = \App\Models\User::where('empleador_id', $ownerId)->orderBy('name')->get();
         }
  
+        // Mark tasks as read
+        $teamTasks->each(function ($task) use ($user) {
+            if (!$task->isReadBy($user->id)) {
+                $task->readBy()->attach($user->id, ['read_at' => now()]);
+            }
+        });
+
+        // Dipatch event specific to this user to update their unread count immediately in frontend
+        // This might be redundant if we just refresh, but helps real-time feel
+        
         return view('empresas.ver_tareas_profesionales', compact('teamTasks', 'profesionales'));
     }
 

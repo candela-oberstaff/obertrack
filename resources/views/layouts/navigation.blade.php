@@ -1,5 +1,6 @@
-<nav x-data="{ open: false, unreadCount: 0 }" 
+<nav x-data="{ open: false, unreadCount: 0, taskUnreadCount: 0 }" 
      @unread-count-changed.window="unreadCount = $event.detail.count"
+     @task-unread-count-changed.window="taskUnreadCount = $event.detail.count"
      class="bg-white border-b border-gray-200 relative">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -31,11 +32,15 @@
                 
                 
                 @if(auth()->user()->tipo_usuario === 'empleador')
-                    <a href="{{ route('empresa.dashboard', [], false) }}" wire:navigate class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empresa.dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('empresa.dashboard', [], false) }}" wire:navigate class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out relative {{ request()->routeIs('empresa.dashboard') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Dashboard
+                        <livewire:pending-hours-notification />
                     </a>
-                    <a href="{{ route('empresa.tareas.index', [], false) }}" wire:navigate class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('empresa.tareas.index') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('empresa.tareas.index', [], false) }}" wire:navigate class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out relative {{ request()->routeIs('empresa.tareas.index') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Tareas
+                        <template x-if="taskUnreadCount > 0">
+                            <span class="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-white bg-red-500 transform translate-x-1/2 -translate-y-1/2"></span>
+                        </template>
                     </a>
                     <a href="{{ route('reportes.index', [], false) }}" wire:navigate class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('reportes.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Reportes
@@ -45,8 +50,9 @@
                     <div class="hidden sm:flex sm:items-center">
                         <x-dropdown align="right" width="48">
                             <x-slot name="trigger">
-                                <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-full text-gray-500 hover:text-gray-900 focus:outline-none transition ease-in-out duration-150 {{ request()->routeIs('profesional.registrar-horas') || request()->routeIs('empresa.dashboard') ? 'bg-white border-gray-300 text-gray-900 shadow-sm' : '' }}">
+                                <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-full text-gray-500 hover:text-gray-900 focus:outline-none transition ease-in-out duration-150 relative {{ request()->routeIs('profesional.registrar-horas') || request()->routeIs('empresa.dashboard') ? 'bg-white border-gray-300 text-gray-900 shadow-sm' : '' }}">
                                     <div>Horas</div>
+                                    <livewire:pending-hours-notification />
                                     <div class="ms-1">
                                         <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -68,8 +74,11 @@
                     <div class="hidden sm:flex sm:items-center">
                         <x-dropdown align="right" width="48">
                             <x-slot name="trigger">
-                                <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-full text-gray-500 hover:text-gray-900 focus:outline-none transition ease-in-out duration-150 {{ request()->routeIs('manager.tasks.index') || request()->routeIs('profesionales.tasks.*') ? 'bg-white border-gray-300 text-gray-900 shadow-sm' : '' }}">
+                                <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-full text-gray-500 hover:text-gray-900 focus:outline-none transition ease-in-out duration-150 relative {{ request()->routeIs('manager.tasks.index') || request()->routeIs('profesionales.tasks.*') ? 'bg-white border-gray-300 text-gray-900 shadow-sm' : '' }}">
                                     <div>Tareas</div>
+                                    <template x-if="taskUnreadCount > 0">
+                                        <span class="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-white bg-red-500 transform translate-x-1/2 -translate-y-1/2"></span>
+                                    </template>
                                     <div class="ms-1">
                                         <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -92,8 +101,11 @@
                     <a href="{{ route('profesional.registrar-horas', [], false) }}" wire:navigate class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('profesional.registrar-horas') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Registrar jornada
                     </a>
-                    <a href="{{ route('profesionales.tasks.index', [], false) }}" wire:navigate class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out {{ request()->routeIs('profesionales.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                    <a href="{{ route('profesionales.tasks.index', [], false) }}" wire:navigate class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out relative {{ request()->routeIs('profesionales.tasks.*') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Tareas
+                        <template x-if="taskUnreadCount > 0">
+                            <span class="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-white bg-red-500 transform translate-x-1/2 -translate-y-1/2"></span>
+                        </template>
                     </a>
                     <a href="{{ route('chat', [], false) }}" wire:navigate class="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition duration-150 ease-in-out relative {{ request()->routeIs('chat') ? 'bg-white border border-gray-300 text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
                         Chat

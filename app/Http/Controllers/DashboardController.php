@@ -192,8 +192,15 @@ class DashboardController extends Controller
                 return $item->recovery_date->format('Y-m-d');
             });
 
+        // Check for activity TODAY (Real-time status)
+        $today = Carbon::today();
+        $activeTodayIds = WorkHours::whereIn('user_id', $profesionales->pluck('id'))
+            ->whereDate('work_date', $today)
+            ->pluck('user_id')
+            ->toArray();
+
         // Professional Summary Cards Data
-        $professionalSummaries = $profesionales->map(function($professional) use ($monthlyHours, $monthlyTasks, $professionalColors, $professionalStatuses) {
+        $professionalSummaries = $profesionales->map(function($professional) use ($monthlyHours, $monthlyTasks, $professionalColors, $professionalStatuses, $activeTodayIds) {
             $professionalHours = $monthlyHours->where('user_id', $professional->id);
             
             // Filter tasks for this specific professional
@@ -216,6 +223,8 @@ class DashboardController extends Controller
                 'initials' => strtoupper(substr($professional->name, 0, 1) . substr(strrchr($professional->name, ' ') ?: ' ' . substr($professional->name, 1), 1, 1)),
                 'activity_status' => $statusData['status'] ?? 'active',
                 'days_inactive' => $statusData['days_inactive'] ?? 0,
+                'last_activity' => $statusData['last_registration'] ?? null,
+                'active_today' => in_array($professional->id, $activeTodayIds),
                 'debt_summary' => $debtSummary,
             ];
         });
