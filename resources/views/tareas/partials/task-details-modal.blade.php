@@ -67,9 +67,11 @@
                                             <span class="text-sm font-medium text-gray-700 max-w-[120px] truncate" x-text="assignee.name"></span>
                                         </div>
                                     </template>
+                                    <!--
                                     <button x-show="isEditingTask" class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-[#22A9C8] hover:border-[#22A9C8] bg-white transition-colors" title="Add Assignee (Use edit mode below)">
                                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                     </button>
+                                    -->
                                 </div>
 
                                 <!-- Due Date Pipeline -->
