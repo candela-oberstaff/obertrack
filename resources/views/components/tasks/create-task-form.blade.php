@@ -85,7 +85,7 @@
                             dark:text-gray-300"
                     >
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Puedes subir múltiples archivos (PDF, Word, Excel, imágenes). Máximo 10MB por archivo.
+                        Puedes subir múltiples archivos (PDF, Word, Excel, imágenes). Máximo 5MB por archivo.
                     </p>
                 </div>
             </div>

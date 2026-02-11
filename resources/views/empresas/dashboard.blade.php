@@ -389,7 +389,7 @@
                                 </div>
                             </div>
                             
-                            <div class="overflow-x-auto">
+                            <div class="overflow-y-auto h-[600px]">
                                 <table class="w-full text-left">
                                     <thead>
                                         <tr class="bg-gray-50/20">
@@ -404,9 +404,6 @@
                                             <tr class="hover:bg-gray-50/30 transition-colors">
                                                 <td class="px-8 py-5">
                                                     <div class="flex items-center gap-3">
-                                                        <div class="w-10 h-10 rounded-xl overflow-hidden shadow-sm bg-gray-100 flex-shrink-0">
-                                                            <img src="{{ $sum['user']->avatar ? (str_starts_with($sum['user']->avatar, 'http') ? $sum['user']->avatar : '/avatars/' . $sum['user']->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($sum['user']->name) . '&color=FFFFFF&background=22A9C8' }}" class="w-full h-full object-cover">
-                                                        </div>
                                                         <div>
                                                             <p class="text-sm font-bold text-gray-700">{{ $sum['user']->name }}</p>
                                                             <p class="text-[10px] text-gray-400 font-medium uppercase truncate max-w-[120px]">{{ $sum['role'] }}</p>
@@ -451,23 +448,20 @@
                                 <p class="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1 ml-7">Pendientes de revisión</p>
                             </div>
                             
-                            <div class="flex-1 overflow-y-auto no-scrollbar max-h-[720px]">
+                            <div class="flex-1 overflow-y-auto no-scrollbar h-[600px]">
                                 @forelse($recoveryHistory as $recovery)
                                     <div class="px-5 py-4 border-b border-gray-50 last:border-0 hover:bg-gradient-to-r hover:from-gray-50/50 hover:to-transparent transition-all group">
                                         <!-- Header: User Info & Hours -->
                                         <div class="flex items-center justify-between mb-3">
                                             <div class="flex items-center gap-3 flex-1 min-w-0">
-                                                <div class="relative flex-shrink-0">
-                                                    <div class="w-10 h-10 rounded-xl overflow-hidden shadow-sm ring-2 ring-white group-hover:ring-[#22A9C8]/20 transition-all">
-                                                        <img src="{{ $recovery->user->avatar ? (str_starts_with($recovery->user->avatar, 'http') ? $recovery->user->avatar : '/avatars/' . $recovery->user->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($recovery->user->name) . '&color=FFFFFF&background=22A9C8' }}" class="w-full h-full object-cover">
-                                                    </div>
-                                                    <!-- Status Indicator Dot -->
-                                                    @if($recovery->approved === null)
-                                                        <span class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-orange-400 rounded-full border-2 border-white animate-pulse"></span>
-                                                    @endif
-                                                </div>
                                                 <div class="flex-1 min-w-0">
-                                                    <p class="text-sm font-bold text-gray-800 truncate">{{ $recovery->user->name }}</p>
+                                                    <div class="flex items-center gap-2">
+                                                        <p class="text-sm font-bold text-gray-800 truncate">{{ $recovery->user->name }}</p>
+                                                        <!-- Status Indicator Dot moved here -->
+                                                        @if($recovery->approved === null)
+                                                            <span class="w-2 h-2 bg-orange-400 rounded-full animate-pulse" title="Pendiente"></span>
+                                                        @endif
+                                                    </div>
                                                     <div class="flex items-center gap-2 mt-0.5">
                                                         <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -810,7 +804,8 @@
                                                             <div class="w-14 h-14 rounded-2xl overflow-hidden border-2 border-[#22A9C8]/10 shadow-sm bg-gray-100 flex-shrink-0">
                                                                 <img :src="emp.avatar ? (emp.avatar.startsWith('http') ? emp.avatar : '/avatars/' + emp.avatar) : `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}&color=FFFFFF&background=22A9C8`" 
                                                                      :alt="emp.name" 
-                                                                     class="w-full h-full object-cover">
+                                                                     x-on:error="$el.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}&color=FFFFFF&background=22A9C8`"
+                                                                     class="w-full h-full object-cover object-center">
                                                             </div>
                                                             <div>
                                                                 <p class="font-black text-lg text-gray-900 leading-tight" x-text="emp.name"></p>

@@ -228,6 +228,13 @@
 
             async uploadFile(file) {
                 if (!file || this.isUploadingFile) return;
+
+                // 5MB Limit Check
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('El archivo excede el límite de 5MB.');
+                    return;
+                }
+
                 this.isUploadingFile = true;
 
                 const formData = new FormData();
@@ -258,60 +265,61 @@
                 }
             },
 
-            async deleteFile(id) {
-                if (!confirm('¿Estás seguro de eliminar este archivo?')) return;
-                this.deletingFileId = id;
-
-                try {
-                    const response = await fetch(`/tasks/attachments/${id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        }
-                    });
-
-                    if (response.ok) {
-                        this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
-                        this.hasChanges = true;
-                    } else {
-                        throw new Error('Failed');
-                    }
-                } catch (error) {
-                    console.error('Error deleting file:', error);
-                    alert('Error al eliminar el archivo');
-                } finally {
-                    this.deletingFileId = null;
-                }
+            deleteFile(id) {
+                this.deleteConfirmation = { isOpen: true, type: 'attachment', id: id };
             },
+
+            // --- Global Delete Handler ---
 
             // --- Global Delete Handler ---
 
             async performDelete() {
                 const { type, id } = this.deleteConfirmation;
                 
-                if (type === 'task') {
-                    // Task deletion - show loading state
-                    this.isDeletingTask = true;
-                    
-                    try {
-                         const response = await fetch(`/tareas/${id}`, {
+                this.isDeleting = true;
+
+                try {
+                    if (type === 'task') {
+                         await fetch(`/tareas/${id}`, {
                             method: 'DELETE',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                                 'Accept': 'application/json'
                             }
+                        }).then(response => {
+                            if (response.ok) {
+                                window.location.reload(); 
+                            } else {
+                                throw new Error('Failed');
+                            }
                         });
-                        
-                        // Reload page after successful delete
-                        window.location.reload(); 
-                        
-                    } catch (e) {
-                        console.error('Delete error', e);
-                        this.isDeletingTask = false;
+                    }
+                    else if (type === 'attachment') {
+                        const response = await fetch(`/tasks/attachments/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        });
+
+                        if (response.ok) {
+                            this.selectedTask.attachments = this.selectedTask.attachments.filter(a => a.id !== id);
+                            this.hasChanges = true;
+                            this.deleteConfirmation.isOpen = false;
+                        } else {
+                            throw new Error('Failed');
+                        }
+                    }
+                } catch (e) {
+                    console.error('Delete error', e);
+                    alert('Error al eliminar');
+                } finally {
+                    this.isDeleting = false;
+                    // Only close if not task (since task reload happens)
+                    if (type !== 'task') {
                         this.deleteConfirmation.isOpen = false;
-                        alert('Error al eliminar la tarea');
                     }
                 }
             },

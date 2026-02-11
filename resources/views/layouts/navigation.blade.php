@@ -57,10 +57,10 @@
 
                             <x-slot name="content">
                                 <x-dropdown-link :href="route('profesional.registrar-horas', [], false)">
-                                    {{ __('Mis horas') }}
+                                    {{ __('Registro de horas') }}
                                 </x-dropdown-link>
                                 <x-dropdown-link :href="route('empresa.dashboard', [], false)">
-                                    {{ __('Monitoreo') }}
+                                    {{ __('Seguimiento') }}
                                 </x-dropdown-link>
                             </x-slot>
                         </x-dropdown>
@@ -274,12 +274,12 @@
                 </x-responsive-nav-link>
             @else
                 <x-responsive-nav-link :href="route('profesional.registrar-horas', [], false)" :active="request()->routeIs('profesional.registrar-horas')" wire:navigate>
-                    {{ auth()->user()->is_manager ? 'Mis horas' : 'Registro de jornada' }}
+                    {{ auth()->user()->is_manager ? 'Registro de horas' : 'Registro de jornada' }}
                 </x-responsive-nav-link>
 
                 @if(auth()->user()->is_manager)
                     <x-responsive-nav-link :href="route('empresa.dashboard', [], false)" :active="request()->routeIs('empresa.dashboard')" wire:navigate>
-                        Monitoreo
+                        Seguimiento
                     </x-responsive-nav-link>
 
                     <x-responsive-nav-link :href="route('manager.tasks.index', [], false)" :active="request()->routeIs('manager.tasks.index')" wire:navigate>
