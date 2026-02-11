@@ -40,7 +40,7 @@
                     onclick="markAllAsRead()"
                     class="text-xs text-[#22A9C8] hover:text-[#1b8fa8] hover:underline transition-colors"
                 >
-                    Marcar toads como leídas
+                    Marcar todas como leídas
                 </button>
             @endif
         </div>

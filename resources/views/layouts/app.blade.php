@@ -11,6 +11,8 @@
         <meta name="description" content="Obertrack: Effortless remote work tracking and task management for distributed teams. Boost productivity and streamline your workflow.">
         <meta name="keywords" content="remote work, task tracking, productivity, time management, project management">
 
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">
+
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -50,7 +52,135 @@
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
             }
+
+            /* EasyMDE Custom Styles */
+            .EasyMDEContainer {
+                border-radius: 0.75rem;
+                overflow: hidden;
+                border: 1.5px solid #E2E8F0;
+                transition: all 0.2s ease;
+                background: #F8FAFC;
+            }
+            .EasyMDEContainer:focus-within {
+                border-color: #22A9C8;
+                box-shadow: 0 0 0 3px rgba(34, 169, 200, 0.1);
+                background: white;
+            }
+            .editor-toolbar {
+                border: none !important;
+                border-bottom: 1px solid #E2E8F0 !important;
+                background: #F8FAFC !important;
+                padding: 6px 10px !important;
+                opacity: 1 !important;
+                display: flex;
+                align-items: center;
+                gap: 2px;
+            }
+            .EasyMDEContainer:focus-within .editor-toolbar {
+                background: white !important;
+                border-bottom-color: #F1F5F9 !important;
+            }
+            .editor-toolbar i {
+                color: #64748B !important;
+                font-size: 14px !important;
+            }
+            .editor-toolbar a {
+                color: #64748B !important;
+                border-radius: 6px !important;
+                width: 28px !important;
+                height: 28px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                border: none !important;
+            }
+            .editor-toolbar a.active, .editor-toolbar a:hover {
+                background: #F1F5F9 !important;
+                color: #22A9C8 !important;
+            }
+            .editor-toolbar a:hover i {
+                color: #22A9C8 !important;
+            }
+            .CodeMirror {
+                border: none !important;
+                background: transparent !important;
+                color: #334155 !important;
+                font-family: 'Montserrat', sans-serif !important;
+                font-size: 14px !important;
+                line-height: 1.6 !important;
+                padding: 12px !important;
+                min-height: 120px !important;
+            }
+            .CodeMirror-cursor {
+                border-left: 2px solid #22A9C8 !important;
+            }
+            .editor-statusbar {
+                display: none !important;
+            }
+            .editor-preview {
+                background: white !important;
+                color: #334155 !important;
+                padding: 12px !important;
+            }
+
+            /* Prose Task Description (Markdown Rendering) */
+            .prose-task-description {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            .prose-task-description a {
+                color: #22A9C8;
+                font-weight: 600;
+                text-decoration: underline;
+                text-decoration-thickness: 1px;
+                text-underline-offset: 2px;
+            }
+            .prose-task-description a:hover {
+                color: #0D5C7D;
+            }
+            .prose-task-description ul {
+                list-style-type: disc;
+                margin-left: 1.5rem;
+                margin-top: 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+            .prose-task-description ol {
+                list-style-type: decimal;
+                margin-left: 1.5rem;
+                margin-top: 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+            .prose-task-description h1 {
+                font-size: 1.25rem;
+                font-weight: 700;
+                margin-top: 1rem;
+                margin-bottom: 0.5rem;
+                color: #0D1E4C;
+            }
+            .prose-task-description h2 {
+                font-size: 1.1rem;
+                font-weight: 600;
+                margin-top: 0.75rem;
+                margin-bottom: 0.4rem;
+                color: #0D1E4C;
+            }
+            .prose-task-description blockquote {
+                border-left: 4px solid #E2E8F0;
+                padding-left: 1rem;
+                font-style: italic;
+                color: #64748B;
+                margin: 1rem 0;
+            }
+            .prose-task-description p {
+                margin-bottom: 0.5rem;
+            }
+            .prose-task-description strong {
+                font-weight: 700;
+                color: #1E293B;
+            }
         </style>
+        <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+        <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
     </head>
     <body class="font-sans antialiased" x-data="{ globalLoading: false }" @show-loader.window="globalLoading = true">
         <!-- Global Loader Overlay -->

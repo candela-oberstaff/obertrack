@@ -20,18 +20,16 @@
             deletingCommentId: null, // Track which comment is being deleted
             deletingFileId: null, // Track which file is being deleted
             updatingCommentId: null, // Track which comment is being updated
+            searchAssignee: '', // Search query for assignee list
             
             // Delete Confirmation State
             deleteConfirmation: { isOpen: false, type: null, id: null },
 
             // Task Edit State
             isEditingTask: false,
-            editTaskData: {},
-            isSavingTask: false,
-            isDeletingTask: false,
-
-            isEditingTask: false,
-            editTaskData: {},
+            editTaskData: {
+                assignees: []
+            },
             isSavingTask: false,
             isDeletingTask: false,
             isDeleting: false, // Unified loading state for modal
@@ -322,6 +320,7 @@
             
             startEditingTask() {
                 this.isEditingTask = true;
+                this.searchAssignee = '';
                 // Clone task data for editing
                 this.editTaskData = {
                     title: this.selectedTask.title,

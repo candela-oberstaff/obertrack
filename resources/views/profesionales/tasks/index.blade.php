@@ -95,7 +95,8 @@
                         title: '',
                         description: '',
                         priority: 'low',
-                        end_date: ''
+                        end_date: '',
+                        assignees: []
                     },
                     isUploadingFile: false,
                     newCommentText: '',
@@ -151,6 +152,7 @@
                         this.isCreateModalOpen = true; 
                     },
                     closeCreateModal() { this.isCreateModalOpen = false; },
+                    searchAssignee: '',
 
                     matches(task) {
                         const taskDate = task.date || '';
@@ -295,7 +297,8 @@
                             title: this.selectedTask.title,
                             description: this.selectedTask.description,
                             priority: this.selectedTask.priority,
-                            end_date: this.selectedTask.end_date ? this.selectedTask.end_date.split('T')[0] : ''
+                            end_date: this.selectedTask.end_date ? this.selectedTask.end_date.split('T')[0] : '',
+                            assignees: this.selectedTask.assignees ? this.selectedTask.assignees.map(a => a.id) : []
                         };
                         this.isEditingTask = true;
                     },

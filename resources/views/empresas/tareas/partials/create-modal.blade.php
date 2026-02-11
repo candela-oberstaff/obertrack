@@ -78,9 +78,28 @@
                 <div class="mb-6" x-show="isTeamTask">
                     <div class="bg-gray-50 rounded-lg p-4 max-h-32 overflow-y-auto">
                         <p class="text-xs text-gray-500 mb-2 uppercase font-bold tracking-wider">Asigna a los profesionales</p>
+                        
+                        <!-- Mini Search for Assignees -->
+                        <div class="mb-3 relative">
+                            <input 
+                                type="text" 
+                                x-model="searchAssignee" 
+                                placeholder="Buscar profesional..." 
+                                class="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 pl-8 text-xs text-gray-700 focus:ring-1 focus:ring-[#22A9C8] transition-all"
+                            >
+                            <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <svg class="h-3.5 w-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                        </div>
+
                         <div class="space-y-2">
                             @forelse($profesionales as $emp)
-                                <label class="flex items-center space-x-3 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                                <label 
+                                    x-show="!searchAssignee || '{{ strtolower($emp->name) }}'.includes(searchAssignee.toLowerCase())"
+                                    class="flex items-center space-x-3 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                >
                                     <input type="checkbox" name="assignees[]" value="{{ $emp->id }}" class="rounded border-gray-300 text-[#22A9C8] focus:ring-[#22A9C8]">
                                     <span class="text-sm text-gray-700">{{ $emp->name }}</span>
                                 </label>
@@ -100,7 +119,10 @@
 
                 <!-- Description -->
                 <div class="mb-8">
-                    <textarea name="description" rows="4" maxlength="2000" placeholder="Añade una descripción de la asignación" class="w-full bg-gray-50 border-none rounded-lg py-3 px-4 text-sm text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-[#22A9C8] focus:bg-white transition-colors resize-none"></textarea>
+                    <x-tasks.rich-text-editor 
+                        name="description" 
+                        placeholder='Escribe una descripción.'
+                    />
                 </div>
 
                 <!-- Submit Button -->

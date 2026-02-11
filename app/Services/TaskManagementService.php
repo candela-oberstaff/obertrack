@@ -103,8 +103,15 @@ class TaskManagementService
         }
 
         if ($assignees !== null) {
-            // Ensure all IDs are integers
-            $assignees = array_map('intval', array_filter($assignees));
+            // Ensure $assignees is an array
+            $assignees = is_array($assignees) ? $assignees : [$assignees];
+            
+            // Filter out empty values, nulls, and non-numeric strings
+            // Also cast everything to int for database safety
+            $assignees = array_map('intval', array_filter($assignees, function($value) {
+                return $value !== null && $value !== '' && is_numeric($value);
+            }));
+            
             $task->assignees()->sync($assignees);
         }
 

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Str;
 
 class Task extends Model
 {
@@ -23,11 +24,26 @@ class Task extends Model
         'status', // Added status
     ];
 
+    protected $appends = ['description_html'];
+
     protected $casts = [
         'completed' => 'boolean',
         'start_date' => 'datetime:Y-m-d',
         'end_date' => 'datetime:Y-m-d',
     ];
+
+    public function getDescriptionHtmlAttribute(): string
+    {
+        if (!$this->description) {
+            return '';
+        }
+        
+        // Use markdown with options that allow links
+        return Str::markdown($this->description, [
+            'html_input' => 'allow',
+            'allow_unsafe_links' => true,
+        ]);
+    }
 
     // Status Constants
     const STATUS_TODO = 'por_hacer';

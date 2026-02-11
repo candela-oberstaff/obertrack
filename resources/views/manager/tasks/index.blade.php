@@ -228,6 +228,7 @@
                 selectedTask: null,
                 isDetailsModalOpen: false,
                 isCreateModalOpen: false,
+                searchAssignee: '',
                 currentTab: 'details',
                 isTeamTask: true,
                 targetEmployeeId: null,
@@ -625,7 +626,8 @@
                         description: this.selectedTask.description || '',
                         priority: this.selectedTask.priority,
                         start_date: (this.selectedTask.start_date || '').split('T')[0],
-                        end_date: (this.selectedTask.end_date || '').split('T')[0]
+                        end_date: (this.selectedTask.end_date || '').split('T')[0],
+                        assignees: this.selectedTask.assignees ? this.selectedTask.assignees.map(a => a.id) : []
                     };
                     this.isEditingTask = true;
                 },
