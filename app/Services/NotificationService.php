@@ -79,6 +79,7 @@ class NotificationService
             $recentTasks = Task::whereHas('assignees', function ($q) use ($professional) {
                 $q->where('user_id', $professional->id);
             })
+                ->where('status', Task::STATUS_TODO)
                 ->whereRaw('completed IS FALSE')
                 ->where('created_at', '>=', now()->subDays(7))
                 ->whereDoesntHave('readBy', function ($query) use ($professional) {

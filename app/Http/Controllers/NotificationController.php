@@ -27,6 +27,9 @@ class NotificationController extends Controller
             ['read_at' => now()]
         );
 
+        // Clear notification cache
+        app(\App\Services\NotificationService::class)->clearProfessionalCache($user);
+
         return response()->json(['success' => true, 'message' => 'Tarea marcada como leída']);
     }
 
@@ -53,6 +56,9 @@ class NotificationController extends Controller
                 ['read_at' => now()]
             );
         }
+
+        // Clear notification cache
+        app(\App\Services\NotificationService::class)->clearProfessionalCache($user);
 
         return response()->json([
             'success' => true,
