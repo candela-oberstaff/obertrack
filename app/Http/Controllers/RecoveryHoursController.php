@@ -144,21 +144,67 @@ class RecoveryHoursController extends Controller
     }
 
     /**
+     * Helper to get total debt vs recovered for multiple users in bulk.
+     */
+    public static function getDebtSummaries(array $userIds)
+    {
+        // Debt comes from WorkHours records with absence
+        $debts = \App\Models\WorkHours::whereIn('user_id', $userIds)
+            ->where('absence_hours', '>', 0)
+            ->selectRaw('user_id, SUM(absence_hours) as total_debt')
+            ->groupBy('user_id')
+            ->get()
+            ->pluck('total_debt', 'user_id');
+
+        // Recovered comes from the new RecoveryHour table (Approved)
+        $recoveries = \App\Models\RecoveryHour::whereIn('user_id', $userIds)
+            ->whereRaw('approved IS TRUE')
+            ->selectRaw('user_id, SUM(hours_recovered) as total_recovered')
+            ->groupBy('user_id')
+            ->get()
+            ->pluck('total_recovered', 'user_id');
+
+        // Pending Approval
+        $pending = \App\Models\RecoveryHour::whereIn('user_id', $userIds)
+            ->whereNull('approved')
+            ->selectRaw('user_id, SUM(hours_recovered) as total_pending')
+            ->groupBy('user_id')
+            ->get()
+            ->pluck('total_pending', 'user_id');
+
+        $summaries = [];
+        foreach ($userIds as $userId) {
+            $totalDebt = (float)($debts[$userId] ?? 0);
+            $totalRecovered = (float)($recoveries[$userId] ?? 0);
+            $pendingApproval = (float)($pending[$userId] ?? 0);
+
+            $summaries[$userId] = [
+                'total_debt' => $totalDebt,
+                'total_recovered' => $totalRecovered,
+                'pending_approval' => $pendingApproval,
+                'remaining_debt' => (float)max(0, $totalDebt - $totalRecovered)
+            ];
+        }
+
+        return $summaries;
+    }
+
+    /**
      * Helper to get total debt vs recovered for a user.
      */
     public static function getDebtSummary($userId)
     {
         // Debt comes from WorkHours records with absence
-        $totalDebt = WorkHours::where('user_id', $userId)
+        $totalDebt = \App\Models\WorkHours::where('user_id', $userId)
             ->where('absence_hours', '>', 0)
             ->sum('absence_hours');
 
         // Recovered comes from the new RecoveryHour table
-        $totalRecovered = RecoveryHour::where('user_id', $userId)
+        $totalRecovered = \App\Models\RecoveryHour::where('user_id', $userId)
             ->whereRaw('approved IS TRUE')
             ->sum('hours_recovered');
             
-        $pendingApproval = RecoveryHour::where('user_id', $userId)
+        $pendingApproval = \App\Models\RecoveryHour::where('user_id', $userId)
             ->whereNull('approved')
             ->sum('hours_recovered');
 

@@ -402,17 +402,18 @@
 
                 <!-- 3. Compact Data Table -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-gray-50/50 border-b border-gray-100 text-xs text-gray-400 font-black uppercase tracking-wider">
-                                    <th class="px-6 py-4 w-16 text-center">Estado</th>
-                                    <th class="px-6 py-4">Profesional</th>
-                                    <th class="px-6 py-4 text-center">Días Reg.</th>
-                                    <th class="px-6 py-4 w-48">Progreso Mensual</th>
-                                    <th class="px-6 py-4 text-right">Última Actividad</th>
+                    <div class="overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar">
+                        <table class="w-full text-left border-separate border-spacing-0">
+                            <thead class="sticky top-0 z-20 bg-gray-50 shadow-sm">
+                                <tr class="text-xs text-gray-400 font-black uppercase tracking-wider">
+                                    <th class="px-6 py-4 w-16 text-center border-b border-gray-100">Estado</th>
+                                    <th class="px-6 py-4 border-b border-gray-100">Profesional</th>
+                                    <th class="px-6 py-4 text-center border-b border-gray-100">Días Reg.</th>
+                                    <th class="px-6 py-4 w-48 border-b border-gray-100">Progreso Mensual</th>
+                                    <th class="px-6 py-4 text-right border-b border-gray-100">Última Actividad</th>
                                 </tr>
                             </thead>
+
                             <tbody class="divide-y divide-gray-50">
                                 <template x-for="emp in filteredProfessionals" :key="emp.user.id">
                                     <!-- Row with Hover Effect -->

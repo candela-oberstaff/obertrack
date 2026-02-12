@@ -14,13 +14,33 @@ class ProfessionalActivityService
      */
     public function getStatusesForUsers(Collection $users): Collection
     {
-        return $users->map(function ($professional) {
-            $lastWorkDay = $this->getLastWorkingDay()->startOfDay();
-            $dayBeforeLastWorkDay = $this->getWorkingDayBefore($lastWorkDay)->startOfDay();
-            $registrationDate = $professional->created_at->startOfDay();
+        $userIds = $users->pluck('id')->toArray();
+        $lastWorkDay = $this->getLastWorkingDay()->startOfDay();
+        $dayBeforeLastWorkDay = $this->getWorkingDayBefore($lastWorkDay)->startOfDay();
 
-            $hasHoursLast = $this->hasHoursOn($professional->id, $lastWorkDay);
-            $hasHoursBefore = $this->hasHoursOn($professional->id, $dayBeforeLastWorkDay);
+        // Get existence of hours for all users on specific dates in one go or grouped
+        $checkDates = [$lastWorkDay->format('Y-m-d'), $dayBeforeLastWorkDay->format('Y-m-d')];
+        $hoursExistence = WorkHours::whereIn('user_id', $userIds)
+            ->whereIn('work_date', $checkDates)
+            ->get()
+            ->groupBy('user_id');
+
+        // Get last registration dates for all users
+        $lastRegistrations = WorkHours::whereIn('user_id', $userIds)
+            ->selectRaw('user_id, MAX(work_date) as last_date')
+            ->groupBy('user_id')
+            ->get()
+            ->pluck('last_date', 'user_id');
+
+        return $users->map(function ($professional) use ($lastWorkDay, $dayBeforeLastWorkDay, $hoursExistence, $lastRegistrations) {
+            $registrationDate = $professional->created_at->startOfDay();
+            
+            $userHours = $hoursExistence->get($professional->id, collect());
+            $hasHoursLast = $userHours->contains('work_date', $lastWorkDay->format('Y-m-d 00:00:00')) || 
+                           $userHours->contains('work_date', $lastWorkDay->format('Y-m-d'));
+            
+            $hasHoursBefore = $userHours->contains('work_date', $dayBeforeLastWorkDay->format('Y-m-d 00:00:00')) || 
+                             $userHours->contains('work_date', $dayBeforeLastWorkDay->format('Y-m-d'));
 
             $status = 'active';
             $daysInactive = 0;
@@ -40,7 +60,7 @@ class ProfessionalActivityService
                 'user' => $professional,
                 'status' => $status,
                 'days_inactive' => $daysInactive,
-                'last_registration' => $this->getLastRegistrationDate($professional->id),
+                'last_registration' => isset($lastRegistrations[$professional->id]) ? Carbon::parse($lastRegistrations[$professional->id]) : null,
             ];
         });
     }

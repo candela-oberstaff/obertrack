@@ -199,8 +199,11 @@ class DashboardController extends Controller
             ->pluck('user_id')
             ->toArray();
 
+        // Fetch debt summaries in bulk
+        $allDebtSummaries = \App\Http\Controllers\RecoveryHoursController::getDebtSummaries($profesionales->pluck('id')->toArray());
+
         // Professional Summary Cards Data
-        $professionalSummaries = $profesionales->map(function($professional) use ($monthlyHours, $monthlyTasks, $professionalColors, $professionalStatuses, $activeTodayIds) {
+        $professionalSummaries = $profesionales->map(function($professional) use ($monthlyHours, $monthlyTasks, $professionalColors, $professionalStatuses, $activeTodayIds, $allDebtSummaries) {
             $professionalHours = $monthlyHours->where('user_id', $professional->id);
             
             // Filter tasks for this specific professional
@@ -209,7 +212,12 @@ class DashboardController extends Controller
             });
 
             $statusData = $professionalStatuses->firstWhere('user.id', $professional->id);
-            $debtSummary = \App\Http\Controllers\RecoveryHoursController::getDebtSummary($professional->id);
+            $debtSummary = $allDebtSummaries[$professional->id] ?? [
+                'total_debt' => 0.0,
+                'total_recovered' => 0.0,
+                'pending_approval' => 0.0,
+                'remaining_debt' => 0.0
+            ];
             
             return [
                 'user' => $professional,
