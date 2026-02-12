@@ -84,25 +84,16 @@
         }
     }"
     x-init="
-        const scrollToBottom = () => {
-            const container = document.getElementById('messages-container');
-            if (container) container.scrollTop = container.scrollHeight;
-        };
-
-        $watch('visiblySelectedUser', value => {
-            if (value) setTimeout(scrollToBottom, 100);
-        });
+        // Escuchar el evento de Livewire para hacer scroll
+        // Ya no es necesario aquí, se maneja directamente en el contenedor
         
-        // Removed Livewire.hook('morph.updated') to prevent forced scrolling during polling
-        
-        // Listen for new message events (with error handling)
+        // Listen for new message events
         if (typeof Livewire !== 'undefined') {
             try {
                 Livewire.on('new-message-received', (event) => {
                     this.newMessageFrom = event[0];
                     this.showNewMessageToast = true;
                     
-                    // Auto-hide after 4 seconds
                     setTimeout(() => {
                         this.showNewMessageToast = false;
                     }, 4000);
@@ -460,7 +451,12 @@
                 </div>
 
                 <!-- Messages Stream -->
-                <div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar scroll-smooth relative" id="messages-container">
+                <div 
+                    class="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar relative" 
+                    id="chat-messages-scroll-container"
+                    x-init="$nextTick(() => { $el.scrollTop = $el.scrollHeight; setTimeout(() => { $el.scrollTop = $el.scrollHeight; }, 300); })"
+                    @scroll-to-bottom.window="$nextTick(() => { $el.scrollTop = $el.scrollHeight; setTimeout(() => { $el.scrollTop = $el.scrollHeight; }, 300); })"
+                >
                     
                     <!-- Loading Overlay -->
                     <div wire:loading.flex wire:target="selectContact" class="absolute inset-0 bg-white/50 backdrop-blur-sm z-20 flex flex-col items-center justify-center">

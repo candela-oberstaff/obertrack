@@ -51,6 +51,10 @@ class Chat extends Component
         foreach ($this->contacts as $contact) {
             $this->previousUnreadCounts[$contact->id] = $contact->unread_messages_count;
         }
+
+        if ($this->selectedUserId) {
+            $this->dispatch('scroll-to-bottom');
+        }
     }
 
     public function loadContacts()
@@ -162,6 +166,7 @@ class Chat extends Component
         $this->isBroadcastMode = false;
         $this->selectedUserId = $userId;
         $this->markMessagesAsRead();
+        $this->dispatch('scroll-to-bottom');
         // Don't force reload contacts here, just update view
     }
 
@@ -243,6 +248,8 @@ class Chat extends Component
         if ($this->isBroadcastMode) {
             $this->isBroadcastMode = false;
             session()->flash('message', 'Mensaje masivo enviado con éxito.');
+        } else {
+            $this->dispatch('scroll-to-bottom');
         }
     }
 

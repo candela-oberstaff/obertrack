@@ -7,7 +7,7 @@
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
         <!-- Modal Panel -->
-        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full">
             <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl leading-6 font-bold text-gray-900" id="modal-title">
@@ -53,52 +53,61 @@
                         </div>
                     </div>
 
-                    <!-- Row 3: Assignees -->
-                    <div class="mb-6">
-                        <div class="bg-gray-50 rounded-lg p-4 max-h-32 overflow-y-auto">
-                            <p class="text-xs text-gray-500 mb-2 uppercase font-bold tracking-wider">Asigna a tus compañeros</p>
-                            
-                            <!-- Mini Search for Colleagues -->
-                            <div class="mb-3 relative">
-                                <input 
-                                    type="text" 
-                                    x-model="searchAssignee" 
-                                    placeholder="Buscar compañero..." 
-                                    class="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 pl-8 text-xs text-gray-700 focus:ring-1 focus:ring-[#22A9C8] transition-all"
-                                >
-                                <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                                    <svg class="h-3.5 w-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
+                    <!-- Row 3 & 4: Horizontal Layout for Assignees and Description -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                        <!-- Assignees Column -->
+                        <div class="lg:col-span-1">
+                            <div class="bg-gray-50 rounded-xl p-4 flex flex-col border border-gray-100 shadow-sm">
+                                <p class="text-[10px] text-gray-500 mb-3 uppercase font-bold tracking-widest border-b border-gray-200 pb-2">Asigna a tus compañeros</p>
+                                
+                                <!-- Mini Search for Colleagues -->
+                                <div class="mb-3 relative shrink-0">
+                                    <input 
+                                        type="text" 
+                                        x-model="searchAssignee" 
+                                        placeholder="Buscar..." 
+                                        class="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 pl-8 text-xs text-gray-700 focus:ring-1 focus:ring-[#22A9C8] transition-all"
+                                    >
+                                    <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                        <svg class="h-3.5 w-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-1.5 overflow-y-auto max-h-[250px] custom-scrollbar pr-1">
+                                    <label class="flex items-center space-x-3 cursor-pointer hover:bg-white p-2 rounded-lg transition-colors border border-transparent hover:border-gray-100">
+                                        <input type="checkbox" name="assignees[]" value="{{ auth()->id() }}" checked class="rounded border-gray-300 text-[#22A9C8] focus:ring-[#22A9C8]">
+                                        <span class="text-xs text-gray-700 font-bold">Yo ({{ auth()->user()->name }})</span>
+                                    </label>
+                                    @if(isset($profesionales))
+                                        @foreach($profesionales as $colleague)
+                                            <label 
+                                                x-show="!searchAssignee || '{{ strtolower($colleague->name) }}'.includes(searchAssignee.toLowerCase())"
+                                                class="flex items-center space-x-3 cursor-pointer hover:bg-white p-2 rounded-lg transition-colors border border-transparent hover:border-gray-100"
+                                            >
+                                                <input type="checkbox" name="assignees[]" value="{{ $colleague->id }}" class="rounded border-gray-300 text-[#22A9C8] focus:ring-[#22A9C8]">
+                                                <span class="text-xs text-gray-700">{{ $colleague->name }}</span>
+                                            </label>
+                                        @endforeach
+                                    @endif
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="space-y-2">
-                                <label class="flex items-center space-x-3 cursor-pointer hover:bg-gray-100 p-1 rounded">
-                                    <input type="checkbox" name="assignees[]" value="{{ auth()->id() }}" checked class="rounded border-gray-300 text-[#22A9C8] focus:ring-[#22A9C8]">
-                                    <span class="text-sm text-gray-700 font-bold">Yo ({{ auth()->user()->name }})</span>
+                        <!-- Description Column -->
+                        <div class="lg:col-span-2">
+                            <div class="h-full flex flex-col">
+                                <label class="text-[10px] text-gray-500 mb-2 uppercase font-bold tracking-widest flex items-center gap-2">
+                                    <i class="fa fa-align-left"></i>
+                                    Descripción del trabajo
                                 </label>
-                                @if(isset($profesionales))
-                                    @foreach($profesionales as $colleague)
-                                        <label 
-                                            x-show="!searchAssignee || '{{ strtolower($colleague->name) }}'.includes(searchAssignee.toLowerCase())"
-                                            class="flex items-center space-x-3 cursor-pointer hover:bg-gray-100 p-1 rounded"
-                                        >
-                                            <input type="checkbox" name="assignees[]" value="{{ $colleague->id }}" class="rounded border-gray-300 text-[#22A9C8] focus:ring-[#22A9C8]">
-                                            <span class="text-sm text-gray-700">{{ $colleague->name }}</span>
-                                        </label>
-                                    @endforeach
-                                @endif
+                                <x-tasks.rich-text-editor 
+                                    name="description" 
+                                    placeholder='Detalla los objetivos y requerimientos de la tarea...'
+                                />
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Description -->
-                    <div class="mb-8">
-                        <x-tasks.rich-text-editor 
-                            name="description" 
-                            placeholder='Escribe una descripción.'
-                        />
                     </div>
 
                     <!-- Submit Button -->
@@ -106,11 +115,24 @@
                         <button type="button" @click="closeCreateModal()" class="border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-10 rounded-full transition-colors shadow-sm">
                             Cancelar
                         </button>
-                        <button type="submit" class="border border-[#22A9C8] text-[#0D1E4C] hover:bg-[#22A9C8] hover:text-white font-medium py-2 px-10 rounded-full transition-colors shadow-sm">
-                            Crear tarea
+                        <button type="submit" id="profCreateTaskBtn" class="border border-[#22A9C8] text-[#0D1E4C] hover:bg-[#22A9C8] hover:text-white font-medium py-2 px-10 rounded-full transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span class="submit-text">Crear tarea</span>
+                            <span class="loading-text hidden">Creando...</span>
                         </button>
                     </div>
                 </form>
+
+                <script>
+                document.getElementById('createTaskForm').onsubmit = function() {
+                    const btn = document.getElementById('profCreateTaskBtn');
+                    if (btn.disabled) return false;
+                    
+                    btn.disabled = true;
+                    btn.querySelector('.submit-text').classList.add('hidden');
+                    btn.querySelector('.loading-text').classList.remove('hidden');
+                    return true;
+                };
+                </script>
         </div>
     </div>
 </div>
