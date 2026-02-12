@@ -36,7 +36,7 @@ class TaskFilesModal extends Component
     public function updatedNewFile()
     {
         $this->validate([
-            'newFile' => 'file|max:10240', // 10MB max
+            'newFile' => 'file|max:5120', // 5MB max
         ]);
 
         $task = Task::findOrFail($this->taskId);

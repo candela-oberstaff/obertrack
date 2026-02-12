@@ -178,6 +178,36 @@
                 font-weight: 700;
                 color: #1E293B;
             }
+            .prose-task-description code {
+                background: #F1F5F9;
+                color: #E11D48;
+                padding: 0.2rem 0.4rem;
+                border-radius: 0.375rem;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+                font-size: 0.875rem;
+            }
+            .prose-task-description pre {
+                background: #1E293B;
+                color: #F8FAFC;
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin: 1rem 0;
+                overflow-x: auto;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+                font-size: 0.875rem;
+                line-height: 1.7;
+            }
+            .prose-task-description pre code {
+                background: transparent;
+                color: inherit;
+                padding: 0;
+                border-radius: 0;
+                font-size: inherit;
+            }
+            .prose-task-description div, .prose-task-description span {
+                max-width: 100%;
+                overflow-wrap: break-word;
+            }
         </style>
         <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
         <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
@@ -204,6 +234,10 @@
             <main>
                 {{ $slot }}
             </main>
+            
+            <!-- Global Listeners -->
+            <livewire:chat-notification />
+            <livewire:task-notification />
         </div>
         <script>
             // Handle Session Expiration (419 Page Expired)

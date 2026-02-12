@@ -932,7 +932,7 @@
                          }
                      }
 
-                     if (isPast || isApproved) {
+                     if (isApproved) {
                          this.isDetailModalOpen = true;
                          return;
                      }

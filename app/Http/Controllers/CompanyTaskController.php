@@ -32,6 +32,16 @@ class CompanyTaskController extends Controller
              $profesionales = \App\Models\User::where('empleador_id', $ownerId)->orderBy('name')->get();
         }
  
+        // Mark tasks as read
+        $teamTasks->each(function ($task) use ($user) {
+            if (!$task->isReadBy($user->id)) {
+                $task->readBy()->attach($user->id, ['read_at' => now()]);
+            }
+        });
+
+        // Dipatch event specific to this user to update their unread count immediately in frontend
+        // This might be redundant if we just refresh, but helps real-time feel
+        
         return view('empresas.ver_tareas_profesionales', compact('teamTasks', 'profesionales'));
     }
 
@@ -51,12 +61,31 @@ class CompanyTaskController extends Controller
             'priority' => 'required|in:low,medium,high,urgent',
             'assignees' => 'required|array|min:1',
             'assignees.*' => 'exists:users,id',
+            'attachments' => 'sometimes|array',
+            'attachments.*' => 'file|max:5120', // 5MB max per file
         ]);
 
         // Service handles 'assignees' directly
         // $validatedData['assignees'] = [$validatedData['professional_id']]; // Handled in Service
 
-        $this->taskManagementService->createTask($validatedData);
+        $task = $this->taskManagementService->createTask($validatedData);
+
+        // Handle Attachments
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $filename = $file->getClientOriginalName();
+                $path = $file->store('task_attachments', 'local');
+
+                $attachment = new \App\Models\TaskAttachment();
+                $attachment->task_id = $task->id;
+                $attachment->uploaded_by = Auth::id();
+                $attachment->filename = $filename;
+                $attachment->stored_filename = $path;
+                $attachment->mime_type = $file->getMimeType();
+                $attachment->file_size = $file->getSize();
+                $attachment->save();
+            }
+        }
 
         return redirect()->route('empresa.tareas.index')->with('success', 'Tarea creada y asignada exitosamente.');
     }
@@ -156,7 +185,7 @@ class CompanyTaskController extends Controller
     public function uploadFile(Request $request, $taskId)
     {
         $request->validate([
-            'file' => 'required|file|max:10240', // 10MB max
+            'file' => 'required|file|max:5120', // 5MB max
         ]);
 
         $task = Task::findOrFail($taskId);

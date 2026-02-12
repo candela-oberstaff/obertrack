@@ -161,6 +161,13 @@ class ProfessionalTaskController extends Controller
             return $colleague->tipo_usuario !== 'empleador';
         })->sortBy('name');
 
+        // Mark tasks as read
+        $allTasks->each(function ($task) use ($user) {
+            if (!$task->isReadBy($user->id)) {
+                $task->readBy()->attach($user->id, ['read_at' => now()]);
+            }
+        });
+
         return view('profesionales.tasks.index', compact('teamTasks', 'individualTasks', 'pendingTasksCount', 'completedTasksCount', 'profesionales'));
     }
 

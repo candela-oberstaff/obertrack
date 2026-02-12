@@ -41,6 +41,13 @@ class ManagerTaskController extends Controller
             'is_superadmin' => $user->is_superadmin
         ];
 
+        // Mark tasks as read
+        $tareas->each(function ($task) use ($user) {
+            if (!$task->isReadBy($user->id)) {
+                $task->readBy()->attach($user->id, ['read_at' => now()]);
+            }
+        });
+
         return view('manager.tasks.index', compact('tareas', 'profesionales', 'currentUserData'));
     }
 
