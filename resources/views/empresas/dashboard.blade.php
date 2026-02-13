@@ -287,6 +287,8 @@
                 </div>
             @endif
 
+            <livewire:calendar-meetings />
+
             <!-- Subtitle -->
             <h3 class="text-[#22A9C8] font-medium text-base mb-6">Horas registradas por los profesionales</h3>
             

@@ -205,6 +205,64 @@
                 />
             @endif
 
+            <!-- Google Calendar Connection -->
+            <div class="ms-3 relative" x-data="{ open: false }">
+                <button @click="open = !open" class="inline-flex items-center px-2 py-2 rounded-full transition duration-150 ease-in-out hover:bg-gray-100 {{ auth()->user()->google_calendar_token ? 'text-[#22A9C8]' : 'text-gray-400' }}" title="Google Calendar">
+                    <i class="fa fa-plug text-lg"></i>
+                    @if(auth()->user()->google_calendar_token)
+                        <span class="absolute top-1 right-1 flex h-2 w-2">
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                    @endif
+                </button>
+                
+                <div x-show="open" 
+                     @click.away="open = false"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="transform opacity-0 scale-95"
+                     x-transition:enter-end="transform opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="transform opacity-100 scale-100"
+                     x-transition:leave-end="transform opacity-0 scale-95"
+                     class="absolute right-0 mt-2 w-72 rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 z-50 p-4"
+                     x-cloak>
+                    <div class="flex flex-col gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 rounded-lg {{ auth()->user()->google_calendar_token ? 'bg-[#22A9C8]/10 text-[#22A9C8]' : 'bg-gray-100 text-gray-400' }}">
+                                <i class="fa fa-calendar text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-900">Google Calendar</h4>
+                                <p class="text-[11px] {{ auth()->user()->google_calendar_token ? 'text-green-600' : 'text-gray-500' }}">
+                                    {{ auth()->user()->google_calendar_token ? 'Conectado a ' . auth()->user()->google_calendar_email : 'No conectado' }}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="h-px bg-gray-100"></div>
+                        
+                        @if(auth()->user()->google_calendar_token)
+                            <p class="text-[11px] text-gray-500 italic leading-relaxed">
+                                Tus reuniones se mostrarán en tu dashboard. Recibirás avisos 10 min antes y alarmas al comenzar.
+                            </p>
+                            <form method="POST" action="{{ route('google-calendar.disconnect') }}">
+                                @csrf
+                                <button type="submit" class="w-full py-2 bg-red-50 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-100 transition duration-150">
+                                    Desconectar cuenta
+                                </button>
+                            </form>
+                        @else
+                            <p class="text-[11px] text-gray-500 italic leading-relaxed">
+                                Conecta tu calendario para ver tus reuniones y recibir recordatorios sonoros en Obertrack.
+                            </p>
+                            <a href="{{ route('google-calendar.connect') }}" class="w-full py-2 bg-[#22A9C8] text-white text-xs font-semibold rounded-lg hover:bg-[#1B8BA6] transition duration-150 text-center">
+                                Conectar Google Calendar
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
             <!-- User Menu -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <span class="mr-3 text-sm font-medium text-gray-700">{{ Auth::user()->name }}</span>

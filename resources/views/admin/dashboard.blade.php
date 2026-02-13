@@ -10,6 +10,8 @@
             
             <!-- Admin Navigation Hub -->
             @include('admin.partials.nav')
+
+            <livewire:calendar-meetings />
             
             <!-- Overall Stats -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">

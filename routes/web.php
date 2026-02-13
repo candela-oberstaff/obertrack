@@ -98,6 +98,13 @@ Route::middleware(['auth', 'superadmin'])->prefix('admin')->name('admin.')->grou
 
 // Chat Route
 Route::middleware(['auth'])->get('/chat/{userId?}', \App\Livewire\Chat::class)->name('chat');
+
+// Google Calendar Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/google-calendar/connect', [\App\Http\Controllers\GoogleCalendarController::class, 'connect'])->name('google-calendar.connect');
+    Route::get('/google-calendar/callback', [\App\Http\Controllers\GoogleCalendarController::class, 'callback'])->name('google-calendar.callback');
+    Route::post('/google-calendar/disconnect', [\App\Http\Controllers\GoogleCalendarController::class, 'disconnect'])->name('google-calendar.disconnect');
+});
 // AI Chat Route
 Route::middleware(['auth'])->get('/ai', AiChat::class)->name('ai.chat');
 Route::middleware(['auth'])->get('/ai/stream', \App\Http\Controllers\AiChatStreamController::class)->name('ai.stream');
@@ -118,7 +125,6 @@ Route::middleware(['auth'])->get('/whatsapp/session-status', function(\Illuminat
         $qr = $waha->getQrCode('default');
     }
     
-    return response()->json(['status' => $status, 'qr' => $qr]);
     return response()->json(['status' => $status, 'qr' => $qr]);
 })->name('whatsapp.session-status');
 

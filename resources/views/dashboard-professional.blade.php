@@ -540,6 +540,8 @@
 
             </div>
 
+            <livewire:calendar-meetings />
+
             {{-- Main Content Grid --}}
             <div class="grid grid-cols-1 gap-6">
                 

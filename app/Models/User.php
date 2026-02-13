@@ -59,6 +59,8 @@ class User extends Authenticatable
         'is_superadmin',
         'google_id',
         'avatar',
+        'google_calendar_token',
+        'google_calendar_email',
     ];
 
 
@@ -198,5 +200,10 @@ class User extends Authenticatable
 
         // Professionals go to the main dashboard which shows dashboard-professional.blade.php
         return 'dashboard';
+    }
+
+    public function isGoogleCalendarConnected(): bool
+    {
+        return !empty($this->google_calendar_token);
     }
 }
