@@ -18,76 +18,55 @@
                 spellChecker: false,
                 status: false,
                 minHeight: '150px',
+                maxHeight: '400px',
+                syncSideBySidePreviewScroll: true,
+                renderingConfig: {
+                    singleLineBreaks: true,
+                    codeSyntaxHighlighting: true,
+                },
                 toolbar: [
+                    'bold', 'italic', 'heading', '|',
+                    'quote', 'unordered-list', 'ordered-list', '|',
+                    'link', 'image', 'table', '|',
                     {
-                        name: 'bold',
-                        action: EasyMDE.toggleBold,
-                        className: 'fa fa-bold',
-                        title: 'Negrita',
-                    },
-                    {
-                        name: 'italic',
-                        action: EasyMDE.toggleItalic,
-                        className: 'fa fa-italic',
-                        title: 'Cursiva',
-                    },
-                    '|',
-                    {
-                        name: 'quote',
-                        action: EasyMDE.toggleBlockquote,
-                        className: 'fa fa-quote-left',
-                        title: 'Cita',
-                    },
-                    {
-                        name: 'unordered-list',
-                        action: EasyMDE.toggleUnorderedList,
-                        className: 'fa fa-list-ul',
-                        title: 'Lista',
-                    },
-                    '|',
-                    'link',
-                    'image',
-                    '|',
-                    {
-                        name: 'html-tag',
+                        name: 'html-mode',
                         action: (editor) => {
-                            const tag = prompt('Nombre de la etiqueta HTML (ej: div, span, b):', 'div');
-                            if (tag) {
-                                const cm = editor.codemirror;
-                                const selection = cm.getSelection();
-                                cm.replaceSelection(`<${tag}>${selection}</${tag}>`);
-                                if (!selection) {
-                                    const cursor = cm.getCursor();
-                                    cm.setCursor(cursor.line, cursor.ch - (tag.length + 3));
-                                }
+                            const cm = editor.codemirror;
+                            const selection = cm.getSelection();
+                            if (selection) {
+                                cm.replaceSelection(`<div>\n${selection}\n</div>`);
+                            } else {
+                                cm.replaceSelection('<div>\n\n</div>');
+                                const cursor = cm.getCursor();
+                                cm.setCursor(cursor.line - 1, 0);
                             }
                         },
                         className: 'fa fa-code',
-                        title: 'Insertar Etiqueta Personalizada',
+                        title: 'Insertar Bloque HTML',
                     },
                     '|',
-                    'preview',
-                    'side-by-side',
-                    'fullscreen',
-                    '|',
-                    {
-                        name: 'guide',
-                        action: () => window.open('https://www.markdownguide.org/basic-syntax/', '_blank'),
-                        className: 'fa fa-question-circle',
-                        title: 'Guía de Markdown',
-                    }
+                    'preview', 'side-by-side', 'fullscreen',
                 ]
             });
 
-            // Initial preview sync
-            this.previewContent = this.editor.options.previewRender(this.editor.value());
-
-            // Sync with hidden textarea and preview
-            this.editor.codemirror.on('change', () => {
+            // Improved preview sync
+            const updatePreview = () => {
                 const val = this.editor.value();
                 this.$refs.textarea.value = val;
-                this.previewContent = this.editor.options.previewRender(val);
-            });
+                
+                // If it looks like a full HTML doc or contains a <style> tag, 
+                // we bypass markdown processing for the preview to ensure styles work.
+                if (val.trim().toLowerCase().includes('<!doctype html') || 
+                    val.trim().toLowerCase().includes('<html') || 
+                    val.trim().toLowerCase().includes('<style')) {
+                    this.previewContent = val;
+                } else {
+                    this.previewContent = this.editor.options.previewRender(val);
+                }
+            };
+
+            this.editor.codemirror.on('change', updatePreview);
+            updatePreview();
 
             // Slash Menu Logic
             this.editor.codemirror.on('keyup', (cm, event) => {
@@ -106,19 +85,12 @@
                     this.showSlashMenu = false;
                 }
             });
-
-            // Ensure sync before form submission
-            const form = this.$refs.textarea.closest('form');
-            if (form) {
-                form.addEventListener('submit', () => {
-                    this.$refs.textarea.value = this.editor.value();
-                });
-            }
         },
         insertCommand(opening, closing = '') {
             const cm = this.editor.codemirror;
             const cursor = cm.getCursor();
             
+            // Remove the slash
             cm.replaceRange('', {line: cursor.line, ch: cursor.ch - 1}, cursor);
             
             if (closing) {
@@ -193,7 +165,7 @@
             </h4>
             <span class="text-[9px] text-gray-400 italic">Se muestra como aparecerá en la tarea</span>
         </div>
-        <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-dashed border-gray-200 dark:border-gray-700 min-h-[100px]">
+        <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-dashed border-gray-200 dark:border-gray-700 min-h-[100px] max-h-[600px] overflow-y-auto custom-scrollbar shadow-inner">
             <div class="prose prose-sm max-w-none dark:prose-invert prose-task-description text-gray-700 dark:text-gray-300" x-html="previewContent || '<span class=\'text-gray-400 italic\'>Empieza a escribir para ver la vista previa...</span>'"></div>
         </div>
     </div>

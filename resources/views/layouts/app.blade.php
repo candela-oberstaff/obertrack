@@ -125,7 +125,6 @@
 
             /* Prose Task Description (Markdown Rendering) */
             .prose-task-description {
-                white-space: pre-wrap;
                 word-wrap: break-word;
             }
             .prose-task-description a {

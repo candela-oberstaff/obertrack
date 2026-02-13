@@ -37,8 +37,20 @@ class Task extends Model
         if (!$this->description) {
             return '';
         }
+
+        $desc = trim($this->description);
+        $lowerDesc = strtolower($desc);
+
+        // If it starts with a doctype, html tag, or contains a style tag,
+        // we assume it's a full HTML snippet/document and return it as-is.
+        // This avoids markdown parser stripping or messing with head/style tags.
+        if (str_contains($lowerDesc, '<!doctype html') || 
+            str_contains($lowerDesc, '<html') || 
+            str_contains($lowerDesc, '<style')) {
+            return $this->description;
+        }
         
-        // Use markdown with options that allow links
+        // Use markdown with options that allow links and HTML input
         return Str::markdown($this->description, [
             'html_input' => 'allow',
             'allow_unsafe_links' => true,

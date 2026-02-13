@@ -33,28 +33,28 @@
 <body class="min-h-screen flex items-center justify-center p-4 bg-white md:bg-gray-50 overflow-hidden">
     <div class="w-full max-w-2xl flex flex-col items-center justify-center text-center">
         <div class="mb-6 transform hover:scale-105 transition-transform duration-500">
-            <img src="https://i.gifer.com/3cVf.gif" alt="Mascota Feliz" class="w-48 h-48 md:w-60 md:h-60 object-contain">
+            <img src="{{ asset('images/logo.png') }}" alt="Obertrack Logo" class="h-24 md:h-32 object-contain">
         </div>
         
 
         <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4 tracking-tight">
-            ¡Un pequeño descanso!
+            ¡Tu sesión ha expirado!
         </h1>
         
 
         <p class="text-base md:text-lg text-gray-500 max-w-lg mb-8 leading-relaxed px-4">
-            Parece que esta página se tomó un respiro por seguridad (la sesión expiró). 
-            <span class="block mt-1 font-medium text-gray-600">No hay de qué preocuparse, ¡solo recarga y seguimos!</span>
+            Por seguridad, tu sesión se tomó un respiro. 
+            <span class="block mt-1 font-medium text-gray-600">No te preocupes, ¡vuelve a iniciar sesión y continuemos!</span>
         </p>
         
 
         <div class="w-full max-w-xs flex flex-col items-center gap-4">
-            <button onclick="window.location.reload()" 
+            <button onclick="window.location.href='/login'" 
                 class="w-full bg-[#22A9C8] hover:bg-[#1b8a9e] text-white text-lg font-bold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-xl active:scale-95 flex items-center justify-center gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-                Recargar Página
+                Iniciar Sesión
             </button>
             
             <a href="/" class="text-gray-400 hover:text-[#22A9C8] font-medium transition-colors text-xs">
