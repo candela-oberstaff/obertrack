@@ -99,5 +99,22 @@ class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
                 <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
             </audio>
         </div>
+    @else
+        {{-- Gray Placeholder for Disconnected State --}}
+        <div class="bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 overflow-hidden">
+            <div class="px-6 py-12 flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 border border-gray-100">
+                    <i class="fa fa-calendar-alt text-gray-200 text-3xl"></i>
+                </div>
+                <h3 class="text-base font-bold text-gray-400 uppercase tracking-wider">Google Calendar</h3>
+                <p class="text-xs text-gray-400 mt-1 max-w-xs">
+                    Conecta tu calendario para ver tus próximas reuniones y activar las alarmas inteligentes.
+                </p>
+                <a href="{{ route('google-calendar.connect') }}" class="mt-6 px-6 py-2 bg-white border border-gray-200 text-gray-500 rounded-lg text-xs font-bold hover:bg-gray-50 transition-all flex items-center gap-2">
+                    <i class="fa fa-plug text-[10px]"></i>
+                    Conectar ahora
+                </a>
+            </div>
+        </div>
     @endif
 </div>
