@@ -18,6 +18,8 @@ class GoogleCalendarService
         $this->client->setClientSecret(config('services.google.client_secret'));
         $this->client->setRedirectUri(route('google-calendar.callback'));
         $this->client->addScope(Calendar::CALENDAR_EVENTS_READONLY);
+        $this->client->addScope('email');
+        $this->client->addScope('profile');
         $this->client->setAccessType('offline');
         $this->client->setPrompt('consent');
     }
