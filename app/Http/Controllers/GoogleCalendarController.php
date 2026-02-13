@@ -24,10 +24,13 @@ class GoogleCalendarController extends Controller
     {
         if ($request->has('code')) {
             try {
+                \Illuminate\Support\Facades\Log::info('Google Calendar Callback received for user ' . Auth::id());
                 $this->calendarService->authenticate($request->code, Auth::user());
+                \Illuminate\Support\Facades\Log::info('Google Calendar Authentication successful for user ' . Auth::id());
                 return redirect()->route(Auth::user()->getDashboardRoute())
                     ->with('success', 'Google Calendar conectado exitosamente.');
             } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Google Calendar Callback Error: ' . $e->getMessage());
                 return redirect()->route(Auth::user()->getDashboardRoute())
                     ->with('error', 'Error al conectar Google Calendar: ' . $e->getMessage());
             }

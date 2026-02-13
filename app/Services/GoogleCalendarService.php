@@ -13,10 +13,6 @@ class GoogleCalendarService
 
     public function __construct()
     {
-        if (!class_exists('Google\Client')) {
-            return;
-        }
-
         $this->client = new Client();
         $this->client->setClientId(config('services.google.client_id'));
         $this->client->setClientSecret(config('services.google.client_secret'));
@@ -37,26 +33,37 @@ class GoogleCalendarService
     public function authenticate($code, User $user)
     {
         if (!$this->client) {
+            \Illuminate\Support\Facades\Log::error('Google Calendar Service client is null during authentication');
             throw new \Exception('La integración con Google Calendar no está disponible todavía.');
         }
 
+        \Illuminate\Support\Facades\Log::info('Fetching Google Access Token with code for user ' . $user->id);
         $accessToken = $this->client->fetchAccessTokenWithAuthCode($code);
         
         if (isset($accessToken['error'])) {
-            throw new \Exception('Google Auth Error: ' . $accessToken['error_description']);
+            \Illuminate\Support\Facades\Log::error('Google Access Token Fetch Error: ' . json_encode($accessToken));
+            throw new \Exception('Google Auth Error: ' . ($accessToken['error_description'] ?? $accessToken['error']));
         }
 
-        $user->update([
+        \Illuminate\Support\Facades\Log::info('Token obtained. Updating user fields for user ' . $user->id);
+        $email = $this->getCalendarEmail();
+        
+        $updated = $user->update([
             'google_calendar_token' => json_encode($accessToken),
-            'google_calendar_email' => $this->getCalendarEmail(),
+            'google_calendar_email' => $email,
         ]);
+
+        \Illuminate\Support\Facades\Log::info('User update result: ' . ($updated ? 'SUCCESS' : 'FAILURE'));
+        if (!$updated) {
+            \Illuminate\Support\Facades\Log::error('Failed to update user model with Google Calendar tokens.');
+        }
 
         return $accessToken;
     }
 
     public function getTodayMeetings(User $user)
     {
-        if (!class_exists('Google\Client') || !$user->google_calendar_token) {
+        if (!$user->google_calendar_token) {
             return [];
         }
 

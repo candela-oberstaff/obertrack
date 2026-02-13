@@ -1,6 +1,6 @@
 <div x-data="{ 
     meetings: @entangle('meetings'),
-    activeAlarmId: @entangle('activeAlarmId'),
+    activeMeetingId: @entangle('activeMeetingId'),
     warningMeetingId: @entangle('warningMeetingId'),
     playAlarm() {
         let audio = document.getElementById('meeting-alarm-sound');
@@ -17,11 +17,12 @@
     }
 }" 
 x-init="
-    $watch('activeAlarmId', value => {
+    $watch('activeMeetingId', value => {
         if (value) playAlarm();
         else stopAlarm();
     });
 "
+wire:poll.60s="poll"
 class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
 
     @if(auth()->user()->isGoogleCalendarConnected())
@@ -40,9 +41,9 @@ class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
                 @if(count($meetings) > 0)
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         @foreach($meetings as $meeting)
-                            <div class="relative group p-4 rounded-xl border transition-all duration-300 {{ $activeAlarmId === $meeting['id'] ? 'bg-red-50 border-red-200 ring-2 ring-red-100' : ($warningMeetingId === $meeting['id'] ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-transparent hover:border-gray-200') }}">
+                            <div class="relative group p-4 rounded-xl border transition-all duration-300 {{ $activeMeetingId === $meeting['id'] ? 'bg-red-50 border-red-200 ring-2 ring-red-100' : ($warningMeetingId === $meeting['id'] ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-transparent hover:border-gray-200') }}">
                                 
-                                @if($activeAlarmId === $meeting['id'])
+                                @if($activeMeetingId === $meeting['id'])
                                     <div class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg animate-bounce">
                                         ¡Comenzó!
                                     </div>
@@ -55,7 +56,7 @@ class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
                                 <div class="flex flex-col gap-2">
                                     <div class="flex items-center justify-between">
                                         <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ \Carbon\Carbon::parse($meeting['start'])->format('H:i') }}</span>
-                                        @if($meeting['is_active'])
+                                        @if($meeting['is_active'] ?? false)
                                             <span class="flex h-2 w-2">
                                                 <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
                                                 <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -63,15 +64,15 @@ class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
                                         @endif
                                     </div>
                                     
-                                    <h4 class="text-sm font-bold text-gray-900 line-clamp-1 {{ $activeAlarmId === $meeting['id'] ? 'text-red-700' : '' }}">{{ $meeting['summary'] }}</h4>
+                                    <h4 class="text-sm font-bold text-gray-900 line-clamp-1 {{ $activeMeetingId === $meeting['id'] ? 'text-red-700' : '' }}">{{ $meeting['summary'] }}</h4>
                                     
-                                    @if($meeting['hangoutLink'])
+                                    @if($meeting['hangoutLink'] ?? false)
                                         <a href="{{ $meeting['hangoutLink'] }}" 
                                            target="_blank"
-                                           wire:click="joinMeeting('{{ $meeting['id'] }}')"
-                                           class="mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all {{ $activeAlarmId === $meeting['id'] ? 'bg-red-600 text-white shadow-lg hover:bg-red-700' : 'bg-white border border-gray-200 text-[#22A9C8] hover:bg-gray-50' }}">
+                                           wire:click="joinMeeting('{{ $meeting['id'] }}', '{{ $meeting['hangoutLink'] }}')"
+                                           class="mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all {{ $activeMeetingId === $meeting['id'] ? 'bg-red-600 text-white shadow-lg hover:bg-red-700' : 'bg-white border border-gray-200 text-[#22A9C8] hover:bg-gray-50' }}">
                                             <i class="fa fa-video"></i>
-                                            {{ $activeAlarmId === $meeting['id'] ? 'Detener Alarma y Unirse' : 'Unirse a la reunión' }}
+                                            {{ $activeMeetingId === $meeting['id'] ? 'Detener Alarma y Unirse' : 'Unirse a la reunión' }}
                                         </a>
                                     @else
                                         <div class="mt-2 w-full py-2 flex items-center justify-center gap-2 text-[10px] text-gray-400 italic">

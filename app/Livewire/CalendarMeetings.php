@@ -9,9 +9,8 @@ use Illuminate\Support\Facades\Auth;
 class CalendarMeetings extends Component
 {
     public $meetings = [];
-    public $alarmActive = false;
-    public $warningActive = false;
     public $activeMeetingId = null;
+    public $warningMeetingId = null;
 
     public function mount(GoogleCalendarService $service)
     {
@@ -34,33 +33,31 @@ class CalendarMeetings extends Component
     protected function checkAlarms()
     {
         $now = now();
-        $this->alarmActive = false;
-        $this->warningActive = false;
         $this->activeMeetingId = null;
+        $this->warningMeetingId = null;
 
         foreach ($this->meetings as $meeting) {
             $start = \Carbon\Carbon::parse($meeting['start']);
             
-            // Alarm starting exactly at the time, or within the next minute if we missed it
+            // Alarm starting exactly at the time, or within the next minute
             if ($now->greaterThanOrEqualTo($start) && $now->diffInMinutes($start) < 2) {
-                $this->alarmActive = true;
                 $this->activeMeetingId = $meeting['id'];
                 break;
             }
 
             // Warning 10 minutes before
             if ($now->diffInMinutes($start) <= 10 && $now->lessThan($start)) {
-                $this->warningActive = true;
+                $this->warningMeetingId = $meeting['id'];
             }
         }
     }
 
     public function joinMeeting($id, $link)
     {
-        $this->alarmActive = false;
         $this->activeMeetingId = null;
         
-        // This will be handled by JS to open the link
+        // This will be handled by JS to open the link if needed, 
+        // though the <a> already has target="_blank"
         $this->dispatch('meeting-joined', link: $link);
     }
 
