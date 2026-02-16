@@ -71,18 +71,31 @@ class GoogleCalendarService
 
         try {
             $this->setAccessToken($user);
+            
+            $timeMin = now()->startOfDay()->toRfc3339String();
+            $timeMax = now()->endOfDay()->toRfc3339String();
+            
+            Log::info('Fetching Google Calendar events for user ' . $user->id, [
+                'timeMin' => $timeMin,
+                'timeMax' => $timeMax,
+                'timezone' => config('app.timezone')
+            ]);
 
             $calendarService = new Calendar($this->client);
             $optParams = [
                 'maxResults' => 10,
                 'orderBy' => 'startTime',
                 'singleEvents' => true,
-                'timeMin' => now()->startOfDay()->toRfc3339String(),
-                'timeMax' => now()->endOfDay()->toRfc3339String(),
+                'timeMin' => $timeMin,
+                'timeMax' => $timeMax,
             ];
 
             $results = $calendarService->events->listEvents('primary', $optParams);
             $events = $results->getItems();
+            
+            Log::info('Google API response for user ' . $user->id, [
+                'count' => count($events)
+            ]);
 
             return collect($events)->map(function ($event) {
                 return [
@@ -95,7 +108,7 @@ class GoogleCalendarService
                 ];
             });
         } catch (\Exception $e) {
-            Log::error('Google Calendar Error: ' . $e->getMessage());
+            Log::error('Google Calendar Error for user ' . $user->id . ': ' . $e->getMessage());
             return [];
         }
     }

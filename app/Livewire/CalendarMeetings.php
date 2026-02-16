@@ -39,14 +39,15 @@ class CalendarMeetings extends Component
         foreach ($this->meetings as $meeting) {
             $start = \Carbon\Carbon::parse($meeting['start']);
             
-            // Alarm starting exactly at the time, or within the next minute
-            if ($now->greaterThanOrEqualTo($start) && $now->diffInMinutes($start) < 2) {
+            // Active alarm: meeting started within the last 2 minutes
+            $minutesSinceStart = $now->diffInMinutes($start, false); // false = signed difference
+            if ($minutesSinceStart >= 0 && $minutesSinceStart < 2) {
                 $this->activeMeetingId = $meeting['id'];
                 break;
             }
 
             // Warning 10 minutes before
-            if ($now->diffInMinutes($start) <= 10 && $now->lessThan($start)) {
+            if ($now->lessThan($start) && $now->diffInMinutes($start) <= 10) {
                 $this->warningMeetingId = $meeting['id'];
             }
         }
