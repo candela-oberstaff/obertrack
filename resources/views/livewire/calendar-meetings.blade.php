@@ -47,11 +47,11 @@
                 const seconds = Math.floor((diff % (1000 * 60)) / 1000);
                 
                 if (hours > 0) {
-                    this.countdown = `${hours}h ${minutes}m ${seconds}s`;
+                    this.countdown = hours + 'h ' + minutes + 'm ' + seconds + 's';
                 } else if (minutes > 0) {
-                    this.countdown = `${minutes}m ${seconds}s`;
+                    this.countdown = minutes + 'm ' + seconds + 's';
                 } else {
-                    this.countdown = `${seconds}s`;
+                    this.countdown = seconds + 's';
                 }
             } else {
                 this.countdown = '¡Comenzó!';
