@@ -71,10 +71,10 @@ x-init="
     setInterval(() => updateCountdown(), 1000);
 "
 wire:poll.60s="poll"
-class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+class="mb-8">
 
     @if(auth()->user()->isGoogleCalendarConnected())
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 px-4 lg:px-0">
             {{-- Meetings List --}}
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -247,7 +247,7 @@ class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         </div>
     @else
         {{-- Gray Placeholder for Disconnected State --}}
-        <div class="bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 overflow-hidden">
+        <div class="bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 overflow-hidden px-4 lg:px-0">
             <div class="px-6 py-12 flex flex-col items-center justify-center text-center">
                 <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 border border-gray-100">
                     <i class="fa fa-calendar-alt text-gray-200 text-3xl"></i>
