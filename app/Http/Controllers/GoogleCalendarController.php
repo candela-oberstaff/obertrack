@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\GoogleCalendarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Jobs\RefreshGoogleCalendarToken;
 
 class GoogleCalendarController extends Controller
 {
@@ -39,6 +40,10 @@ class GoogleCalendarController extends Controller
 
                 $this->calendarService->authenticate($request->code, $user);
                 \Illuminate\Support\Facades\Log::info('Google Calendar Authentication successful for user ' . $user->id);
+                
+                // Dispatch background job to keep token fresh
+                RefreshGoogleCalendarToken::dispatch($user)->delay(now()->addMinutes(45));
+                
                 return redirect()->route($user->getDashboardRoute())
                     ->with('success', 'Google Calendar conectado exitosamente.');
             } catch (\Exception $e) {

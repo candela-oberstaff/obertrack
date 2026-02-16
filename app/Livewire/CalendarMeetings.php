@@ -11,6 +11,8 @@ class CalendarMeetings extends Component
     public $meetings = [];
     public $activeMeetingId = null;
     public $warningMeetingId = null;
+    public $errorState = null; // 'token_expired', 'access_denied', 'api_error', 'rate_limit', 'quota_exceeded', 'unknown'
+    public $retryAfter = null; // seconds until retry is available
 
     public function mount(GoogleCalendarService $service)
     {
@@ -26,7 +28,18 @@ class CalendarMeetings extends Component
     protected function updateMeetings(GoogleCalendarService $service)
     {
         if (Auth::user()->google_calendar_token) {
-            $this->meetings = $service->getTodayMeetings(Auth::user());
+            $result = $service->getTodayMeetings(Auth::user());
+            
+            // Check if result contains an error
+            if (is_array($result) && isset($result['error'])) {
+                $this->errorState = $result['error'];
+                $this->retryAfter = $result['retry_after'] ?? null;
+                $this->meetings = [];
+            } else {
+                $this->errorState = null;
+                $this->retryAfter = null;
+                $this->meetings = $result;
+            }
         }
     }
 
@@ -60,6 +73,14 @@ class CalendarMeetings extends Component
         // This will be handled by JS to open the link if needed, 
         // though the <a> already has target="_blank"
         $this->dispatch('meeting-joined', link: $link);
+    }
+    
+    public function fetchMeetings()
+    {
+        // Clear cache and force refresh
+        $service = app(GoogleCalendarService::class);
+        $service->clearCache(Auth::user());
+        $this->updateMeetings($service);
     }
 
     public function render()

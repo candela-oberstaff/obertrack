@@ -88,6 +88,64 @@ class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
                         </button>
                     </div>
 
+                    {{-- Error State Messages --}}
+                    @if($errorState)
+                        <div class="mx-6 mt-4 mb-2">
+                            @if($errorState === 'token_expired')
+                                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-start gap-3">
+                                    <i class="fa fa-exclamation-triangle text-orange-500 mt-0.5"></i>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-bold text-orange-900">Sesión de Google expirada</p>
+                                        <p class="text-xs text-orange-700 mt-1">Tu conexión con Google Calendar ha expirado. Por favor, reconecta tu cuenta.</p>
+                                        <a href="{{ route('google-calendar.connect') }}" class="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-xs font-bold rounded-lg hover:bg-orange-600 transition-colors">
+                                            <i class="fa fa-sync text-[10px]"></i>
+                                            Reconectar Google Calendar
+                                        </a>
+                                    </div>
+                                </div>
+                            @elseif($errorState === 'access_denied')
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                                    <i class="fa fa-ban text-red-500 mt-0.5"></i>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-bold text-red-900">Acceso denegado</p>
+                                        <p class="text-xs text-red-700 mt-1">No tienes permisos para acceder a Google Calendar. Verifica la configuración de tu cuenta.</p>
+                                    </div>
+                                </div>
+                            @elseif($errorState === 'api_error' || $errorState === 'unknown')
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+                                    <i class="fa fa-exclamation-circle text-yellow-500 mt-0.5"></i>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-bold text-yellow-900">Error temporal</p>
+                                        <p class="text-xs text-yellow-700 mt-1">No pudimos cargar tus reuniones. Intenta nuevamente en unos momentos.</p>
+                                    </div>
+                                </div>
+                            @elseif($errorState === 'rate_limit')
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                                    <i class="fa fa-clock text-blue-500 mt-0.5"></i>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-bold text-blue-900">Demasiadas actualizaciones</p>
+                                        <p class="text-xs text-blue-700 mt-1">
+                                            Has actualizado demasiado rápido. 
+                                            @if($retryAfter)
+                                                Intenta nuevamente en {{ $retryAfter }} segundos.
+                                            @else
+                                                Intenta nuevamente en unos momentos.
+                                            @endif
+                                        </p>
+                                    </div>
+                                </div>
+                            @elseif($errorState === 'quota_exceeded')
+                                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 flex items-start gap-3">
+                                    <i class="fa fa-exclamation-triangle text-purple-500 mt-0.5"></i>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-bold text-purple-900">Límite de Google alcanzado</p>
+                                        <p class="text-xs text-purple-700 mt-1">Hemos alcanzado el límite diario de consultas a Google Calendar. Las reuniones se actualizarán automáticamente mañana.</p>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
                     <div class="p-6">
                         @if(count($meetings) > 0)
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
