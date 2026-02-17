@@ -13,9 +13,11 @@ class CalendarMeetings extends Component
     public $warningMeetingId = null;
     public $errorState = null; // 'token_expired', 'access_denied', 'api_error', 'rate_limit', 'quota_exceeded', 'unknown'
     public $retryAfter = null; // seconds until retry is available
+    public $notificationsEnabled = true;
 
     public function mount(GoogleCalendarService $service)
     {
+        $this->notificationsEnabled = (bool) Auth::user()->google_calendar_notifications;
         $this->updateMeetings($service);
     }
 
@@ -45,25 +47,44 @@ class CalendarMeetings extends Component
 
     protected function checkAlarms()
     {
-        $now = now();
+        if (!$this->notificationsEnabled) {
+            $this->activeMeetingId = null;
+            $this->warningMeetingId = null;
+            return;
+        }
+
+        $timezone = Auth::user()->timezone ?? config('app.timezone', 'America/Argentina/Buenos_Aires');
+        $now = now()->timezone($timezone);
         $this->activeMeetingId = null;
         $this->warningMeetingId = null;
 
         foreach ($this->meetings as $meeting) {
-            $start = \Carbon\Carbon::parse($meeting['start']);
+            $start = \Carbon\Carbon::parse($meeting['start'])->timezone($timezone);
             
-            // Active alarm: meeting started within the last 2 minutes
-            $minutesSinceStart = $now->diffInMinutes($start, false); // false = signed difference
-            if ($minutesSinceStart >= 0 && $minutesSinceStart < 2) {
+            // Alarm trigger: Exactly 1 minute before start
+            $secondsUntilStart = $now->diffInSeconds($start, false); // false = signed diff
+            
+            // Alarm sounds between 60 seconds before and 5 minutes after (to allow manually stopping)
+            if ($secondsUntilStart >= -300 && $secondsUntilStart <= 60) {
                 $this->activeMeetingId = $meeting['id'];
                 break;
             }
 
             // Warning 10 minutes before
-            if ($now->lessThan($start) && $now->diffInMinutes($start) <= 10) {
+            if ($secondsUntilStart > 60 && $secondsUntilStart <= 600) {
                 $this->warningMeetingId = $meeting['id'];
             }
         }
+    }
+
+    public function toggleNotifications()
+    {
+        $this->notificationsEnabled = !$this->notificationsEnabled;
+        Auth::user()->update([
+            'google_calendar_notifications' => $this->notificationsEnabled
+        ]);
+        
+        $this->checkAlarms();
     }
 
     public function joinMeeting($id, $link)

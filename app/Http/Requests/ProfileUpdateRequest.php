@@ -33,6 +33,7 @@ class ProfileUpdateRequest extends FormRequest
             'related_contact' => ['nullable', 'string', 'min:3', 'max:255'],
             'job_title' => ['nullable', 'string', 'max:255'],
             'avatar' => ['nullable', 'image', 'max:2048'], // Max 2MB
+            'timezone' => ['nullable', 'string', 'timezone'],
         ];
     }
 }

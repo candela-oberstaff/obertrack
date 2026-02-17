@@ -84,15 +84,15 @@ class GoogleCalendarService
         // Cache key unique per user and day
         $cacheKey = 'calendar_meetings_' . $user->id . '_' . now()->format('Y-m-d');
         
-        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user, $rateLimitKey) {
+        return Cache::remember($cacheKey, now()->addSeconds(30), function () use ($user, $rateLimitKey) {
             // Increment rate limit counter
             RateLimiter::hit($rateLimitKey, 60);
             
             try {
                 $this->setAccessToken($user);
                 
-                // Explicitly specify timezone
-                $timezone = config('app.timezone', 'America/Argentina/Buenos_Aires');
+                // Explicitly specify timezone from user or default
+                $timezone = $user->timezone ?? config('app.timezone', 'America/Argentina/Buenos_Aires');
                 $timeMin = now()->timezone($timezone)->startOfDay()->toRfc3339String();
                 $timeMax = now()->timezone($timezone)->endOfDay()->toRfc3339String();
                 

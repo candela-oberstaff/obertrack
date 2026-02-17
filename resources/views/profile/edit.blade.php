@@ -125,6 +125,14 @@
                             </div>
                         </div>
 
+                        <!-- Timezone -->
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Zona Horaria</label>
+                            <div class="bg-[#F3F4F6] text-gray-700 rounded-lg p-3 w-full">
+                                {{ $user->timezone ?? 'America/Argentina/Buenos_Aires' }}
+                            </div>
+                        </div>
+
                     </div>
 
                     <div class="mt-8 flex justify-center">
@@ -342,6 +350,19 @@
                                             </select>
                                             <x-input-error class="mt-2" :messages="$errors->get('city')" />
                                         </div>
+                                    </div>
+
+                                    <!-- Timezone List -->
+                                    <div>
+                                        <label for="timezone" class="block text-sm font-bold text-gray-700 mb-1">Zona Horaria</label>
+                                        <select name="timezone" id="timezone" class="mt-1 block w-full bg-[#F3F4F6] border-none rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm py-3 px-4">
+                                            @foreach($timezones as $tz)
+                                                <option value="{{ $tz }}" {{ old('timezone', $user->timezone ?? 'America/Argentina/Buenos_Aires') === $tz ? 'selected' : '' }}>
+                                                    {{ $tz }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <x-input-error class="mt-2" :messages="$errors->get('timezone')" />
                                     </div>
 
                                     @if($user->tipo_usuario === 'empleador')

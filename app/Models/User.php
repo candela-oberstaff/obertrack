@@ -61,6 +61,8 @@ class User extends Authenticatable
         'avatar',
         'google_calendar_token',
         'google_calendar_email',
+        'timezone',
+        'google_calendar_notifications',
     ];
 
 
@@ -86,6 +88,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_manager' => 'boolean',
             'is_superadmin' => 'boolean',
+            'google_calendar_notifications' => 'boolean',
         ];
     }
 

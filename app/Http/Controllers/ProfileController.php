@@ -52,10 +52,12 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $profesionales = $this->professionalDataService->getProfessionalsForUser($user);
+        $timezones = \DateTimeZone::listIdentifiers();
 
         return view('profile.edit', [
             'user' => $user,
             'profesionales' => $profesionales,
+            'timezones' => $timezones,
         ]);
     }
 
