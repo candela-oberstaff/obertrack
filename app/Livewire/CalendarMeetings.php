@@ -92,9 +92,15 @@ class CalendarMeetings extends Component
     {
         $this->notificationsEnabled = !$this->notificationsEnabled;
         
-        $user = Auth::user();
-        $user->google_calendar_notifications = (bool) $this->notificationsEnabled;
-        $user->save();
+        // Use DB::table with DB::raw to avoid PostgreSQL boolean vs integer mismatch
+        // this follows the pattern used in the User model's promoverAManager method
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', Auth::id())
+            ->update([
+                'google_calendar_notifications' => $this->notificationsEnabled 
+                    ? \Illuminate\Support\Facades\DB::raw('true') 
+                    : \Illuminate\Support\Facades\DB::raw('false')
+            ]);
         
         $this->checkAlarms();
     }
