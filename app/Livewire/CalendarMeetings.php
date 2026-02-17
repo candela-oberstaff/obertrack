@@ -59,15 +59,18 @@ class CalendarMeetings extends Component
         $this->activeMeetingId = null;
         $this->warningMeetingId = null;
 
-        foreach ($this->meetings as $meeting) {
+        foreach ($this->meetings as $index => $meeting) {
             $id = $meeting['id'];
+            $start = \Carbon\Carbon::parse($meeting['start'])->timezone($timezone);
+            $end = \Carbon\Carbon::parse($meeting['end'])->timezone($timezone);
 
-            // Skip if this alarm was already dismissed by the user
+            // Set is_active if now is between start and end
+            $this->meetings[$index]['is_active'] = $now->between($start, $end);
+
+            // Skip alarm logic if already dismissed
             if (in_array($id, $this->dismissedAlarms)) {
                 continue;
             }
-
-            $start = \Carbon\Carbon::parse($meeting['start'])->timezone($timezone);
             
             // Alarm trigger: Exactly 1 minute before start, stop at start
             $secondsUntilStart = $now->diffInSeconds($start, false); // false = signed diff
@@ -75,7 +78,7 @@ class CalendarMeetings extends Component
             // Alarm sounds only during the 60 seconds BEFORE the meeting
             if ($secondsUntilStart >= 0 && $secondsUntilStart <= 60) {
                 $this->activeMeetingId = $meeting['id'];
-                break;
+                // We don't break here because we need to calculate is_active for all meetings
             }
 
             // Warning 10 minutes before

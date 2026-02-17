@@ -131,6 +131,7 @@ class GoogleCalendarService
                         'end' => $event->getEnd()->getDateTime() ?: $event->getEnd()->getDate(),
                         'link' => $event->getHangoutLink() ?: $event->getHtmlLink(),
                         'status' => $event->status,
+                        'is_active' => false,
                     ];
                 })->toArray();
             } catch (\Google\Service\Exception $e) {
