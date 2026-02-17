@@ -91,8 +91,10 @@ class CalendarMeetings extends Component
     public function toggleNotifications()
     {
         $this->notificationsEnabled = !$this->notificationsEnabled;
+        
+        // Ensure we pass a strict boolean to avoid PDO type mismatch in some DBs like PostgreSQL
         Auth::user()->update([
-            'google_calendar_notifications' => $this->notificationsEnabled
+            'google_calendar_notifications' => (bool) $this->notificationsEnabled
         ]);
         
         $this->checkAlarms();
