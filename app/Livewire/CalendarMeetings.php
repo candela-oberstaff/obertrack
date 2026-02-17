@@ -92,10 +92,9 @@ class CalendarMeetings extends Component
     {
         $this->notificationsEnabled = !$this->notificationsEnabled;
         
-        // Ensure we pass a strict boolean to avoid PDO type mismatch in some DBs like PostgreSQL
-        Auth::user()->update([
-            'google_calendar_notifications' => (bool) $this->notificationsEnabled
-        ]);
+        $user = Auth::user();
+        $user->google_calendar_notifications = (bool) $this->notificationsEnabled;
+        $user->save();
         
         $this->checkAlarms();
     }
@@ -119,6 +118,7 @@ class CalendarMeetings extends Component
         $service = app(GoogleCalendarService::class);
         $service->clearCache(Auth::user());
         $this->updateMeetings($service);
+        $this->checkAlarms();
     }
 
     public function render()

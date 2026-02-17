@@ -152,12 +152,16 @@ class="mb-8">
                             {{-- Notification Toggle --}}
                             <div class="flex items-center gap-2 mr-2 border-r border-gray-100 pr-4">
                                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ $notificationsEnabled ? 'Alertas ON' : 'Alertas OFF' }}</span>
-                                <button wire:click="toggleNotifications" class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $notificationsEnabled ? 'bg-[#22A9C8]' : 'bg-gray-200' }}">
+                                <button wire:click="toggleNotifications" 
+                                        wire:loading.attr="disabled"
+                                        class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $notificationsEnabled ? 'bg-[#22A9C8]' : 'bg-gray-200' }}">
                                     <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $notificationsEnabled ? 'translate-x-4' : 'translate-x-0' }}"></span>
                                 </button>
                             </div>
                             
-                            <button wire:click="fetchMeetings" class="text-gray-400 hover:text-[#22A9C8] transition-colors">
+                            <button wire:click="fetchMeetings" 
+                                    wire:loading.attr="disabled"
+                                    class="text-gray-400 hover:text-[#22A9C8] transition-colors">
                                 <i class="fa fa-sync-alt text-xs" wire:loading.class="fa-spin"></i>
                             </button>
                         </div>
