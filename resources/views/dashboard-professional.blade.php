@@ -14,6 +14,8 @@
                     Aquí está tu resumen de actividades
                 </p>
             </div> 
+            
+            <livewire:calendar-meetings />
 
             {{-- Summary Cards --}}
             <div id="dashboard-stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -540,7 +542,7 @@
 
             </div>
 
-            <livewire:calendar-meetings />
+
 
             {{-- Main Content Grid --}}
             <div class="grid grid-cols-1 gap-6">
