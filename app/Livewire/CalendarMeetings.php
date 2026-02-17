@@ -14,6 +14,7 @@ class CalendarMeetings extends Component
     public $errorState = null; // 'token_expired', 'access_denied', 'api_error', 'rate_limit', 'quota_exceeded', 'unknown'
     public $retryAfter = null; // seconds until retry is available
     public $notificationsEnabled = true;
+    public $dismissedAlarms = [];
 
     public function mount(GoogleCalendarService $service)
     {
@@ -59,13 +60,20 @@ class CalendarMeetings extends Component
         $this->warningMeetingId = null;
 
         foreach ($this->meetings as $meeting) {
+            $id = $meeting['id'];
+
+            // Skip if this alarm was already dismissed by the user
+            if (in_array($id, $this->dismissedAlarms)) {
+                continue;
+            }
+
             $start = \Carbon\Carbon::parse($meeting['start'])->timezone($timezone);
             
-            // Alarm trigger: Exactly 1 minute before start
+            // Alarm trigger: Exactly 1 minute before start, stop at start
             $secondsUntilStart = $now->diffInSeconds($start, false); // false = signed diff
             
-            // Alarm sounds between 60 seconds before and 5 minutes after (to allow manually stopping)
-            if ($secondsUntilStart >= -300 && $secondsUntilStart <= 60) {
+            // Alarm sounds only during the 60 seconds BEFORE the meeting
+            if ($secondsUntilStart >= 0 && $secondsUntilStart <= 60) {
                 $this->activeMeetingId = $meeting['id'];
                 break;
             }
@@ -91,8 +99,12 @@ class CalendarMeetings extends Component
     {
         $this->activeMeetingId = null;
         
-        // This will be handled by JS to open the link if needed, 
-        // though the <a> already has target="_blank"
+        // Mark this meeting as dismissed so the alarm doesn't sound again 
+        // until the next poll cycle or if it re-enters the window
+        if (!in_array($id, $this->dismissedAlarms)) {
+            $this->dismissedAlarms[] = $id;
+        }
+        
         $this->dispatch('meeting-joined', link: $link);
     }
     

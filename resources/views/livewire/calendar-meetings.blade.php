@@ -63,10 +63,75 @@
     }
 }" 
 x-init="
+    // Audio Unlocker (Global for meeting alarms)
+    const audio = document.getElementById('meeting-alarm-sound');
+    const unlockAudio = () => {
+        if (audio) {
+            audio.muted = true;
+            audio.play().then(() => {
+                audio.pause();
+                audio.currentTime = 0;
+                audio.muted = false;
+                document.removeEventListener('click', unlockAudio);
+                console.log('Meeting alarm channel unlocked.');
+            }).catch(e => console.log('Unlock failed:', e));
+        }
+    };
+    document.addEventListener('click', unlockAudio);
+
+    // Title Flashing Logic
+    const originalTitle = document.title;
+    let titleInterval = null;
+    const flashTitle = (msg) => {
+        if (titleInterval) clearInterval(titleInterval);
+        let flip = false;
+        titleInterval = setInterval(() => {
+            document.title = flip ? '🔔 ' + msg : originalTitle;
+            flip = !flip;
+        }, 1000);
+    };
+    const stopFlash = () => {
+        if (titleInterval) {
+            clearInterval(titleInterval);
+            titleInterval = null;
+        }
+        document.title = originalTitle;
+    };
+
+    // Web Notification Request
+    if (Notification.permission === 'default') {
+        setTimeout(() => {
+            Notification.requestPermission();
+        }, 2000);
+    }
+
     $watch('activeMeetingId', value => {
-        if (value) playAlarm();
-        else stopAlarm();
+        if (value) {
+            playAlarm();
+            const meeting = meetings.find(m => m.id === value);
+            if (meeting) {
+                // Show Web Notification if window is in background
+                if (document.visibilityState !== 'visible' || !document.hasFocus()) {
+                    flashTitle('Reunión por comenzar');
+                    if (Notification.permission === 'granted') {
+                        new Notification('Próxima Reunión', {
+                            body: meeting.summary + ' está por comenzar.',
+                            icon: '/favicon.ico'
+                        });
+                    }
+               }
+            }
+        } else {
+            stopAlarm();
+            stopFlash();
+        }
     });
+
+    // Cleanup on window focus
+    window.addEventListener('focus', () => {
+        if (!activeMeetingId) stopFlash();
+    });
+
     updateCountdown();
     setInterval(() => updateCountdown(), 1000);
 "
@@ -160,11 +225,11 @@ class="mb-8">
                         @if(count($meetings) > 0)
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 @foreach($meetings as $meeting)
-                                    <div class="relative group p-4 rounded-xl border transition-all duration-300 {{ $activeMeetingId === $meeting['id'] ? 'bg-red-50 border-red-200 ring-2 ring-red-100' : ($warningMeetingId === $meeting['id'] ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-transparent hover:border-gray-200') }}">
+                                    <div class="relative group p-4 rounded-xl border transition-all duration-300 {{ $activeMeetingId === $meeting['id'] ? 'bg-red-50 border-red-200 ring-2 ring-red-100' : ($meeting['is_active'] ? 'bg-green-50/50 border-green-200' : ($warningMeetingId === $meeting['id'] ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-transparent hover:border-gray-200')) }}">
                                         
                                         @if($activeMeetingId === $meeting['id'])
                                             <div class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg animate-bounce">
-                                                ¡Comenzó!
+                                                Está por comenzar
                                             </div>
                                         @elseif($warningMeetingId === $meeting['id'])
                                             <div class="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg">
@@ -189,9 +254,9 @@ class="mb-8">
                                                 <a href="{{ $meeting['link'] }}" 
                                                    target="_blank"
                                                    wire:click="joinMeeting('{{ $meeting['id'] }}', '{{ $meeting['link'] }}')"
-                                                   class="mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all {{ $activeMeetingId === $meeting['id'] ? 'bg-red-600 text-white shadow-lg hover:bg-red-700' : 'bg-white border border-gray-200 text-[#22A9C8] hover:bg-gray-50' }}">
+                                                    class="mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all {{ $activeMeetingId === $meeting['id'] ? 'bg-red-600 text-white shadow-lg hover:bg-red-700' : ($meeting['is_active'] ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-white border border-gray-200 text-[#22A9C8] hover:bg-gray-50') }}">
                                                     <i class="fa fa-video"></i>
-                                                    {{ $activeMeetingId === $meeting['id'] ? 'Detener Alarma y Unirse' : 'Unirse a la reunión' }}
+                                                    {{ $activeMeetingId === $meeting['id'] ? 'Detener Alarma y Unirse' : ($meeting['is_active'] ? 'Reunión en curso - Unirse' : 'Unirse a la reunión') }}
                                                 </a>
                                             @else
                                                 <div class="mt-2 w-full py-2 flex items-center justify-center gap-2 text-[10px] text-gray-400 italic">
