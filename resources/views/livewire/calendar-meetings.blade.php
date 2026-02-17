@@ -163,11 +163,11 @@ x-init="
     // Initial check for active meeting
     if (this.activeMeetingId) {
         console.log('Initial meeting active, scheduling alarm...');
-        setTimeout(() => playAlarm(), 1000);
+        setTimeout(() => this.playAlarm(), 1000);
     }
 
-    updateCountdown();
-    setInterval(() => updateCountdown(), 1000);
+    this.updateCountdown();
+    setInterval(() => this.updateCountdown(), 1000);
 "
 wire:poll.10s="poll"
 class="mb-8">
@@ -297,13 +297,23 @@ class="mb-8">
                                             <h4 class="text-sm font-bold text-gray-900 line-clamp-1 {{ $activeMeetingId === $meeting['id'] ? 'text-red-700' : '' }}">{{ $meeting['summary'] }}</h4>
                                             
                                             @if($meeting['link'] ?? false)
-                                                <a href="{{ $meeting['link'] }}" 
-                                                   target="_blank"
-                                                   wire:click="joinMeeting('{{ $meeting['id'] }}', '{{ $meeting['link'] }}')"
-                                                    class="mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all {{ $activeMeetingId === $meeting['id'] ? 'bg-red-600 text-white shadow-lg hover:bg-red-700' : ($meeting['is_active'] ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-white border border-gray-200 text-[#22A9C8] hover:bg-gray-50') }}">
-                                                    <i class="fa fa-video"></i>
-                                                    {{ $activeMeetingId === $meeting['id'] ? 'Detener Alarma y Unirse' : ($meeting['is_active'] ? 'Reunión en curso - Unirse' : 'Unirse a la reunión') }}
-                                                </a>
+                                                <div class="flex gap-2 mt-2">
+                                                    <a href="{{ $meeting['link'] }}" 
+                                                       target="_blank"
+                                                       wire:click="joinMeeting('{{ $meeting['id'] }}', '{{ $meeting['link'] }}')"
+                                                        class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all {{ $activeMeetingId === $meeting['id'] ? 'bg-red-600 text-white shadow-lg hover:bg-red-700' : ($meeting['is_active'] ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-white border border-gray-200 text-[#22A9C8] hover:bg-gray-50') }}">
+                                                        <i class="fa fa-video"></i>
+                                                        {{ $activeMeetingId === $meeting['id'] ? 'Unirse' : ($meeting['is_active'] ? 'Unirse' : 'Unirse') }}
+                                                    </a>
+                                                    
+                                                    @if($activeMeetingId === $meeting['id'])
+                                                        <button @click="stopAlarm(); activeMeetingId = null" 
+                                                                title="Silenciar alarma"
+                                                                class="px-3 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors">
+                                                            <i class="fa fa-bell-slash"></i>
+                                                        </button>
+                                                    @endif
+                                                </div>
                                             @else
                                                 <div class="mt-2 w-full py-2 flex items-center justify-center gap-2 text-[10px] text-gray-400 italic">
                                                     Sin link de acceso
