@@ -545,7 +545,7 @@
 
 
             {{-- Main Content Grid --}}
-            <div class="grid grid-cols-1 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 
                 {{-- Últimas Tareas (Full width) --}}
                 <div class="" id="dashboard-latest-tasks">
