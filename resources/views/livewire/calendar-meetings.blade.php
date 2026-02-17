@@ -5,9 +5,22 @@
     countdown: '',
     nextMeeting: null,
     playAlarm() {
+        console.log('Attempting to play alarm...');
         let audio = document.getElementById('meeting-alarm-sound');
         if (audio) {
-            audio.play().catch(e => console.error('Error playing alarm:', e));
+            audio.play().then(() => {
+                console.log('Alarm playing successfully.');
+            }).catch(e => {
+                console.error('Error playing alarm:', e);
+                console.log('Audio state:', {
+                    paused: audio.paused,
+                    muted: audio.muted,
+                    src: audio.src,
+                    readyState: audio.readyState
+                });
+            });
+        } else {
+            console.error('Audio element NOT FOUND');
         }
     },
     stopAlarm() {
@@ -28,7 +41,12 @@
         let upcoming = null;
         
         for (let meeting of this.meetings) {
+            if (!meeting.start) continue;
+            
+            // Handle both ISO strings and local formats
             const start = new Date(meeting.start);
+            if (isNaN(start.getTime())) continue;
+
             if (start > now) {
                 if (!upcoming || start < new Date(upcoming.start)) {
                     upcoming = meeting;
@@ -37,6 +55,7 @@
         }
         
         if (upcoming) {
+            console.log('Upcoming meeting found:', upcoming.summary);
             this.nextMeeting = upcoming;
             const start = new Date(upcoming.start);
             const diff = start - now;
@@ -54,10 +73,10 @@
                     this.countdown = seconds + 's';
                 }
             } else {
-                this.countdown = '¡Comenzó!';
+                this.countdown = 'Iniciando...';
             }
         } else {
-            this.countdown = '';
+            this.countdown = '--:--';
             this.nextMeeting = null;
         }
     }
@@ -131,6 +150,12 @@ x-init="
     window.addEventListener('focus', () => {
         if (!activeMeetingId) stopFlash();
     });
+
+    // Initial check for active meeting
+    if (this.activeMeetingId) {
+        console.log('Initial meeting active, scheduling alarm...');
+        setTimeout(() => playAlarm(), 1000);
+    }
 
     updateCountdown();
     setInterval(() => updateCountdown(), 1000);
