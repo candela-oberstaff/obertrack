@@ -4,23 +4,17 @@
     warningMeetingId: @entangle('warningMeetingId'),
     countdown: '',
     nextMeeting: null,
+    isAlarmPlaying: false,
     playAlarm() {
         console.log('Attempting to play alarm...');
         let audio = document.getElementById('meeting-alarm-sound');
         if (audio) {
             audio.play().then(() => {
                 console.log('Alarm playing successfully.');
+                this.isAlarmPlaying = true;
             }).catch(e => {
                 console.error('Error playing alarm:', e);
-                console.log('Audio state:', {
-                    paused: audio.paused,
-                    muted: audio.muted,
-                    src: audio.src,
-                    readyState: audio.readyState
-                });
             });
-        } else {
-            console.error('Audio element NOT FOUND');
         }
     },
     stopAlarm() {
@@ -28,6 +22,21 @@
         if (audio) {
             audio.pause();
             audio.currentTime = 0;
+            this.isAlarmPlaying = false;
+            console.log('Alarm stopped.');
+        }
+    },
+    toggleTestAlarm() {
+        if (this.isAlarmPlaying) {
+            this.stopAlarm();
+        } else {
+            this.playAlarm();
+            // Auto-stop test after 10 seconds to avoid annoyance
+            setTimeout(() => {
+                if (this.isAlarmPlaying && !this.activeMeetingId) {
+                    this.stopAlarm();
+                }
+            }, 10000);
         }
     },
     updateCountdown() {
@@ -191,10 +200,11 @@ class="mb-8">
                                 <i class="fa fa-sync-alt text-xs" wire:loading.class="fa-spin"></i>
                             </button>
 
-                            <button @click="playAlarm()" 
-                                    title="Probar sonido"
-                                    class="text-gray-400 hover:text-red-500 transition-colors">
-                                <i class="fa fa-volume-up text-xs"></i>
+                            <button @click="toggleTestAlarm()" 
+                                    :title="isAlarmPlaying ? 'Detener prueba' : 'Probar sonido'"
+                                    :class="isAlarmPlaying ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-red-500'"
+                                    class="transition-colors">
+                                <i :class="isAlarmPlaying ? 'fa fa-stop-circle' : 'fa fa-volume-up'" class="text-xs"></i>
                             </button>
                         </div>
                     </div>
