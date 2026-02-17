@@ -186,8 +186,15 @@ class="mb-8">
                             
                             <button wire:click="fetchMeetings" 
                                     wire:loading.attr="disabled"
+                                    title="Sincronizar ahora"
                                     class="text-gray-400 hover:text-[#22A9C8] transition-colors">
                                 <i class="fa fa-sync-alt text-xs" wire:loading.class="fa-spin"></i>
+                            </button>
+
+                            <button @click="playAlarm()" 
+                                    title="Probar sonido"
+                                    class="text-gray-400 hover:text-red-500 transition-colors">
+                                <i class="fa fa-volume-up text-xs"></i>
                             </button>
                         </div>
                     </div>
