@@ -104,6 +104,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/google-calendar/connect', [\App\Http\Controllers\GoogleCalendarController::class, 'connect'])->name('google-calendar.connect');
     Route::get('/google-calendar/callback', [\App\Http\Controllers\GoogleCalendarController::class, 'callback'])->name('google-calendar.callback');
     Route::post('/google-calendar/disconnect', [\App\Http\Controllers\GoogleCalendarController::class, 'disconnect'])->name('google-calendar.disconnect');
+
+    Route::get('/google-forms', \App\Livewire\GoogleFormsManager::class)->name('google-forms.manage');
+    Route::get('/google-forms/connect', [\App\Http\Controllers\GoogleFormsController::class, 'connect'])->name('google-forms.connect');
+    Route::get('/google-forms/callback', [\App\Http\Controllers\GoogleFormsController::class, 'callback'])->name('google-forms.callback');
+    Route::post('/google-forms/disconnect', [\App\Http\Controllers\GoogleFormsController::class, 'disconnect'])->name('google-forms.disconnect');
 });
 // AI Chat Route
 Route::middleware(['auth'])->get('/ai', AiChat::class)->name('ai.chat');

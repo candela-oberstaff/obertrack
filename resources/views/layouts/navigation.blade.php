@@ -205,11 +205,11 @@
                 />
             @endif
 
-            <!-- Google Calendar Connection -->
+            <!-- Google Integrations -->
             <div class="ms-3 relative" x-data="{ open: false }">
-                <button @click="open = !open" class="inline-flex items-center px-2 py-2 rounded-full transition duration-150 ease-in-out hover:bg-gray-100 {{ auth()->user()->google_calendar_token ? 'text-[#22A9C8]' : 'text-gray-400' }}" title="Google Calendar">
+                <button @click="open = !open" class="inline-flex items-center px-2 py-2 rounded-full transition duration-150 ease-in-out hover:bg-gray-100 {{ auth()->user()->isGoogleCalendarConnected() || auth()->user()->isGoogleFormsConnected() ? 'text-[#22A9C8]' : 'text-gray-400' }}" title="Integraciones">
                     <i class="fa fa-plug text-lg"></i>
-                    @if(auth()->user()->google_calendar_token)
+                    @if(auth()->user()->isGoogleCalendarConnected() || auth()->user()->isGoogleFormsConnected())
                         <span class="absolute top-1 right-1 flex h-2 w-2">
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                         </span>
@@ -226,39 +226,51 @@
                      x-transition:leave-end="transform opacity-0 scale-95"
                      class="absolute right-0 mt-2 w-72 rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 z-50 p-4"
                      x-cloak>
-                    <div class="flex flex-col gap-3">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 rounded-lg {{ auth()->user()->google_calendar_token ? 'bg-[#22A9C8]/10 text-[#22A9C8]' : 'bg-gray-100 text-gray-400' }}">
-                                <i class="fa fa-calendar text-xl"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-bold text-gray-900">Google Calendar</h4>
-                                <p class="text-[11px] {{ auth()->user()->google_calendar_token ? 'text-green-600' : 'text-gray-500' }}">
-                                    {{ auth()->user()->google_calendar_token ? 'Conectado a ' . auth()->user()->google_calendar_email : 'No conectado' }}
-                                </p>
+                    <div class="flex flex-col gap-4">
+                        <!-- Google Calendar Section -->
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 rounded-lg {{ auth()->user()->isGoogleCalendarConnected() ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-400' }}">
+                                    <i class="fa fa-calendar text-lg"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-gray-900">Google Calendar</h4>
+                                    <p class="text-[10px] {{ auth()->user()->isGoogleCalendarConnected() ? 'text-green-600' : 'text-gray-500' }}">
+                                        {{ auth()->user()->isGoogleCalendarConnected() ? 'Conectado' : 'No conectado' }}
+                                    </p>
+                                </div>
+                                @if(!auth()->user()->isGoogleCalendarConnected())
+                                    <a href="{{ route('google-calendar.connect') }}" class="text-[10px] font-bold text-[#22A9C8] hover:underline">Vincular</a>
+                                @endif
                             </div>
                         </div>
-                        
+
                         <div class="h-px bg-gray-100"></div>
-                        
-                        @if(auth()->user()->google_calendar_token)
-                            <p class="text-[11px] text-gray-500 italic leading-relaxed">
-                                Tus reuniones se mostrarán en tu dashboard. Recibirás avisos 10 min antes y alarmas al comenzar.
-                            </p>
-                            <form method="POST" action="{{ route('google-calendar.disconnect') }}">
-                                @csrf
-                                <button type="submit" class="w-full py-2 bg-red-50 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-100 transition duration-150">
-                                    Desconectar cuenta
-                                </button>
-                            </form>
-                        @else
-                            <p class="text-[11px] text-gray-500 italic leading-relaxed">
-                                Conecta tu calendario para ver tus reuniones y recibir recordatorios sonoros en Obertrack.
-                            </p>
-                            <a href="{{ route('google-calendar.connect') }}" class="w-full py-2 bg-[#22A9C8] text-white text-xs font-semibold rounded-lg hover:bg-[#1B8BA6] transition duration-150 text-center">
-                                Conectar Google Calendar
-                            </a>
-                        @endif
+
+                        <!-- Google Forms Section -->
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 rounded-lg {{ auth()->user()->isGoogleFormsConnected() ? 'bg-purple-50 text-purple-600' : 'bg-gray-100 text-gray-400' }}">
+                                    <i class="fa fa-file-text text-lg"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-gray-900">Google Forms</h4>
+                                    <p class="text-[10px] {{ auth()->user()->isGoogleFormsConnected() ? 'text-green-600' : 'text-gray-500' }}">
+                                        {{ auth()->user()->isGoogleFormsConnected() ? 'Conectado' : 'No conectado' }}
+                                    </p>
+                                </div>
+                                @if(!auth()->user()->isGoogleFormsConnected())
+                                    <a href="{{ route('google-forms.connect') }}" class="text-[10px] font-bold text-[#22A9C8] hover:underline">Vincular</a>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="h-px bg-gray-100"></div>
+
+                        <a href="{{ route('google-forms.manage') }}" class="w-full py-2 bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-100 transition duration-150 text-center flex items-center justify-center gap-2">
+                            <i class="fa fa-cog"></i>
+                            Gestionar integraciones
+                        </a>
                     </div>
                 </div>
             </div>

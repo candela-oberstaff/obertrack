@@ -64,6 +64,8 @@ class User extends Authenticatable
         'timezone',
         'google_calendar_notifications',
         'google_calendar_notification_minutes',
+        'google_forms_token',
+        'google_forms_email',
     ];
 
 
@@ -209,5 +211,10 @@ class User extends Authenticatable
     public function isGoogleCalendarConnected(): bool
     {
         return !empty($this->google_calendar_token);
+    }
+
+    public function isGoogleFormsConnected(): bool
+    {
+        return !empty($this->google_forms_token);
     }
 }
