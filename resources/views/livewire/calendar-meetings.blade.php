@@ -2,6 +2,7 @@
     meetings: @entangle('meetings'),
     activeMeetingId: @entangle('activeMeetingId'),
     warningMeetingId: @entangle('warningMeetingId'),
+    notificationMinutes: @entangle('notificationMinutes'),
     countdown: '',
     nextMeeting: null,
     isAlarmPlaying: false,
@@ -40,8 +41,8 @@
         }
     },
     updateCountdown() {
-        if (!this.meetings || this.meetings.length === 0) {
-            this.countdown = '';
+        if (!this.meetings || !Array.isArray(this.meetings) || this.meetings.length === 0) {
+            this.countdown = '--:--';
             this.nextMeeting = null;
             return;
         }
@@ -49,22 +50,20 @@
         const now = new Date();
         let upcoming = null;
         
-        for (let meeting of this.meetings) {
-            if (!meeting.start) continue;
+        this.meetings.forEach(meeting => {
+            if (!meeting.start) return;
             
-            // Handle both ISO strings and local formats
             const start = new Date(meeting.start);
-            if (isNaN(start.getTime())) continue;
+            if (isNaN(start.getTime())) return;
 
             if (start > now) {
                 if (!upcoming || start < new Date(upcoming.start)) {
                     upcoming = meeting;
                 }
             }
-        }
+        });
         
         if (upcoming) {
-            console.log('Upcoming meeting found:', upcoming.summary);
             this.nextMeeting = upcoming;
             const start = new Date(upcoming.start);
             const diff = start - now;
@@ -77,7 +76,7 @@
                 if (hours > 0) {
                     this.countdown = hours + 'h ' + minutes + 'm ' + seconds + 's';
                 } else if (minutes > 0) {
-                    this.countdown = minutes + 'm ' + seconds + 's';
+                    this.countdown = minutes + 'm ' + (seconds < 10 ? '0' : '') + seconds + 's';
                 } else {
                     this.countdown = seconds + 's';
                 }
@@ -138,7 +137,6 @@ x-init="
             playAlarm();
             const meeting = meetings.find(m => m.id === value);
             if (meeting) {
-                // Show Web Notification if window is in background
                 if (document.visibilityState !== 'visible' || !document.hasFocus()) {
                     flashTitle('Reunión por comenzar');
                     if (Notification.permission === 'granted') {
@@ -162,7 +160,6 @@ x-init="
 
     // Initial check for active meeting
     if (this.activeMeetingId) {
-        console.log('Initial meeting active, scheduling alarm...');
         setTimeout(() => this.playAlarm(), 1000);
     }
 
@@ -183,14 +180,28 @@ class="mb-8">
                             <h3 class="text-sm font-bold text-gray-900">Reuniones de Hoy</h3>
                         </div>
                         <div class="flex items-center gap-4">
-                            {{-- Notification Toggle --}}
-                            <div class="flex items-center gap-2 mr-2 border-r border-gray-100 pr-4">
-                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ $notificationsEnabled ? 'Alertas ON' : 'Alertas OFF' }}</span>
-                                <button wire:click="toggleNotifications" 
-                                        wire:loading.attr="disabled"
-                                        class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $notificationsEnabled ? 'bg-[#22A9C8]' : 'bg-gray-200' }}">
-                                    <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $notificationsEnabled ? 'translate-x-4' : 'translate-x-0' }}"></span>
-                                </button>
+                            {{-- Notification Settings --}}
+                            <div class="flex items-center gap-3 mr-2 border-r border-gray-100 pr-4">
+                                {{-- Lead Time Selector --}}
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Alerta:</span>
+                                    <select wire:change="updateNotificationMinutes($event.target.value)" 
+                                            class="bg-transparent border-none text-[10px] font-bold text-[#22A9C8] focus:ring-0 p-0 cursor-pointer uppercase tracking-widest">
+                                        <option value="5" {{ $notificationMinutes == 5 ? 'selected' : '' }}>5 min antes</option>
+                                        <option value="1" {{ $notificationMinutes == 1 ? 'selected' : '' }}>1 min antes</option>
+                                        <option value="0" {{ $notificationMinutes == 0 ? 'selected' : '' }}>Al empezar</option>
+                                    </select>
+                                </div>
+
+                                {{-- Toggle Swich --}}
+                                <div class="flex items-center gap-2 border-l border-gray-50 pl-3">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ $notificationsEnabled ? 'ON' : 'OFF' }}</span>
+                                    <button wire:click="toggleNotifications" 
+                                            wire:loading.attr="disabled"
+                                            class="relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $notificationsEnabled ? 'bg-[#22A9C8]' : 'bg-gray-200' }}">
+                                        <span class="pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $notificationsEnabled ? 'translate-x-3' : 'translate-x-0' }}"></span>
+                                    </button>
+                                </div>
                             </div>
                             
                             <button wire:click="fetchMeetings" 

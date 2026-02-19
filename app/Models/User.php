@@ -63,6 +63,7 @@ class User extends Authenticatable
         'google_calendar_email',
         'timezone',
         'google_calendar_notifications',
+        'google_calendar_notification_minutes',
     ];
 
 

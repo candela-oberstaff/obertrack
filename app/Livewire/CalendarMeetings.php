@@ -14,11 +14,13 @@ class CalendarMeetings extends Component
     public $errorState = null; // 'token_expired', 'access_denied', 'api_error', 'rate_limit', 'quota_exceeded', 'unknown'
     public $retryAfter = null; // seconds until retry is available
     public $notificationsEnabled = true;
+    public $notificationMinutes = 1;
     public $dismissedAlarms = [];
 
     public function mount(GoogleCalendarService $service)
     {
         $this->notificationsEnabled = (bool) Auth::user()->google_calendar_notifications;
+        $this->notificationMinutes = Auth::user()->google_calendar_notification_minutes ?? 1;
         $this->updateMeetings($service);
     }
 
@@ -72,13 +74,21 @@ class CalendarMeetings extends Component
                 continue;
             }
             
-            // Alarm trigger: Exactly 1 minute before start, stop at start
+            // Alarm trigger: Based on user preference, stop at start
             $secondsUntilStart = $now->diffInSeconds($start, false); // false = signed diff
             
-            // Alarm sounds only during the 60 seconds BEFORE the meeting
-            if ($secondsUntilStart >= 0 && $secondsUntilStart <= 60) {
-                $this->activeMeetingId = $meeting['id'];
-                // We don't break here because we need to calculate is_active for all meetings
+            $leadSeconds = $this->notificationMinutes * 60;
+            
+            // Alarm sounds only during the selected lead time BEFORE the meeting
+            if ($leadSeconds > 0) {
+                if ($secondsUntilStart >= 0 && $secondsUntilStart <= $leadSeconds) {
+                    $this->activeMeetingId = $meeting['id'];
+                }
+            } else {
+                // If lead time is 0 (at start), sound for 60 seconds after start
+                if ($secondsUntilStart <= 0 && $secondsUntilStart >= -60) {
+                    $this->activeMeetingId = $meeting['id'];
+                }
             }
 
             // Warning 10 minutes before
@@ -92,8 +102,6 @@ class CalendarMeetings extends Component
     {
         $this->notificationsEnabled = !$this->notificationsEnabled;
         
-        // Use DB::table with DB::raw to avoid PostgreSQL boolean vs integer mismatch
-        // this follows the pattern used in the User model's promoverAManager method
         \Illuminate\Support\Facades\DB::table('users')
             ->where('id', Auth::id())
             ->update([
@@ -102,6 +110,19 @@ class CalendarMeetings extends Component
                     : \Illuminate\Support\Facades\DB::raw('false')
             ]);
         
+        $this->checkAlarms();
+    }
+
+    public function updateNotificationMinutes($minutes)
+    {
+        $this->notificationMinutes = (int) $minutes;
+        
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', Auth::id())
+            ->update([
+                'google_calendar_notification_minutes' => $this->notificationMinutes
+            ]);
+            
         $this->checkAlarms();
     }
 
