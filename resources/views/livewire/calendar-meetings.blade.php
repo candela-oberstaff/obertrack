@@ -50,9 +50,8 @@
         }
     },
     updateCountdown() {
-        // Use a plain array copy to ensure reactivity and Proxy compatibility
+        // Log for debugging
         const currentMeetings = Array.isArray(this.meetings) ? [...this.meetings] : [];
-        
         if (currentMeetings.length === 0) {
             this.countdown = '--:--';
             this.nextMeeting = null;
@@ -64,16 +63,16 @@
         let upcoming = null;
         let minDiff = Infinity;
         
-        currentMeetings.forEach(m => {
+        currentMeetings.forEach((m, index) => {
             if (!m || !m.start) return;
-            
-            // Standard parse for ISO strings or date strings
             const startTime = new Date(m.start).getTime();
             if (isNaN(startTime)) return;
 
             const diff = startTime - nowTime;
             
-            // We want the closest future meeting
+            // Log meeting status for debugging
+            if (index === 0) console.log('Checking meetings...', { firstMeeting: m.summary, diff, now: now.toISOString() });
+
             if (diff > 0 && diff < minDiff) {
                 minDiff = diff;
                 upcoming = m;
@@ -94,14 +93,12 @@
                 if (h > 0) {
                     this.countdown = `${h}h ${m}m ${s.toString().padStart(2, '0')}s`;
                 } else {
-                    // Force display of minutes and seconds as requested
                     this.countdown = `${m}m ${s.toString().padStart(2, '0')}s`;
                 }
             } else {
                 this.countdown = 'Iniciando...';
             }
         } else {
-            // Check if there are active meetings if no upcoming are found
             const hasActive = currentMeetings.some(m => m.is_active);
             this.countdown = hasActive ? 'En curso' : '--:--';
             this.nextMeeting = null;
@@ -109,18 +106,20 @@
     }
 }" 
 x-init="
-    // Audio Unlocker (Global and persistent for meeting alarms)
+    console.log('CalendarMeetings initialized', { meetingsCount: meetings.length });
+
+    // Audio Unlocker
     const audio = document.getElementById('meeting-alarm-sound');
     const unlockAudio = () => {
         if (audio) {
-            console.log('User interaction detected, unlocking audio context...');
+            console.log('Unlocking audio context via user interaction...');
             audio.muted = true;
             audio.play().then(() => {
                 audio.pause();
                 audio.currentTime = 0;
                 audio.muted = false;
-                console.log('Meeting alarm channel unlocked.');
-            }).catch(e => console.log('Unlock failed:', e));
+                console.log('Audio context unlocked successfully.');
+            }).catch(e => console.warn('Audio unlock failed:', e));
         }
     };
     document.addEventListener('click', unlockAudio, { once: true });
@@ -145,22 +144,21 @@ x-init="
         document.title = originalTitle;
     };
 
-    // Web Notification Request
+    // Notification Permission
     if (Notification.permission === 'default') {
-        setTimeout(() => {
-            Notification.requestPermission();
-        }, 2000);
+        setTimeout(() => Notification.requestPermission(), 2000);
     }
 
-    // Capture component context for watchers/intervals
     const component = this;
 
-    // Watch for meetings updates to refresh countdown immediately
-    $watch('meetings', () => {
+    // Reactivity Watches
+    $watch('meetings', (value) => {
+        console.log('Meetings updated!', { count: value.length });
         component.updateCountdown();
     });
 
     $watch('activeMeetingId', value => {
+        console.log('activeMeetingId changed:', value);
         if (value) {
             component.playAlarm();
             const meetingList = Array.isArray(component.meetings) ? component.meetings : [];
@@ -189,10 +187,11 @@ x-init="
 
     // Initial check for active meeting
     if (this.activeMeetingId) {
+        console.log('Initial check: Meeting is active!', this.activeMeetingId);
         setTimeout(() => this.playAlarm(), 1000);
     }
 
-    // Start countdown timer with correct context
+    // Start countdown timer
     this.updateCountdown();
     setInterval(() => {
         component.updateCountdown();
@@ -379,7 +378,7 @@ class="mb-8">
 
                     {{-- Alarm Sound --}}
                     <audio id="meeting-alarm-sound" loop preload="auto">
-                        <source src="{{ asset('sounds/Sfx_Common_001 Notice1.ogg') }}" type="audio/ogg">
+                        <source src="{{ asset('sounds/meeting_alarm.ogg') }}" type="audio/ogg">
                     </audio>
                 </div>
             </div>
