@@ -106,6 +106,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/google-calendar/disconnect', [\App\Http\Controllers\GoogleCalendarController::class, 'disconnect'])->name('google-calendar.disconnect');
 
     Route::get('/google-forms', \App\Livewire\GoogleFormsManager::class)->name('google-forms.manage');
+    Route::get('/google-forms/{formId}/edit', \App\Livewire\GoogleFormsEditor::class)->name('google-forms.editor');
     Route::get('/google-forms/connect', [\App\Http\Controllers\GoogleFormsController::class, 'connect'])->name('google-forms.connect');
     Route::get('/google-forms/callback', [\App\Http\Controllers\GoogleFormsController::class, 'callback'])->name('google-forms.callback');
     Route::post('/google-forms/disconnect', [\App\Http\Controllers\GoogleFormsController::class, 'disconnect'])->name('google-forms.disconnect');

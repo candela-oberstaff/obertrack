@@ -44,13 +44,14 @@ class GoogleFormsManager extends Component
 
         try {
             $user = Auth::user();
-            $formsService->createForm($user, $this->newFormTitle);
+            $form = $formsService->createForm($user, $this->newFormTitle);
             
             $this->newFormTitle = '';
             $this->showCreateModal = false;
-            $this->loadForms($formsService, $user);
             
-            session()->flash('success', 'Formulario creado exitosamente.');
+            // Redirect to the form editor
+            return redirect()->route('google-forms.editor', ['formId' => $form->formId]);
+            
         } catch (\Exception $e) {
             session()->flash('error', 'Error al crear el formulario: ' . $e->getMessage());
         }

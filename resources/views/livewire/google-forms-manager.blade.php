@@ -79,10 +79,10 @@
                                     </div>
                                     
                                     <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                                        <a href="{{ $form['webViewLink'] }}" target="_blank" class="text-[#22A9C8] hover:text-[#1B8BA6] text-sm font-medium flex items-center gap-1">
-                                            <span>Abrir</span>
+                                        <a href="{{ route('google-forms.editor', $form['id']) }}" class="text-[#22A9C8] hover:text-[#1B8BA6] text-sm font-medium flex items-center gap-1">
+                                            <span>Editar</span>
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                             </svg>
                                         </a>
                                         

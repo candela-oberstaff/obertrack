@@ -68,8 +68,13 @@ class GoogleFormsService
                 'q' => "mimeType='application/vnd.google-apps.form' and trashed=false",
                 'fields' => 'nextPageToken, files(id, name, webViewLink, webContentLink)'
             ];
+            
+            Log::info('Listing Google Forms for user ' . $user->id);
             $results = $driveService->files->listFiles($optParams);
-            return $results->getFiles();
+            $files = $results->getFiles();
+            Log::info('Google Forms found: ' . count($files));
+            
+            return $files;
         } catch (\Exception $e) {
             Log::error('Google Forms List Error: ' . $e->getMessage());
             return [];
@@ -105,6 +110,77 @@ class GoogleFormsService
             return true;
         } catch (\Exception $e) {
             Log::error('Google Forms Delete Error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function getFormContent(User $user, string $formId)
+    {
+        try {
+            $this->setAccessToken($user);
+            $formsService = new \Google\Service\Forms($this->client);
+            return $formsService->forms->get($formId);
+        } catch (\Exception $e) {
+            Log::error('Google Forms Get Content Error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function addQuestion(User $user, string $formId, array $questionData)
+    {
+        try {
+            $this->setAccessToken($user);
+            $formsService = new \Google\Service\Forms($this->client);
+
+            $requests = [];
+            $item = new \Google\Service\Forms\Item();
+            $item->setTitle($questionData['title']);
+
+            $question = new \Google\Service\Forms\Question();
+            $question->setRequired($questionData['required'] ?? false);
+
+            if ($questionData['type'] === 'TEXT') {
+                $textQuestion = new \Google\Service\Forms\TextQuestion();
+                $textQuestion->setParagraph(true); // True for Paragraph, False for Short Answer
+                $question->setTextQuestion($textQuestion);
+            } elseif ($questionData['type'] === 'RADIO') {
+                $choiceQuestion = new \Google\Service\Forms\ChoiceQuestion();
+                $choiceQuestion->setType('RADIO');
+                
+                $options = [];
+                if (isset($questionData['options']) && is_array($questionData['options'])) {
+                    foreach ($questionData['options'] as $optText) {
+                        $option = new \Google\Service\Forms\Option();
+                        $option->setValue($optText);
+                        $options[] = $option;
+                    }
+                } else {
+                    // Default option if none provided
+                    $option = new \Google\Service\Forms\Option();
+                    $option->setValue('Opción 1');
+                    $options[] = $option;
+                }
+                
+                $choiceQuestion->setOptions($options);
+                $question->setChoiceQuestion($choiceQuestion);
+            }
+
+            $item->setQuestionItem($question);
+            
+            $createItemRequest = new \Google\Service\Forms\CreateItemRequest();
+            $createItemRequest->setItem($item);
+            $createItemRequest->setLocation(['index' => 0]); // Add to top, or handle index logic
+
+            $request = new \Google\Service\Forms\Request();
+            $request->setCreateItem($createItemRequest);
+            $requests[] = $request;
+
+            $batchRequest = new \Google\Service\Forms\BatchUpdateFormRequest();
+            $batchRequest->setRequests($requests);
+
+            return $formsService->forms->batchUpdate($formId, $batchRequest);
+        } catch (\Exception $e) {
+            Log::error('Google Forms Add Question Error: ' . $e->getMessage());
             throw $e;
         }
     }
