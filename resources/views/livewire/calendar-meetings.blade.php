@@ -10,11 +10,20 @@
         console.log('Attempting to play alarm...');
         let audio = document.getElementById('meeting-alarm-sound');
         if (audio) {
+            // Force reload to ensure it's ready
+            audio.load();
             audio.play().then(() => {
                 console.log('Alarm playing successfully.');
                 this.isAlarmPlaying = true;
             }).catch(e => {
-                console.error('Error playing alarm:', e);
+                console.warn('Playback blocked or failed. Browser might require interaction.', e);
+                // Fallback: Try playing again on next click if blocked
+                const retryPlay = () => {
+                    audio.play();
+                    this.isAlarmPlaying = true;
+                    document.removeEventListener('click', retryPlay);
+                };
+                document.addEventListener('click', retryPlay);
             });
         }
     },
@@ -41,44 +50,51 @@
         }
     },
     updateCountdown() {
-        if (!this.meetings || !Array.isArray(this.meetings) || this.meetings.length === 0) {
+        // Ensure we have meetings and it's an array
+        const meetingList = Array.isArray(this.meetings) ? this.meetings : [];
+        
+        if (meetingList.length === 0) {
             this.countdown = '--:--';
             this.nextMeeting = null;
             return;
         }
         
         const now = new Date();
+        const nowTime = now.getTime();
         let upcoming = null;
+        let minDiff = Infinity;
         
-        this.meetings.forEach(meeting => {
-            if (!meeting.start) return;
+        meetingList.forEach(m => {
+            if (!m.start) return;
             
-            const start = new Date(meeting.start);
-            if (isNaN(start.getTime())) return;
+            // Handle both ISO strings and potentially other formats from Google
+            const startTime = new Date(m.start).getTime();
+            if (isNaN(startTime)) return;
 
-            if (start > now) {
-                if (!upcoming || start < new Date(upcoming.start)) {
-                    upcoming = meeting;
-                }
+            const diff = startTime - nowTime;
+            
+            // We only count meetings that haven't started yet
+            if (diff > 0 && diff < minDiff) {
+                minDiff = diff;
+                upcoming = m;
             }
         });
         
         if (upcoming) {
             this.nextMeeting = upcoming;
-            const start = new Date(upcoming.start);
-            const diff = start - now;
+            const startTime = new Date(upcoming.start).getTime();
+            const diff = startTime - nowTime;
             
             if (diff > 0) {
-                const hours = Math.floor(diff / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
                 
-                if (hours > 0) {
-                    this.countdown = hours + 'h ' + minutes + 'm ' + seconds + 's';
-                } else if (minutes > 0) {
-                    this.countdown = minutes + 'm ' + (seconds < 10 ? '0' : '') + seconds + 's';
+                if (h > 0) {
+                    this.countdown = h + 'h ' + m + 'm ' + (s < 10 ? '0' : '') + s + 's';
                 } else {
-                    this.countdown = seconds + 's';
+                    // Always show minutes and seconds as requested: 15m 05s
+                    this.countdown = m + 'm ' + (s < 10 ? '0' : '') + s + 's';
                 }
             } else {
                 this.countdown = 'Iniciando...';
@@ -90,21 +106,22 @@
     }
 }" 
 x-init="
-    // Audio Unlocker (Global for meeting alarms)
+    // Audio Unlocker (Global and persistent for meeting alarms)
     const audio = document.getElementById('meeting-alarm-sound');
     const unlockAudio = () => {
         if (audio) {
+            console.log('User interaction detected, unlocking audio context...');
             audio.muted = true;
             audio.play().then(() => {
                 audio.pause();
                 audio.currentTime = 0;
                 audio.muted = false;
-                document.removeEventListener('click', unlockAudio);
                 console.log('Meeting alarm channel unlocked.');
             }).catch(e => console.log('Unlock failed:', e));
         }
     };
-    document.addEventListener('click', unlockAudio);
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('keydown', unlockAudio, { once: true });
 
     // Title Flashing Logic
     const originalTitle = document.title;
@@ -132,10 +149,16 @@ x-init="
         }, 2000);
     }
 
+    // Watch for meetings updates to refresh countdown immediately
+    $watch('meetings', () => {
+        updateCountdown();
+    });
+
     $watch('activeMeetingId', value => {
         if (value) {
             playAlarm();
-            const meeting = meetings.find(m => m.id === value);
+            const meetingList = Array.isArray(meetings) ? meetings : [];
+            const meeting = meetingList.find(m => m.id === value);
             if (meeting) {
                 if (document.visibilityState !== 'visible' || !document.hasFocus()) {
                     flashTitle('Reunión por comenzar');
@@ -163,8 +186,11 @@ x-init="
         setTimeout(() => this.playAlarm(), 1000);
     }
 
-    this.updateCountdown();
-    setInterval(() => this.updateCountdown(), 1000);
+    // Start countdown timer
+    updateCountdown();
+    setInterval(() => {
+        updateCountdown();
+    }, 1000);
 "
 wire:poll.10s="poll"
 class="mb-8">
@@ -347,7 +373,7 @@ class="mb-8">
 
                     {{-- Alarm Sound --}}
                     <audio id="meeting-alarm-sound" loop preload="auto">
-                        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+                        <source src="{{ asset('sounds/Sfx_Common_001 Notice1.ogg') }}" type="audio/ogg">
                     </audio>
                 </div>
             </div>
