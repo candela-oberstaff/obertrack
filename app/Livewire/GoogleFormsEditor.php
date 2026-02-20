@@ -34,9 +34,9 @@ class GoogleFormsEditor extends Component
         try {
             $user = Auth::user();
             $form = $formsService->getFormContent($user, $this->formId);
-            $this->formTitle = $form->info->title;
+            $this->formTitle = $form['info']['title'];
             // Provide a default empty array if no items exist
-            $this->questions = $form->items ?? [];
+            $this->questions = $form['items'] ?? [];
         } catch (\Exception $e) {
             session()->flash('error', 'Error al cargar el formulario: ' . $e->getMessage());
         }

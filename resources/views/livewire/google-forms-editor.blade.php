@@ -37,37 +37,37 @@
                         <h3 class="text-lg font-semibold mb-4">Preguntas Actuales</h3>
                         @forelse($questions as $index => $item)
                             <div class="p-4 border border-gray-200 rounded-xl bg-gray-50">
-                                @if(isset($item->questionItem))
+                                @if(isset($item['questionItem']))
                                     <div class="flex items-start gap-3">
                                         <div class="flex-shrink-0 w-6 h-6 rounded-full bg-[#22A9C8] text-white flex items-center justify-center text-xs font-bold">
                                             {{ $index + 1 }}
                                         </div>
                                         <div>
-                                            <p class="font-medium text-gray-900">{{ $item->title }}</p>
+                                            <p class="font-medium text-gray-900">{{ $item['title'] }}</p>
                                             <p class="text-xs text-gray-500 mt-1">
-                                                @if(isset($item->questionItem->question->textQuestion))
+                                                @if(isset($item['questionItem']['question']['textQuestion']))
                                                     Texto (Párrafo)
-                                                @elseif(isset($item->questionItem->question->choiceQuestion))
+                                                @elseif(isset($item['questionItem']['question']['choiceQuestion']))
                                                     Opción Múltiple
                                                 @else
                                                     Otro tipo
                                                 @endif
                                             </p>
                                             
-                                            @if(isset($item->questionItem->question->choiceQuestion))
+                                            @if(isset($item['questionItem']['question']['choiceQuestion']))
                                                 <ul class="mt-2 space-y-1 ml-1 text-sm text-gray-600">
-                                                    @foreach($item->questionItem->question->choiceQuestion->options as $option)
+                                                    @foreach($item['questionItem']['question']['choiceQuestion']['options'] as $option)
                                                         <li class="flex items-center gap-2">
                                                             <div class="w-3 h-3 rounded-full border border-gray-400"></div>
-                                                            {{ $option->value }}
+                                                            {{ $option['value'] }}
                                                         </li>
                                                     @endforeach
                                                 </ul>
                                             @endif
                                         </div>
                                     </div>
-                                @elseif(isset($item->title))
-                                     <h4 class="font-medium text-gray-800">{{ $item->title }} (Título de sección)</h4>
+                                @elseif(isset($item['title']))
+                                     <h4 class="font-medium text-gray-800">{{ $item['title'] }} (Título de sección)</h4>
                                 @else
                                     <span class="italic text-gray-400">Elemento sin título</span>
                                 @endif

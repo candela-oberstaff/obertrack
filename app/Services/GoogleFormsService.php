@@ -74,7 +74,13 @@ class GoogleFormsService
             $files = $results->getFiles();
             Log::info('Google Forms found: ' . count($files));
             
-            return $files;
+            return array_map(function($file) {
+                return [
+                    'id' => $file->id,
+                    'name' => $file->name,
+                    'webViewLink' => $file->webViewLink,
+                ];
+            }, $files);
         } catch (\Exception $e) {
             Log::error('Google Forms List Error: ' . $e->getMessage());
             return [];
@@ -119,7 +125,46 @@ class GoogleFormsService
         try {
             $this->setAccessToken($user);
             $formsService = new \Google\Service\Forms($this->client);
-            return $formsService->forms->get($formId);
+            $form = $formsService->forms->get($formId);
+            
+            // Map the form object to an array for Livewire serialization
+            $mappedItems = [];
+            if ($form->items) {
+                foreach ($form->items as $item) {
+                    $mappedItem = [
+                        'title' => $item->title,
+                        'itemId' => $item->itemId,
+                        'description' => $item->description,
+                    ];
+                    
+                    if ($item->questionItem) {
+                        $mappedItem['questionItem'] = [
+                            'question' => [
+                                'textQuestion' => $item->questionItem->question->textQuestion ? [
+                                    'paragraph' => $item->questionItem->question->textQuestion->paragraph,
+                                ] : null,
+                                'choiceQuestion' => $item->questionItem->question->choiceQuestion ? [
+                                    'type' => $item->questionItem->question->choiceQuestion->type,
+                                    'options' => array_map(function($opt) {
+                                        return ['value' => $opt->value];
+                                    }, $item->questionItem->question->choiceQuestion->options ?? []),
+                                ] : null,
+                            ],
+                        ];
+                    }
+                    
+                    $mappedItems[] = $mappedItem;
+                }
+            }
+
+            return [
+                'formId' => $form->formId,
+                'info' => [
+                    'title' => $form->info->title,
+                    'description' => $form->info->description,
+                ],
+                'items' => $mappedItems,
+            ];
         } catch (\Exception $e) {
             Log::error('Google Forms Get Content Error: ' . $e->getMessage());
             throw $e;
