@@ -27,6 +27,23 @@
         setInterval(() => component.updateCountdown(), 1000);
         this.updateCountdown();
 
+        // Background Timer (Web Worker)
+        // Browsers throttle setInterval/setTimeout in background tabs.
+        // Web Workers run in a separate thread and are not throttled.
+        try {
+            const blob = new Blob([`
+                setInterval(() => postMessage('tick'), 1000);
+            `], { type: 'application/javascript' });
+            this.worker = new Worker(URL.createObjectURL(blob));
+            this.worker.onmessage = () => {
+                // This ensures updateCountdown runs even if the browser tries to pause the main thread's setInterval
+                component.updateCountdown();
+            };
+            console.log('Background timer (Web Worker) started');
+        } catch (e) {
+            console.error('Web Worker failed, falling back to setInterval', e);
+        }
+
         const unlockAudio = () => {
             if (this.audioUnlocked) return;
             const audio = document.getElementById('meeting-alarm-sound');
