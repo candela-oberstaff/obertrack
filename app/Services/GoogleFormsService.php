@@ -217,7 +217,9 @@ class GoogleFormsService
             
             $createItemRequest = new \Google\Service\Forms\CreateItemRequest();
             $createItemRequest->setItem($item);
-            $createItemRequest->setLocation(['index' => 0]); // Add to top, or handle index logic
+            $location = new \Google\Service\Forms\Location();
+            $location->setIndex(0);
+            $createItemRequest->setLocation($location);
 
             $request = new \Google\Service\Forms\Request();
             $request->setCreateItem($createItemRequest);
