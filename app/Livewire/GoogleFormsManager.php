@@ -10,6 +10,9 @@ class GoogleFormsManager extends Component
 {
     public $newFormTitle = '';
     public $showCreateModal = false;
+    public $isConnected = false;
+    public $forms = [];
+    public $email = '';
 
     protected $rules = [
         'newFormTitle' => 'required|string|min:3|max:255',
