@@ -50,10 +50,10 @@
         }
     },
     updateCountdown() {
-        // Ensure we have meetings and it's an array
-        const meetingList = Array.isArray(this.meetings) ? this.meetings : [];
+        // Use a plain array copy to ensure reactivity and Proxy compatibility
+        const currentMeetings = Array.isArray(this.meetings) ? [...this.meetings] : [];
         
-        if (meetingList.length === 0) {
+        if (currentMeetings.length === 0) {
             this.countdown = '--:--';
             this.nextMeeting = null;
             return;
@@ -64,16 +64,16 @@
         let upcoming = null;
         let minDiff = Infinity;
         
-        meetingList.forEach(m => {
-            if (!m.start) return;
+        currentMeetings.forEach(m => {
+            if (!m || !m.start) return;
             
-            // Handle both ISO strings and potentially other formats from Google
+            // Standard parse for ISO strings or date strings
             const startTime = new Date(m.start).getTime();
             if (isNaN(startTime)) return;
 
             const diff = startTime - nowTime;
             
-            // We only count meetings that haven't started yet
+            // We want the closest future meeting
             if (diff > 0 && diff < minDiff) {
                 minDiff = diff;
                 upcoming = m;
@@ -86,21 +86,24 @@
             const diff = startTime - nowTime;
             
             if (diff > 0) {
-                const h = Math.floor(diff / 3600000);
-                const m = Math.floor((diff % 3600000) / 60000);
-                const s = Math.floor((diff % 60000) / 1000);
+                const totalSeconds = Math.floor(diff / 1000);
+                const h = Math.floor(totalSeconds / 3600);
+                const m = Math.floor((totalSeconds % 3600) / 60);
+                const s = totalSeconds % 60;
                 
                 if (h > 0) {
-                    this.countdown = h + 'h ' + m + 'm ' + (s < 10 ? '0' : '') + s + 's';
+                    this.countdown = `${h}h ${m}m ${s.toString().padStart(2, '0')}s`;
                 } else {
-                    // Always show minutes and seconds as requested: 15m 05s
-                    this.countdown = m + 'm ' + (s < 10 ? '0' : '') + s + 's';
+                    // Force display of minutes and seconds as requested
+                    this.countdown = `${m}m ${s.toString().padStart(2, '0')}s`;
                 }
             } else {
                 this.countdown = 'Iniciando...';
             }
         } else {
-            this.countdown = '--:--';
+            // Check if there are active meetings if no upcoming are found
+            const hasActive = currentMeetings.some(m => m.is_active);
+            this.countdown = hasActive ? 'En curso' : '--:--';
             this.nextMeeting = null;
         }
     }
@@ -149,15 +152,18 @@ x-init="
         }, 2000);
     }
 
+    // Capture component context for watchers/intervals
+    const component = this;
+
     // Watch for meetings updates to refresh countdown immediately
     $watch('meetings', () => {
-        updateCountdown();
+        component.updateCountdown();
     });
 
     $watch('activeMeetingId', value => {
         if (value) {
-            playAlarm();
-            const meetingList = Array.isArray(meetings) ? meetings : [];
+            component.playAlarm();
+            const meetingList = Array.isArray(component.meetings) ? component.meetings : [];
             const meeting = meetingList.find(m => m.id === value);
             if (meeting) {
                 if (document.visibilityState !== 'visible' || !document.hasFocus()) {
@@ -171,14 +177,14 @@ x-init="
                }
             }
         } else {
-            stopAlarm();
-            stopFlash();
+            component.stopAlarm();
+            component.stopFlash();
         }
     });
 
     // Cleanup on window focus
     window.addEventListener('focus', () => {
-        if (!activeMeetingId) stopFlash();
+        if (!component.activeMeetingId) stopFlash();
     });
 
     // Initial check for active meeting
@@ -186,10 +192,10 @@ x-init="
         setTimeout(() => this.playAlarm(), 1000);
     }
 
-    // Start countdown timer
-    updateCountdown();
+    // Start countdown timer with correct context
+    this.updateCountdown();
     setInterval(() => {
-        updateCountdown();
+        component.updateCountdown();
     }, 1000);
 "
 wire:poll.10s="poll"
