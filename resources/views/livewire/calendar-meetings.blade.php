@@ -1,166 +1,137 @@
-<div x-data="{ 
+<div x-data="{
     meetings: @entangle('meetings'),
     activeMeetingId: @entangle('activeMeetingId'),
     warningMeetingId: @entangle('warningMeetingId'),
     notificationMinutes: @entangle('notificationMinutes'),
-    countdown: '',
+    countdown: 'Cargando...',
+    alarmPlaying: false,
+    audioUnlocked: false,
     nextMeeting: null,
-    isAlarmPlaying: false,
-    playAlarm() {
-        console.log('Attempting to play alarm...');
-        let audio = document.getElementById('meeting-alarm-sound');
-        if (audio) {
-            // Force reload to ensure it's ready
-            audio.load();
-            audio.play().then(() => {
-                console.log('Alarm playing successfully.');
-                this.isAlarmPlaying = true;
-            }).catch(e => {
-                console.warn('Playback blocked or failed. Browser might require interaction.', e);
-                // Fallback: Try playing again on next click if blocked
-                const retryPlay = () => {
-                    audio.play();
-                    this.isAlarmPlaying = true;
-                    document.removeEventListener('click', retryPlay);
-                };
-                document.addEventListener('click', retryPlay);
-            });
-        }
-    },
-    stopAlarm() {
-        let audio = document.getElementById('meeting-alarm-sound');
-        if (audio) {
-            audio.pause();
-            audio.currentTime = 0;
-            this.isAlarmPlaying = false;
-            console.log('Alarm stopped.');
-        }
-    },
-    toggleTestAlarm() {
-        if (this.isAlarmPlaying) {
-            this.stopAlarm();
-        } else {
-            this.playAlarm();
-            // Auto-stop test after 10 seconds to avoid annoyance
-            setTimeout(() => {
-                if (this.isAlarmPlaying && !this.activeMeetingId) {
-                    this.stopAlarm();
-                }
-            }, 10000);
-        }
-    },
-    updateCountdown() {
-        // High-level defensive check
-        if (!this.meetings) {
-            this.countdown = 'Cargando...';
-            return;
-        }
-
-        const currentMeetings = Array.isArray(this.meetings) ? JSON.parse(JSON.stringify(this.meetings)) : [];
+    
+    init() {
+        const component = this;
+        console.log('--- CALENDAR DEBUG START ---');
         
-        if (currentMeetings.length === 0) {
+        // Tool for manual debug via console
+        window.oberDebug = {
+            getMeetings: () => JSON.parse(JSON.stringify(component.meetings)),
+            getTimer: () => component.countdown,
+            checkAudio: () => document.getElementById('meeting-alarm-sound')?.src
+        };
+
+        this.$watch('meetings', () => {
+            console.log('Meetings updated, refreshing countdown');
+            component.updateCountdown();
+        });
+
+        setInterval(() => component.updateCountdown(), 1000);
+        this.updateCountdown();
+
+        const unlockAudio = () => {
+            if (this.audioUnlocked) return;
+            const audio = document.getElementById('meeting-alarm-sound');
+            if (audio) {
+                audio.play().then(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    this.audioUnlocked = true;
+                    console.log('Audio unlocked');
+                }).catch(e => console.log('Unlock pending interaction...'));
+            }
+        };
+        ['click', 'keydown', 'touchstart'].forEach(e => document.addEventListener(e, unlockAudio, { once: true }));
+    },
+
+    normalizeMeetings() {
+        if (!this.meetings) return [];
+        const raw = JSON.parse(JSON.stringify(this.meetings));
+        if (!Array.isArray(raw)) return [];
+        return raw.map(m => (Array.isArray(m) && m.length > 0 && typeof m[0] === 'object') ? m[0] : m)
+                  .filter(m => m && typeof m === 'object' && !m.s);
+    },
+
+    updateCountdown() {
+        const meetings = this.normalizeMeetings();
+        if (meetings.length === 0) {
             this.countdown = '--:--';
             this.nextMeeting = null;
             return;
         }
-        
-        const now = new Date();
-        const nowTime = now.getTime();
-        let upcoming = null;
-        let minDiff = Infinity;
-        
-        currentMeetings.forEach((m, idx) => {
-            if (!m || !m.start) return;
-            const startTime = new Date(m.start).getTime();
-            if (isNaN(startTime)) return;
 
-            const diff = startTime - nowTime;
-            
-            // Only upcoming meetings
-            if (diff > 0 && diff < minDiff) {
-                minDiff = diff;
-                upcoming = m;
+        const now = new Date();
+        let next = null;
+        let active = false;
+
+        meetings.forEach(m => {
+            if (!m.start) return;
+            const start = new Date(m.start);
+            const end = m.end ? new Date(m.end) : new Date(start.getTime() + 30 * 60000);
+
+            if (now >= start && now <= end) active = true;
+
+            if (start > now) {
+                if (!next || start < new Date(next.start)) next = m;
             }
         });
-        
-        if (upcoming) {
-            this.nextMeeting = upcoming;
-            const startTime = new Date(upcoming.start).getTime();
-            const diff = startTime - nowTime;
-            
-            if (diff > 0) {
-                const h = Math.floor(diff / 3600000);
-                const m = Math.floor((diff % 3600000) / 60000);
-                const s = Math.floor((diff % 60000) / 1000);
-                
-                if (h > 0) {
-                    this.countdown = `${h}h ${m}m ${s.toString().padStart(2, '0')}s`;
-                } else {
-                    this.countdown = `${m}m ${s.toString().padStart(2, '0')}s`;
-                }
-            } else {
-                this.countdown = 'Iniciando...';
+
+        this.nextMeeting = next;
+
+        if (next) {
+            const diff = new Date(next.start) - now;
+            const totalSecs = Math.floor(diff / 1000);
+            const h = Math.floor(totalSecs / 3600);
+            const m = Math.floor((totalSecs % 3600) / 60);
+            const s = totalSecs % 60;
+
+            this.countdown = (h > 0 ? h + 'h ' : '') + (m > 0 || h > 0 ? m + 'm ' : '') + s + 's';
+
+            const alarmThreshold = this.notificationMinutes * 60;
+            if (totalSecs <= alarmThreshold && totalSecs > 0) {
+                this.playAlarm();
+            } else if (totalSecs <= 0) {
+                this.stopAlarm();
             }
         } else {
-            const hasActive = currentMeetings.some(m => m.is_active || m.id === this.activeMeetingId);
-            this.countdown = hasActive ? 'En curso' : '--:--';
-            this.nextMeeting = null;
+            this.countdown = active ? 'En curso' : '--:--';
+            this.stopAlarm();
+        }
+    },
+
+    playAlarm() {
+        if (this.alarmPlaying) return;
+        const audio = document.getElementById('meeting-alarm-sound');
+        if (audio) {
+            audio.play().then(() => {
+                this.alarmPlaying = true;
+                console.log('Alarm started');
+            }).catch(e => console.error('Audio failed', e));
+        }
+    },
+
+    stopAlarm() {
+        if (!this.alarmPlaying) return;
+        const audio = document.getElementById('meeting-alarm-sound');
+        if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+            this.alarmPlaying = false;
+        }
+    },
+
+    toggleTestAlarm() {
+        if (this.alarmPlaying) {
+            this.stopAlarm();
+        } else {
+            const audio = document.getElementById('meeting-alarm-sound');
+            if (audio) {
+                audio.play().then(() => {
+                    this.alarmPlaying = true;
+                    setTimeout(() => this.stopAlarm(), 3000);
+                }).catch(e => alert('Interactúe con la página primero.'));
+            }
         }
     }
 }" 
-x-init="
-    const component = this;
-    console.log('--- CALENDAR DEBUG START ---');
-    console.log('Meetings at init:', JSON.parse(JSON.stringify(meetings || [])));
-    
-    // Global debug tool for the user to help me
-    window.oberDebug = {
-        getMeetings: () => JSON.parse(JSON.stringify(component.meetings)),
-        getTimer: () => component.countdown,
-        checkAudio: () => document.getElementById('meeting-alarm-sound')?.src
-    };
-
-    // Audio Unlocker
-    const audio = document.getElementById('meeting-alarm-sound');
-    const unlockAudio = () => {
-        if (audio) {
-            console.log('Attempting audio unlock...');
-            audio.muted = true;
-            audio.play().then(() => {
-                audio.pause();
-                audio.currentTime = 0;
-                audio.muted = false;
-                console.log('Audio UNLOCKED');
-            }).catch(e => console.warn('Unlock blocked:', e));
-        }
-    };
-    document.addEventListener('click', unlockAudio, { once: true });
-    document.addEventListener('keydown', unlockAudio, { once: true });
-
-    // Watches
-    $watch('meetings', (val) => {
-        console.log('Meetings updated (Watch)', val?.length);
-        component.updateCountdown();
-    });
-
-    $watch('activeMeetingId', val => {
-        console.log('activeMeetingId Watch:', val);
-        if (val) {
-            component.playAlarm();
-            if (document.visibilityState !== 'visible') {
-                if (Notification.permission === 'granted') {
-                    new Notification('Reunión rápida', { body: 'Una reunión está por comenzar.' });
-                }
-            }
-        } else {
-            component.stopAlarm();
-        }
-    });
-
-    // Start timer
-    component.updateCountdown();
-    setInterval(() => component.updateCountdown(), 1000);
-"
 wire:poll.10s="poll"
 class="mb-8">
 
@@ -207,10 +178,10 @@ class="mb-8">
                             </button>
 
                             <button @click="toggleTestAlarm()" 
-                                    :title="isAlarmPlaying ? 'Detener prueba' : 'Probar sonido'"
-                                    :class="isAlarmPlaying ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-red-500'"
+                                    :title="alarmPlaying ? 'Detener prueba' : 'Probar sonido'"
+                                    :class="alarmPlaying ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-red-500'"
                                     class="transition-colors">
-                                <i :class="isAlarmPlaying ? 'fa fa-stop-circle' : 'fa fa-volume-up'" class="text-xs"></i>
+                                <i :class="alarmPlaying ? 'fa fa-stop-circle' : 'fa fa-volume-up'" class="text-xs"></i>
                             </button>
                         </div>
                     </div>

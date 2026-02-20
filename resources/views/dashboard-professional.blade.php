@@ -63,6 +63,7 @@
                     isSavingTask: false,
                     isDeletingTask: false,
                     isDeleting: false, // Unified loading state for modal
+                    searchAssignee: '', // Fixed: missing variable causing crash
         
                     openModal(task, tab = 'details') {
                         // Ensure attachments and comments are arrays
