@@ -165,7 +165,10 @@ class GoogleFormsService
                 $question->setChoiceQuestion($choiceQuestion);
             }
 
-            $item->setQuestionItem($question);
+            $questionItem = new \Google\Service\Forms\QuestionItem();
+            $questionItem->setQuestion($question);
+            
+            $item->setQuestionItem($questionItem);
             
             $createItemRequest = new \Google\Service\Forms\CreateItemRequest();
             $createItemRequest->setItem($item);
