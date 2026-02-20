@@ -268,8 +268,8 @@
                         <div class="h-px bg-gray-100"></div>
 
                         <a href="{{ route('google-forms.manage') }}" class="w-full py-2 bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-100 transition duration-150 text-center flex items-center justify-center gap-2">
-                            <i class="fa fa-cog"></i>
-                            Gestionar integraciones
+                            <i class="fa fa-plus"></i>
+                            Crear formulario
                         </a>
                     </div>
                 </div>
