@@ -17,7 +17,8 @@ class GoogleFormsService
         $this->client->setClientId(config('services.google.client_id'));
         $this->client->setClientSecret(config('services.google.client_secret'));
         $this->client->setRedirectUri(route('google-forms.callback'));
-        $this->client->addScope(Forms::FORMS_BODY_READONLY);
+        $this->client->addScope(Forms::FORMS_BODY); // Changed from READONLY to FULL ACCESS
+        $this->client->addScope(Forms::DRIVE_FILE); // Access to files created by the app (for delete)
         $this->client->addScope('email');
         $this->client->addScope('profile');
         $this->client->setAccessType('offline');
@@ -61,19 +62,50 @@ class GoogleFormsService
 
         try {
             $this->setAccessToken($user);
-            // Note: Google Forms API list forms is not directly available via Google\Service\Forms
-            // usually you'd search in Drive for files with mimeType 'application/vnd.google-apps.form'
             $driveService = new \Google\Service\Drive($this->client);
             $optParams = [
                 'pageSize' => 20,
-                'q' => "mimeType='application/vnd.google-apps.form'",
-                'fields' => 'nextPageToken, files(id, name, webViewLink)'
+                'q' => "mimeType='application/vnd.google-apps.form' and trashed=false",
+                'fields' => 'nextPageToken, files(id, name, webViewLink, webContentLink)'
             ];
             $results = $driveService->files->listFiles($optParams);
             return $results->getFiles();
         } catch (\Exception $e) {
-            Log::error('Google Forms Error: ' . $e->getMessage());
+            Log::error('Google Forms List Error: ' . $e->getMessage());
             return [];
+        }
+    }
+
+    public function createForm(User $user, string $title)
+    {
+        try {
+            $this->setAccessToken($user);
+            $formsService = new \Google\Service\Forms($this->client);
+            
+            $form = new \Google\Service\Forms\Form();
+            $info = new \Google\Service\Forms\Info();
+            $info->setTitle($title);
+            $form->setInfo($info);
+            
+            $createdForm = $formsService->forms->create($form);
+            return $createdForm;
+        } catch (\Exception $e) {
+            Log::error('Google Forms Create Error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function deleteForm(User $user, string $formId)
+    {
+        try {
+            $this->setAccessToken($user);
+            $driveService = new \Google\Service\Drive($this->client);
+            // We use Drive API to delete the file
+            $driveService->files->delete($formId);
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Google Forms Delete Error: ' . $e->getMessage());
+            throw $e;
         }
     }
 
@@ -85,7 +117,9 @@ class GoogleFormsService
         if ($this->client->isAccessTokenExpired()) {
             if ($this->client->getRefreshToken()) {
                 $newToken = $this->client->fetchAccessTokenWithRefreshToken($this->client->getRefreshToken());
-                $user->update(['google_forms_token' => json_encode($newToken)]);
+                // Merge with old token to keep refresh token if not returned
+                $mergedToken = array_merge($token, $newToken);
+                $user->update(['google_forms_token' => json_encode($mergedToken)]);
             } else {
                 throw new \Exception('Token expired and no refresh token available.');
             }
