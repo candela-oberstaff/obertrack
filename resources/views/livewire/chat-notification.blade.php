@@ -1,6 +1,6 @@
 <div wire:poll.5s="poll" class="hidden">
     <audio id="notification-sound" preload="auto">
-        <source src="{{ asset('sounds/Sfx_Common_001 Notice1.ogg') }}" type="audio/ogg">
+        <source src="{{ asset('sounds/meeting_alarm.ogg') }}" type="audio/ogg">
     </audio>
 
     <script>

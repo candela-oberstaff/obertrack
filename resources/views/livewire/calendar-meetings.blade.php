@@ -50,8 +50,14 @@
         }
     },
     updateCountdown() {
-        // Log for debugging
-        const currentMeetings = Array.isArray(this.meetings) ? [...this.meetings] : [];
+        // High-level defensive check
+        if (!this.meetings) {
+            this.countdown = 'Cargando...';
+            return;
+        }
+
+        const currentMeetings = Array.isArray(this.meetings) ? JSON.parse(JSON.stringify(this.meetings)) : [];
+        
         if (currentMeetings.length === 0) {
             this.countdown = '--:--';
             this.nextMeeting = null;
@@ -63,16 +69,14 @@
         let upcoming = null;
         let minDiff = Infinity;
         
-        currentMeetings.forEach((m, index) => {
+        currentMeetings.forEach((m, idx) => {
             if (!m || !m.start) return;
             const startTime = new Date(m.start).getTime();
             if (isNaN(startTime)) return;
 
             const diff = startTime - nowTime;
             
-            // Log meeting status for debugging
-            if (index === 0) console.log('Checking meetings...', { firstMeeting: m.summary, diff, now: now.toISOString() });
-
+            // Only upcoming meetings
             if (diff > 0 && diff < minDiff) {
                 minDiff = diff;
                 upcoming = m;
@@ -85,10 +89,9 @@
             const diff = startTime - nowTime;
             
             if (diff > 0) {
-                const totalSeconds = Math.floor(diff / 1000);
-                const h = Math.floor(totalSeconds / 3600);
-                const m = Math.floor((totalSeconds % 3600) / 60);
-                const s = totalSeconds % 60;
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
                 
                 if (h > 0) {
                     this.countdown = `${h}h ${m}m ${s.toString().padStart(2, '0')}s`;
@@ -99,103 +102,64 @@
                 this.countdown = 'Iniciando...';
             }
         } else {
-            const hasActive = currentMeetings.some(m => m.is_active);
+            const hasActive = currentMeetings.some(m => m.is_active || m.id === this.activeMeetingId);
             this.countdown = hasActive ? 'En curso' : '--:--';
             this.nextMeeting = null;
         }
     }
 }" 
 x-init="
-    console.log('CalendarMeetings initialized', { meetingsCount: meetings.length });
+    const component = this;
+    console.log('--- CALENDAR DEBUG START ---');
+    console.log('Meetings at init:', JSON.parse(JSON.stringify(meetings || [])));
+    
+    // Global debug tool for the user to help me
+    window.oberDebug = {
+        getMeetings: () => JSON.parse(JSON.stringify(component.meetings)),
+        getTimer: () => component.countdown,
+        checkAudio: () => document.getElementById('meeting-alarm-sound')?.src
+    };
 
     // Audio Unlocker
     const audio = document.getElementById('meeting-alarm-sound');
     const unlockAudio = () => {
         if (audio) {
-            console.log('Unlocking audio context via user interaction...');
+            console.log('Attempting audio unlock...');
             audio.muted = true;
             audio.play().then(() => {
                 audio.pause();
                 audio.currentTime = 0;
                 audio.muted = false;
-                console.log('Audio context unlocked successfully.');
-            }).catch(e => console.warn('Audio unlock failed:', e));
+                console.log('Audio UNLOCKED');
+            }).catch(e => console.warn('Unlock blocked:', e));
         }
     };
     document.addEventListener('click', unlockAudio, { once: true });
     document.addEventListener('keydown', unlockAudio, { once: true });
 
-    // Title Flashing Logic
-    const originalTitle = document.title;
-    let titleInterval = null;
-    const flashTitle = (msg) => {
-        if (titleInterval) clearInterval(titleInterval);
-        let flip = false;
-        titleInterval = setInterval(() => {
-            document.title = flip ? '🔔 ' + msg : originalTitle;
-            flip = !flip;
-        }, 1000);
-    };
-    const stopFlash = () => {
-        if (titleInterval) {
-            clearInterval(titleInterval);
-            titleInterval = null;
-        }
-        document.title = originalTitle;
-    };
-
-    // Notification Permission
-    if (Notification.permission === 'default') {
-        setTimeout(() => Notification.requestPermission(), 2000);
-    }
-
-    const component = this;
-
-    // Reactivity Watches
-    $watch('meetings', (value) => {
-        console.log('Meetings updated!', { count: value.length });
+    // Watches
+    $watch('meetings', (val) => {
+        console.log('Meetings updated (Watch)', val?.length);
         component.updateCountdown();
     });
 
-    $watch('activeMeetingId', value => {
-        console.log('activeMeetingId changed:', value);
-        if (value) {
+    $watch('activeMeetingId', val => {
+        console.log('activeMeetingId Watch:', val);
+        if (val) {
             component.playAlarm();
-            const meetingList = Array.isArray(component.meetings) ? component.meetings : [];
-            const meeting = meetingList.find(m => m.id === value);
-            if (meeting) {
-                if (document.visibilityState !== 'visible' || !document.hasFocus()) {
-                    flashTitle('Reunión por comenzar');
-                    if (Notification.permission === 'granted') {
-                        new Notification('Próxima Reunión', {
-                            body: meeting.summary + ' está por comenzar.',
-                            icon: '/favicon.ico'
-                        });
-                    }
-               }
+            if (document.visibilityState !== 'visible') {
+                if (Notification.permission === 'granted') {
+                    new Notification('Reunión rápida', { body: 'Una reunión está por comenzar.' });
+                }
             }
         } else {
             component.stopAlarm();
-            component.stopFlash();
         }
     });
 
-    // Cleanup on window focus
-    window.addEventListener('focus', () => {
-        if (!component.activeMeetingId) stopFlash();
-    });
-
-    // Initial check for active meeting
-    if (this.activeMeetingId) {
-        console.log('Initial check: Meeting is active!', this.activeMeetingId);
-        setTimeout(() => this.playAlarm(), 1000);
-    }
-
-    // Start countdown timer
-    this.updateCountdown();
-    setInterval(() => {
-        component.updateCountdown();
-    }, 1000);
+    // Start timer
+    component.updateCountdown();
+    setInterval(() => component.updateCountdown(), 1000);
 "
 wire:poll.10s="poll"
 class="mb-8">
