@@ -265,7 +265,7 @@ class GoogleFormsService
             $formsService = new \Google\Service\Forms($this->client);
 
             $video = new \Google\Service\Forms\Video();
-            $video->setYoutubeUri($youtubeUri);
+            $video->setYoutubeUri($this->normalizeYouTubeUrl($youtubeUri));
 
             $videoItem = new \Google\Service\Forms\VideoItem();
             $videoItem->setVideo($video);
@@ -378,5 +378,15 @@ class GoogleFormsService
                 throw new \Exception('Token expired and no refresh token available.');
             }
         }
+    }
+
+    private function normalizeYouTubeUrl(string $url): string
+    {
+        $videoId = '';
+        // Extract video ID from various YouTube URL formats
+        if (preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i', $url, $match)) {
+            $videoId = $match[1];
+        }
+        return $videoId ? "https://www.youtube.com/watch?v=" . $videoId : $url;
     }
 }
