@@ -114,7 +114,20 @@
                                                     <span class="text-xs font-bold uppercase">{{ $item['title'] ?: 'Video' }}</span>
                                                 </div>
                                                 <div class="aspect-video w-full rounded-xl overflow-hidden border border-gray-100 bg-black">
-                                                    <iframe class="w-full h-full" src="{{ str_replace('youtu.be/', 'www.youtube.com/embed/', str_replace('watch?v=', 'embed/', $item['video']['youtubeUri'])) }}" frameborder="0" allowfullscreen></iframe>
+                                                    @php
+                                                        $videoId = '';
+                                                        $url = $item['video']['youtubeUri'];
+                                                        if (preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i', $url, $match)) {
+                                                            $videoId = $match[1];
+                                                        }
+                                                    @endphp
+                                                    @if($videoId)
+                                                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/{{ $videoId }}" frameborder="0" allowfullscreen></iframe>
+                                                    @else
+                                                        <div class="w-full h-full flex items-center justify-center text-gray-500 text-xs text-center p-4">
+                                                            No se pudo cargar la vista previa del video
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             </div>
                                         @endif
