@@ -435,12 +435,12 @@
     </script>
                 
                 {{-- Tareas Pendientes --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm relative group cursor-help">
-                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas pendientes</p>
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-5 shadow-sm relative group cursor-help">
+                    <p class="text-[9px] md:text-xs text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas pendientes</p>
                     @php
                         $totalPending = auth()->user()->assignedTasks()->whereRaw('completed IS FALSE')->count();
                     @endphp
-                    <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C]">{{ str_pad($totalPending, 2, '0', STR_PAD_LEFT) }}</p>
+                    <p class="text-3xl md:text-4xl font-extrabold text-[#0D1E4C]">{{ str_pad($totalPending, 2, '0', STR_PAD_LEFT) }}</p>
 
                     <!-- Tooltip -->
                     <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
@@ -452,7 +452,7 @@
                 </div>
 
                 {{-- Horas Registradas --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm relative group cursor-help">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-5 shadow-sm relative group cursor-help">
                     @php
                         $currentPeriodStart = now()->startOfMonth();
                         $currentPeriodEnd = now();
@@ -462,11 +462,11 @@
                         $totalHours = $registeredHours->sum('hours_worked');
                         $hasPendingApproval = $registeredHours->where('approved', false)->count() > 0;
                     @endphp
-                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">
+                    <p class="text-[9px] md:text-xs text-gray-600 mb-2 uppercase tracking-wider font-bold whitespace-nowrap overflow-hidden text-ellipsis">
                         Horas registradas
-                        <span class="text-[8px] md:text-[10px] text-gray-400 font-medium">({{ $currentPeriodStart->format('M d') }} - {{ $currentPeriodEnd->format('M d') }})</span>
+                        <span class="text-[7px] md:text-[8px] text-gray-400 font-medium normal-case">({{ $currentPeriodStart->format('d/m') }} - {{ $currentPeriodEnd->format('d/m') }})</span>
                     </p>
-                    <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C] mb-2">{{ (int)$totalHours }} h</p>
+                    <p class="text-3xl md:text-4xl font-extrabold text-[#0D1E4C] mb-2">{{ (int)$totalHours }} h</p>
                     @if($hasPendingApproval)
                         <p class="text-[10px] text-red-500 font-bold italic line-clamp-1">
                             Pendientes de aprobación
@@ -483,8 +483,8 @@
                 </div>
 
                 {{-- Tareas Completadas --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm relative group cursor-help">
-                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas finalizadas</p>
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-5 shadow-sm relative group cursor-help">
+                    <p class="text-[9px] md:text-xs text-gray-600 mb-2 uppercase tracking-wider font-bold">Tareas finalizadas</p>
                     @php
                         $completedTasks = auth()->user()->assignedTasks()
                             ->whereRaw('completed IS TRUE')
@@ -493,8 +493,8 @@
                             ->count();
                     @endphp
                     <div class="flex items-center gap-3">
-                        <p class="text-4xl md:text-5xl font-extrabold text-[#0D1E4C]">{{ str_pad($completedTasks, 2, '0', STR_PAD_LEFT) }}</p>
-                        <div class="w-8 h-8 md:w-10 md:h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <p class="text-3xl md:text-4xl font-extrabold text-[#0D1E4C]">{{ str_pad($completedTasks, 2, '0', STR_PAD_LEFT) }}</p>
+                        <div class="w-7 h-7 md:w-9 md:h-9 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                             <svg class="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                             </svg>
@@ -511,18 +511,18 @@
                 </div>
 
                 {{-- Recuperación de Horas --}}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 shadow-sm relative group cursor-help">
-                    <p class="text-[10px] md:text-sm text-gray-600 mb-2 uppercase tracking-wider font-bold">Horas de Recuperación</p>
+                <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-5 shadow-sm relative group cursor-help">
+                    <p class="text-[9px] md:text-xs text-gray-600 mb-2 uppercase tracking-wider font-bold">Horas de Recuperación</p>
                     <div class="flex items-center justify-between">
                         <div>
                             @php $remainingDebt = $debtSummary['remaining_debt']; @endphp
-                            <p class="text-4xl md:text-5xl font-extrabold {{ $remainingDebt > 0 ? 'text-red-500' : 'text-green-500' }}">
-                                {{ $remainingDebt > 0 ? '-' . number_format($remainingDebt, 1) : '0' }}<span class="text-lg">h</span>
+                            <p class="text-3xl md:text-4xl font-extrabold {{ $remainingDebt > 0 ? 'text-red-500' : 'text-green-500' }}">
+                                {{ $remainingDebt > 0 ? '-' . number_format($remainingDebt, 1) : '0' }}<span class="text-base">h</span>
                             </p>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] text-gray-400 font-bold uppercase">Recuperado</p>
-                            <p class="text-sm font-black text-green-600">{{ number_format($debtSummary['total_recovered'], 1) }}h</p>
+                            <p class="text-[9px] text-gray-400 font-bold uppercase">Recuperado</p>
+                            <p class="text-xs font-black text-green-600">{{ number_format($debtSummary['total_recovered'], 1) }}h</p>
                         </div>
                     </div>
                     <div class="mt-2 text-[10px] text-gray-400 flex justify-between">

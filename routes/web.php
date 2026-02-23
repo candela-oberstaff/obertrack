@@ -110,6 +110,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/google-forms/connect', [\App\Http\Controllers\GoogleFormsController::class, 'connect'])->name('google-forms.connect');
     Route::get('/google-forms/callback', [\App\Http\Controllers\GoogleFormsController::class, 'callback'])->name('google-forms.callback');
     Route::post('/google-forms/disconnect', [\App\Http\Controllers\GoogleFormsController::class, 'disconnect'])->name('google-forms.disconnect');
+    Route::post('/google/disconnect', [\App\Http\Controllers\GoogleAuthController::class, 'disconnect'])->name('google.disconnect');
 });
 // AI Chat Route
 Route::middleware(['auth'])->get('/ai', AiChat::class)->name('ai.chat');

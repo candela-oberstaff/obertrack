@@ -271,6 +271,19 @@
                             <i class="fa fa-plus"></i>
                             Crear formulario
                         </a>
+
+                        @if(auth()->user()->isGoogleCalendarConnected() || auth()->user()->isGoogleFormsConnected())
+                            <div class="h-px bg-gray-100"></div>
+                            <form method="POST" action="{{ route('google.disconnect') }}">
+                                @csrf
+                                <button type="submit" 
+                                        onclick="return confirm('¿Estás seguro de que deseas cerrar sesión de Google? Esto desconectará Calendario y Formularios.')"
+                                        class="w-full py-2 bg-red-50 text-red-600 text-xs font-bold rounded-lg hover:bg-red-100 transition duration-150 flex items-center justify-center gap-2">
+                                    <i class="fa fa-google"></i>
+                                    Cerrar sesión de Google
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
             </div>
