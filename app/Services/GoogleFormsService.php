@@ -173,6 +173,8 @@ class GoogleFormsService
                         $mappedItem['caption'] = $item->videoItem->caption;
                     } elseif ($item->textItem) {
                         $mappedItem['type'] = 'TEXT';
+                    } elseif ($item->pageBreakItem) {
+                        $mappedItem['type'] = 'PAGE_BREAK';
                     }
                     
                     $mappedItems[] = $mappedItem;
@@ -199,6 +201,10 @@ class GoogleFormsService
         try {
             $this->setAccessToken($user);
             $formsService = new \Google\Service\Forms($this->client);
+            
+            // Get current count to append at the end
+            $currentForm = $formsService->forms->get($formId);
+            $nextIndex = count($currentForm->getItems() ?? []);
 
             $requests = [];
             $item = new \Google\Service\Forms\Item();
@@ -241,7 +247,7 @@ class GoogleFormsService
             $createItemRequest = new \Google\Service\Forms\CreateItemRequest();
             $createItemRequest->setItem($item);
             $location = new \Google\Service\Forms\Location();
-            $location->setIndex(0);
+            $location->setIndex($nextIndex);
             $createItemRequest->setLocation($location);
 
             $request = new \Google\Service\Forms\Request();
@@ -264,6 +270,10 @@ class GoogleFormsService
             $this->setAccessToken($user);
             $formsService = new \Google\Service\Forms($this->client);
 
+            // Get current count to append at the end
+            $currentForm = $formsService->forms->get($formId);
+            $nextIndex = count($currentForm->getItems() ?? []);
+
             $video = new \Google\Service\Forms\Video();
             $video->setYoutubeUri($this->normalizeYouTubeUrl($youtubeUri));
 
@@ -277,7 +287,7 @@ class GoogleFormsService
             $createItemRequest = new \Google\Service\Forms\CreateItemRequest();
             $createItemRequest->setItem($item);
             $location = new \Google\Service\Forms\Location();
-            $location->setIndex(0);
+            $location->setIndex($nextIndex);
             $createItemRequest->setLocation($location);
 
             $request = new \Google\Service\Forms\Request();
@@ -299,6 +309,10 @@ class GoogleFormsService
             $this->setAccessToken($user);
             $formsService = new \Google\Service\Forms($this->client);
 
+            // Get current count to append at the end
+            $currentForm = $formsService->forms->get($formId);
+            $nextIndex = count($currentForm->getItems() ?? []);
+
             $image = new \Google\Service\Forms\Image();
             $image->setSourceUri($imageUri);
 
@@ -312,7 +326,7 @@ class GoogleFormsService
             $createItemRequest = new \Google\Service\Forms\CreateItemRequest();
             $createItemRequest->setItem($item);
             $location = new \Google\Service\Forms\Location();
-            $location->setIndex(0);
+            $location->setIndex($nextIndex);
             $createItemRequest->setLocation($location);
 
             $request = new \Google\Service\Forms\Request();
