@@ -23,6 +23,13 @@ class GoogleFormsService
         $this->client->addScope('profile');
         $this->client->setAccessType('offline');
         $this->client->setPrompt('consent');
+
+        // Fix for cURL error 77 in local development (Laragon/Windows SSL issues)
+        if (app()->environment('local')) {
+            $this->client->setHttpClient(new \GuzzleHttp\Client([
+                'verify' => false,
+            ]));
+        }
     }
 
     public function getAuthUrl()
@@ -293,7 +300,7 @@ class GoogleFormsService
             $formsService = new \Google\Service\Forms($this->client);
 
             $image = new \Google\Service\Forms\Image();
-            $image->setContentUri($imageUri);
+            $image->setSourceUri($imageUri);
 
             $imageItem = new \Google\Service\Forms\ImageItem();
             $imageItem->setImage($image);
