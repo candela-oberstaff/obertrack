@@ -138,6 +138,7 @@ class GoogleFormsService
                     ];
                     
                     if ($item->questionItem) {
+                        $mappedItem['type'] = 'QUESTION';
                         $mappedItem['questionItem'] = [
                             'question' => [
                                 'textQuestion' => $item->questionItem->question->textQuestion ? [
@@ -151,6 +152,20 @@ class GoogleFormsService
                                 ] : null,
                             ],
                         ];
+                    } elseif ($item->imageItem) {
+                        $mappedItem['type'] = 'IMAGE';
+                        $mappedItem['image'] = [
+                            'contentUri' => $item->imageItem->image->contentUri,
+                            'altText' => $item->imageItem->image->altText,
+                        ];
+                    } elseif ($item->videoItem) {
+                        $mappedItem['type'] = 'VIDEO';
+                        $mappedItem['video'] = [
+                            'youtubeUri' => $item->videoItem->video->youtubeUri,
+                        ];
+                        $mappedItem['caption'] = $item->videoItem->caption;
+                    } elseif ($item->textItem) {
+                        $mappedItem['type'] = 'TEXT';
                     }
                     
                     $mappedItems[] = $mappedItem;
@@ -163,6 +178,7 @@ class GoogleFormsService
                     'title' => $form->info->title,
                     'description' => $form->info->description,
                 ],
+                'responderUri' => $form->responderUri,
                 'items' => $mappedItems,
             ];
         } catch (\Exception $e) {
@@ -232,6 +248,111 @@ class GoogleFormsService
         } catch (\Exception $e) {
             Log::error('Google Forms Add Question Error: ' . $e->getMessage());
             throw $e;
+        }
+    }
+
+    public function addVideo(User $user, string $formId, string $title, string $youtubeUri)
+    {
+        try {
+            $this->setAccessToken($user);
+            $formsService = new \Google\Service\Forms($this->client);
+
+            $video = new \Google\Service\Forms\Video();
+            $video->setYoutubeUri($youtubeUri);
+
+            $videoItem = new \Google\Service\Forms\VideoItem();
+            $videoItem->setVideo($video);
+
+            $item = new \Google\Service\Forms\Item();
+            $item->setTitle($title);
+            $item->setVideoItem($videoItem);
+
+            $createItemRequest = new \Google\Service\Forms\CreateItemRequest();
+            $createItemRequest->setItem($item);
+            $location = new \Google\Service\Forms\Location();
+            $location->setIndex(0);
+            $createItemRequest->setLocation($location);
+
+            $request = new \Google\Service\Forms\Request();
+            $request->setCreateItem($createItemRequest);
+
+            $batchRequest = new \Google\Service\Forms\BatchUpdateFormRequest();
+            $batchRequest->setRequests([$request]);
+
+            return $formsService->forms->batchUpdate($formId, $batchRequest);
+        } catch (\Exception $e) {
+            Log::error('Google Forms Add Video Error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function addImage(User $user, string $formId, string $title, string $imageUri)
+    {
+        try {
+            $this->setAccessToken($user);
+            $formsService = new \Google\Service\Forms($this->client);
+
+            $image = new \Google\Service\Forms\Image();
+            $image->setContentUri($imageUri);
+
+            $imageItem = new \Google\Service\Forms\ImageItem();
+            $imageItem->setImage($image);
+
+            $item = new \Google\Service\Forms\Item();
+            $item->setTitle($title);
+            $item->setImageItem($imageItem);
+
+            $createItemRequest = new \Google\Service\Forms\CreateItemRequest();
+            $createItemRequest->setItem($item);
+            $location = new \Google\Service\Forms\Location();
+            $location->setIndex(0);
+            $createItemRequest->setLocation($location);
+
+            $request = new \Google\Service\Forms\Request();
+            $request->setCreateItem($createItemRequest);
+
+            $batchRequest = new \Google\Service\Forms\BatchUpdateFormRequest();
+            $batchRequest->setRequests([$request]);
+
+            return $formsService->forms->batchUpdate($formId, $batchRequest);
+        } catch (\Exception $e) {
+            Log::error('Google Forms Add Image Error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function getFormResponses(User $user, string $formId)
+    {
+        try {
+            $this->setAccessToken($user);
+            $formsService = new \Google\Service\Forms($this->client);
+            $responses = $formsService->forms_responses->listFormsResponses($formId);
+            
+            $summary = [
+                'total' => count($responses->getResponses()),
+                'responses' => []
+            ];
+
+            foreach ($responses->getResponses() as $response) {
+                $answers = [];
+                foreach ($response->getAnswers() as $questionId => $answer) {
+                    $val = '';
+                    if ($answer->getTextAnswers()) {
+                        $val = implode(', ', array_map(fn($t) => $t->getValue(), $answer->getTextAnswers()->getAnswers()));
+                    }
+                    $answers[$questionId] = $val;
+                }
+                $summary['responses'][] = [
+                    'responseId' => $response->getResponseId(),
+                    'createTime' => $response->getCreateTime(),
+                    'answers' => $answers
+                ];
+            }
+
+            return $summary;
+        } catch (\Exception $e) {
+            Log::error('Google Forms Get Responses Error: ' . $e->getMessage());
+            return ['total' => 0, 'responses' => []];
         }
     }
 
