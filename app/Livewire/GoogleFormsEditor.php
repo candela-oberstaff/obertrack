@@ -129,6 +129,12 @@ class GoogleFormsEditor extends Component
 
         try {
             $user = Auth::user();
+            
+            // Auto-detect YouTube links
+            if (str_contains($this->mediaUri, 'youtube.com') || str_contains($this->mediaUri, 'youtu.be')) {
+                $this->mediaType = 'VIDEO';
+            }
+
             if ($this->mediaType === 'IMAGE') {
                 $formsService->addImage($user, $this->formId, $this->mediaTitle, $this->mediaUri);
             } else {
@@ -137,7 +143,7 @@ class GoogleFormsEditor extends Component
 
             $this->reset(['mediaTitle', 'mediaUri']);
             $this->loadForm($formsService);
-            session()->flash('success', ucfirst(strtolower($this->mediaType)) . ' agregado exitosamente.');
+            session()->flash('success', ($this->mediaType === 'IMAGE' ? 'Imagen' : 'Video') . ' agregado exitosamente.');
         } catch (\Exception $e) {
             session()->flash('error', 'Error al agregar multimedia: ' . $e->getMessage());
         }
