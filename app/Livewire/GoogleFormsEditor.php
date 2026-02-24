@@ -148,20 +148,6 @@ class GoogleFormsEditor extends Component
         }
     }
 
-    public function makePublic(GoogleFormsService $formsService)
-    {
-        try {
-            $user = Auth::user();
-            $formsService->updateFormSettings($user, $this->formId, [
-                'emailCollectionType' => 'DO_NOT_COLLECT'
-            ]);
-            
-            session()->flash('success', 'Formulario configurado como público (sin necesidad de login).');
-        } catch (\Exception $e) {
-            session()->flash('error', 'Error al configurar privacidad: ' . $e->getMessage());
-        }
-    }
-
     public function render()
     {
         return view('livewire.google-forms-editor')
