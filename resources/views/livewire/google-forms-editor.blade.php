@@ -20,10 +20,17 @@
                             <div class="flex items-center gap-2 mt-1">
                                 <span class="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded uppercase">Google Forms</span>
                                 @if($responderUri)
-                                    <button @click="copyLink()" class="text-xs text-gray-500 hover:text-[#22A9C8] flex items-center gap-1 transition-colors">
-                                        <i class="fa fa-link"></i>
-                                        Copiar enlace público
-                                    </button>
+                                    <div class="flex items-center gap-3">
+                                        <button @click="copyLink()" class="text-xs text-gray-500 hover:text-[#22A9C8] flex items-center gap-1 transition-colors">
+                                            <i class="fa fa-link"></i>
+                                            Copiar enlace público
+                                        </button>
+                                        <button wire:click="makePublic" wire:loading.attr="disabled" class="text-xs text-gray-400 hover:text-green-600 flex items-center gap-1 transition-colors">
+                                            <i class="fa fa-unlock-alt" wire:loading.remove wire:target="makePublic"></i>
+                                            <i class="fa fa-spinner fa-spin" wire:loading wire:target="makePublic"></i>
+                                            Hacer público (quitar login)
+                                        </button>
+                                    </div>
                                 @endif
                             </div>
                         </div>

@@ -30,7 +30,6 @@ class GoogleFormsEditor extends Component
     protected $rules = [
         'newQuestionTitle' => 'required_if:currentTab,preguntas|string|min:3|max:255',
         'newQuestionType' => 'required_if:currentTab,preguntas|in:TEXT,RADIO',
-        'newQuestionOptions.*' => 'required_if:newQuestionType,RADIO|string',
     ];
 
     public function mount($formId, GoogleFormsService $formsService)
@@ -146,6 +145,20 @@ class GoogleFormsEditor extends Component
             session()->flash('success', ($this->mediaType === 'IMAGE' ? 'Imagen' : 'Video') . ' agregado exitosamente.');
         } catch (\Exception $e) {
             session()->flash('error', 'Error al agregar multimedia: ' . $e->getMessage());
+        }
+    }
+
+    public function makePublic(GoogleFormsService $formsService)
+    {
+        try {
+            $user = Auth::user();
+            $formsService->updateFormSettings($user, $this->formId, [
+                'emailCollectionType' => 'DO_NOT_COLLECT'
+            ]);
+            
+            session()->flash('success', 'Formulario configurado como público (sin necesidad de login).');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error al configurar privacidad: ' . $e->getMessage());
         }
     }
 

@@ -22,6 +22,6 @@ class GoogleAuthController extends Controller
             'google_id' => null, // Optional: if we want a complete Google unlink
         ]);
 
-        return back()->with('success', 'Cuenta de Google desconectada exitosamente.');
+        return redirect()->route('google-forms.manage')->with('success', 'Cuenta de Google desconectada exitosamente.');
     }
 }

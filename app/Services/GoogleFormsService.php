@@ -105,6 +105,10 @@ class GoogleFormsService
             $info->setTitle($title);
             $form->setInfo($info);
             
+            $settings = new \Google\Service\Forms\FormSettings();
+            $settings->setEmailCollectionType('DO_NOT_COLLECT');
+            $form->setSettings($settings);
+            
             $createdForm = $formsService->forms->create($form);
             return $createdForm;
         } catch (\Exception $e) {
@@ -144,36 +148,39 @@ class GoogleFormsService
                         'description' => $item->description,
                     ];
                     
-                    if ($item->questionItem) {
+                    if ($item->getQuestionItem()) {
                         $mappedItem['type'] = 'QUESTION';
+                        $question = $item->getQuestionItem()->getQuestion();
                         $mappedItem['questionItem'] = [
                             'question' => [
-                                'textQuestion' => $item->questionItem->question->textQuestion ? [
-                                    'paragraph' => $item->questionItem->question->textQuestion->paragraph,
+                                'textQuestion' => $question->getTextQuestion() ? [
+                                    'paragraph' => $question->getTextQuestion()->getParagraph(),
                                 ] : null,
-                                'choiceQuestion' => $item->questionItem->question->choiceQuestion ? [
-                                    'type' => $item->questionItem->question->choiceQuestion->type,
+                                'choiceQuestion' => $question->getChoiceQuestion() ? [
+                                    'type' => $question->getChoiceQuestion()->getType(),
                                     'options' => array_map(function($opt) {
-                                        return ['value' => $opt->value];
-                                    }, $item->questionItem->question->choiceQuestion->options ?? []),
+                                        return ['value' => $opt->getValue()];
+                                    }, $question->getChoiceQuestion()->getOptions() ?? []),
                                 ] : null,
                             ],
                         ];
-                    } elseif ($item->imageItem) {
+                    } elseif ($item->getImageItem()) {
                         $mappedItem['type'] = 'IMAGE';
+                        $image = $item->getImageItem()->getImage();
                         $mappedItem['image'] = [
-                            'contentUri' => $item->imageItem->image->contentUri,
-                            'altText' => $item->imageItem->image->altText,
+                            'contentUri' => $image->getContentUri(),
+                            'altText' => $image->getAltText(),
                         ];
-                    } elseif ($item->videoItem) {
+                    } elseif ($item->getVideoItem()) {
                         $mappedItem['type'] = 'VIDEO';
+                        $video = $item->getVideoItem()->getVideo();
                         $mappedItem['video'] = [
-                            'youtubeUri' => $item->videoItem->video->youtubeUri,
+                            'youtubeUri' => $video->getYoutubeUri(),
                         ];
-                        $mappedItem['caption'] = $item->videoItem->caption;
-                    } elseif ($item->textItem) {
+                        $mappedItem['caption'] = $item->getVideoItem()->getCaption();
+                    } elseif ($item->getTextItem()) {
                         $mappedItem['type'] = 'TEXT';
-                    } elseif ($item->pageBreakItem) {
+                    } elseif ($item->getPageBreakItem()) {
                         $mappedItem['type'] = 'PAGE_BREAK';
                     }
                     
@@ -215,7 +222,7 @@ class GoogleFormsService
 
             if ($questionData['type'] === 'TEXT') {
                 $textQuestion = new \Google\Service\Forms\TextQuestion();
-                $textQuestion->setParagraph(true); // True for Paragraph, False for Short Answer
+                $textQuestion->setParagraph(true);
                 $question->setTextQuestion($textQuestion);
             } elseif ($questionData['type'] === 'RADIO') {
                 $choiceQuestion = new \Google\Service\Forms\ChoiceQuestion();
@@ -229,7 +236,6 @@ class GoogleFormsService
                         $options[] = $option;
                     }
                 } else {
-                    // Default option if none provided
                     $option = new \Google\Service\Forms\Option();
                     $option->setValue('Opción 1');
                     $options[] = $option;
@@ -338,6 +344,36 @@ class GoogleFormsService
             return $formsService->forms->batchUpdate($formId, $batchRequest);
         } catch (\Exception $e) {
             Log::error('Google Forms Add Image Error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function updateFormSettings(User $user, string $formId, array $settingsData)
+    {
+        try {
+            $this->setAccessToken($user);
+            $formsService = new \Google\Service\Forms($this->client);
+
+            $settings = new \Google\Service\Forms\FormSettings();
+            if (isset($settingsData['emailCollectionType'])) {
+                $settings->setEmailCollectionType($settingsData['emailCollectionType']);
+            } else {
+                $settings->setEmailCollectionType('DO_NOT_COLLECT');
+            }
+
+            $updateSettingsRequest = new \Google\Service\Forms\UpdateSettingsRequest();
+            $updateSettingsRequest->setSettings($settings);
+            $updateSettingsRequest->setUpdateMask('emailCollectionType');
+
+            $request = new \Google\Service\Forms\Request();
+            $request->setUpdateSettings($updateSettingsRequest);
+
+            $batchRequest = new \Google\Service\Forms\BatchUpdateFormRequest();
+            $batchRequest->setRequests([$request]);
+
+            return $formsService->forms->batchUpdate($formId, $batchRequest);
+        } catch (\Exception $e) {
+            Log::error('Google Forms Update Settings Error: ' . $e->getMessage());
             throw $e;
         }
     }
